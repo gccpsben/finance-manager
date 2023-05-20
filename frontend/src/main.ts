@@ -3,6 +3,7 @@ import { createPinia } from 'pinia'
 import axios from 'axios'
 import VueAxios from 'vue-axios'
 import { markRaw } from 'vue'
+import { createMetaManager } from 'vue-meta'
 
 import App from './App.vue'
 import router from './router/router.js'
@@ -18,6 +19,7 @@ import customDropdown from "@/components/custom-dropdown.vue"
 const app = createApp(App)
 app.use(VueAxios, axios)
 app.use(router)
+app.use(createMetaManager())
 app.component('grid-shortcut',gridShortcut)
 app.component('fa-icon', faIcon)
 app.component('grid-area', gridArea)

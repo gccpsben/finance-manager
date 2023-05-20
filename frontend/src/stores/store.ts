@@ -51,7 +51,8 @@ export const useMainStore = defineStore(
             ],
             allTransactions: [],
             dashboardSummary: {} as any,
-            currencies: [] as Array<Currency>
+            currencies: [] as Array<Currency>,
+            containers: [] as any
         }
     ),
     getters: 
@@ -65,6 +66,7 @@ export const useMainStore = defineStore(
             await this.updateTransactions();
             await this.updateDashboardSummary();
             await this.updateCurrencies();
+            await this.updateContainers();
         },
         resetAuth()
         {
@@ -100,6 +102,12 @@ export const useMainStore = defineStore(
             {
                 return new Currency(currency["_id"], currency["name"], currency["symbol"], currency["rate"])
             });
+        },
+        async updateContainers()
+        {
+            var self = this;
+            var response = await self.authGet("/api/finance/containers");
+            self.containers = response.data;
         },
         setCookie(cname:string, cvalue:string, exdays:number): void
         {

@@ -1,29 +1,76 @@
 <template>
-    <div id="topDiv">
-        <custom-dropdown style="width:150px; position:absolute; left:500px; top:500px;">
-            <template #main="props">
-                <grid-shortcut columns="1fr 25px" style="padding:5px; cursor:pointer;">
-                    <div style="color:white;" class="middleLeft">{{ props.currentItem }}</div>
-                    <div class="center">
-                        <fa-icon style="font-size:12px; color:white;" icon="fa-solid fa-chevron-down"></fa-icon>
-                    </div>
-                </grid-shortcut>
-            </template>
-            <template #row="props">
-                <div style="background:green;">
-                    <div>{{ props.item }}</div>
-                </div>
-            </template>
-        </custom-dropdown>
+
+    <metainfo>
+        <template v-slot:title="{content}">{{content}}</template>
+    </metainfo>
+
+    <div id="topDiv" class="center">
+
+        <div v-if="isLoading" class="fullSize center">Loading...</div>
+
+        <div id="containersSelectDiv" v-else style="width:500px; height:500px;">
+            
+            <grid-shortcut style="height:45px;" columns="100px 1fr" class="fullWidth">
+                <div class="middleLeft">From:</div>
+                <custom-dropdown :items="store.containers" v-model:currentItem="selectedFromContainer" style="width:100%; height:100%;">
+                    <template #itemToText="props">
+                        <div :style="{'padding-left': props.isSelector ? '0px' : '5px'}">{{ props.item?.name }}</div>
+                    </template>
+                </custom-dropdown>
+            </grid-shortcut>
+
+            <grid-shortcut style="height:45px; margin-top:5px;" columns="100px 1fr" class="fullWidth">
+                <div class="middleLeft">To:</div>
+                <custom-dropdown :items="store.containers" v-model:currentItem="selectedToContainer" style="width:100%; height:100%;">
+                    <template #itemToText="props">
+                        <div :style="{'padding-left': props.isSelector ? '0px' : '5px'}">{{ props.item?.name }}</div>
+                    </template>
+                </custom-dropdown>
+            </grid-shortcut>
+<!-- 
+            <grid-shortcut style="height:45px; width:100%;" columns="100px 1fr">
+                <div class="center">From:</div>
+                <custom-dropdown :items="store.availablePages" v-model:currentItem="selectedData" style="width:100%; height:100%;">
+                    <template #itemToText="props">{{ props.item?.name }}</template>
+                </custom-dropdown>
+            </grid-shortcut> -->
+
+        </div>
     </div>
 </template>
 
 <script lang="ts">
+import { useMainStore } from "@/stores/store";
+import { useMeta } from 'vue-meta';
+
 export default
 {
+    setup () 
+    {
+        useMeta(
+        {
+            title: 'Add Txns',
+            htmlAttrs: 
+            {
+                lang: 'en',
+                amp: true
+            }
+        })
+    },
+    async mounted() 
+    { 
+        this.isLoading = true;
+        await this.store.updateAll(); 
+        this.isLoading = false;
+    },
     data()
     {
-        return { sampleData: [1,2,3,4] }
+        return { 
+            isLoading: true,
+            store: useMainStore(),
+            selectedFromContainer: undefined,
+            selectedToContainer: undefined
+        }
     }
 }
 </script>
@@ -36,5 +83,6 @@ export default
 {
     background: @background;
     .fullSize;
+    color:white;
 }
 </style>

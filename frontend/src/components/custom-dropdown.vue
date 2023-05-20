@@ -44,7 +44,7 @@
         <div @click="opened=!opened" style="height:100%;">
             <slot id="selector" name="main" :currentItem="currentItem">
                 <grid-shortcut columns="1fr 25px" style="padding:5px; cursor:pointer; height:100%; box-sizing: border-box;">
-                    <div style="color:white;" class="middleLeft">
+                    <div style="color:white; padding-left:5px;" class="middleLeft">
                         <slot name="itemToText" :item="currentItem" :isSelector="true">
                             <div :class="{'disabled': currentItem === undefined}">{{ currentItem ?? "No Item Selected" }}</div>
                         </slot>
@@ -61,7 +61,9 @@
                 <slot name="row" :item="item">
                     <grid-shortcut class="row" columns="1fr 30px">
                         <div class="middleLeft">
-                            <slot name="itemToText" :item="item" :isSelector="false">{{ item }}</slot>
+                            <slot name="itemToText" :item="item" :isSelector="false">
+                                <div style="padding-left:5px;">{{ item }}</div>
+                            </slot>
                         </div>
                         <div v-if="currentItem==item" class="checkIcon">
                             <fa-icon style="font-size:12px; color:white;" icon="fa-solid fa-check"></fa-icon>
