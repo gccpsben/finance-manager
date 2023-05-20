@@ -1,0 +1,14 @@
+{
+  "compilerOptions": 
+  {
+    "outDir":"./server_build",
+    "experimentalDecorators":true,
+    "emitDecoratorMetadata": true,
+  },
+  "include": [
+    "server_source/**/*.ts",
+  ],
+  "exclude": [
+    "node_modules"
+  ]
+}
