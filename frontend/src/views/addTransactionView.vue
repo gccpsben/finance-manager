@@ -1,13 +1,18 @@
 <template>
     <div id="topDiv">
-        <custom-dropdown style="width:150px;">
+        <custom-dropdown style="width:150px; position:absolute; left:500px; top:500px;">
             <template #main="props">
-                <grid-shortcut columns="1fr 25px" style="padding:5px;">
+                <grid-shortcut columns="1fr 25px" style="padding:5px; cursor:pointer;">
                     <div style="color:white;" class="middleLeft">{{ props.currentItem }}</div>
                     <div class="center">
                         <fa-icon style="font-size:12px; color:white;" icon="fa-solid fa-chevron-down"></fa-icon>
                     </div>
                 </grid-shortcut>
+            </template>
+            <template #row="props">
+                <div style="background:green;">
+                    <div>{{ props.item }}</div>
+                </div>
             </template>
         </custom-dropdown>
     </div>

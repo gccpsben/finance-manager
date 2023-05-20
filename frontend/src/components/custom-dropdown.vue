@@ -1,6 +1,13 @@
 <template>
     <div id="topDiv">
-        <slot name="main" :currentItem="currentItem"></slot>
+        <div @click="opened=!opened" >
+            <slot id="selector" name="main" :currentItem="currentItem"></slot>
+        </div>
+        <div v-if="opened" style="width:100%; background:red; position:absolute;">
+            <div v-for="item in items" @click="currentItem = item">
+                <slot name="row" :item="item"></slot>
+            </div>
+        </div>
     </div>
 </template>
 
@@ -12,7 +19,8 @@ export default
         var data = 
         {
             "items": [123123,12312312],
-            "currentItem": undefined
+            "currentItem": undefined as any,
+            "opened": true
         };
 
         return data;
@@ -28,9 +36,9 @@ export default
 @import '@/stylesheets/globalStyle.less';
 #topDiv
 {
+    position:relative;
     background:@backgroundDark;
     width:fit-content;
     height:fit-content;
-    & /deep/ { cursor:pointer !important; }
 }
 </style>
