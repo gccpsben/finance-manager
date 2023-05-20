@@ -19,6 +19,7 @@
     "log-to-file": "^3.0.3",
     "mongodb": "^5.0.0",
     "mongoose": "^6.9.0",
+    "tsc-watch": "^6.0.4",
     "vue": "^3.2.13",
     "vue-select": "^4.0.0-beta.6"
   },

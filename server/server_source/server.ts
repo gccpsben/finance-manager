@@ -7,14 +7,19 @@ var minify = require('express-minify');
 require('dotenv').config(); // load env
 
 // #region SSL
-if (!process.env.SSL_KEY_PATH || !process.env.SSL_PEM_PATH) console.log("SSL_KEY_PATH or SSL_PEM_PATH isn't defined in the env file.");
-var key = fs.readFileSync(process.cwd() + process.env.SSL_KEY_PATH)
-var cert = fs.readFileSync(process.cwd() + process.env.SSL_PEM_PATH)
+var isSSLDefined = process.env.SSL_KEY_PATH && process.env.SSL_PEM_PATH;
+var sslKey, sslCert;
+if (!isSSLDefined) console.log("SSL_KEY_PATH or SSL_PEM_PATH isn't defined in the env file. Running in HTTP mode.");
+else 
+{ 
+    sslKey = fs.readFileSync(process.cwd() + process.env.SSL_KEY_PATH);
+    sslCert = fs.readFileSync(process.cwd() + process.env.SSL_PEM_PATH);
+    console.log("Running in HTTPS mode.");
+}
 // #endregion 
 
 var app = Express();
-//var server = require('https').createServer({ key:key, cert:cert }, app);
-var server = require('http').createServer(app);
+var server = isSSLDefined ? require('https').createServer({ key:sslKey, cert:sslCert }, app) : require('http').createServer(app);
 var port = process.env.PORT || 55561;
 var systemLaunchTime = new Date();
 

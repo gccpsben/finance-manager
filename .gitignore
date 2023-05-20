@@ -2,4 +2,5 @@
 /server/node_modules
 /server/ssl
 /server/*.log
+/server/server_build/*
 *.env
