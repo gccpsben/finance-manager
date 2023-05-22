@@ -15,6 +15,7 @@ import numberCell from "@/components/controls/numberCell.vue";
 import listCell from "@/components/controls/listCell.vue";
 import customTable from "@/components/custom-table.vue";
 import customDropdown from "@/components/custom-dropdown.vue"
+import { PrismaClient } from '@prisma/client'
 
 const app = createApp(App)
 app.use(VueAxios, axios)

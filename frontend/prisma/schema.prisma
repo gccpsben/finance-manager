@@ -1,0 +1,115 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mongodb"
+  url      = env("FINANCE_DB_FULL_URL")
+}
+
+type CryptoWalletWatchdogsTokensSupported {
+  chainType     String
+  currencyID    String
+  publicAddress String
+}
+
+type CurrenciesDataSource {
+  id          String? @map("_id") @db.ObjectId
+  jmesQuery   String
+  jsonURLHost String
+  jsonURLPath String
+}
+
+type TransactionsFrom {
+  amount      TransactionsFromAmount
+  containerID String
+}
+
+type TransactionsFromAmount {
+  currencyID String
+  /// Multiple data types found: Float: 28%, Int: 72% out of 678 sampled entries
+  value      Json
+}
+
+type TransactionsTo {
+  amount      TransactionsToAmount
+  containerID String
+}
+
+type TransactionsToAmount {
+  currencyID String
+  /// Multiple data types found: Float: 44.8%, Int: 55.2% out of 270 sampled entries
+  value      Json
+}
+
+model accessTokens {
+  id             String   @id @default(auto()) @map("_id") @db.ObjectId
+  v              Int      @map("__v")
+  accessCount    Int
+  issueTime      DateTime @db.Date
+  lastAccessTime DateTime @db.Date
+  token          String
+  userID         String
+  useragent      String
+  username       String
+}
+
+model accounts {
+  id           String   @id @default(auto()) @map("_id") @db.ObjectId
+  v            Int      @map("__v")
+  passwordHash String
+  registerTime DateTime @db.Date
+  username     String
+}
+
+model containers {
+  id       String @id @default(auto()) @map("_id") @db.ObjectId
+  v        Int    @map("__v")
+  name     String
+  /// Could not determine type: the field only had null or empty values in the sample set.
+  ownersID Json?
+}
+
+model cryptoWalletWatchdogs {
+  id                       String                                 @id @default(auto()) @map("_id") @db.ObjectId
+  v                        Int                                    @map("__v")
+  defaultTransactionTypeID String
+  linkedContainerID        String
+  tokensSupported          CryptoWalletWatchdogsTokensSupported[]
+}
+
+model currencies {
+  id         String                @id @default(auto()) @map("_id") @db.ObjectId
+  v          Int                   @map("__v")
+  dataSource CurrenciesDataSource?
+  name       String
+  /// Multiple data types found: Float: 85.7%, Int: 14.3% out of 7 sampled entries
+  rate       Json
+  symbol     String
+}
+
+model totalValueHistory {
+  id    String   @id @default(auto()) @map("_id") @db.ObjectId
+  v     Int      @map("__v")
+  date  DateTime @db.Date
+  value Float
+}
+
+model transactionTypes {
+  id        String  @id @default(auto()) @map("_id") @db.ObjectId
+  v         Int     @map("__v")
+  isEarning Boolean
+  isExpense Boolean
+  name      String
+}
+
+model transactions {
+  id        String            @id @default(auto()) @map("_id") @db.ObjectId
+  v         Int               @map("__v")
+  date      DateTime          @db.Date
+  from      TransactionsFrom?
+  isFromBot Boolean
+  title     String
+  to        TransactionsTo?
+  typeID    String
+}

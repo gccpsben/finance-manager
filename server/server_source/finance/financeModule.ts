@@ -217,7 +217,7 @@ exports.initialize = function (express_instance:Express)
                             else
                             {
                                 logGreen(`Successfully fetched ${currency.symbol} price ${value}.`);
-                                currency.rate = value;
+                                currency.rate = Number.parseFloat(value);
                                 await currency.save();
                             }
                         }

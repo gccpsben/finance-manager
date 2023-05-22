@@ -57,7 +57,7 @@
             <grid-shortcut v-if="txnMode != 'unknown'" id="summaryBox" columns="1fr 50px 1fr" class="fullWidth">
                 <div class="middleLeft fullWidth">
                     <div>
-                        <div class="containerValueText">{{ selectedFromContainer?.name }}</div>
+                        <div class="containerValueText" style="text-align: start;">{{ selectedFromContainer?.name }}</div>
                         <div style="text-align: start;">{{ fromAmount }} {{ selectedSpendingCurrency?.symbol }}</div>
                     </div>
                 </div>
@@ -66,13 +66,13 @@
                 </div>
                 <div class="middleRight fullWidth">
                     <div>
-                        <div class="containerValueText">{{ selectedToContainer?.name }}</div>
+                        <div class="containerValueText" style="text-align: end;">{{ selectedToContainer?.name }}</div>
                         <div style="text-align: end;">{{ toAmount }} {{ selectedReceivingCurrency?.symbol }}</div>
                     </div>
                 </div>
             </grid-shortcut>
 
-<!-- 
+            <!-- 
             <grid-shortcut style="height:45px; width:100%;" columns="100px 1fr">
                 <div class="center">From:</div>
                 <custom-dropdown :items="store.availablePages" v-model:currentItem="selectedData" style="width:100%; height:100%;">
@@ -86,6 +86,7 @@
 
 <script lang="ts">
 import { useMainStore } from "@/stores/store";
+import type { containers, currencies } from "@prisma/client";
 import { useMeta } from 'vue-meta';
 
 export default
@@ -114,10 +115,10 @@ export default
         return { 
             isLoading: true,
             store: useMainStore(),
-            selectedFromContainer: undefined as any,
-            selectedToContainer: undefined as any,
-            selectedSpendingCurrency: undefined as any,
-            selectedReceivingCurrency: undefined as any,
+            selectedFromContainer: undefined as undefined | containers,
+            selectedToContainer: undefined as undefined | containers,
+            selectedSpendingCurrency: undefined as undefined | currencies,
+            selectedReceivingCurrency: undefined as undefined | currencies,
             fromAmount: 0 as number,
             toAmount: 0 as number,
         }

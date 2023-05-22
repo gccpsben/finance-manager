@@ -1,19 +1,6 @@
+import type { containers, currencies, transactions } from '@prisma/client';
 import axios from 'axios';
 import { defineStore } from 'pinia'
-
-export class Currency
-{
-    name: string = "";
-    symbol: string = "";
-    rate: number = 0;
-    id: string = "";
-    
-    constructor(id:string, name:string, symbol:string, rate:number)
-    {
-        this.id = id;
-        this.name = name; this.symbol = symbol; this.rate = rate;
-    }
-}
 
 export const useMainStore = defineStore(
 {
@@ -49,10 +36,10 @@ export const useMainStore = defineStore(
                     iconClass: "fa fa-inbox"
                 }
             ],
-            allTransactions: [],
+            allTransactions: [] as Array<transactions>,
             dashboardSummary: {} as any,
-            currencies: [] as Array<Currency>,
-            containers: [] as Array<any>
+            currencies: [] as Array<currencies>,
+            containers: [] as Array<containers>
         }
     ),
     getters: 
@@ -98,10 +85,7 @@ export const useMainStore = defineStore(
         {
             var self = this;
             var response = await self.authGet("/api/finance/currencies");
-            self.currencies = response.data.map((currency:any) => 
-            {
-                return new Currency(currency["_id"], currency["name"], currency["symbol"], currency["rate"])
-            });
+            self.currencies = response.data;
         },
         async updateContainers()
         {
