@@ -10,53 +10,66 @@
 
         <div id="containersSelectDiv" v-else style="width:500px; height:500px;">
             
-            <grid-shortcut style="height:45px;" columns="100px 1fr" class="fullWidth">
+            <grid-shortcut columns="100px 1fr" class="fullWidth field">
                 <div class="middleLeft">From:</div>
-                <custom-dropdown :items="store.containers" v-model:currentItem="selectedFromContainer" style="width:100%; height:100%;">
+                <custom-dropdown :items="store.containers" v-model:currentItem="selectedFromContainer">
                     <template #itemToText="props">
                         <grid-shortcut :style="{'padding-left': props.isSelector ? '0px' : '5px', 'padding-right': props.isSelector ? '5px' : '0px'}" columns="1fr 1fr" class="fullWidth">
-                            <div class="middleLeft">{{ props.item?.name }}</div>
+                            <div class="middleLeft">{{ props.item?.name ?? 'No Container Selected' }}</div>
                             <div class="middleRight containerValueText">{{ props.item?.value.toFixed(1) }} {{ props.item ? 'HKD' : '' }}</div>
                         </grid-shortcut>
                     </template>
                 </custom-dropdown>
             </grid-shortcut>
 
-            <grid-shortcut style="height:45px; margin-top:5px;" columns="100px 1fr" class="fullWidth">
+            <grid-shortcut columns="100px 1fr" class="fullWidth field">
                 <div class="middleLeft">To:</div>
-                <custom-dropdown :items="store.containers" v-model:currentItem="selectedToContainer" style="width:100%; height:100%;">
+                <custom-dropdown :items="store.containers" v-model:currentItem="selectedToContainer">
                     <template #itemToText="props">
-                        <grid-shortcut :style="{'padding-left': props.isSelector ? '0px' : '5px', 'padding-right': props.isSelector ? '5px' : '0px'}" columns="1fr 1fr" class="fullWidth">
-                            <div class="middleLeft">{{ props.item?.name }}</div>
+                        <grid-shortcut :style="{'padding-left': props.isSelector ? '0px' : '5px', 'padding-right': props.isSelector ? '5px' : '0px' }" columns="1fr 1fr" class="fullWidth">
+                            <div class="middleLeft">{{ props.item?.name ?? 'No Container Selected' }}</div>
                             <div class="middleRight containerValueText">{{ props.item?.value.toFixed(1) }} {{ props.item ? 'HKD' : '' }}</div>
                         </grid-shortcut>
                     </template>
                 </custom-dropdown>
             </grid-shortcut>
 
-            <grid-shortcut v-if="selectedFromContainer" style="height:45px; margin-top:5px;" columns="100px 1fr 100px" class="fullWidth">
+            <grid-shortcut v-if="selectedFromContainer" columns="100px 1fr 100px" class="fullWidth field">
                 <div class="middleLeft">Spending:</div>
-                <input @keypress="isNumber($event)" type="number"/>
-                <custom-dropdown :items="store.currencies" v-model:currentItem="selectedSpendingCurrency" style="width:100%; height:100%;">
+                <input @keypress="isNumber($event)" type="number" v-model="fromAmount"/>
+                <custom-dropdown :items="store.currencies" v-model:currentItem="selectedSpendingCurrency">
                     <template #itemToText="props">
-                        {{ props.item?.symbol }}
+                        {{ props.item?.symbol ?? '-' }}
                     </template>
                 </custom-dropdown>
             </grid-shortcut>
 
-            <grid-shortcut v-if="selectedToContainer" style="height:45px; margin-top:5px;" columns="100px 1fr 100px" class="fullWidth">
+            <grid-shortcut v-if="selectedToContainer" columns="100px 1fr 100px" class="fullWidth field">
                 <div class="middleLeft">Receiving:</div>
-                <input @keypress="isNumber($event)" type="number"/>
-                <custom-dropdown :items="store.currencies" v-model:currentItem="selectedReceivingCurrency" style="width:100%; height:100%;">
+                <input @keypress="isNumber($event)" type="number" v-model="toAmount"/>
+                <custom-dropdown :items="store.currencies" v-model:currentItem="selectedReceivingCurrency">
                     <template #itemToText="props">
-                        {{ props.item?.symbol }}
+                        {{ props.item?.symbol ?? '-' }}
                     </template>
                 </custom-dropdown>
             </grid-shortcut>
 
-            <grid-shortcut id="summaryBox" columns="1fr 1fr" class="fullWidth debug" style="height:45px;">
-                <div class="middleLeft fullWidth">{{ selectedFromContainer?.name }}</div>
-                <div class="middleRight fullWidth">{{ selectedToContainer?.name }}</div>
+            <grid-shortcut v-if="txnMode != 'unknown'" id="summaryBox" columns="1fr 50px 1fr" class="fullWidth">
+                <div class="middleLeft fullWidth">
+                    <div>
+                        <div class="containerValueText">{{ selectedFromContainer?.name }}</div>
+                        <div style="text-align: start;">{{ fromAmount }} {{ selectedSpendingCurrency?.symbol }}</div>
+                    </div>
+                </div>
+                <div class="center">
+                    <fa-icon style="font-size:12px; color:white;" icon="fa-solid fa-chevron-right"></fa-icon>
+                </div>
+                <div class="middleRight fullWidth">
+                    <div>
+                        <div class="containerValueText">{{ selectedToContainer?.name }}</div>
+                        <div style="text-align: end;">{{ toAmount }} {{ selectedReceivingCurrency?.symbol }}</div>
+                    </div>
+                </div>
             </grid-shortcut>
 
 <!-- 
@@ -82,6 +95,7 @@ export default
         useMeta(
         {
             title: 'Add Txns',
+            visualViewport: 'width=device-width, initial-scale=1.0',
             htmlAttrs: 
             {
                 lang: 'en',
@@ -103,7 +117,9 @@ export default
             selectedFromContainer: undefined as any,
             selectedToContainer: undefined as any,
             selectedSpendingCurrency: undefined as any,
-            selectedReceivingCurrency: undefined as any
+            selectedReceivingCurrency: undefined as any,
+            fromAmount: 0 as number,
+            toAmount: 0 as number,
         }
     },
     methods:
@@ -154,9 +170,20 @@ export default
         font-size:16px;
     }
 
+    .field
+    {
+        height:45px; margin-top:5px;
+        div { .fullSize; }
+    }
+
     #summaryBox
     {
         margin-top:15px;
+        background: @backgroundDark;
+        padding:10px;
+        box-sizing:border-box;
+
+        & > div > div > div:first-child { margin-bottom:5px; }
     }
 }
 

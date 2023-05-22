@@ -75,7 +75,7 @@
         'expensesPanel incomesPanel totalValuePanel netChangePanel' 
         '30dExpensesList 30dIncomesList _ _';
 
-        .listItemTitle { color:gray; font-size:14px; }
+        .listItemTitle { color:gray; font-size:14px; overflow:hidden; white-space: nowrap; text-overflow: ellipsis; }
     }
 }
 </style>

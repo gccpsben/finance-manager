@@ -367,59 +367,66 @@ export class CryptoWalletWatchDogClass
         // returns a list of newly added tx.
         async function syncXNO(token: WalletTokenClass) : Promise<Array<TransactionClass>>
         {
-            if (token.chainType == "XNO") 
+            try
             {
-                let addedTxns: any[] = []; // this will be the return value
+                if (token.chainType == "XNO") 
+                {
+                    let addedTxns: any[] = []; // this will be the return value
 
-                var fetchResponse = await axios.post(`https://www.nanolooker.com/api/rpc`, 
-                {
-                    "action": "account_history",
-                    "account": token.publicAddress,
-                    "count":"9999"
-                });
-
-                if (fetchResponse.status != 200) 
-                {
-                    logRed(`Error fetching blockchain data for watchdog id=${self._id}: E${response.status}: ${response.body}`);
-                    return [];
-                }
-
-                var response = await fetchResponse.data;
-
-                if (response.error == "Bad account number") 
-                {
-                    logRed(`Error fetching blockchain data for watchdog id=${self._id}: of chain XNO: The given public address ${token.publicAddress} cannot be found.`);
-                    return [];
-                }
-                else if (response.error != undefined) 
-                {
-                    logRed(`Error fetching blockchain data for watchdog id=${self._id}: of chain XNO: ${response.error}`);
-                    return [];
-                }
-                else
-                {
-                    var allTransactions = response.history;
-                    for (var i = 0; i < allTransactions.length; i++)
+                    var fetchResponse = await axios.post(`https://www.nanolooker.com/api/rpc`, 
                     {
-                        var item = allTransactions[i];
-                        if (item["confirmed"] == "true")
-                        {
-                            var addedTx = await tryAppendTxn
-                            (
-                                new Date(Number.parseInt(item["local_timestamp"]) * 1000),
-                                Number.parseInt(item["amount"]) / 10e+29,
-                                item["type"] == "receive" ? "Receive" : "Spent",
-                                token
-                            );
+                        "action": "account_history",
+                        "account": token.publicAddress,
+                        "count":"9999"
+                    });
 
-                            if (addedTx != undefined) addedTxns.push(addedTx);
+                    if (fetchResponse.status != 200) 
+                    {
+                        logRed(`Error fetching blockchain data for watchdog id=${self._id}: E${response.status}: ${response.body}`);
+                        return [];
+                    }
+
+                    var response = await fetchResponse.data;
+
+                    if (response.error == "Bad account number") 
+                    {
+                        logRed(`Error fetching blockchain data for watchdog id=${self._id}: of chain XNO: The given public address ${token.publicAddress} cannot be found.`);
+                        return [];
+                    }
+                    else if (response.error != undefined) 
+                    {
+                        logRed(`Error fetching blockchain data for watchdog id=${self._id}: of chain XNO: ${response.error}`);
+                        return [];
+                    }
+                    else
+                    {
+                        var allTransactions = response.history;
+                        for (var i = 0; i < allTransactions.length; i++)
+                        {
+                            var item = allTransactions[i];
+                            if (item["confirmed"] == "true")
+                            {
+                                var addedTx = await tryAppendTxn
+                                (
+                                    new Date(Number.parseInt(item["local_timestamp"]) * 1000),
+                                    Number.parseInt(item["amount"]) / 10e+29,
+                                    item["type"] == "receive" ? "Receive" : "Spent",
+                                    token
+                                );
+
+                                if (addedTx != undefined) addedTxns.push(addedTx);
+                            }
                         }
                     }
-                }
 
-                return addedTxns;
+                    return addedTxns;
+                }
+                else throw new Error(`The given token is not on the XNO chain.`);
             }
-            else throw new Error(`The given token is not on the XNO chain.`);
+            catch(ex)
+            {
+                console.log(`Error trying to update address info of ${token.publicAddress} in chain ${token.chainType}`);
+            }
         }
 
         let txAdded:Array<TransactionClass> = [];

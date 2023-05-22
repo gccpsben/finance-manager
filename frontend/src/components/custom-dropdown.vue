@@ -57,7 +57,7 @@
         </div>
         <div v-if="opened" id="unselectOverlay" @click="opened=false"></div>
         <div id="dropdownMenu" v-if="opened" style="width:100%; position:absolute;">
-            <div v-for="item in items" @click="$emit('update:currentItem', item); opened=false;" class="fullWidth">
+            <div v-for="item in items" @click="onItemClicked(item)" class="fullWidth">
                 <slot name="row" :item="item">
                     <grid-shortcut class="row" columns="1fr 30px">
                         <div class="middleLeft">
@@ -84,7 +84,8 @@ export default
     props:
     {
         "items": { default: [], type: Array<any> },
-        "currentItem": { default: undefined }
+        "currentItem": { default: undefined },
+        "allowDeselect": { default: true }
     },
     // props:["items", "currentItem"],
     emits:["update:items", "update:currentItem"],
@@ -93,10 +94,15 @@ export default
         var data = { "opened": false };
         return data;
     },
-    setup(){ return; },
-    computed: 
-    { 
-        
+    setup() { return; },
+    methods:
+    {
+        onItemClicked(itemClicked:any)
+        {
+            if (this.allowDeselect && this.currentItem === itemClicked) { this.$emit('update:currentItem', undefined); }
+            else this.$emit('update:currentItem', itemClicked);
+            this.opened = false;
+        }
     }
 }
 </script>
