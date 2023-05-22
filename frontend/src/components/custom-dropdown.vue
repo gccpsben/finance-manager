@@ -57,7 +57,7 @@
         </div>
         <div v-if="opened" id="unselectOverlay" @click="opened=false"></div>
         <div id="dropdownMenu" v-if="opened" style="width:100%; position:absolute;">
-            <div v-for="item in items" @click="$emit('update:currentItem', item); opened=false;">
+            <div v-for="item in items" @click="$emit('update:currentItem', item); opened=false;" class="fullWidth">
                 <slot name="row" :item="item">
                     <grid-shortcut class="row" columns="1fr 30px">
                         <div class="middleLeft">

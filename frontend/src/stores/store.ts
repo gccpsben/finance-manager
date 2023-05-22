@@ -52,7 +52,7 @@ export const useMainStore = defineStore(
             allTransactions: [],
             dashboardSummary: {} as any,
             currencies: [] as Array<Currency>,
-            containers: [] as any
+            containers: [] as Array<any>
         }
     ),
     getters: 

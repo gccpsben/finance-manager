@@ -1,15 +1,4 @@
-@background: rgb(25,25,25); @backgroundDark: rgb(15,15,15);
-@border: rgb(35,35,35);
-@surface: rgb(27,29,33); @surfaceHigh: rgb(51,52,56);
-@focus: rgb(43,179,255); @focusDark: rgb(28,44,55);
-@font: Ubuntu; @foreground: rgb(189,189,190);
-@success: rgb(155,255,155); @successDark: rgb(50,100,50);
-@error: rgb(255,155,155); @errorDark: rgb(100,50,50);
-@yellow: rgb(255,255,155); @yellowDark: rgb(100,100,50);
-@blue: rgb(200,200,255); @blueDark: rgb(80,80,100);
-@gridCellBorderRadius: 5px; @gridCellPadding: 20px;
-
-@mobileViewHeaderHeight: 35px;
+@import "./mainTheme.less";
 
 .minButtonBase { cursor:pointer; border:0px; transition: all 0.2s ease; }
 .figureHeader { color: @foreground; font-weight:bold; font-size:30px; }
@@ -49,8 +38,13 @@
 .horiPadding(@amount) { padding-left: @amount; padding-right: @amount; }
 .squareSize(@size) { width:@size; height:@size; }
 .circle(@size) { .squareSize(@size); border-radius: calc(@size / 2); }
-.bg(@parameter) { background:@parameter; }
+.bg(@parameter) { background:@parameter;  }
+.color(@parameter) { color: @parameter; }
 .roundSquare(@size, @radius) { .squareSize(@size); border-radius: @radius; }
 .debug { background:red; border:1px solid darkred; }
 .noHighlight { user-select: none; -moz-user-select: none; -webkit-user-select: none; }
 .clearInput { appearance: none; outline:none; }
+
+/* To disable webkit engine's autofill style, see https://stackoverflow.com/questions/2781549/removing-input-background-colour-for-chrome-autocomplete */
+input:-webkit-autofill, input:-webkit-autofill:focus { transition: background-color 600000s 0s, color 600000s 0s; }
+input[data-autocompleted] { background-color: transparent !important; }

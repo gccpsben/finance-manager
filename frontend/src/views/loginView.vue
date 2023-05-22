@@ -3,14 +3,14 @@
         <grid-shortcut id="loginForm" rows="45px 45px 35px" columns="1fr">
             <div class="field">
                 <div><span class="material-symbols-outlined noHighlight">person</span></div>
-                <div>
+                <div class="flex">
                     <input v-model="enteredUsername"
                     placeholder="Username">
                 </div>
             </div>
             <div class="field">
                 <div><span class="material-symbols-outlined smallIcon noHighlight">key</span></div>
-                <div>
+                <div class="flex">
                     <input v-model="enteredPassword"
                     placeholder="Password" :type="pwVisible ? 'text' : 'password'">
                 </div>
@@ -39,6 +39,8 @@
     {
         gap: 15px;
         width:clamp(200px, 80vw, 300px);
+
+        .flex { display:flex; }
 
         .field
         {
