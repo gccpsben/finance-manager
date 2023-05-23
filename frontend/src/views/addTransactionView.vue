@@ -56,20 +56,27 @@
 
             <grid-shortcut v-if="txnMode != 'unknown'" id="summaryBox" columns="1fr 50px 1fr" class="fullWidth">
                 <div class="middleLeft fullWidth">
-                    <div>
-                        <div class="containerValueText" style="text-align: start;">{{ selectedFromContainer?.name }}</div>
-                        <div style="text-align: start;">{{ fromAmount }} {{ selectedSpendingCurrency?.symbol }}</div>
+                    <div v-if="fromAmount && selectedSpendingCurrency && selectedFromContainer">
+                        <div class="containerValueText" style="text-align: start;">{{ selectedFromContainer.name }}</div>
+                        <div style="text-align: start;">{{ fromAmount }} {{ selectedSpendingCurrency.symbol }}</div>
+                        <div class="containerValueText" style="text-align: start; margin-top:5px;">{{ fromAmount * selectedSpendingCurrency.rate }} HKD</div>
                     </div>
                 </div>
                 <div class="center">
                     <fa-icon style="font-size:12px; color:white;" icon="fa-solid fa-chevron-right"></fa-icon>
                 </div>
                 <div class="middleRight fullWidth">
-                    <div>
-                        <div class="containerValueText" style="text-align: end;">{{ selectedToContainer?.name }}</div>
-                        <div style="text-align: end;">{{ toAmount }} {{ selectedReceivingCurrency?.symbol }}</div>
+                    <div v-if="toAmount && selectedReceivingCurrency && selectedToContainer" >
+                        <div class="containerValueText" style="text-align: end;">{{ selectedToContainer.name }}</div>
+                        <div style="text-align: end;">{{ toAmount }} {{ selectedReceivingCurrency.symbol }}</div>
+                        <div class="containerValueText" style="text-align: end; margin-top:5px;">{{ toAmount * selectedReceivingCurrency.rate }} HKD</div>
                     </div>
                 </div>
+            </grid-shortcut>
+
+            <grid-shortcut columns="1fr 1fr">
+                <div class="middleLeft"><button @click="reset">Reset</button></div>
+                <div class="middleRight"><button>Upload</button></div>
             </grid-shortcut>
 
             <!-- 
@@ -131,6 +138,15 @@ export default
             var charCode = (evt.which) ? evt.which : evt.keyCode;
             if ((charCode > 31 && (charCode < 48 || charCode > 57)) && charCode !== 46) evt.preventDefault();
             else return true;
+        },
+        reset()
+        {
+            this.selectedFromContainer = undefined;
+            this.selectedToContainer = undefined;
+            this.selectedSpendingCurrency = undefined;
+            this.selectedReceivingCurrency = undefined;
+            this.fromAmount = 0;
+            this.toAmount = 0;
         }
     },
     computed:
@@ -186,6 +202,8 @@ export default
 
         & > div > div > div:first-child { margin-bottom:5px; }
     }
+
+    button { background:@backgroundDark; border:0px; color:white; padding:10px; margin-top:15px; }
 }
 
 .containerValueText

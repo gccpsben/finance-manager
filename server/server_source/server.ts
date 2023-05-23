@@ -4,7 +4,7 @@ import { logGreen, logRed, log, logBlue, getLog } from "./extendedLog";
 const Express = require("express");
 var fs = require("fs");
 var minify = require('express-minify');
-require('dotenv-expand')(require('dotenv').config()) // load env and expand using dotenv-expand
+require('dotenv-expand').expand(require('dotenv').config()); // load env and expand using dotenv-expand
 
 // #region SSL
 var isSSLDefined = process.env.SSL_KEY_PATH && process.env.SSL_PEM_PATH;

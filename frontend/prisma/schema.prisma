@@ -83,8 +83,7 @@ model currencies {
   v          Int                   @map("__v")
   dataSource CurrenciesDataSource?
   name       String
-  /// Multiple data types found: Float: 85.7%, Int: 14.3% out of 7 sampled entries
-  rate       Json
+  rate       Float
   symbol     String
 }
 
