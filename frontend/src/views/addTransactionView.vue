@@ -8,35 +8,58 @@
 
         <div v-if="isLoading" class="fullSize center">Loading...</div>
 
-        <div id="containersSelectDiv" v-else style="width:500px; height:500px;">
+        <div id="containersSelectDiv" v-else>
             
+            <grid-shortcut id="modeSelector" columns="1fr 1fr 1fr" class="fullWidth field">
+
+                <div v-for="option in ['spending', 'earning', 'transfer']">
+                    <div :class="{'selected': selectedMode == option}" @click="selectedMode = option"
+                    v-bind:class="option" >{{ option }}</div>
+                </div>
+
+            </grid-shortcut>
+
             <grid-shortcut columns="100px 1fr" class="fullWidth field">
+                <div class="middleLeft">Title:</div>
+                <input type="text" placeholder="Title Here..." v-model="txnTitle"/>
+            </grid-shortcut>
+
+            <grid-shortcut columns="100px 1fr" class="fullWidth field">
+                <div class="middleLeft">Type:</div>
+                <custom-dropdown :items="store.txnTypes" v-model:currentItem="selectedTxnType">
+                    <template #itemToText="props">
+                        <div class="middleLeft" :class="{'grayText': !props.item?.name }">{{ props.item?.name ?? 'No Type Selected' }}</div>
+                    </template>
+                </custom-dropdown>
+            </grid-shortcut>
+            
+            <grid-shortcut v-if="selectedMode == 'transfer' || selectedMode == 'spending'" columns="100px 1fr" class="fullWidth field">
                 <div class="middleLeft">From:</div>
                 <custom-dropdown :items="store.containers" v-model:currentItem="selectedFromContainer">
                     <template #itemToText="props">
-                        <grid-shortcut :style="{'padding-left': props.isSelector ? '0px' : '5px', 'padding-right': props.isSelector ? '5px' : '0px'}" columns="1fr 1fr" class="fullWidth">
-                            <div class="middleLeft">{{ props.item?.name ?? 'No Container Selected' }}</div>
+                        <grid-shortcut :style="{'padding-left': props.isSelector ? '0px' : '5px', 'padding-right': props.isSelector ? '5px' : '0px'}" columns="1fr auto" class="fullWidth">
+                            <div class="middleLeft" :class="{'grayText': !props.item?.name }">{{ props.item?.name ?? '/' }}</div>
                             <div class="middleRight containerValueText">{{ props.item?.value.toFixed(1) }} {{ props.item ? 'HKD' : '' }}</div>
                         </grid-shortcut>
                     </template>
                 </custom-dropdown>
             </grid-shortcut>
 
-            <grid-shortcut columns="100px 1fr" class="fullWidth field">
+            <grid-shortcut v-if="selectedMode == 'transfer' || selectedMode == 'earning'" columns="100px 1fr" class="fullWidth field">
                 <div class="middleLeft">To:</div>
                 <custom-dropdown :items="store.containers" v-model:currentItem="selectedToContainer">
                     <template #itemToText="props">
                         <grid-shortcut :style="{'padding-left': props.isSelector ? '0px' : '5px', 'padding-right': props.isSelector ? '5px' : '0px' }" columns="1fr 1fr" class="fullWidth">
-                            <div class="middleLeft">{{ props.item?.name ?? 'No Container Selected' }}</div>
+                            <div class="middleLeft" :class="{'grayText': !props.item?.name }">{{ props.item?.name ?? '/' }}</div>
                             <div class="middleRight containerValueText">{{ props.item?.value.toFixed(1) }} {{ props.item ? 'HKD' : '' }}</div>
                         </grid-shortcut>
                     </template>
                 </custom-dropdown>
             </grid-shortcut>
 
-            <grid-shortcut v-if="selectedFromContainer" columns="100px 1fr 100px" class="fullWidth field">
+            <grid-shortcut id="spendingFieldContainer" v-if="selectedFromContainer" class="fullWidth field">
                 <div class="middleLeft">Spending:</div>
-                <input @keypress="isNumber($event)" type="number" v-model="fromAmount"/>
+                <input inputmode="decimal" @keypress="isNumber($event)" type="number" v-model="fromAmount"/>
                 <custom-dropdown :items="store.currencies" v-model:currentItem="selectedSpendingCurrency">
                     <template #itemToText="props">
                         {{ props.item?.symbol ?? '-' }}
@@ -46,7 +69,7 @@
 
             <grid-shortcut v-if="selectedToContainer" columns="100px 1fr 100px" class="fullWidth field">
                 <div class="middleLeft">Receiving:</div>
-                <input @keypress="isNumber($event)" type="number" v-model="toAmount"/>
+                <input inputmode="decimal" @keypress="isNumber($event)" type="number" v-model="toAmount"/>
                 <custom-dropdown :items="store.currencies" v-model:currentItem="selectedReceivingCurrency">
                     <template #itemToText="props">
                         {{ props.item?.symbol ?? '-' }}
@@ -54,38 +77,32 @@
                 </custom-dropdown>
             </grid-shortcut>
 
-            <grid-shortcut v-if="txnMode != 'unknown'" id="summaryBox" columns="1fr 50px 1fr" class="fullWidth">
+            <grid-shortcut v-if="shouldSummaryBoxVisible" id="summaryBox" columns="1fr 50px 1fr" class="fullWidth">
                 <div class="middleLeft fullWidth">
-                    <div v-if="fromAmount && selectedSpendingCurrency && selectedFromContainer">
+                    <div v-if="fromAmount != undefined && selectedSpendingCurrency && selectedFromContainer">
                         <div class="containerValueText" style="text-align: start;">{{ selectedFromContainer.name }}</div>
                         <div style="text-align: start;">{{ fromAmount }} {{ selectedSpendingCurrency.symbol }}</div>
-                        <div class="containerValueText" style="text-align: start; margin-top:5px;">{{ fromAmount * selectedSpendingCurrency.rate }} HKD</div>
+                        <div class="containerValueText" style="text-align: start; margin-top:5px;">{{ fromAmount * selectedSpendingCurrency?.rate }} HKD</div>
                     </div>
                 </div>
                 <div class="center">
                     <fa-icon style="font-size:12px; color:white;" icon="fa-solid fa-chevron-right"></fa-icon>
                 </div>
                 <div class="middleRight fullWidth">
-                    <div v-if="toAmount && selectedReceivingCurrency && selectedToContainer" >
+                    <div v-if="toAmount != undefined && selectedReceivingCurrency && selectedToContainer" >
                         <div class="containerValueText" style="text-align: end;">{{ selectedToContainer.name }}</div>
                         <div style="text-align: end;">{{ toAmount }} {{ selectedReceivingCurrency.symbol }}</div>
-                        <div class="containerValueText" style="text-align: end; margin-top:5px;">{{ toAmount * selectedReceivingCurrency.rate }} HKD</div>
+                        <div class="containerValueText" style="text-align: end; margin-top:5px;">{{ toAmount * selectedReceivingCurrency?.rate }} HKD</div>
                     </div>
                 </div>
             </grid-shortcut>
 
             <grid-shortcut columns="1fr 1fr">
                 <div class="middleLeft"><button @click="reset">Reset</button></div>
-                <div class="middleRight"><button>Upload</button></div>
+                <div class="middleRight">
+                    <button @click="upload" :disabled="!isFormValid">Upload</button>
+                </div>
             </grid-shortcut>
-
-            <!-- 
-            <grid-shortcut style="height:45px; width:100%;" columns="100px 1fr">
-                <div class="center">From:</div>
-                <custom-dropdown :items="store.availablePages" v-model:currentItem="selectedData" style="width:100%; height:100%;">
-                    <template #itemToText="props">{{ props.item?.name }}</template>
-                </custom-dropdown>
-            </grid-shortcut> -->
 
         </div>
     </div>
@@ -93,7 +110,7 @@
 
 <script lang="ts">
 import { useMainStore } from "@/stores/store";
-import type { containers, currencies } from "@prisma/client";
+import type { containers, currencies, transactionTypes } from "@prisma/client";
 import { useMeta } from 'vue-meta';
 
 export default
@@ -103,13 +120,11 @@ export default
         useMeta(
         {
             title: 'Add Txns',
-            visualViewport: 'width=device-width, initial-scale=1.0',
             htmlAttrs: 
             {
                 lang: 'en',
-                amp: true
             }
-        })
+        });
     },
     async mounted() 
     { 
@@ -126,8 +141,11 @@ export default
             selectedToContainer: undefined as undefined | containers,
             selectedSpendingCurrency: undefined as undefined | currencies,
             selectedReceivingCurrency: undefined as undefined | currencies,
+            selectedTxnType: undefined as undefined | transactionTypes,
             fromAmount: 0 as number,
             toAmount: 0 as number,
+            txnTitle: '' as string,
+            selectedMode: 'spending' as 'spending' | 'earning' | 'transfer' | string
         }
     },
     methods:
@@ -147,21 +165,45 @@ export default
             this.selectedReceivingCurrency = undefined;
             this.fromAmount = 0;
             this.toAmount = 0;
+        },
+        upload()
+        {
+            alert("upload");
         }
     },
     computed:
     {
-        txnMode() : "transfer" | "spending" | "receiving" | "unknown"
-        {
-            if (this.selectedFromContainer && this.selectedToContainer) return "transfer";
-            if (this.selectedFromContainer && !this.selectedToContainer) return "spending";
-            if (!this.selectedFromContainer && !this.selectedToContainer) return "unknown"
-            return "receiving";
-        },
         summaryBoxStyle() : any
         {
             
+        },
+        isAmountsValid(): boolean
+        {
+            if (this.selectedMode == "earning") return typeof this.toAmount == 'number';
+            else if (this.selectedMode == "spending") return typeof this.fromAmount == 'number';
+            else if (this.selectedMode == "transfer") return typeof this.toAmount == 'number' && typeof this.fromAmount == 'number';
+            else { return false; }
+        },
+        shouldSummaryBoxVisible(): boolean
+        {
+            if (!this.isAmountsValid) return false;
+            if (this.selectedMode == "earning") return this.selectedReceivingCurrency !== undefined && this.selectedToContainer !== undefined;
+            else if (this.selectedMode == "spending") return this.selectedSpendingCurrency !== undefined && this.selectedFromContainer !== undefined;
+            else if (this.selectedMode == "transfer") 
+                return this.selectedSpendingCurrency !== undefined && 
+                this.selectedReceivingCurrency !== undefined && 
+                this.selectedFromContainer !== undefined && 
+                this.selectedToContainer !== undefined;
+            else return false;
+        },
+        isFormValid(): boolean
+        {
+            return this.shouldSummaryBoxVisible && this.isAmountsValid && this.txnTitle?.length > 0 && this.selectedTxnType !== undefined;
         }
+    },
+    watch:
+    {
+        selectedMode(newValue, oldValue) { this.reset(); }
     }
 }
 </script>
@@ -172,9 +214,38 @@ export default
 
 #topDiv
 {
-    background: @background;
-    .fullSize;
+    #containersSelectDiv { .size(500px, auto); }
+
+    background: @background; .fullSize;
     color:white;
+
+    #spendingFieldContainer
+    {
+        grid-template-columns: 100px 1fr 100px;
+    }
+
+    #modeSelector
+    {
+        margin-bottom:15px;
+        text-transform: capitalize;
+        border: 1px solid @backgroundDark;
+        box-sizing: border-box;
+        padding:0px;
+
+        div
+        {
+            box-sizing: border-box;
+            --accent-color: #00000055;
+            cursor: pointer;
+            color:white;
+            .center;
+
+            &.transfer { --accent-color: @yellowDark; }
+            &.spending { --accent-color: @errorDark; }
+            &.earning { --accent-color: @successDark; }
+            &.selected { background: var(--accent-color) !important; }
+        }
+    }
 
     input
     {
@@ -185,6 +256,8 @@ export default
         color:white;
         padding-left:10px;
         font-size:16px;
+        border-radius: 0;
+        margin:0px;
     }
 
     .field
@@ -203,7 +276,9 @@ export default
         & > div > div > div:first-child { margin-bottom:5px; }
     }
 
-    button { background:@backgroundDark; border:0px; color:white; padding:10px; margin-top:15px; }
+    button { background:@backgroundDark; border:0px; color:white; padding:10px; margin-top:15px; cursor:pointer; }
+    button:hover { background:@surfaceHigh; }
+    button:disabled { opacity:0.5; cursor:not-allowed; }
 }
 
 .containerValueText
@@ -211,4 +286,22 @@ export default
     color:gray;
     font-family: Consolas;
 }
+div.grayText { opacity: 0.2; } 
+
+@media only screen and (max-width: 600px) 
+{
+    #topDiv { height: 100svh; }
+
+    #containersSelectDiv
+    {
+        width:90vw !important;
+        overflow-x: hidden;
+    }
+
+    #spendingFieldContainer
+    {
+        grid-template-columns: 100px 180px auto !important;
+    }
+}
+
 </style>

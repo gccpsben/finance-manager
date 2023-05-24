@@ -1,4 +1,9 @@
 <template>
+
+    <metainfo>
+        <template v-slot:title="{content}">{{content}}</template>
+    </metainfo>
+
     <div id="topDiv">
         <grid-shortcut id="loginForm" rows="45px 45px 35px" columns="1fr">
             <div class="field">
@@ -34,6 +39,7 @@
 {
     background:@background;
     .fullSize; .center;
+    overflow:hidden;
 
     #loginForm
     {
@@ -79,9 +85,21 @@
 
 <script lang="ts">
 import { useMainStore } from '@/stores/store';
+import { useMeta } from 'vue-meta';
 
 export default
 {
+    setup()
+    {
+        useMeta(
+        {
+            meta: 
+            {
+                "name":"viewport",
+                "content":"width=device-width, initial-scale=1, maximum-scale=1",
+            }
+        });
+    },
     data()
     {
         var data = 

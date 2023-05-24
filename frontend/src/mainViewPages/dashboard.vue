@@ -2,7 +2,7 @@
     <div id="topDiv">
         <grid-shortcut id="mainGrid">
 
-            <grid-area area="expensesPanel">
+             <grid-area area="expensesPanel">
                 <number-cell title="Expenses"
                 :value7d="store.dashboardSummary.totalExpenses7d"
                 :value30d="store.dashboardSummary.totalExpenses30d"
@@ -28,7 +28,7 @@
             </grid-area>
 
             <grid-area area="30dExpensesList">
-                <list-cell title="30d Expenses" :items="store.dashboardSummary.expenses30d?.reverse()">
+                <list-cell title="30d Expenses" :items="store.toReversed(store.dashboardSummary.expenses30d ?? [])">
                 <template #row="props">
                     <grid-shortcut columns="50px 1fr 1fr" class="fullSize">
                         <div class="listItemTitle middleLeft">{{ store.getDateAge(props.currentItem["date"]) }}</div>
@@ -40,7 +40,7 @@
             </grid-area>
 
             <grid-area area="30dIncomesList">
-                <list-cell title="30d Incomes" :items="store.dashboardSummary.incomes30d?.reverse()">
+                <list-cell title="30d Incomes" :items="store.toReversed(store.dashboardSummary.incomes30d ?? [])">
                 <template #row="props">
                     <grid-shortcut columns="50px 1fr 1fr" class="fullSize">
                         <div class="listItemTitle middleLeft">{{ store.getDateAge(props.currentItem["date"]) }}</div>
@@ -82,6 +82,7 @@
 
 <script lang="ts">
 import { useMainStore } from "@/stores/store";
+import type { transactions } from "@prisma/client";
 export default 
 {
     data()

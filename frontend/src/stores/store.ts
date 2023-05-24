@@ -1,4 +1,4 @@
-import type { containers, currencies, transactions } from '@prisma/client';
+import type { containers, currencies, transactionTypes, transactions } from '@prisma/client';
 import axios from 'axios';
 import { defineStore } from 'pinia'
 
@@ -39,7 +39,8 @@ export const useMainStore = defineStore(
             allTransactions: [] as Array<transactions>,
             dashboardSummary: {} as any,
             currencies: [] as Array<currencies>,
-            containers: [] as Array<containers>
+            containers: [] as Array<containers>,
+            txnTypes: [] as Array<transactionTypes>
         }
     ),
     getters: 
@@ -54,6 +55,7 @@ export const useMainStore = defineStore(
             await this.updateDashboardSummary();
             await this.updateCurrencies();
             await this.updateContainers();
+            await this.updateTxnTypes();
         },
         resetAuth()
         {
@@ -93,6 +95,12 @@ export const useMainStore = defineStore(
             var response = await self.authGet("/api/finance/containers");
             self.containers = response.data;
         },
+        async updateTxnTypes()
+        {
+            var self = this;
+            var response = await self.authGet("/api/finance/transactionTypes");
+            self.txnTypes = response.data;
+        },
         setCookie(cname:string, cvalue:string, exdays:number): void
         {
             const d = new Date();
@@ -120,7 +128,7 @@ export const useMainStore = defineStore(
         {
             if (transactionRecord == undefined) return "";
             if (this.currencies.length == 0 || transactionRecord[side] == undefined) return "";
-            var symbol = this.currencies.find(c => c.id == transactionRecord[side]["amount"]["currencyID"]);
+            var symbol = this.currencies.find(c => c.pubID == transactionRecord[side]["amount"]["currencyID"]);
             return `${transactionRecord[side]["amount"]["value"].toFixed(2)} ${symbol?.symbol}`
         },
 
@@ -134,6 +142,17 @@ export const useMainStore = defineStore(
             else if (msDiff < 3.6e+6) return `${(msDiff / 60000).toFixed(0)}m`; // if < 1 hour
             else if (msDiff < 8.64e+7) return `${(msDiff / (3.6e+6)).toFixed(0)}h`; // if < 1 day
             else return `${(msDiff / (8.64e+7)).toFixed(0)}d`;
+        },
+
+        toSorted(array:Array<any>, func:any)
+        {
+            var newArray = [...array];
+            return newArray.sort(func);
+        },
+        toReversed(array:Array<any>)
+        {
+            var newArray = [...array];
+            return newArray.reverse();
         }
     }
 })

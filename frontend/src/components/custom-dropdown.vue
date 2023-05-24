@@ -56,7 +56,7 @@
             </slot>
         </div>
         <div v-if="opened" id="unselectOverlay" @click="opened=false"></div>
-        <div id="dropdownMenu" v-if="opened" style="width:100%; position:absolute;">
+        <div id="dropdownMenu" v-if="opened" style="position:absolute;">
             <div v-for="item in items" @click="onItemClicked(item)" class="fullWidth">
                 <slot name="row" :item="item">
                     <grid-shortcut class="row" columns="1fr 30px">
@@ -117,7 +117,11 @@ export default
     height:100%;
 
     #unselectOverlay { position:fixed; top:0; bottom:0; left:0; right:0; }
-    #dropdownMenu { z-index:1000; max-height:250px; overflow:auto; }
+    #dropdownMenu 
+    { 
+        z-index:1000; max-height:250px; overflow:auto !important; 
+        width:100%;
+    }
 
     .checkIcon { transform: translateX(2px); }
 
@@ -129,6 +133,25 @@ export default
         color:white;
         cursor:pointer;
         &:hover { background:@background; }
+    }
+}
+
+@media only screen and (max-width: 600px) 
+{
+    #dropdownMenu 
+    { 
+        left:0px; bottom:0px; width:100vw; right:0px;
+        position: fixed !important;
+        border-top:3px solid @surfaceHigh;
+        max-height:70vh !important;
+        background: @backgroundDark;
+        padding:5px;
+        box-sizing: border-box !important;
+    }
+
+    #unselectOverlay
+    {
+        background: #000000AA;
     }
 }
 </style>
