@@ -68,6 +68,7 @@ model containers {
   name     String
   /// Could not determine type: the field only had null or empty values in the sample set.
   ownersID Json?
+  pubID    String
 }
 
 model cryptoWalletWatchdogs {
@@ -83,7 +84,9 @@ model currencies {
   v          Int                   @map("__v")
   dataSource CurrenciesDataSource?
   name       String
-  rate       Float
+  pubID      String
+  /// Multiple data types found: Float: 85.7%, Int: 14.3% out of 7 sampled entries
+  rate       Json
   symbol     String
 }
 
@@ -100,6 +103,7 @@ model transactionTypes {
   isEarning Boolean
   isExpense Boolean
   name      String
+  pubID     String
 }
 
 model transactions {
@@ -108,6 +112,7 @@ model transactions {
   date      DateTime          @db.Date
   from      TransactionsFrom?
   isFromBot Boolean
+  pubID     String
   title     String
   to        TransactionsTo?
   typeID    String
