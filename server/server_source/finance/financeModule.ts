@@ -6,6 +6,7 @@ import { MongoClient } from "mongodb";
 import * as mongo from "mongodb";
 import * as fdbTypes from "./financeDatabase";
 import { TransactionClass, AccountClass, AccessTokenClassModel,AccountClassModel } from "./financeDatabase";
+import { genUUID } from "../uuid";
 
 var fs = require('fs');
 var fsp = require("fs/promises");
@@ -24,7 +25,14 @@ exports.initialize = function (express_instance:Express)
     {
         expressInstance = express_instance;
         
-        expressInstance.get(`/api/finance/containers`, async (req:any ,res:any) => { res.json(await fdbTypes.ContainerClass.getAllContainersTotalBalance()); });
+        expressInstance.get(`/api/finance/containers`, async (req:any ,res:any) => 
+        { 
+            // Check for permission and login
+            if (!await AccessTokenClassModel.isRequestAuthenticated(req)) { res.status(401).json({}); return; }
+
+            res.json(await fdbTypes.ContainerClass.getAllContainersTotalBalance()); 
+        });
+
         expressInstance.get(`/api/finance/transactions`, async (req:any, res:any) => 
         { 
             // Check for permission and login
@@ -45,11 +53,27 @@ exports.initialize = function (express_instance:Express)
 
             res.json(output); 
         });
-        expressInstance.get(`/api/finance/currencies`, async (req:any, res:any) => { res.json(await fdbTypes.CurrencyModel.find()); });
-        expressInstance.get(`/api/finance/transactionTypes`, async (req:any, res:any) => { res.json(await fdbTypes.TransactionTypeModel.find()); });
+
+        expressInstance.get(`/api/finance/currencies`, async (req:any, res:any) => 
+        {
+            // Check for permission and login
+            if (!await AccessTokenClassModel.isRequestAuthenticated(req)) { res.status(401).json({}); return; }
+            
+            res.json(await fdbTypes.CurrencyModel.find()); 
+        });
+        expressInstance.get(`/api/finance/transactionTypes`, async (req:any, res:any) => 
+        {
+            // Check for permission and login
+            if (!await AccessTokenClassModel.isRequestAuthenticated(req)) { res.status(401).json({}); return; }
+
+            res.json(await fdbTypes.TransactionTypeModel.find()); 
+        });
 
         expressInstance.get(`/api/finance/summary`, async (req:any, res:any) => 
         { 
+            // Check for permission and login
+            if (!await AccessTokenClassModel.isRequestAuthenticated(req)) { res.status(401).json({}); return; }
+
             let allTxns = await fdbTypes.TransactionModel.find();
             let allCurrencies = await fdbTypes.CurrencyModel.find();
             var oneWeekAgoDate = new Date();  oneWeekAgoDate.setDate(oneWeekAgoDate.getDate() - 7);
@@ -98,7 +122,11 @@ exports.initialize = function (express_instance:Express)
         {
             try 
             {
-                var txn = new fdbTypes.TransactionModel(req.body); 
+                // Check for permission and login
+                if (!await AccessTokenClassModel.isRequestAuthenticated(req)) { res.status(401).json({}); return; }
+
+                var newTxnID = genUUID();
+                var txn = new fdbTypes.TransactionModel({...req.body, "pubID": newTxnID}); 
                 res.json(await txn.save()); 
             }
             catch(error) { log(error); res.status(400); res.json( { errors: error } ); }
@@ -106,6 +134,9 @@ exports.initialize = function (express_instance:Express)
 
         expressInstance.post(`/api/finance/transactions/remove`, async (req:any,res:any) =>
         {
+            // Check for permission and login
+            if (!await AccessTokenClassModel.isRequestAuthenticated(req)) { res.status(401).json({}); return; }
+
             var idToRemove = req.body.id;
             try { res.json(await fdbTypes.TransactionModel.findById({"_id":idToRemove}).deleteOne()); }
             catch(error) { res.status(400); res.json( { errors: error.errors } ); }
@@ -113,12 +144,22 @@ exports.initialize = function (express_instance:Express)
 
         expressInstance.post(`/api/finance/containers/add`, async (req:any,res:any) =>
         {
-            try { res.json(await new fdbTypes.ContainerModel(req.body).save()); }
+            // Check for permission and login
+            if (!await AccessTokenClassModel.isRequestAuthenticated(req)) { res.status(401).json({}); return; }
+
+            try 
+            { 
+                var newTxnID = genUUID();
+                res.json(await new fdbTypes.ContainerModel({...req.body, "pubID": newTxnID}).save()); 
+            }
             catch(error) { log(error); res.status(400); res.json( { errors: error } ); }
         });
 
         expressInstance.post(`/api/finance/containers/remove`, async (req:any,res:any) =>
         {
+            // Check for permission and login
+            if (!await AccessTokenClassModel.isRequestAuthenticated(req)) { res.status(401).json({}); return; }
+
             var idToRemove = req.body.id;
             try {  res.json(await fdbTypes.ContainerModel.findById({"_id":idToRemove}).deleteOne()); }
             catch(error) { res.status(400); res.json( { errors: error.errors } ); }
@@ -128,6 +169,9 @@ exports.initialize = function (express_instance:Express)
         {
             try 
             {
+                // Check for permission and login
+                if (!await AccessTokenClassModel.isRequestAuthenticated(req)) { res.status(401).json({}); return; }
+
                 res.json(await fdbTypes.TotalValueRecordModel.find({}));   
             }
             catch(error) { res.status(400); res.json( { errors: error.errors } ); }

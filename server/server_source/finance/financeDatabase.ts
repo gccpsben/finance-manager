@@ -7,6 +7,7 @@ import mongoose, { Model, Mongoose, ObjectId, PromiseProvider } from "mongoose";
 import { Types } from "../database";
 import { logGreen, logRed, log, logBlue, getLog, logYellow } from "../extendedLog";
 import axios from "axios";
+import { genUUID } from "../uuid";
 
 const bcrypt = require('bcrypt');
 const saltRounds = 10;
@@ -61,8 +62,8 @@ export class AmountClass
     public async getValue(allCurrencies?:CurrencyClass[])
     {
         let respectiveCurrency:CurrencyClass|undefined|null;
-        if (allCurrencies == undefined) respectiveCurrency = await CurrencyModel.findOne({_id: this.currencyID});
-        else respectiveCurrency = allCurrencies!.find(c => c._id?.toString() == this.currencyID);
+        if (allCurrencies == undefined) respectiveCurrency = await CurrencyModel.findOne({pubID: this.currencyID});
+        else respectiveCurrency = allCurrencies!.find(c => c.pubID?.toString() == this.currencyID);
 
         if (respectiveCurrency) return respectiveCurrency!.rate * this.value;
         else throw new Error(`Currency with ID=${this.currencyID} is not found.`);
@@ -84,6 +85,9 @@ export const ContainerBoundAmountModel = getModelForClass(ContainerBoundAmountCl
 @modelOptions ( {schemaOptions: { collection: "transactions" }, existingConnection: financeDbMongoose} )
 export class TransactionClass
 {
+    @prop( { required: true } )
+    pubID: string;
+
     @prop( { required: true } )
     date!: Date;
 
@@ -119,6 +123,9 @@ export const TransactionModel = getModelForClass(TransactionClass);
 @modelOptions ( {schemaOptions: { collection: "containers" }, existingConnection: financeDbMongoose } )
 export class ContainerClass
 {
+    @prop( { type:String, required: true } )
+    pubID: string;
+
     @prop( { type:String, required: true} )
     name: string;
 
@@ -132,8 +139,8 @@ export class ContainerClass
         cache = await DataCache.ensure(cache);
 
         // Expected output
-        // { value:2.1, balance: { "63b5fe6c13e0eeed4d8d1fad": 2.1, ... }, id: '63b5fbad98550215af18cd31' }
-        var output = {id: this["_id"], balance:{}, value:0};
+        // { value:2.1, balance: { "63b5fe6c13e0eeed4d8d1fad": 2.1, ... }, _id: '63b5fbad98550215af18cd31' }
+        var output = {pubID: this.pubID, balance:{}, value:0};
 
         cache.allTransactions!.forEach(tx => 
         {
@@ -141,10 +148,10 @@ export class ContainerClass
             if (tx.to != undefined && tx.to != null)
             {
                 // Check if the transaction relates to the current container:
-                if (tx.to.containerID == this["_id"]!.toString())
+                if (tx.to.containerID == this.pubID.toString())
                 {
                     var cID = tx.to.amount.currencyID;
-                    let respectiveCurrency:CurrencyClass|undefined = cache!.allCurrencies!.find(x => x["_id"]!.toString() == cID);
+                    let respectiveCurrency:CurrencyClass|undefined = cache!.allCurrencies!.find(x => x.pubID.toString() == cID);
 
                     if (cID in output.balance) output.balance[cID] += tx.to.amount.value;
                     else output.balance[cID] = tx.to.amount.value;
@@ -158,10 +165,10 @@ export class ContainerClass
             if (tx.from != undefined && tx.from != null)
             {
                 // Check if the transaction relates to the current container:
-                if (tx.from.containerID == this["_id"]!.toString())
+                if (tx.from.containerID == this.pubID.toString())
                 {
                     var cID = tx.from.amount.currencyID;
-                    let respectiveCurrency:CurrencyClass|undefined = cache!.allCurrencies!.find(x => x["_id"]!.toString() == cID);
+                    let respectiveCurrency:CurrencyClass|undefined = cache!.allCurrencies!.find(x => x.pubID.toString() == cID);
 
                     var cID = tx.from.amount.currencyID;
                     if (cID in output.balance) output.balance[cID] -= tx.from.amount.value;
@@ -201,8 +208,8 @@ export const ContainerModel = getModelForClass(ContainerClass);
 @modelOptions ( { schemaOptions: {  collection: "transactionTypes" } , existingConnection: financeDbMongoose} )
 export class TransactionTypeClass
 {
-    @prop( { required: false } )
-    _id?: mongoose.Types.ObjectId
+    @prop( { required: true } )
+    pubID: string;
     @prop( { required: true } )
     name!: string;
     @prop( { required: true } )
@@ -227,15 +234,15 @@ export const CurrencyDataSourceModel = getModelForClass(CurrencyDataSourceClass)
 @modelOptions ( {schemaOptions: { collection: "currencies" }, existingConnection: financeDbMongoose} )
 export class CurrencyClass
 {
-    @prop( { required: false } )
-    _id?: mongoose.Types.ObjectId
+    @prop( { required: true } )
+    pubID: string
     @prop( { required: true } )
     name!: string;
     @prop( { required: true } )
     symbol!: string;
     @prop( { required: true } )
     rate!: number;
-    @prop( { required: true } )
+    @prop( { required: false } )
     dataSource!: CurrencyDataSourceClass;
 }
 export const CurrencyModel = getModelForClass(CurrencyClass);
@@ -246,7 +253,7 @@ export class WalletTokenClass
     @prop( { required: true } )
     publicAddress!: string
 
-    @prop( { required: true, enum:["BTC","LTC"] } )
+    @prop( { required: true, enum:["BTC","LTC", "XNO"] } )
     chainType!: string
 
     @prop( { required: true } )
@@ -257,8 +264,8 @@ export const WalletTokenModel = getModelForClass(WalletTokenClass);
 @modelOptions ( {schemaOptions: { collection: "cryptoWalletWatchdogs" }, existingConnection: financeDbMongoose} )
 export class CryptoWalletWatchDogClass
 {
-    @prop( { required: false } )
-    _id?: mongoose.Types.ObjectId
+    @prop( { required: true } )
+    pubID: string;
 
     @prop( {required: true} )
     linkedContainerID!: string;
@@ -304,7 +311,8 @@ export class CryptoWalletWatchDogClass
                     "title": `${token.chainType} Transaction`,
                     "typeID": self.defaultTransactionTypeID,
                     "date": dateOfTransaction.toISOString(),
-                    "isFromBot": true
+                    "isFromBot": true,
+                    "pubID": genUUID()
                 };
 
                 transactionBodyToAdd[keyToMatch] = 
@@ -334,7 +342,7 @@ export class CryptoWalletWatchDogClass
                 var fetchResponse = await axios.get(`https://api.blockcypher.com/v1/${token.chainType.toLowerCase()}/main/addrs/${token.publicAddress}`);
                 if (fetchResponse.status != 200) 
                 {
-                    logRed(`Error fetching blockchain data for watchdog id=${self._id}: E${response.status}: ${response.body}`);
+                    logRed(`Error fetching blockchain data for watchdog id=${self.pubID}: E${response.status}: ${response.body}`);
                     return [];
                 }
 
@@ -382,7 +390,7 @@ export class CryptoWalletWatchDogClass
 
                     if (fetchResponse.status != 200) 
                     {
-                        logRed(`Error fetching blockchain data for watchdog id=${self._id}: E${response.status}: ${response.body}`);
+                        logRed(`Error fetching blockchain data for watchdog id=${self.pubID}: E${response.status}: ${response.body}`);
                         return [];
                     }
 
@@ -390,12 +398,12 @@ export class CryptoWalletWatchDogClass
 
                     if (response.error == "Bad account number") 
                     {
-                        logRed(`Error fetching blockchain data for watchdog id=${self._id}: of chain XNO: The given public address ${token.publicAddress} cannot be found.`);
+                        logRed(`Error fetching blockchain data for watchdog id=${self.pubID}: of chain XNO: The given public address ${token.publicAddress} cannot be found.`);
                         return [];
                     }
                     else if (response.error != undefined) 
                     {
-                        logRed(`Error fetching blockchain data for watchdog id=${self._id}: of chain XNO: ${response.error}`);
+                        logRed(`Error fetching blockchain data for watchdog id=${self.pubID}: of chain XNO: ${response.error}`);
                         return [];
                     }
                     else
@@ -536,7 +544,6 @@ export class AccountClass
         }
     }
 
-
 }
 export const AccountClassModel = getModelForClass(AccountClass);
 // #endregion
@@ -659,6 +666,55 @@ export class AccessTokenClass
     }
 }
 export const AccessTokenClassModel = getModelForClass(AccessTokenClass);
+
+// (async () =>
+// {
+//     (await TransactionModel.find()).forEach(async x => 
+//     {
+//         if (x.isFromBot)
+//         {
+//             await x.delete();
+//         }
+//     });
+// })();
+
+
+
+// (async () => 
+// {
+//     var allContainers = await ContainerModel.find();
+//     var allCurrencies = await CurrencyModel.find();
+//     var allTypes = await TransactionTypeModel.find();
+//     var containersMap = {};
+//     var currenciesMap = {};
+//     var typesMap = {};
+//     allContainers.forEach(container => { containersMap[container.id] = container.pubID; });
+//     allCurrencies.forEach(currency => { currenciesMap[currency.id] = currency.pubID; });
+//     allTypes.forEach(type => { typesMap[type.id] = type.pubID; });
+
+//     setTimeout(async () => 
+//     {
+//         (await CryptoWalletWatchDogModel.find()).forEach(async x => 
+//         {
+//             if (x.linkedContainerID.length > 30) return;
+
+//             var oldContainerID = x.linkedContainerID;
+//             x.linkedContainerID = containersMap[oldContainerID];
+
+//             var oldTypeID = x.defaultTransactionTypeID;
+//             x.defaultTransactionTypeID = typesMap[oldTypeID];
+
+//             x.tokensSupported.forEach(token => 
+//             {
+//                 var oldID = token.currencyID;
+//                 token.currencyID = currenciesMap[oldID];
+//             });
+
+//             setTimeout(async () => { await x.save(); }, 1000);
+//         });
+//     }, 1000);
+// })();
+
 // #endregion
 
 // function httpGet(url:string) 
