@@ -20,12 +20,12 @@ export default defineConfig(
 		{
 			'/api': 
 			{
-				target: 'https://localhost:55559',
+				target: 'https://192.168.8.130:55559',
 				changeOrigin: true,
 				secure: false
 			},
 			'/socket.io': {
-				target: 'https://localhost:55559',
+				target: 'https://192.168.8.130:55559',
 				changeOrigin: true,
 				ws: true,
 				secure: false
