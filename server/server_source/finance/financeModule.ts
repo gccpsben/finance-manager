@@ -126,10 +126,29 @@ exports.initialize = function (express_instance:Express)
                 if (!await AccessTokenClassModel.isRequestAuthenticated(req)) { res.status(401).json({}); return; }
 
                 var newTxnID = genUUID();
-                var txn = new fdbTypes.TransactionModel({...req.body, "pubID": newTxnID}); 
+                var txn = new fdbTypes.TransactionModel(
+                {
+                    ...req.body, 
+                    "pubID": newTxnID,
+                    "isFromBot": false
+                }); 
+
+                var fromContainerID = req.body?.from?.containerID ?? undefined;
+                var toContainerID = req.body?.to?.containerID ?? undefined;
+                var typeID = req.body?.typeID ?? undefined;
+                var fromContainerPass = req.body?.from ? await fdbTypes.ContainerModel.isExist(fromContainerID) : true;
+                var toContainerPass = req.body?.to ? await fdbTypes.ContainerModel.isExist(toContainerID) : true;
+                var typeExists = req.body?.typeID && await fdbTypes.TransactionTypeModel.isExist(typeID);
+
+                // Check if containers exist
+                if (!fromContainerPass || !toContainerPass) throw new Error(`Container pubID=${fromContainerID || toContainerID} doesn't exist.`);
+
+                // Check if type exists
+                if (!typeExists)  throw new Error(`Transaction Type pubID=${typeExists} doesn't exist.`);
+
                 res.json(await txn.save()); 
             }
-            catch(error) { log(error); res.status(400); res.json( { errors: error } ); }
+            catch(error) { log(error); res.status(400).send({message: error}); }
         });
 
         expressInstance.post(`/api/finance/transactions/remove`, async (req:any,res:any) =>
@@ -281,7 +300,7 @@ exports.initialize = function (express_instance:Express)
             updateFunc();
         })();
 
-        // Sync wallets transactions from blockchain every 30 min
+        // Sync wallets transactions from blockchain every 60 mins
         (async () => 
         {
             var syncWalletFunc = async () => 
@@ -297,7 +316,7 @@ exports.initialize = function (express_instance:Express)
                     if (txAdded.length > 0) logGreen(`${txAdded.length} txns added for container=${watchdog.linkedContainerID} from blockchain`);
                 }
             };
-            setInterval(syncWalletFunc, 60000 * 30);
+            setInterval(syncWalletFunc, 60000 * 60);
             syncWalletFunc();
         })();
     }

@@ -5,6 +5,7 @@
   "private": true,
   "scripts": {
     "watch_server": "tsc-watch -p \"./tsconfig.json\" --onSuccess \"node server_build/server.js\"",
+    "start_server": "node server_build/server.js",
     "docs:dev": "vuepress dev docs",
     "docs:build": "vuepress build docs"
   },

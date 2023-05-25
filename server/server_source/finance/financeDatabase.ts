@@ -202,7 +202,13 @@ export class ContainerClass
         }
         return output;
     }
+
+    public static async isExist(containerID: string) : Promise<boolean> 
+    { 
+        return (await ContainerModel.find({pubID: containerID})).length > 0 
+    };
 }
+
 export const ContainerModel = getModelForClass(ContainerClass);
 
 @modelOptions ( { schemaOptions: {  collection: "transactionTypes" } , existingConnection: financeDbMongoose} )
@@ -216,6 +222,11 @@ export class TransactionTypeClass
     isEarning!: boolean;
     @prop( { required: true } )
     isExpense!: boolean;
+
+    public static async isExist(typeID: string) : Promise<boolean> 
+    { 
+        return (await TransactionTypeModel.find({pubID: typeID})).length > 0 
+    };
 }
 export const TransactionTypeModel = getModelForClass(TransactionTypeClass);
 
@@ -244,6 +255,11 @@ export class CurrencyClass
     rate!: number;
     @prop( { required: false } )
     dataSource!: CurrencyDataSourceClass;
+
+    public static async isExist(currencyID: string) : Promise<boolean> 
+    { 
+        return (await CurrencyModel.find( { pubID: currencyID })).length > 0 
+    };
 }
 export const CurrencyModel = getModelForClass(CurrencyClass);
 
@@ -440,9 +456,17 @@ export class CryptoWalletWatchDogClass
         let txAdded:Array<TransactionClass> = [];
         for (let tokenIndex = 0; tokenIndex < this.tokensSupported.length; tokenIndex++)
         {
-            var tokenToSync = this.tokensSupported[tokenIndex];
-            if (tokenToSync.chainType == "LTC" || tokenToSync.chainType == "BTC") txAdded = txAdded.concat(await syncBTCish(tokenToSync));
-            else if (tokenToSync.chainType == "XNO") txAdded = txAdded.concat(await syncXNO(tokenToSync));
+            try 
+            {
+                var tokenToSync = this.tokensSupported[tokenIndex];
+                if (tokenToSync.chainType == "LTC" || tokenToSync.chainType == "BTC") txAdded = txAdded.concat(await syncBTCish(tokenToSync));
+                else if (tokenToSync.chainType == "XNO") txAdded = txAdded.concat(await syncXNO(tokenToSync));
+            }
+            catch(error) 
+            { 
+                if (error && error.status == 429) logRed(`Limit reached trying to update blockchain RPC for chain=${tokenToSync.chainType}, error=${error}`); 
+                else logRed(`Error trying to update blockchain RPC for chain=${tokenToSync.chainType}, error=${error}`); 
+            }
         }
         return txAdded;
     }

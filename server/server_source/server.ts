@@ -22,17 +22,19 @@ var app = Express();
 var server = isSSLDefined ? require('https').createServer({ key:sslKey, cert:sslCert }, app) : require('http').createServer(app);
 var port = process.env.PORT || 55561;
 var systemLaunchTime = new Date();
+var distFolderLocation = require('node:path').resolve(process.env.DIST_FOLDER ?? "./dist/");
 
 // initialization
 (async function () 
 {
+    console.log(`Static folder set to ${distFolderLocation}`);
+
     //#region Finance Database Setup
     await require("./database").init(process.env.FINANCE_DB_FULL_URL);
     //#endregion
 
     app.use(minify());
     app.use(Express.json());
-    app.use(Express.static("./dist/"));
     app.use(require('express-useragent').express());
     server.listen(port, () => { logGreen(`Started listening on ${port}`); });
 
@@ -40,7 +42,10 @@ var systemLaunchTime = new Date();
     (function()
     {
         app.get("/api/", (req:any, res:any) => { res.json({message:"welcome to the entry API"}); });
-        app.get("/assets/*", (req:any, res:any) => { res.sendFile(`${req.path}`.replace("/assets/",""), {root: "./src/assets/"});} );
+        // app.get(`${distFolderLocation}/assets/*`, (req:any, res:any) => 
+        // { 
+        //     res.sendFile(`${req.path}`.replace("/assets/",""), {root: `${distFolderLocation}/src/assets/`});
+        // } );
         app.get("/api/", (req:any, res:any) => { res.json({message:"welcome to the entry API"}); });
         app.get("/api/systemLaunchTime", (req:any, res:any) => { res.json({launchTime:systemLaunchTime}); });
         app.get("/api/pastLog", (req:any, res:any) => 
@@ -57,19 +62,19 @@ var systemLaunchTime = new Date();
     // Catching signals and logging them
     (function()
     {
-        ['SIG', 'SIGHUP', 'SIGINT', 'SIGQUIT', 'SIGILL', 'SIGTRAP', 'SIGABRT','SIGBUS', 'SIGFPE', 'SIGUSR1', 'SIGSEGV', 'SIGUSR2', 'SIGTERM'].forEach(function (sig)
+        ['SIG', 'SIGHUP', 'SIGINT', 'SIGQUIT', 'SIGILL', 'SIGTRAP', 'SIGABRT','SIGBUS', 'SIGFPE', 'SIGUSR1', 'SIGSEGV', 'SIGUSR2', 'SIGTERM'].forEach(sig =>
         {
-            process.on(sig, function ()
+            process.on(sig, () =>
             {
                 logRed('Server shutting down with signal=' + sig);
 
-                setTimeout(function ()
-                { process.exit(1); }, 100);
+                setTimeout(() => { process.exit(1); }, 100);
             });
         });
     })();
 
-    expressRouterGet("/*", function (req, res, next) { res.sendFile("index.html", {root: "./dist/"}); }, false);
+    expressRouterGet("/assets/*", (req, res, next) => { res.sendFile(req.path, { root: distFolderLocation }); }, false);
+    expressRouterGet("/*", (req, res, next) => { res.sendFile("index.html", { root: distFolderLocation }); }, false);
 
 })();
 
