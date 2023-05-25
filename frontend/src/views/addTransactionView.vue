@@ -6,9 +6,11 @@
 
     <div id="topDiv" class="center">
 
-        <div v-if="isLoading" class="fullSize center">Loading...</div>
+        <div v-if="isLoading && !isFormUploading" class="fullSize center">Initializing...</div>
 
-        <div id="containersSelectDiv" v-else>
+        <div v-if="!isLoading && isFormUploading" class="fullSize center">Uploading...</div>
+
+        <div id="containersSelectDiv" v-if="!isFormUploading && !isLoading">
             
             <grid-shortcut id="modeSelector" columns="1fr 1fr 1fr" class="fullWidth field">
 
@@ -82,7 +84,7 @@
                     <div v-if="fromAmount != undefined && selectedSpendingCurrency && selectedFromContainer">
                         <div class="containerValueText" style="text-align: start;">{{ selectedFromContainer.name }}</div>
                         <div style="text-align: start;">{{ fromAmount }} {{ selectedSpendingCurrency.symbol }}</div>
-                        <div class="containerValueText" style="text-align: start; margin-top:5px;">{{ fromAmount * selectedSpendingCurrency?.rate }} HKD</div>
+                        <div class="containerValueText" style="text-align: start; margin-top:5px;">{{ fromAmount * (selectedSpendingCurrency!.rate as number) }} HKD</div>
                     </div>
                 </div>
                 <div class="center">
@@ -92,7 +94,7 @@
                     <div v-if="toAmount != undefined && selectedReceivingCurrency && selectedToContainer" >
                         <div class="containerValueText" style="text-align: end;">{{ selectedToContainer.name }}</div>
                         <div style="text-align: end;">{{ toAmount }} {{ selectedReceivingCurrency.symbol }}</div>
-                        <div class="containerValueText" style="text-align: end; margin-top:5px;">{{ toAmount * selectedReceivingCurrency?.rate }} HKD</div>
+                        <div class="containerValueText" style="text-align: end; margin-top:5px;">{{ toAmount * (selectedReceivingCurrency!.rate as number) }} HKD</div>
                     </div>
                 </div>
             </grid-shortcut>
@@ -105,6 +107,7 @@
             </grid-shortcut>
 
         </div>
+        
     </div>
 </template>
 
@@ -145,7 +148,8 @@ export default
             fromAmount: 0 as number,
             toAmount: 0 as number,
             txnTitle: '' as string,
-            selectedMode: 'spending' as 'spending' | 'earning' | 'transfer' | string
+            selectedMode: 'spending' as 'spending' | 'earning' | 'transfer' | string,
+            isFormUploading: false
         }
     },
     methods:
@@ -168,7 +172,50 @@ export default
         },
         upload()
         {
-            alert("upload");
+            if (!this.isFormValid) alert("Please complete the form.");
+            else
+            {
+                var self = this;
+                var body = 
+                {
+                    "title": this.txnTitle,
+                    "typeID": this.selectedTxnType?.pubID,
+                    "date": new Date().toISOString(),
+                    "from": undefined as any,
+                    "to": undefined as any
+                };
+
+                if (this.selectedFromContainer)
+                {
+                    body.from = 
+                    {
+                        "containerID": this.selectedFromContainer.pubID,
+                        "amount":
+                        {
+                            "currencyID": this.selectedSpendingCurrency?.pubID,
+                            "value": this.fromAmount
+                        }
+                    };
+                }
+                if (this.selectedToContainer)
+                {
+                    body.to = 
+                    {
+                        "containerID": this.selectedToContainer.pubID,
+                        "amount":
+                        {
+                            "currencyID": this.selectedReceivingCurrency?.pubID,
+                            "value":  this.toAmount
+                        }
+                    };
+                }
+                
+                this.isFormUploading = true;
+                this.store.authPost(`/api/finance/transactions/add`, body)
+                .then(() => { alert("Successfully Added Transaction."); self.reset(); })
+                .catch(error => { alert(`Error trying to upload transaction. ${error}`); })
+                .finally(() => { self.isFormUploading = false; });
+            }
         }
     },
     computed:

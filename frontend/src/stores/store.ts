@@ -1,5 +1,5 @@
 import type { containers, currencies, transactionTypes, transactions } from '@prisma/client';
-import axios from 'axios';
+import axios, { AxiosError } from 'axios';
 import { defineStore } from 'pinia'
 
 export const useMainStore = defineStore(
@@ -62,44 +62,60 @@ export const useMainStore = defineStore(
             this.clearCookie("jwt");
             this.$router.push("/login");
         },
-        async authGet(url:string)
+        async authGet(url:string, extraHeaders:any={})
         {
-            var headers = {headers: { "Authorization": this.getCookie("jwt") }};
+            var headers = {headers: { "Authorization": this.getCookie("jwt"), ...extraHeaders }};
             return axios.get(url, headers).catch(error => 
             {
-                this.resetAuth();
-                throw error;
+                if (error.response && error.response.status == 401)
+                {
+                    this.resetAuth();
+                    throw error;
+                }
+            });
+        },
+        async authPost(url:string, body:any={}, extraHeaders:any={})
+        {
+            var headers = { headers: { "Authorization": this.getCookie("jwt"), ...extraHeaders } };
+            return axios.post(url, body, headers).catch((error: any) => 
+            {
+                if (error.response && error.response.status == 401 && axios.isAxiosError(error))
+                {
+                    this.resetAuth();
+                    throw error as AxiosError;
+                }
+                else throw error as any;
             });
         },
         async updateDashboardSummary()
         {
             var self = this;
             var response = await self.authGet("/api/finance/summary");
-            self.dashboardSummary = response.data;
+            self.dashboardSummary = response!.data;
         },
         async updateTransactions()
         {
             var self = this;
             var response = await self.authGet("/api/finance/transactions");
-            self.allTransactions = response.data;
+            self.allTransactions = response!.data;
         },
         async updateCurrencies()
         {
             var self = this;
             var response = await self.authGet("/api/finance/currencies");
-            self.currencies = response.data;
+            self.currencies = response!.data;
         },
         async updateContainers()
         {
             var self = this;
             var response = await self.authGet("/api/finance/containers");
-            self.containers = response.data;
+            self.containers = response!.data;
         },
         async updateTxnTypes()
         {
             var self = this;
             var response = await self.authGet("/api/finance/transactionTypes");
-            self.txnTypes = response.data;
+            self.txnTypes = response!.data;
         },
         setCookie(cname:string, cvalue:string, exdays:number): void
         {
