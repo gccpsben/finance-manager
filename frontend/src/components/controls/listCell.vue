@@ -39,7 +39,7 @@ export default
     computed:
     {
         isPreviousArrowAllowed() { return this.page > 0; },
-        isNextArrowAllowed() { return this.itemsInPage == 0 ? false : this.page < Math.floor(this.items.length / this.itemsInPage); },
+        isNextArrowAllowed() { return this.itemsInPage == 0 ? false : this.page < Math.floor((this.items.length - 1) / this.itemsInPage); },
         currentViewItems() 
         {
             if (this.items.length == 0) return [];

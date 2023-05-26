@@ -11,8 +11,10 @@ import type { Router } from 'vue-router';
 import gridShortcut from './components/gridShortcut.vue';
 import faIcon from "./components/faIcon.vue";
 import gridArea from "./components/gridArea.vue";
+import cell from "@/components/controls/cell.vue";
 import numberCell from "@/components/controls/numberCell.vue";
 import listCell from "@/components/controls/listCell.vue";
+import totalValueGraphCell from "@/components/controls/totalValueGraphCell.vue";
 import customTable from "@/components/custom-table.vue";
 import customDropdown from "@/components/custom-dropdown.vue"
 import { PrismaClient } from '@prisma/client'
@@ -24,9 +26,11 @@ app.use(createMetaManager())
 app.component('grid-shortcut',gridShortcut)
 app.component('fa-icon', faIcon)
 app.component('grid-area', gridArea)
+app.component('cell', cell)
 app.component('number-cell', numberCell)
 app.component('custom-table', customTable)
 app.component('list-cell', listCell)
+app.component('total-value-graph-cell', totalValueGraphCell)
 app.component('custom-dropdown', customDropdown)
 
 // Since router isn't defined in the pinia type, add them manually.
