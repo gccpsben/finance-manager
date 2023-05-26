@@ -157,7 +157,7 @@ exports.initialize = function (express_instance:Express)
             if (!await AccessTokenClassModel.isRequestAuthenticated(req)) { res.status(401).json({}); return; }
 
             var idToRemove = req.body.id;
-            try { res.json(await fdbTypes.TransactionModel.findById({"_id":idToRemove}).deleteOne()); }
+            try { res.json(await fdbTypes.TransactionModel.findById({"pubID":idToRemove}).deleteOne()); }
             catch(error) { res.status(400); res.json( { errors: error.errors } ); }
         });
 
@@ -180,11 +180,11 @@ exports.initialize = function (express_instance:Express)
             if (!await AccessTokenClassModel.isRequestAuthenticated(req)) { res.status(401).json({}); return; }
 
             var idToRemove = req.body.id;
-            try {  res.json(await fdbTypes.ContainerModel.findById({"_id":idToRemove}).deleteOne()); }
+            try {  res.json(await fdbTypes.ContainerModel.findById({"pubID":idToRemove}).deleteOne()); }
             catch(error) { res.status(400); res.json( { errors: error.errors } ); }
         });
 
-        expressInstance.post(`/api/finance/charts/totalValue`, async (req:any,res:any) => 
+        expressInstance.get(`/api/finance/charts/totalValue`, async (req:any,res:any) => 
         {
             try 
             {
@@ -316,7 +316,7 @@ exports.initialize = function (express_instance:Express)
                     if (txAdded.length > 0) logGreen(`${txAdded.length} txns added for container=${watchdog.linkedContainerID} from blockchain`);
                 }
             };
-            setInterval(syncWalletFunc, 60000 * 60);
+            setInterval(syncWalletFunc, 60000 * 120);
             syncWalletFunc();
         })();
     }
