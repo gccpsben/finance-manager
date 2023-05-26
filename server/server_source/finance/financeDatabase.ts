@@ -397,7 +397,7 @@ export class CryptoWalletWatchDogClass
                 {
                     let addedTxns: any[] = []; // this will be the return value
 
-                    var fetchResponse = await axios.post(`https://www.nanolooker.com/api/rpc`, 
+                    var fetchResponse = await axios.post(`https://rpc.nano.to`, 
                     {
                         "action": "account_history",
                         "account": token.publicAddress,
@@ -449,7 +449,7 @@ export class CryptoWalletWatchDogClass
             }
             catch(ex)
             {
-                console.log(`Error trying to update address info of ${token.publicAddress} in chain ${token.chainType}`);
+                console.log(`Error trying to update address info of ${token.publicAddress} in chain ${token.chainType}, error: ${ex}`);
             }
         }
 
@@ -506,17 +506,6 @@ export class TotalValueRecordClass
     }
 }
 export const TotalValueRecordModel = getModelForClass(TotalValueRecordClass);
-
-export class FinanceHistory
-{
-    // Add a new datum to totalValueHistory if the last record is older than 1 hour
-    static async UpdateTotalValueDatum()
-    {
-        // each 
-        var allRecords = await financeDb.collection("totalValueHistory").find({}).toArray();
-
-    }
-}
 
 // #region AccountClass
 @modelOptions ( { schemaOptions: { autoCreate: false, collection: "accounts" }, existingConnection:financeDbMongoose } )

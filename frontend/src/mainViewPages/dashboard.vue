@@ -29,26 +29,41 @@
 
             <grid-area area="30dExpensesList">
                 <list-cell title="30d Expenses" :items="store.toReversed(store.dashboardSummary.expenses30d ?? [])">
-                <template #row="props">
-                    <grid-shortcut columns="50px 1fr 1fr" class="fullSize">
-                        <div class="listItemTitle middleLeft">{{ store.getDateAge(props.currentItem["date"]) }}</div>
-                        <div class="listItemTitle middleLeft">{{ props.currentItem["title"] }}</div>
-                        <div class="listItemTitle middleRight">{{ store.formatAmount(props.currentItem, 'from') }}</div>
-                    </grid-shortcut>
-                </template>
+                    <template #row="props">
+                        <grid-shortcut columns="50px 1fr 1fr" class="fullSize">
+                            <div class="listItemTitle middleLeft">{{ store.getDateAge(props.currentItem["date"]) }}</div>
+                            <div class="listItemTitle middleLeft">{{ props.currentItem["title"] }}</div>
+                            <div class="listItemTitle middleRight">{{ store.formatAmount(props.currentItem, 'from') }}</div>
+                        </grid-shortcut>
+                    </template>
                 </list-cell>
             </grid-area>
 
             <grid-area area="30dIncomesList">
                 <list-cell title="30d Incomes" :items="store.toReversed(store.dashboardSummary.incomes30d ?? [])">
-                <template #row="props">
-                    <grid-shortcut columns="50px 1fr 1fr" class="fullSize">
-                        <div class="listItemTitle middleLeft">{{ store.getDateAge(props.currentItem["date"]) }}</div>
-                        <div class="listItemTitle middleLeft">{{ props.currentItem["title"] }}</div>
-                        <div class="listItemTitle middleRight">{{ store.formatAmount(props.currentItem, 'to') }}</div>
-                    </grid-shortcut>
-                </template>
+                    <template #row="props">
+                        <grid-shortcut columns="50px 1fr 1fr" class="fullSize">
+                            <div class="listItemTitle middleLeft">{{ store.getDateAge(props.currentItem["date"]) }}</div>
+                            <div class="listItemTitle middleLeft">{{ props.currentItem["title"] }}</div>
+                            <div class="listItemTitle middleRight">{{ store.formatAmount(props.currentItem, 'to') }}</div>
+                        </grid-shortcut>
+                    </template>
                 </list-cell>
+            </grid-area>
+
+            <grid-area area="ContainersList">
+                <list-cell title="Containers" :items="store.toSorted(store.containers ?? [], (a:any,b:any) => { return b.value - a.value; })">
+                    <template #row="props">
+                        <grid-shortcut columns="1fr 1fr" class="fullSize">
+                            <div class="listItemTitle middleLeft">{{ props.currentItem.name }}</div>
+                            <div class="listItemTitle middleRight">{{ props.currentItem.value.toFixed(2) }} HKD</div>
+                        </grid-shortcut>
+                    </template>
+                </list-cell>
+            </grid-area>
+
+            <grid-area area="TotalValueGraph">
+                <total-value-graph-cell title="Total Value"></total-value-graph-cell>
             </grid-area>
         
         </grid-shortcut>
@@ -73,7 +88,7 @@
 
         grid-template-areas: 
         'expensesPanel incomesPanel totalValuePanel netChangePanel' 
-        '30dExpensesList 30dIncomesList _ _';
+        '30dExpensesList 30dIncomesList ContainersList TotalValueGraph';
 
         .listItemTitle { color:gray; font-size:14px; overflow:hidden; white-space: nowrap; text-overflow: ellipsis; }
     }
@@ -87,14 +102,9 @@ export default
 {
     data()
     {
-        return {
-            store: useMainStore()
-        };
+        return { store: useMainStore() };
     },
-    mounted()
-    {
-        this.store.updateAll();
-    }
+    mounted() { this.store.updateAll(); }
 }
 </script>
 

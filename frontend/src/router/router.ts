@@ -4,6 +4,7 @@ import LoginView from "../views/loginView.vue"
 
 // MainView Pages
 import dashboardPage from "../mainViewPages/dashboard.vue"
+import chartsPage from "../mainViewPages/charts.vue"
 import transactionsPage from "../mainViewPages/transactions.vue"
 import addTransactionsPage from "../views/addTransactionView.vue"
 
@@ -32,6 +33,10 @@ const router = createRouter(
                 {
                     path: 'transactions',
                     component: transactionsPage
+                },
+                {
+                    path: 'charts',
+                    component: chartsPage
                 }
             ]
 		},
