@@ -28,7 +28,7 @@
     {
         .fullSize; display:grid; gap:15px;
         grid-template-columns: minmax(0,1fr) minmax(0,1fr);
-        grid-template-rows: minmax(0,250px) minmax(0,250px);
+        grid-template-rows: minmax(0,500px) minmax(0,500px);
         grid-template-areas: "TotalValueGraph ExpensesIncomesGraph" "_4 _5";
     }
 }
@@ -66,29 +66,42 @@ export default
         expensesIncomesData()
         {
             var allTransactions = [...this.store.allTransactions]; allTransactions.forEach(x => { x.date = new Date(x.date); });
+            var topExpenses = 0;
             var latestDate = new Date(0);
             var oldestDate = new Date();
+
+            // var keyingFunction = (x:Date) => x.toLocaleDateString(); // Advance per day
+            // var advanceFunction = (x:Date) => new Date(x.setDate(x.getDate() + 1)); // Advance per day
+
+            var keyingFunction = (x:Date) => `${x.getMonth()}-${x.getFullYear()}`; // Advance per month
+            var advanceFunction = (x:Date) => new Date(x.setMonth(x.getMonth() + 1)); // Advance per month
 
             var expensesMap: {[key: string]: number} = {};
             var allExpenses = allTransactions.filter(x => x.from && !x.to);
             allExpenses.forEach(item => 
             { 
-                if (item.date.getTime() > latestDate.getTime()) latestDate = item.date;
-                if (item.date.getTime() < oldestDate.getTime()) oldestDate = item.date;
+                var value = this.store.getValue(item.from!.amount.currencyID, item.from!.amount.value as number);
+                var key = keyingFunction(item.date);
 
-                var key = item.date.toLocaleDateString();
-                expensesMap[key] = expensesMap[key] ?? 0 + this.store.getValue(item.from!.amount.currencyID, item.from!.amount.value as number)
+                if (item.date.getTime() >= latestDate.getTime()) latestDate = item.date;
+                if (item.date.getTime() <= oldestDate.getTime()) oldestDate = item.date;
+                if (value > topExpenses) topExpenses = value;
+
+                expensesMap[key] = expensesMap[key] ? expensesMap[key] + value : value;
             });
+            console.log(expensesMap);
 
             var incomesMap: {[key: string]: number} = {};
             var allIncomes = allTransactions.filter(x => !x.from && x.to);
             allIncomes.forEach(item => 
             { 
-                if (item.date.getTime() > latestDate.getTime()) latestDate = item.date;
-                if (item.date.getTime() < oldestDate.getTime()) oldestDate = item.date;
+                var value = this.store.getValue(item.to!.amount.currencyID, item.to!.amount.value as number);
+                var key = keyingFunction(item.date);
 
-                var key = item.date.toLocaleDateString();
-                incomesMap[key] = incomesMap[key] ?? 0 + this.store.getValue(item.to!.amount.currencyID, item.to!.amount.value as number)
+                if (item.date.getTime() >= latestDate.getTime()) latestDate = item.date;
+                if (item.date.getTime() <= oldestDate.getTime()) oldestDate = item.date;
+
+                incomesMap[key] = incomesMap[key] ? incomesMap[key] + value : value;
             });
 
             //               date,         income, expenses
@@ -96,8 +109,10 @@ export default
             var loop = oldestDate;
             while(loop <= latestDate)
             {   
-                var newDate = new Date(loop.setDate(loop.getDate() + 1));
-                var dateString = newDate.toLocaleDateString();
+                // var newDate = new Date(loop.setDate(loop.getDate() + 1)); // Advance per day
+                var newDate = advanceFunction(loop); // Advance per month
+
+                var dateString = keyingFunction(newDate);
                 loop = newDate;
                 totalMap[dateString] = [incomesMap[dateString] ?? 0, expensesMap[dateString] ?? 0];
             }

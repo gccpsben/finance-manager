@@ -186,6 +186,7 @@ export const useMainStore = defineStore(
         },
         getValue(currencyID: string, amount: number) 
         {
+            if (this.currencies.find(x => x.pubID == currencyID) == undefined) console.log(`Unknown currency ${currencyID} found.`);
             return amount * (this.currencies.find(x => x.pubID == currencyID)?.rate as number ?? 0);
         }
     }
