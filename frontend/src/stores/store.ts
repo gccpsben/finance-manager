@@ -1,4 +1,4 @@
-import type { containers, currencies, transactionTypes, transactions } from '@prisma/client';
+import type { containers, currencies, totalValueHistory, transactionTypes, transactions } from '@prisma/client';
 import axios, { AxiosError } from 'axios';
 import { defineStore } from 'pinia'
 
@@ -40,7 +40,9 @@ export const useMainStore = defineStore(
             dashboardSummary: {} as any,
             currencies: [] as Array<currencies>,
             containers: [] as Array<containers>,
-            txnTypes: [] as Array<transactionTypes>
+            txnTypes: [] as Array<transactionTypes>,
+            valueHistory: [] as Array<totalValueHistory>,
+            lastUpdateTime: new Date(0) as Date
         }
     ),
     getters: 
@@ -51,11 +53,17 @@ export const useMainStore = defineStore(
     {
         async updateAll()
         {
-            await this.updateTransactions();
-            await this.updateDashboardSummary();
-            await this.updateCurrencies();
-            await this.updateContainers();
-            await this.updateTxnTypes();
+            if (new Date().getTime() - this.lastUpdateTime.getTime() < 10000) return;
+            await Promise.all(
+            [
+                this.updateTransactions(),
+                this.updateDashboardSummary(),
+                this.updateCurrencies(),
+                this.updateContainers(),
+                this.updateTxnTypes(),
+                this.updateTotalValueHistory()
+            ]);
+            this.lastUpdateTime = new Date();
         },
         resetAuth()
         {
@@ -86,6 +94,12 @@ export const useMainStore = defineStore(
                 }
                 else throw error as any;
             });
+        },
+        async updateTotalValueHistory()
+        {
+            var self = this;
+            var response = await self.authGet("/api/finance/charts/totalValue");
+            self.valueHistory = response!.data;
         },
         async updateDashboardSummary()
         {
@@ -169,6 +183,10 @@ export const useMainStore = defineStore(
         {
             var newArray = [...array];
             return newArray.reverse();
+        },
+        getValue(currencyID: string, amount: number) 
+        {
+            return amount * (this.currencies.find(x => x.pubID == currencyID)?.rate as number ?? 0);
         }
     }
 })
