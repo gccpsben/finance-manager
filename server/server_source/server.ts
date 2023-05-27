@@ -1,6 +1,6 @@
 'use strict'
 
-import { logGreen, logRed, log, logBlue, getLog } from "./extendedLog";
+import { logGreen, logRed, log, logBlue, getLog, logYellow } from "./extendedLog";
 const Express = require("express");
 var fs = require("fs");
 var minify = require('express-minify');
@@ -9,12 +9,12 @@ require('dotenv-expand').expand(require('dotenv').config()); // load env and exp
 // #region SSL
 var isSSLDefined = process.env.SSL_KEY_PATH && process.env.SSL_PEM_PATH;
 var sslKey, sslCert;
-if (!isSSLDefined) console.log("SSL_KEY_PATH or SSL_PEM_PATH isn't defined in the env file. Running in HTTP mode.");
+if (!isSSLDefined) logYellow("SSL_KEY_PATH or SSL_PEM_PATH isn't defined in the env file. Running in HTTP mode.");
 else 
 { 
     sslKey = fs.readFileSync(process.cwd() + process.env.SSL_KEY_PATH);
     sslCert = fs.readFileSync(process.cwd() + process.env.SSL_PEM_PATH);
-    console.log("Running in HTTPS mode.");
+    logGreen("Running in HTTPS mode.");
 }
 // #endregion 
 
@@ -23,11 +23,12 @@ var server = isSSLDefined ? require('https').createServer({ key:sslKey, cert:ssl
 var port = process.env.PORT || 55561;
 var systemLaunchTime = new Date();
 var distFolderLocation = require('node:path').resolve(process.env.DIST_FOLDER ?? "./dist/");
+if (process.env.DIST_FOLDER == undefined) logYellow("Warning: DIST_FOLDER isn't defined in the env file.");
 
 // initialization
 (async function () 
 {
-    console.log(`Static folder set to ${distFolderLocation}`);
+    logBlue(`Static folder set to ${distFolderLocation}`);
 
     //#region Finance Database Setup
     await require("./database").init(process.env.FINANCE_DB_FULL_URL);
