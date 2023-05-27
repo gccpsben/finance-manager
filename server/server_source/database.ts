@@ -10,6 +10,7 @@ export async function init(url:string)
 {
     try
     {
+        if (process.env.FINANCE_DB_FULL_URL == undefined) throw new Error("FINANCE_DB_FULL_URL is not defined.");
         databaseURL = url;
         logYellow(`Connecting to finance database...`);
         client = new mongo.MongoClient(url);
