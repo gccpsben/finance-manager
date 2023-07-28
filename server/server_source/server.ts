@@ -1,7 +1,7 @@
 'use strict'
 
 import * as dotenv from 'dotenv';
-import { logGreen, logRed, log, logBlue, getLog, logYellow, logYellow } from "./extendedLog";
+import { logGreen, logRed, log, logBlue, getLog, logYellow } from "./extendedLog";
 const Express = require("express");
 var fs = require("fs");
 var minify = require('express-minify');
