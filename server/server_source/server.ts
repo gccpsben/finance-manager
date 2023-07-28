@@ -1,7 +1,7 @@
 'use strict'
 
 import * as dotenv from 'dotenv';
-import { logGreen, logRed, log, logBlue, getLog, logYellow } from "./extendedLog";
+import { logGreen, logRed, log, logBlue, getLog, logYellow, logYellow } from "./extendedLog";
 const Express = require("express");
 var fs = require("fs");
 var minify = require('express-minify');
@@ -30,11 +30,12 @@ var server = isSSLDefined ? require('https').createServer({ key:sslKey, cert:ssl
 var port = process.env.PORT || 55561;
 var systemLaunchTime = new Date();
 var distFolderLocation = require('node:path').resolve(process.env.DIST_FOLDER ?? "./dist/");
+if (process.env.DIST_FOLDER == undefined) logYellow("Warning: DIST_FOLDER isn't defined in the env file.");
 
 // initialization
 (async function () 
 {
-    console.log(`Static folder set to ${distFolderLocation}`);
+    logBlue(`Static folder set to ${distFolderLocation}`);
 
     //#region Finance Database Setup
     await require("./database").init(process.env.FINANCE_DB_FULL_URL);
