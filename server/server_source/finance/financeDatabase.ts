@@ -14,7 +14,7 @@ const saltRounds = 10;
 const jwtSecret = process.env.JWT_SECRET;
 
 let jwt = require("jsonwebtoken");
-let databaseToUse = "finance";
+let databaseToUse = process.env.FINANCE_DB_NAME || "finance";
 let mongoWrapper = require("../database");
 let mongoClient:MongoClient = mongoWrapper.client;
 let financeDb:mongo.Db = mongoClient.db(databaseToUse);

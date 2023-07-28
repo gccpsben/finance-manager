@@ -1,13 +1,29 @@
 <template>
     <div id="topDiv">
-        <custom-table style="height:100%;" :columns="columns" :rows="dataWrappedTxns">
+        
+        <div id="mainCell">
+            <cell title="Transactions">
+                <div style="background:red;">
+                    <custom-table style="height:100%;" :columns="columns" :rows="dataWrappedTxns">
+                        <template #headercell="headercell">
+                            <strong>{{ headercell.currentColumn.label }}</strong>
+                        </template>
+                        <template #cell="cell">
+                            <strong>{{ cell.cellValueReadonly }}</strong>
+                        </template>
+                    </custom-table>
+                </div>
+            </cell>
+        </div>
+
+        <!-- <custom-table style="height:100%;" :columns="columns" :rows="dataWrappedTxns">
             <template #headercell="headercell">
                 <strong>{{ headercell.currentColumn.label }}</strong>
             </template>
             <template #cell="cell">
                 <strong>{{ cell.cellValueReadonly }}</strong>
             </template>
-        </custom-table>
+        </custom-table> -->
     </div>
 </template>
 
@@ -17,8 +33,30 @@
 
 #topDiv
 {
+    padding:50px; box-sizing: border-box;
     overflow-x:hidden; .fullSize;
     font-family: 'Schibsted Grotesk', sans-serif;
+
+    #mainCell
+    {
+        .fullSize;
+        .bg(@backgroundDark);
+    }
+    
+    #mainGrid
+    {
+        display:grid;
+        padding:50px; box-sizing: border-box; gap:15px;
+        .fullSize; grid-template-columns: 1fr 1fr 1fr 1fr;
+        grid-template-rows:100px 250px 1fr 1fr;
+        height:2000px;
+
+        grid-template-areas: 
+        'expensesPanel incomesPanel totalValuePanel netChangePanel' 
+        '30dExpensesList 30dIncomesList ContainersList TotalValueGraph';
+
+        .listItemTitle { color:gray; font-size:14px; overflow:hidden; white-space: nowrap; text-overflow: ellipsis; }
+    }
 }
 </style>
 

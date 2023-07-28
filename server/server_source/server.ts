@@ -1,20 +1,27 @@
 'use strict'
 
-import { logGreen, logRed, log, logBlue, getLog } from "./extendedLog";
+import * as dotenv from 'dotenv';
+import { logGreen, logRed, log, logBlue, getLog, logYellow } from "./extendedLog";
 const Express = require("express");
 var fs = require("fs");
 var minify = require('express-minify');
-require('dotenv-expand').expand(require('dotenv').config()); // load env and expand using dotenv-expand
+let envFilePath = process.argv[2] || ".env";
+require('dotenv-expand').expand(dotenv.config({path: envFilePath})); // load env and expand using dotenv-expand
+
+let isDevelopment = process.env.NODE_ENV == "development" || process.env.NODE_ENV == "dev"
+console.log(`env file loaded fro ${envFilePath}`);
+
+(isDevelopment ? logRed : logGreen)(`Running with isDevelopment=${isDevelopment}`);
 
 // #region SSL
 var isSSLDefined = process.env.SSL_KEY_PATH && process.env.SSL_PEM_PATH;
 var sslKey, sslCert;
-if (!isSSLDefined) console.log("SSL_KEY_PATH or SSL_PEM_PATH isn't defined in the env file. Running in HTTP mode.");
+if (!isSSLDefined) logYellow("SSL_KEY_PATH or SSL_PEM_PATH isn't defined in the env file. Running in HTTP mode.");
 else 
 { 
     sslKey = fs.readFileSync(process.cwd() + process.env.SSL_KEY_PATH);
     sslCert = fs.readFileSync(process.cwd() + process.env.SSL_PEM_PATH);
-    console.log("Running in HTTPS mode.");
+    logGreen("Running in HTTPS mode.");
 }
 // #endregion 
 

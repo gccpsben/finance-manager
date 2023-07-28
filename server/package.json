@@ -4,10 +4,16 @@
   "description": "",
   "private": true,
   "scripts": {
+
     "watch_server": "tsc-watch -p \"./tsconfig.json\" --onSuccess \"node server_build/server.js\"",
     "start_server": "node server_build/server.js",
+
+    "watch_server_dev": "tsc-watch -p \"./tsconfig.json\" --onSuccess \"node server_build/server.js ./dev.env\"",
+    "start_server_dev": "node server_build/server.js ./dev.env",
+
     "docs:dev": "vuepress dev docs",
     "docs:build": "vuepress build docs"
+
   },
   "dependencies": {
     "@typegoose/typegoose": "^10.1.0",
