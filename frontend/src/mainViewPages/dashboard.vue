@@ -27,25 +27,38 @@
                 :value30d="(store.dashboardSummary.totalIncomes30d - store.dashboardSummary.totalExpenses30d) ?? 0"></number-cell>
             </grid-area>
 
-            <grid-area area="30dExpensesList">
+            <grid-area area="_30dExpensesList">
                 <list-cell title="30d Expenses" :items="store.toReversed(store.dashboardSummary.expenses30d ?? [])">
                     <template #row="props">
-                        <grid-shortcut columns="50px 1fr 1fr" class="fullSize">
+                        <grid-shortcut columns="50px 1fr 1fr" :class="
+                        {
+                            'fullSize': true,
+                            'pendingTxn': props.currentItem.isTypePending && !props.currentItem.isResolved,
+                            'resolvedTxn': props.currentItem.isTypePending && props.currentItem.isResolved,
+                        }">
                             <div class="listItemTitle middleLeft">{{ store.getDateAge(props.currentItem["date"]) }}</div>
-                            <div class="listItemTitle middleLeft">{{ props.currentItem["title"] }}</div>
-                            <div :title="getAmountTooltip(props.currentItem)" class="listItemTitle middleRight">{{ store.formatAmount(props.currentItem, 'from') }}</div>
+                            <div class="listItemTitle middleLeft">
+                                {{ props.currentItem["title"] }}
+                                <div v-if="props.currentItem.isTypePending && !props.currentItem.isResolved" class="pendingLabel">(Pending)</div>
+                                <div v-if="props.currentItem.isTypePending && props.currentItem.isResolved" class="resolvedLabel">(Resolved)</div>
+                            </div>
+                            <div :title="getAmountTooltip(props.currentItem)" class="listItemTitle middleRight">
+                                {{ store.formatAmount(props.currentItem, 'from') }}
+                            </div>
                         </grid-shortcut>
                     </template>
                 </list-cell>
             </grid-area>
 
-            <grid-area area="30dIncomesList">
+            <grid-area area="_30dIncomesList">
                 <list-cell title="30d Incomes" :items="store.toReversed(store.dashboardSummary.incomes30d ?? [])">
                     <template #row="props">
                         <grid-shortcut columns="50px 1fr 1fr" class="fullSize">
                             <div class="listItemTitle middleLeft">{{ store.getDateAge(props.currentItem["date"]) }}</div>
                             <div class="listItemTitle middleLeft">{{ props.currentItem["title"] }}</div>
-                            <div :title="getAmountTooltip(props.currentItem)" class="listItemTitle middleRight">{{ store.formatAmount(props.currentItem, 'to') }}</div>
+                            <div :title="getAmountTooltip(props.currentItem)" class="listItemTitle middleRight">
+                                {{ store.formatAmount(props.currentItem, 'to') }}
+                            </div>
                         </grid-shortcut>
                     </template>
                 </list-cell>
@@ -78,19 +91,33 @@
 {
     overflow-x:hidden; .fullSize;
     font-family: 'Schibsted Grotesk', sans-serif;
+
+    .pendingTxn { color:@yellow !important; }
+    .resolvedTxn { color: inherit; }
+
+    .pendingLabel { font-weight: bold; margin-left:5px; }
+    .resolvedLabel { font-weight: bold; margin-left:5px; }
     
     #mainGrid
     {
         padding:50px; box-sizing: border-box; gap:15px;
         .fullSize; grid-template-columns: 1fr 1fr 1fr 1fr;
-        grid-template-rows:100px 250px 1fr 1fr;
-        height:2000px;
+        grid-template-rows:100px 250px 250px 1fr;
+        height:2000px; color:gray;
+
+        // grid-template-areas: 
+        // 'expensesPanel incomesPanel totalValuePanel netChangePanel' 
+        // '30dExpensesList 30dIncomesList ContainersList TotalValueGraph';
 
         grid-template-areas: 
         'expensesPanel incomesPanel totalValuePanel netChangePanel' 
-        '30dExpensesList 30dIncomesList ContainersList TotalValueGraph';
+        '_30dExpensesList _30dExpensesList ContainersList ContainersList'
+        '_30dIncomesList _30dIncomesList TotalValueGraph TotalValueGraph';
 
-        .listItemTitle { color:gray; font-size:14px; overflow:hidden; white-space: nowrap; text-overflow: ellipsis; }
+        .listItemTitle 
+        {
+            color:inherit; font-size:14px; overflow:hidden; white-space: nowrap; text-overflow: ellipsis; 
+        }
     }
 }
 </style>

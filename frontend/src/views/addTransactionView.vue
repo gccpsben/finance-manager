@@ -12,6 +12,18 @@
 
         <div id="containersSelectDiv" v-if="!isFormUploading && !isLoading">
             
+            <grid-shortcut id="pendingSelector" columns="1fr 1fr" class="fullWidth field">
+
+                <div>
+                    <div :class="{'selected': !isPending}" class="immediate" @click="isPending=false">Immediate</div>
+                </div>
+
+                <div>
+                    <div :class="{'selected': isPending}" class="pending" @click="isPending=true">Pending</div>
+                </div>
+
+            </grid-shortcut>
+
             <grid-shortcut id="modeSelector" columns="1fr 1fr 1fr" class="fullWidth field">
 
                 <div v-for="option in ['spending', 'earning', 'transfer']">
@@ -149,6 +161,7 @@ export default
             toAmount: 0 as number,
             txnTitle: '' as string,
             selectedMode: 'spending' as 'spending' | 'earning' | 'transfer' | string,
+            isPending: false,
             isFormUploading: false
         }
     },
@@ -182,7 +195,8 @@ export default
                     "typeID": this.selectedTxnType?.pubID,
                     "date": new Date().toISOString(),
                     "from": undefined as any,
-                    "to": undefined as any
+                    "to": undefined as any,
+                    "isTypePending": this.isPending
                 };
 
                 if (this.selectedFromContainer)
@@ -290,6 +304,28 @@ export default
             &.transfer { --accent-color: @yellowDark; }
             &.spending { --accent-color: @errorDark; }
             &.earning { --accent-color: @successDark; }
+            &.selected { background: var(--accent-color) !important; }
+        }
+    }
+
+    #pendingSelector
+    {
+        margin-bottom:15px;
+        text-transform: capitalize;
+        border: 1px solid @backgroundDark;
+        box-sizing: border-box;
+        padding:0px;
+
+        div
+        {
+            box-sizing: border-box;
+            --accent-color: #00000055;
+            cursor: pointer;
+            color:white;
+            .center;
+
+            &.pending { --accent-color: @yellowDark; }
+            &.immediate { --accent-color: @errorDark; }
             &.selected { background: var(--accent-color) !important; }
         }
     }

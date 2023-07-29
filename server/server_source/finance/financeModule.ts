@@ -15,7 +15,7 @@ var jmespath = require('jmespath');
 const bcrypt = require('bcrypt');
 var fdb = require("./financeDatabase.js");
 let financeDbMongoose:mongoose.Mongoose = fdb.financeDbMongoose;
-let expressInstance:Express|any|undefined = undefined;
+let expressInstance:Express = undefined;
 
 const shortcuts = require("../supexShortcuts");
 
@@ -33,25 +33,50 @@ exports.initialize = function (express_instance:Express)
             res.json(await fdbTypes.ContainerClass.getAllContainersTotalBalance()); 
         });
 
-        expressInstance.get(`/api/finance/transactions`, async (req:any, res:any) => 
+        expressInstance.get(`/api/finance/transactions`, async (req, res) => 
         { 
             // Check for permission and login
             if (!await AccessTokenClassModel.isRequestAuthenticated(req)) { res.status(401).json({}); return; }
 
-            let currencies: fdbTypes.CurrencyClass[] = await fdbTypes.CurrencyModel.find();
-            let allTxs: fdbTypes.TransactionClass[] = await fdbTypes.TransactionModel.find();
+            let currencies = await fdbTypes.CurrencyModel.find();
+            let allTxs = await fdbTypes.TransactionModel.find();
+            let onlyUnresolved = req.query.onlyunresolved == "true";
+
             var output:any = [];
             for (let index = 0; index < allTxs.length; index++) 
             {
                 let tx = allTxs[index];
+
+                if (onlyUnresolved && !tx.isTypePending) continue;
+                if (onlyUnresolved && (tx.isTypePending && tx.isResolved)) continue;
+
                 output.push(
                 {
-                    ...tx["_doc"],
+                    ...tx.toJSON(),
                     "changeInValue": await tx.getChangeInValue(currencies)
                 });
             }
 
             res.json(output); 
+        });
+
+        expressInstance.post(`/api/finance/transactions/resolve`, async (req:any, res:any) => 
+        { 
+            try
+            {
+                // Check for permission and login
+                if (!await AccessTokenClassModel.isRequestAuthenticated(req)) { res.status(401).json({}); return; }
+
+                let allTxs = (await fdbTypes.TransactionModel.find());
+                let allUnresolvedTxns = allTxs.filter(x => !x.isResolved);
+                let idToResolve = req.body.resolveID as string;
+                let targetToResolve = allUnresolvedTxns.filter(x => x.pubID == idToResolve)[0];
+                if (targetToResolve == undefined) throw new Error(`The given pubID is not found, or is already resolved.`);
+                targetToResolve.resolution = { date: new Date() };
+                await targetToResolve.save();
+                res.json(targetToResolve);
+            }
+            catch(error) { log(error); res.status(400).send({message: error}); }
         });
 
         expressInstance.get(`/api/finance/currencies`, async (req:any, res:any) => 
@@ -69,12 +94,52 @@ exports.initialize = function (express_instance:Express)
             res.json(await fdbTypes.TransactionTypeModel.find()); 
         });
 
+        expressInstance.post(`/api/finance/types/add`, async (req:any, res:any) => 
+        {
+            try
+            {
+                // Check for permission and login
+                if (!await AccessTokenClassModel.isRequestAuthenticated(req)) { res.status(401).json({}); return; }
+
+                let newID = genUUID();
+                let type = new fdbTypes.TransactionTypeModel(
+                {
+                    pubID: newID,
+                    ...req.body,
+                    isEarning: true,
+                    isExpense: true
+                });
+
+                res.json(await type.save()); 
+            }
+            catch(error) { log(error); res.status(400).send({message: error}); }
+        });
+
+        expressInstance.post(`/api/finance/currencies/add`, async (req:any, res:any) => 
+        {
+            try
+            {
+                // Check for permission and login
+                if (!await AccessTokenClassModel.isRequestAuthenticated(req)) { res.status(401).json({}); return; }
+
+                let newID = genUUID();
+                let currency = new fdbTypes.CurrencyModel(
+                {
+                    ...req.body,
+                    "pubID": newID
+                });
+
+                res.json(await currency.save()); 
+            }
+            catch(error) { log(error); res.status(400).send({message: error}); }
+        });
+
         expressInstance.get(`/api/finance/summary`, async (req:any, res:any) => 
         { 
             // Check for permission and login
             if (!await AccessTokenClassModel.isRequestAuthenticated(req)) { res.status(401).json({}); return; }
 
-            let allTxns = await fdbTypes.TransactionModel.find();
+            let allTxns = (await fdbTypes.TransactionModel.find());
             let allCurrencies = await fdbTypes.CurrencyModel.find();
             var oneWeekAgoDate = new Date();  oneWeekAgoDate.setDate(oneWeekAgoDate.getDate() - 7);
             var oneMonthAgoDate = new Date(); oneMonthAgoDate.setMonth(oneMonthAgoDate.getMonth() - 1);
@@ -86,7 +151,7 @@ exports.initialize = function (express_instance:Express)
             {
                 hydratedTxns.push(
                 {
-                    ...allTxns[index]["_doc"],
+                    ...(allTxns[index].toJSON()),
                     "changeInValue": await (allTxns[index].getChangeInValue(allCurrencies))
                 });
             }

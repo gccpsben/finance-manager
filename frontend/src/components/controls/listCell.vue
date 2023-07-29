@@ -43,6 +43,7 @@ export default
         currentViewItems() 
         {
             if (this.items.length == 0) return [];
+            if (this.items.length <= this.itemsInPage) return this.items;
             var lowerBoundIndex = this.page * this.itemsInPage;
             var upperBoundIndex = lowerBoundIndex + this.itemsInPage;
             if (upperBoundIndex >= this.items.length) upperBoundIndex = this.items.length - 1;

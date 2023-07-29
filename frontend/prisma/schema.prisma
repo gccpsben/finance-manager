@@ -27,7 +27,7 @@ type TransactionsFrom {
 
 type TransactionsFromAmount {
   currencyID String
-  /// Multiple data types found: Float: 28%, Int: 72% out of 678 sampled entries
+  /// Multiple data types found: Float: 29.1%, Int: 70.9% out of 759 sampled entries
   value      Json
 }
 
@@ -38,7 +38,7 @@ type TransactionsTo {
 
 type TransactionsToAmount {
   currencyID String
-  /// Multiple data types found: Float: 44.8%, Int: 55.2% out of 270 sampled entries
+  /// Multiple data types found: Float: 43.5%, Int: 56.5% out of 292 sampled entries
   value      Json
 }
 
@@ -85,7 +85,7 @@ model currencies {
   dataSource CurrenciesDataSource?
   name       String
   pubID      String
-  /// Multiple data types found: Float: 85.7%, Int: 14.3% out of 7 sampled entries
+  /// Multiple data types found: Float: 87.5%, Int: 12.5% out of 8 sampled entries
   rate       Json
   symbol     String
 }

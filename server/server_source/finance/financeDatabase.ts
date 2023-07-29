@@ -32,6 +32,11 @@ exports.txCollection = txCollection;
 
 export class DataCache
 {
+    public static allTransactionsGlobal?: Array<TransactionClass>;
+    public static allCurrenciesGlobal?: Array<CurrencyClass>;
+    public static allContainersGlobal?: Array<ContainerClass>;
+    public static allTransactionTypesGlobal?: Array<TransactionTypeClass>;
+
     public allTransactions?: Array<TransactionClass>;
     public allCurrencies?: Array<CurrencyClass>;
     public allContainers?: Array<ContainerClass>;
@@ -41,10 +46,26 @@ export class DataCache
     static async ensure(cache?: DataCache): Promise<DataCache>
     {
         if (cache == undefined) cache = new DataCache();
-        if (cache.allContainers == undefined) cache.allContainers = await ContainerModel.find(); // fetch all containers from db
-        if (cache.allCurrencies == undefined) cache.allCurrencies = await CurrencyModel.find(); // fetch all currencies from db
-        if (cache.allTransactions == undefined) cache.allTransactions = await TransactionModel.find(); // fetch all transactions from db
-        if (cache.allTransactionTypes == undefined) cache.allTransactionTypes = await TransactionTypeModel.find(); // fetch all types from db
+        if (cache.allContainers == undefined) 
+        { 
+            cache.allContainers = await ContainerModel.find(); // fetch all containers from db
+            DataCache.allContainersGlobal = [...cache.allContainers];
+        }
+        if (cache.allCurrencies == undefined) 
+        {
+            cache.allCurrencies = await CurrencyModel.find(); // fetch all currencies from db
+            DataCache.allCurrenciesGlobal = [...cache.allCurrencies];
+        }
+        if (cache.allTransactions == undefined) 
+        {
+            cache.allTransactions = await TransactionModel.find(); // fetch all transactions from db
+            DataCache.allTransactionsGlobal = [...cache.allTransactions];
+        }
+        if (cache.allTransactionTypes == undefined) 
+        {
+            cache.allTransactionTypes = await TransactionTypeModel.find(); // fetch all types from db
+            DataCache.allTransactionTypesGlobal = [...cache.allTransactionTypes];
+        }
         return cache;
     }
 }
@@ -82,7 +103,15 @@ export class ContainerBoundAmountClass
 }
 export const ContainerBoundAmountModel = getModelForClass(ContainerBoundAmountClass);
 
-@modelOptions ( {schemaOptions: { collection: "transactions" }, existingConnection: financeDbMongoose} )
+@modelOptions ( { schemaOptions: { autoCreate: false , _id : false }, existingConnection:financeDbMongoose } )
+export class TransactionResolutionClass
+{
+    @prop({required:true})
+    public date!: Date;
+}
+export const TransactionResolutionModel = getModelForClass(TransactionResolutionClass);
+
+@modelOptions ( {schemaOptions: { collection: "transactions", toJSON: { virtuals: true } }, existingConnection: financeDbMongoose} )
 export class TransactionClass
 {
     @prop( { required: true } )
@@ -102,6 +131,19 @@ export class TransactionClass
 
     @prop( { required: true } )
     isFromBot!: boolean;
+
+    @prop( { required: false, default: false } )
+    /** Is the transaction not resolved when the record is added */
+    isTypePending?: boolean;
+    
+    @prop( { required: false, default: undefined } )
+    /** Is the pending transaction resolved */
+    resolution?: TransactionResolutionClass;
+
+    public get isResolved()
+    {
+        return this.isTypePending && this.resolution != undefined
+    }
     
     @prop( { required: false} )
     from?: ContainerBoundAmountClass;
@@ -140,7 +182,15 @@ export class ContainerClass
 
         // Expected output
         // { value:2.1, balance: { "63b5fe6c13e0eeed4d8d1fad": 2.1, ... }, _id: '63b5fbad98550215af18cd31' }
-        var output = {pubID: this.pubID, balance:{}, value:0};
+        let output: 
+        {
+            pubID: string,
+            balance: {[key:string]: number},
+            balanceActual: {[key:string]: number}, // this amount is without any pending transactions
+            value: number,
+            valueActual: number
+        } = { pubID: this.pubID, balance:{}, balanceActual:{}, value:0, valueActual: 0 };
+        // var output = {pubID: this.pubID, balance:{}, value:0};
 
         cache.allTransactions!.forEach(tx => 
         {
@@ -150,14 +200,24 @@ export class ContainerClass
                 // Check if the transaction relates to the current container:
                 if (tx.to.containerID == this.pubID.toString())
                 {
-                    var cID = tx.to.amount.currencyID;
+                    let cID = tx.to.amount.currencyID;
                     let respectiveCurrency:CurrencyClass|undefined = cache!.allCurrencies!.find(x => x.pubID.toString() == cID);
 
                     if (cID in output.balance) output.balance[cID] += tx.to.amount.value;
                     else output.balance[cID] = tx.to.amount.value;
 
+                    if (tx.isResolved || !tx.isTypePending)
+                    {
+                        if (cID in output.balanceActual) output.balanceActual[cID] += tx.to.amount.value;
+                        else output.balanceActual[cID] = tx.to.amount.value;
+                    }
+
                     // Calculate value change
-                    if (respectiveCurrency != undefined) output.value += respectiveCurrency.rate * tx.to!.amount.value;
+                    if (respectiveCurrency != undefined) 
+                    { 
+                        output.value += respectiveCurrency.rate * tx.to!.amount.value;
+                        if (tx.isResolved || !tx.isTypePending) output.valueActual += respectiveCurrency.rate * tx.to!.amount.value;
+                    }
                 }
             }
 
@@ -167,15 +227,24 @@ export class ContainerClass
                 // Check if the transaction relates to the current container:
                 if (tx.from.containerID == this.pubID.toString())
                 {
-                    var cID = tx.from.amount.currencyID;
+                    let cID = tx.from.amount.currencyID;
                     let respectiveCurrency:CurrencyClass|undefined = cache!.allCurrencies!.find(x => x.pubID.toString() == cID);
 
-                    var cID = tx.from.amount.currencyID;
                     if (cID in output.balance) output.balance[cID] -= tx.from.amount.value;
                     else output.balance[cID] = tx.from.amount.value * -1;
 
+                    if (tx.isResolved || !tx.isTypePending)
+                    {
+                        if (cID in output.balanceActual) output.balanceActual[cID] -= tx.from.amount.value;
+                        else output.balanceActual[cID] = tx.from.amount.value * -1;
+                    }
+
                     // Calculate value change
-                    if (respectiveCurrency != undefined) output.value -= respectiveCurrency.rate * tx.from!.amount.value;
+                    if (respectiveCurrency != undefined) 
+                    {
+                        output.value -= respectiveCurrency.rate * tx.from!.amount.value;
+                        if (tx.isResolved || !tx.isTypePending) output.valueActual -= respectiveCurrency.rate * tx.from!.amount.value;
+                    }
                 }
             }
         });

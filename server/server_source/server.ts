@@ -2,7 +2,8 @@
 
 import * as dotenv from 'dotenv';
 import { logGreen, logRed, log, logBlue, getLog, logYellow } from "./extendedLog";
-const Express = require("express");
+import * as Express from 'express'
+// const Express = require("express");
 var fs = require("fs");
 var minify = require('express-minify');
 let envFilePath = process.argv[2] || ".env";

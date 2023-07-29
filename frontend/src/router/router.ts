@@ -7,6 +7,10 @@ import dashboardPage from "../mainViewPages/dashboard.vue"
 import chartsPage from "../mainViewPages/charts.vue"
 import transactionsPage from "../mainViewPages/transactions.vue"
 import addTransactionsPage from "../views/addTransactionView.vue"
+import addContainerPage from '../views/addContainerView.vue'
+import addTypePage from '../views/addTypeView.vue'
+import addCurrencyPage from '../views/addCurrencyView.vue'
+import resolveTransactionPage from '../views/resolveTransactionView.vue'
 
 // lazy loading:
 // () => import('../views/AboutView.vue')
@@ -53,6 +57,26 @@ const router = createRouter(
             path: '/transactions/add',
             name: 'addTransaction',
             component: addTransactionsPage
+        },
+        {
+            path: '/containers/add',
+            name: 'addContainer',
+            component: addContainerPage
+        },
+        {
+            path: '/types/add',
+            name: 'addType',
+            component: addTypePage
+        },
+        {
+            path: '/currencies/add',
+            name: 'addCurrency',
+            component: addCurrencyPage
+        },
+        {
+            path: '/transactions/resolve',
+            name: 'resolveTransaction',
+            component: resolveTransactionPage
         },
 	]
 })
