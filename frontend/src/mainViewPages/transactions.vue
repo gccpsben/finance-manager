@@ -37,11 +37,7 @@
     overflow-x:hidden; .fullSize;
     font-family: 'Schibsted Grotesk', sans-serif;
 
-    #mainCell
-    {
-        .fullSize;
-        .bg(@backgroundDark);
-    }
+    #mainCell { .fullSize; .bg(@backgroundDark); }
     
     #mainGrid
     {

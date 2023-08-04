@@ -50,6 +50,29 @@
                 </list-cell>
             </grid-area>
 
+            <grid-area area="_allPendingTransactionsList">
+                <list-cell title="All Pending Txns" :items="store.dashboardSummary?.allPendingTransactions ?? []">
+                    <template #row="props">
+                        <grid-shortcut columns="50px 1fr 1fr" :class="
+                        {
+                            'fullSize': true,
+                            'pendingTxn': props.currentItem.isTypePending && !props.currentItem.isResolved,
+                            'resolvedTxn': props.currentItem.isTypePending && props.currentItem.isResolved,
+                        }">
+                            <div class="listItemTitle middleLeft">{{ store.getDateAge(props.currentItem["date"]) }}</div>
+                            <div class="listItemTitle middleLeft">
+                                {{ props.currentItem["title"] }}
+                                <div v-if="props.currentItem.isTypePending && !props.currentItem.isResolved" class="pendingLabel">(Pending)</div>
+                                <div v-if="props.currentItem.isTypePending && props.currentItem.isResolved" class="resolvedLabel">(Resolved)</div>
+                            </div>
+                            <div :title="getAmountTooltip(props.currentItem)" class="listItemTitle middleRight">
+                                {{ store.formatAmount(props.currentItem, 'from') }}
+                            </div>
+                        </grid-shortcut>
+                    </template>
+                </list-cell>
+            </grid-area>
+
             <grid-area area="_30dIncomesList">
                 <list-cell title="30d Incomes" :items="store.toReversed(store.dashboardSummary.incomes30d ?? [])">
                     <template #row="props">
@@ -93,30 +116,26 @@
     font-family: 'Schibsted Grotesk', sans-serif;
 
     .pendingTxn { color:@yellow !important; }
-    .resolvedTxn { color: inherit; }
-
+    .resolvedTxn { .fg(inherit); }
     .pendingLabel { font-weight: bold; margin-left:5px; }
     .resolvedLabel { font-weight: bold; margin-left:5px; }
     
     #mainGrid
     {
         padding:50px; box-sizing: border-box; gap:15px;
-        .fullSize; grid-template-columns: 1fr 1fr 1fr 1fr;
-        grid-template-rows:100px 250px 250px 1fr;
-        height:2000px; color:gray;
-
-        // grid-template-areas: 
-        // 'expensesPanel incomesPanel totalValuePanel netChangePanel' 
-        // '30dExpensesList 30dIncomesList ContainersList TotalValueGraph';
+        .fullSize; .gridColumns_4;
+        grid-template-rows:100px 250px 250px 250px 1fr;
+        height:2000px; .fg(gray);
 
         grid-template-areas: 
         'expensesPanel incomesPanel totalValuePanel netChangePanel' 
         '_30dExpensesList _30dExpensesList ContainersList ContainersList'
-        '_30dIncomesList _30dIncomesList TotalValueGraph TotalValueGraph';
+        '_30dIncomesList _30dIncomesList TotalValueGraph TotalValueGraph'
+        '_allPendingTransactionsList _allPendingTransactionsList _1 _2';
 
         .listItemTitle 
         {
-            color:inherit; font-size:14px; overflow:hidden; white-space: nowrap; text-overflow: ellipsis; 
+            .fg(inherit); font-size:14px; overflow:hidden; white-space: nowrap; text-overflow: ellipsis; 
         }
     }
 }
@@ -153,4 +172,3 @@ export default
     }
 }
 </script>
-
