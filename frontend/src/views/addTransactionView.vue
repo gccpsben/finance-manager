@@ -73,7 +73,7 @@
 
             <grid-shortcut id="spendingFieldContainer" v-if="selectedFromContainer" class="fullWidth field">
                 <div class="middleLeft">Spending:</div>
-                <input inputmode="decimal" @keypress="isNumber($event)" type="number" v-model="fromAmount"/>
+                <input class="noSpin" inputmode="decimal" type="number" v-model="fromAmount" v-number-only/>
                 <custom-dropdown :items="store.currencies" v-model:currentItem="selectedSpendingCurrency">
                     <template #itemToText="props">
                         {{ props.item?.symbol ?? '-' }}
@@ -83,7 +83,7 @@
 
             <grid-shortcut v-if="selectedToContainer" columns="100px 1fr 100px" class="fullWidth field">
                 <div class="middleLeft">Receiving:</div>
-                <input inputmode="decimal" @keypress="isNumber($event)" type="number" v-model="toAmount"/>
+                <input class="noSpin" inputmode="decimal" type="number" v-model="toAmount" v-number-only/>
                 <custom-dropdown :items="store.currencies" v-model:currentItem="selectedReceivingCurrency">
                     <template #itemToText="props">
                         {{ props.item?.symbol ?? '-' }}
@@ -111,8 +111,14 @@
                 </div>
             </grid-shortcut>
 
-            <grid-shortcut columns="1fr 1fr">
+            <grid-shortcut columns="100px 1fr" class="fullWidth field">
+                <div class="middleLeft">Date:</div>
+                <input type="text" placeholder="YYYY-MM-DD HH:MM:SS" v-model="txnDateInput"/>
+            </grid-shortcut>
+
+            <grid-shortcut columns="1fr auto auto" style="gap: 5px;">
                 <div class="middleLeft"><button @click="reset">Reset</button></div>
+                <div class="middleRight"><button @click="$router.push('./resolve')">Resolve</button></div>
                 <div class="middleRight">
                     <button @click="upload" :disabled="!isFormValid">Upload</button>
                 </div>
@@ -160,6 +166,7 @@ export default
             fromAmount: 0 as number,
             toAmount: 0 as number,
             txnTitle: '' as string,
+            txnDateInput: '' as string,
             selectedMode: 'spending' as 'spending' | 'earning' | 'transfer' | string,
             isPending: false,
             isFormUploading: false
@@ -167,13 +174,6 @@ export default
     },
     methods:
     {
-        isNumber: (evt: any) =>
-        {
-            evt = (evt) ? evt : window.event;
-            var charCode = (evt.which) ? evt.which : evt.keyCode;
-            if ((charCode > 31 && (charCode < 48 || charCode > 57)) && charCode !== 46) evt.preventDefault();
-            else return true;
-        },
         reset()
         {
             this.selectedFromContainer = undefined;
@@ -198,6 +198,8 @@ export default
                     "to": undefined as any,
                     "isTypePending": this.isPending
                 };
+
+                if (this.enteredDate != undefined) body.date = this.enteredDate.toISOString();
 
                 if (this.selectedFromContainer)
                 {
@@ -259,7 +261,32 @@ export default
         },
         isFormValid(): boolean
         {
-            return this.shouldSummaryBoxVisible && this.isAmountsValid && this.txnTitle?.length > 0 && this.selectedTxnType !== undefined;
+            return this.shouldSummaryBoxVisible && this.isAmountsValid && this.txnTitle?.length > 0 && this.selectedTxnType !== undefined
+            && (this.txnDateInput == '' || this.enteredDate != undefined);
+        },
+        enteredDate(): Date|undefined
+        {
+            try
+            {
+                // Format: YYYY-MM-DD HH:MM:SS
+                if (this.txnDateInput == '') return undefined;
+                else if (!/^\d{4}-\d{2}-\d{2}[ ]\d{2}:\d{2}:\d{2}$/.test(this.txnDateInput)) return undefined;
+                // else if (this.txnDateInput.split('-').length != 3 ||  this.txnDateInput.split(':').length != 3) return false;
+                // else if (this.txnDateInput.split(' ').length != 2) return false;
+                else 
+                {
+                    let segments = this.txnDateInput.split(' ');
+                    let years = Number.parseInt(segments[0].split("-")[0]);
+                    let month = Number.parseInt(segments[0].split("-")[1]);
+                    let day = Number.parseInt(segments[0].split("-")[2]);
+                    let hours = Number.parseInt(segments[1].split(":")[0]);
+                    let minutes = Number.parseInt(segments[1].split(":")[1]);
+                    let seconds = Number.parseInt(segments[1].split(":")[2]);
+                    let finalDate = new Date(years, month - 1, day, hours, minutes, seconds);
+                    return finalDate;
+                }
+            }
+            catch(ex) { return undefined; }
         }
     },
     watch:

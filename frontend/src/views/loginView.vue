@@ -61,16 +61,15 @@
 
             input
             {
-                .clearInput;
-                background:inherit;
-                border:0; color:white;
-                padding:15px; padding-left:5px; width:100%;
+                .clearInput; .noBorder;
+                background:inherit; color:white;
+                padding:15px; padding-left:5px; .fullWidth;
             }
         }
 
         #loginCell
         {
-            .horizonalRight;
+            .xRight;
 
             button 
             {

@@ -17,12 +17,14 @@ import listCell from "@/components/controls/listCell.vue";
 import totalValueGraphCell from "@/components/controls/totalValueGraphCell.vue";
 import customTable from "@/components/custom-table.vue";
 import customDropdown from "@/components/custom-dropdown.vue"
-import { PrismaClient } from '@prisma/client'
+import { PrismaClient } from '@prisma/client';
+import vNumberOnly from 'snippets/vite-vue-ts/directives/vNumberOnly'
 
 const app = createApp(App)
 app.use(VueAxios, axios)
 app.use(router)
 app.use(createMetaManager())
+app.directive('number-only', vNumberOnly);
 app.component('grid-shortcut',gridShortcut)
 app.component('fa-icon', faIcon)
 app.component('grid-area', gridArea)
