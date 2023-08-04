@@ -1,6 +1,6 @@
 
 import { logGreen, logRed, log, logBlue, getLog, logYellow } from "../extendedLog";
-import { Express } from "express";
+import { Express, Request, Response } from "express";
 import mongoose, { Model, Mongoose } from "mongoose";
 import { MongoClient } from "mongodb";
 import * as mongo from "mongodb";
@@ -24,7 +24,7 @@ exports.initialize = function (express_instance:Express)
     try 
     {
         expressInstance = express_instance;
-        
+
         expressInstance.get(`/api/finance/containers`, async (req:any ,res:any) => 
         { 
             // Check for permission and login
@@ -134,6 +134,14 @@ exports.initialize = function (express_instance:Express)
             catch(error) { log(error); res.status(400).send({message: error}); }
         });
 
+        expressInstance.get(`/api/finance/graphs`, async (req: Request, res:Response) => 
+        {
+            // Check for permission and login
+            if (!await AccessTokenClassModel.isRequestAuthenticated(req)) { res.status(401).json({}); return; }
+
+            res.status(200).json(await fdbTypes.ContainerClass.getExpensesAndIncomes());
+        });
+        
         expressInstance.get(`/api/finance/summary`, async (req:any, res:any) => 
         { 
             // Check for permission and login
@@ -177,6 +185,7 @@ exports.initialize = function (express_instance:Express)
                 "totalExpenses": allExpenseTxns.reduce((acc:any, val:any) => acc - val.changeInValue, 0),
                 "incomes30d": incomeTxns30d,
                 "expenses30d": expenseTxns30d,
+                "allPendingTransactions": hydratedTxns.filter(x => x.isTypePending && x.resolution == undefined)
             };
             output['totalValue'] = output.totalIncomes - output.totalExpenses;
             
@@ -204,6 +213,8 @@ exports.initialize = function (express_instance:Express)
                 var fromContainerPass = req.body?.from ? await fdbTypes.ContainerModel.isExist(fromContainerID) : true;
                 var toContainerPass = req.body?.to ? await fdbTypes.ContainerModel.isExist(toContainerID) : true;
                 var typeExists = req.body?.typeID && await fdbTypes.TransactionTypeModel.isExist(typeID);
+                
+                // if (req.body.date != undefined) txn.date = new Date(req.body.date);
 
                 // Check if containers exist
                 if (!fromContainerPass || !toContainerPass) throw new Error(`Container pubID=${fromContainerID || toContainerID} doesn't exist.`);

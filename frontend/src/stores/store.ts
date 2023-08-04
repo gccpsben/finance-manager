@@ -36,8 +36,9 @@ export const useMainStore = defineStore(
                     iconClass: "fa fa-inbox"
                 }
             ],
-            allTransactions: [] as Array<transactions>,
+            // allTransactions: [] as Array<transactions>,
             dashboardSummary: {} as any,
+            graphsSummary: {} as any,
             currencies: [] as Array<currencies>,
             containers: [] as Array<containers>,
             txnTypes: [] as Array<transactionTypes>,
@@ -56,7 +57,7 @@ export const useMainStore = defineStore(
             if (new Date().getTime() - this.lastUpdateTime.getTime() < 10000) return;
             await Promise.all(
             [
-                this.updateTransactions(),
+                // this.updateTransactions(),
                 this.updateDashboardSummary(),
                 this.updateCurrencies(),
                 this.updateContainers(),
@@ -107,12 +108,12 @@ export const useMainStore = defineStore(
             var response = await self.authGet("/api/finance/summary");
             self.dashboardSummary = response!.data;
         },
-        async updateTransactions()
-        {
-            var self = this;
-            var response = await self.authGet("/api/finance/transactions");
-            self.allTransactions = response!.data;
-        },
+        // async updateTransactions()
+        // {
+        //     var self = this;
+        //     var response = await self.authGet("/api/finance/transactions");
+        //     self.allTransactions = response!.data;
+        // },
         async updateCurrencies()
         {
             var self = this;
@@ -130,6 +131,12 @@ export const useMainStore = defineStore(
             var self = this;
             var response = await self.authGet("/api/finance/transactionTypes");
             self.txnTypes = response!.data;
+        },
+        async updateGraphsSummary()
+        {
+            var self = this;
+            var response = await self.authGet("/api/finance/graphs");
+            self.graphsSummary = response!.data;
         },
         setCookie(cname:string, cvalue:string, exdays:number): void
         {

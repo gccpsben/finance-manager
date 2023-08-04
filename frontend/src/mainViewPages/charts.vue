@@ -45,6 +45,10 @@ export default
 
 {
     components: { BarChart },
+    async mounted()
+    {
+        await this.store.updateGraphsSummary();
+    },
     data()
     {
         var data = 
@@ -65,71 +69,19 @@ export default
     {
         expensesIncomesData()
         {
-            var allTransactions = [...this.store.allTransactions]; allTransactions.forEach(x => { x.date = new Date(x.date); });
-            var topExpenses = 0;
-            var latestDate = new Date(0);
-            var oldestDate = new Date();
-
-            // var keyingFunction = (x:Date) => x.toLocaleDateString(); // Advance per day
-            // var advanceFunction = (x:Date) => new Date(x.setDate(x.getDate() + 1)); // Advance per day
-
-            var keyingFunction = (x:Date) => `${x.getMonth()}-${x.getFullYear()}`; // Advance per month
-            var advanceFunction = (x:Date) => new Date(x.setMonth(x.getMonth() + 1)); // Advance per month
-
-            var expensesMap: {[key: string]: number} = {};
-            var allExpenses = allTransactions.filter(x => x.from && !x.to);
-            allExpenses.forEach(item => 
-            { 
-                var value = this.store.getValue(item.from!.amount.currencyID, item.from!.amount.value as number);
-                var key = keyingFunction(item.date);
-
-                if (item.date.getTime() >= latestDate.getTime()) latestDate = item.date;
-                if (item.date.getTime() <= oldestDate.getTime()) oldestDate = item.date;
-                if (value > topExpenses) topExpenses = value;
-
-                expensesMap[key] = expensesMap[key] ? expensesMap[key] + value : value;
-            });
-            console.log(expensesMap);
-
-            var incomesMap: {[key: string]: number} = {};
-            var allIncomes = allTransactions.filter(x => !x.from && x.to);
-            allIncomes.forEach(item => 
-            { 
-                var value = this.store.getValue(item.to!.amount.currencyID, item.to!.amount.value as number);
-                var key = keyingFunction(item.date);
-
-                if (item.date.getTime() >= latestDate.getTime()) latestDate = item.date;
-                if (item.date.getTime() <= oldestDate.getTime()) oldestDate = item.date;
-
-                incomesMap[key] = incomesMap[key] ? incomesMap[key] + value : value;
-            });
-
-            //               date,         income, expenses
-            var totalMap: { [key: string]:[number, number] } = {};
-            var loop = oldestDate;
-            while(loop <= latestDate)
-            {   
-                // var newDate = new Date(loop.setDate(loop.getDate() + 1)); // Advance per day
-                var newDate = advanceFunction(loop); // Advance per month
-
-                var dateString = keyingFunction(newDate);
-                loop = newDate;
-                totalMap[dateString] = [incomesMap[dateString] ?? 0, expensesMap[dateString] ?? 0];
-            }
-            
             const data: ChartData<'bar'> = 
             {
-                labels: Object.keys(totalMap),
+                labels: this.store.graphsSummary?.expensesIncomesByDate?.labels ?? [],
                 datasets: 
                 [
                     {
                         // Incomes
-                        data: Object.values(totalMap).map(x => x[0]),
+                        data: this.store.graphsSummary?.expensesIncomesByDate?.incomes ?? [],
                         backgroundColor: 'green'
                     },
                     {
                         // Expenses
-                        data: Object.values(totalMap).map(x => x[1] * -1),
+                        data: this.store.graphsSummary?.expensesIncomesByDate?.expenses ?? [],
                         backgroundColor: 'red'
                     },
                 ],
