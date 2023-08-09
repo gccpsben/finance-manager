@@ -1,30 +1,42 @@
 <script setup lang="ts">
+import vArea from 'snippets/vite-vue-ts/directives/vArea';
+import vBasic from 'snippets/vite-vue-ts/directives/vBasic';
 </script>
 
 <script lang="ts">
-import { useMainStore } from "@/stores/store";
+import { useMainStore, type PageDefinition } from "@/stores/store";
 export default 
 {
+    directives: {vArea},
     data()
     {
         return {
-            store: useMainStore()
+            store: useMainStore(),
         };
     },
     mounted()
     {
         this.store.updateAll();
+    },
+    computed:
+    {
+        currentPageName() { return this.$router.currentRoute.value.fullPath.split('/').pop(); }
+    },
+    methods:
+    {
+        goToPage(page: PageDefinition) { this.$router.push('./' + page.name); }
     }
 }
 </script>
 
 <template>
     <div id="topDiv">
-        <grid-shortcut class="fullSize" columns="minmax(13vw, 225px) 1fr" rows="1fr">
-            <grid-shortcut id="leftBar" class="fullSize" columns="1fr" rows="250px 1fr">
-                <div id="userDiv" class="center" style="overflow:hidden;">
+        <grid-shortcut v-basic="'#topGrid.fullSize'" columns="minmax(13vw, 225px) 1fr" rows="1fr" areas="'leftBar content'">
+
+            <grid-shortcut v-basic="'#leftBar.fullSize'" v-area="'leftBar'" columns="1fr" rows="250px 1fr">
+                <div v-basic="'#userDiv.center'" style="overflow:hidden;">
                     <div>
-                        <div id="userIcon" class="center">P1</div>
+                        <div v-basic="'#userIcon.center'">P1</div>
 
                         <div id="accountButtonsContainer">
                             <button><i class="fa fa-gear"></i></button>
@@ -33,21 +45,58 @@ export default
                     </div>
                 </div>
                 <div id="leftButtonsContainer">
-                    <div v-for="page in store.availablePages"
-                    @click="$router.push('./' + page.name)"
-                    :class="{'activeButton': $router.currentRoute.value.fullPath.split('/').pop() == page.name}">
+                    <div v-for="page in store.availablePages" @click="goToPage(page)"
+                    :class="{'activeButton': currentPageName == page.name}">
                         <i :class="page.iconClass"></i>
                         <div class="iconTitle">{{page.displayName}}</div>
                     </div>
                 </div>
             </grid-shortcut>
-            <router-view></router-view>
+
+            <div v-basic="'#mobileBar'">
+                <div v-for="page in store.availablePages" :class="{'activeButton': currentPageName == page.name}"
+                @click="goToPage(page)">
+                    <div class="center fullSize">
+                        <i class="tight" :class="page.iconClass"></i>
+                    </div>
+                </div>
+            </div>
+
+            <router-view v-area="'content'"></router-view>
+            
         </grid-shortcut>
     </div>
 </template>
 
 <style lang="less">
 @import "../stylesheets/globalStyle.less";
+
+#mobileBar { display:none; }
+
+@media only screen and (max-width: 600px) 
+{
+    #topGrid
+    {
+        grid-template-columns: 1fr !important;
+        grid-template-rows: 1fr 50px !important;
+        grid-template-areas: 'content' 'leftBar' !important;
+    }
+
+    #leftBar { display:none; }
+    #mobileBar 
+    { 
+        display:unset; 
+        .bg(#151515); .fg(white);
+        box-sizing: border-box;
+
+        & > div
+        {
+            .size(50px, 50px); display:inline-block;
+            &.activeButton i { color: #d7f6ff; }
+            &.activeButton { .bg(@focusDark); box-sizing: border-box; }
+        }
+    }
+}
 
 #leftBar
 {

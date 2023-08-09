@@ -3,7 +3,7 @@
         
         <div id="mainCell">
             <cell title="Transactions">
-                <div style="background:red;">
+                <!-- <div style="background:red;">
                     <custom-table style="height:100%;" :columns="columns" :rows="dataWrappedTxns">
                         <template #headercell="headercell">
                             <strong>{{ headercell.currentColumn.label }}</strong>
@@ -12,7 +12,8 @@
                             <strong>{{ cell.cellValueReadonly }}</strong>
                         </template>
                     </custom-table>
-                </div>
+                </div> -->
+                {{ currentViewItems }}
             </cell>
         </div>
 
@@ -63,13 +64,16 @@ import customTable from '@/components/custom-table.vue';
 
 <script lang="ts">
 import { useMainStore } from "@/stores/store";
+import * as arrayHelper from "snippets/arrayHelper";
 
 export default 
 {
     data()
     {
-        var store = useMainStore();
-        return {
+        let store = useMainStore();
+        
+        let data = 
+        {
             store: store,
             columns:
             [
@@ -78,28 +82,58 @@ export default
                     field: "title",
                     width:"1fr",
                 }
-            ]
+            ],
+            itemsInPage: 5,
+            page: 0,
+            transactions: [] as any[],
         };
+        return data;
+    },
+    watch:
+    {
+        "store.dashboardSummary.totalTransactionsCount": function() { this.prefill() }
+    },
+    methods:
+    {
+        prefill()
+        {
+            let prefill = (count:number, value:any) => { let a = new Array(count); for (let i=0; i<count; ++i) a[i] = value; return a; };
+            this.transactions = prefill(this.store.dashboardSummary?.totalTransactionsCount ?? 0, null)
+        }
     },
     computed:
     {
-        dataWrappedTxns()
+        currentViewItems()
         {
-            var output = [];
-            if (this.store.allTransactions.length < 10) return [];
-            for (var i = 0; i < 10; i++)
-            {
-                output.push(
-                {
-                    "data": this.store.allTransactions[i] 
-                });
-            }
-            return output;
+            let bins = arrayHelper.partition<any>(this.transactions, this.itemsInPage);
+            let currentBin = bins[this.page];
+            if (currentBin == undefined) return [];
+            let lowerIndexToFetch = this.page * this.itemsInPage;
+            let upperIndexToFetch = (this.page + 1) * this.itemsInPage - 1;
+            upperIndexToFetch = Math.min(upperIndexToFetch, this.store.dashboardSummary?.totalTransactionsCount ?? 0);
+            if (arrayHelper.count(currentBin, x => x == null) > 0) console.log(`Should fetch ${lowerIndexToFetch} to ${upperIndexToFetch}`);
+            return currentBin;
+        },
+
+        async dataWrappedTxns()
+        {
+
+            // var output = [];
+            // if (this.store.allTransactions.length < 10) return [];
+            // for (var i = 0; i < 10; i++)
+            // {
+            //     output.push(
+            //     {
+            //         "data": this.store.allTransactions[i] 
+            //     });
+            // }
+            // return output;
         }
     },
     mounted()
     {
         this.store.updateAll();
+        this.prefill();
     }
 }
 </script>

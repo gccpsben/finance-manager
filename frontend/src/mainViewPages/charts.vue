@@ -32,6 +32,18 @@
         grid-template-areas: "TotalValueGraph ExpensesIncomesGraph" "_4 _5";
     }
 }
+
+@media only screen and (max-width: 600px) 
+{
+    #mainGrid
+    {
+        .fullSize; display:grid; gap:15px;
+        grid-template-columns: minmax(0,1fr) !important;
+        grid-template-rows: minmax(0,500px) minmax(0,500px) !important;
+        grid-template-areas: 'TotalValueGraph' 'ExpensesIncomesGraph' !important;
+    }
+}
+
 </style>
 
 <script lang="ts">

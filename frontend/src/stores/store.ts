@@ -2,6 +2,13 @@ import type { containers, currencies, totalValueHistory, transactionTypes, trans
 import axios, { AxiosError } from 'axios';
 import { defineStore } from 'pinia'
 
+export type PageDefinition =
+{
+    name:string; 
+    displayName:string;
+    iconClass:string;
+}
+
 export const useMainStore = defineStore(
 {
     id: 'mainStore',
@@ -35,7 +42,7 @@ export const useMainStore = defineStore(
                     displayName: "Containers",
                     iconClass: "fa fa-inbox"
                 }
-            ],
+            ] as PageDefinition[],
             // allTransactions: [] as Array<transactions>,
             dashboardSummary: {} as any,
             graphsSummary: {} as any,
@@ -179,6 +186,14 @@ export const useMainStore = defineStore(
             else if (msDiff < 3.6e+6) return `${(msDiff / 60000).toFixed(0)}m`; // if < 1 hour
             else if (msDiff < 8.64e+7) return `${(msDiff / (3.6e+6)).toFixed(0)}h`; // if < 1 day
             else return `${(msDiff / (8.64e+7)).toFixed(0)}d`;
+        },
+        getCurrencyName(currencyPubID: string)
+        {
+            return this.currencies.find(x => x.pubID == currencyPubID)?.name;
+        },
+        getCurrencySymbol(currencyPubID: string)
+        {
+            return this.currencies.find(x => x.pubID == currencyPubID)?.symbol;
         },
 
         toSorted(array:Array<any>, func:any)

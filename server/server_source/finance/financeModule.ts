@@ -185,7 +185,8 @@ exports.initialize = function (express_instance:Express)
                 "totalExpenses": allExpenseTxns.reduce((acc:any, val:any) => acc - val.changeInValue, 0),
                 "incomes30d": incomeTxns30d,
                 "expenses30d": expenseTxns30d,
-                "allPendingTransactions": hydratedTxns.filter(x => x.isTypePending && x.resolution == undefined)
+                "allPendingTransactions": hydratedTxns.filter(x => x.isTypePending && x.resolution == undefined),
+                "totalTransactionsCount": await fdbTypes.TransactionModel.count()
             };
             output['totalValue'] = output.totalIncomes - output.totalExpenses;
             

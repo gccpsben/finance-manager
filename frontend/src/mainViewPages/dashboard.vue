@@ -3,14 +3,14 @@
         <grid-shortcut id="mainGrid">
 
             <grid-area area="expensesPanel">
-                <number-cell title="Expenses"
+                <number-cell title="Expenses" :noItemsText="'No Expenses'"
                 :value7d="store.dashboardSummary.totalExpenses7d"
                 :value30d="store.dashboardSummary.totalExpenses30d"
                 :valueAll="store.dashboardSummary.totalExpenses"></number-cell>
             </grid-area>
 
             <grid-area area="incomesPanel">
-                <number-cell title="Incomes"
+                <number-cell title="Incomes" :noItemsText="'No Incomes'"
                 :value7d="store.dashboardSummary.totalIncomes7d"
                 :value30d="store.dashboardSummary.totalIncomes30d"
                 :valueAll="store.dashboardSummary.totalIncomes"></number-cell>
@@ -28,7 +28,8 @@
             </grid-area>
 
             <grid-area area="_30dExpensesList">
-                <list-cell title="30d Expenses" :items="store.toReversed(store.dashboardSummary.expenses30d ?? [])">
+                <list-cell title="30d Expenses" :noItemsText="'No Expenses'"
+                :items="store.toReversed(store.dashboardSummary.expenses30d ?? [])">
                     <template #row="props">
                         <grid-shortcut columns="50px 1fr 1fr" :class="
                         {
@@ -51,7 +52,8 @@
             </grid-area>
 
             <grid-area area="_allPendingTransactionsList">
-                <list-cell title="All Pending Txns" :items="store.dashboardSummary?.allPendingTransactions ?? []">
+                <list-cell title="All Pending Txns" :noItemsText="'No Pending Txns'"
+                :items="store.dashboardSummary?.allPendingTransactions ?? []">
                     <template #row="props">
                         <grid-shortcut columns="50px 1fr 1fr" :class="
                         {
@@ -74,7 +76,8 @@
             </grid-area>
 
             <grid-area area="_30dIncomesList">
-                <list-cell title="30d Incomes" :items="store.toReversed(store.dashboardSummary.incomes30d ?? [])">
+                <list-cell title="30d Incomes"  :noItemsText="'No Incomes'"
+                :items="store.toReversed(store.dashboardSummary.incomes30d ?? [])">
                     <template #row="props">
                         <grid-shortcut columns="50px 1fr 1fr" class="fullSize">
                             <div class="listItemTitle middleLeft">{{ store.getDateAge(props.currentItem["date"]) }}</div>
@@ -88,7 +91,8 @@
             </grid-area>
 
             <grid-area area="ContainersList">
-                <list-cell title="Containers" :items="store.toSorted(store.containers ?? [], (a:any,b:any) => { return b.value - a.value; })">
+                <list-cell title="Containers" :noItemsText="'No Containers'"
+                :items="store.toSorted(store.containers ?? [], (a:any,b:any) => { return b.value - a.value; })">
                     <template #row="props">
                         <grid-shortcut :title="getContainerTooltip(props.currentItem)" columns="1fr 1fr" class="fullSize">
                             <div class="listItemTitle middleLeft">{{ props.currentItem.name }}</div>
@@ -100,6 +104,10 @@
 
             <grid-area area="TotalValueGraph">
                 <total-value-graph-cell title="Total Value"></total-value-graph-cell>
+            </grid-area>
+
+            <grid-area area="containerValuesGraph">
+                <container-values-graph-cell title="Containers Value"></container-values-graph-cell>
             </grid-area>
         
         </grid-shortcut>
@@ -131,7 +139,7 @@
         'expensesPanel incomesPanel totalValuePanel netChangePanel' 
         '_30dExpensesList _30dExpensesList ContainersList ContainersList'
         '_30dIncomesList _30dIncomesList TotalValueGraph TotalValueGraph'
-        '_allPendingTransactionsList _allPendingTransactionsList _1 _2';
+        '_allPendingTransactionsList _allPendingTransactionsList containerValuesGraph containerValuesGraph';
 
         .listItemTitle 
         {
@@ -139,6 +147,27 @@
         }
     }
 }
+
+@media only screen and (max-width: 600px) 
+{
+    #mainGrid
+    {
+        gap:15px !important;
+        padding:20px !important;
+        grid-template-columns: 1fr 1fr !important;
+        grid-template-rows: 100px 100px 250px 250px 250px 250px 250px 250px 1fr !important;
+        grid-template-areas: 
+        'expensesPanel incomesPanel' 
+        'totalValuePanel netChangePanel' 
+        '_30dExpensesList _30dExpensesList'
+        'ContainersList ContainersList'
+        '_30dIncomesList _30dIncomesList'
+        'TotalValueGraph TotalValueGraph'
+        '_allPendingTransactionsList _allPendingTransactionsList'
+        'containerValuesGraph containerValuesGraph' !important;
+    }
+}
+
 </style>
 
 <script lang="ts">

@@ -37,10 +37,23 @@ export default
     data() 
     { 
         var data = { selectedVarient: "30d" };
-        if (this.value7d != undefined && this.value30d == undefined && this.valueAll == undefined) data.selectedVarient = "7d";
-        if (this.value7d == undefined && this.value30d != undefined && this.valueAll == undefined) data.selectedVarient = "30d";
-        if (this.value7d == undefined && this.value30d == undefined && this.valueAll != undefined) data.selectedVarient = "All";
         return data;
+    },
+    methods:
+    {
+        checkDefault()
+        {
+            if (this.value7d != undefined && this.value30d == undefined && this.valueAll == undefined) this.selectedVarient = "7d";
+            if (this.value7d == undefined && this.value30d != undefined && this.valueAll == undefined) this.selectedVarient = "30d";
+            if (this.value7d == undefined && this.value30d == undefined && this.valueAll != undefined) this.selectedVarient = "All";
+        }
+    },
+    mounted() { this.checkDefault(); },
+    watch:
+    {
+        "value7d": function () { this.checkDefault(); },
+        "value30d": function () { this.checkDefault(); },
+        "valueAll": function () { this.checkDefault(); },
     }
 }
 </script>
