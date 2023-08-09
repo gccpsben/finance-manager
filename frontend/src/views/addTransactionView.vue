@@ -141,11 +141,22 @@ export default
         useMeta(
         {
             title: 'Add Txns',
-            htmlAttrs: 
-            {
-                lang: 'en',
-            }
+            htmlAttrs: { lang: 'en', },
+            link: 
+            [
+                { rel: 'icon', href: "/addTxnIcon.png" },
+                { rel: 'shortcut icon', type: "image/jpeg", href:"/addTxnIcon.png" },
+                { rel: 'apple-touch-icon', href:"/addTxnIcon.png" }
+            ] 
         });
+
+        // let link:HTMLLinkElement = document.querySelector("link[rel*='icon']") || document.createElement('link');
+
+        // link.rel = 'icon';
+        // link.href = "";
+
+        // // Append the favicon to the `head`
+        // document.getElementsByTagName('head')[0].appendChild(link);
     },
     async mounted() 
     { 

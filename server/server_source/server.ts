@@ -82,6 +82,7 @@ if (process.env.DIST_FOLDER == undefined) logYellow("Warning: DIST_FOLDER isn't 
         });
     })();
 
+    app.use(Express.static(distFolderLocation));
     expressRouterGet("/assets/*", (req, res, next) => { res.sendFile(req.path, { root: distFolderLocation }); }, false);
     expressRouterGet("/*", (req, res, next) => { res.sendFile("index.html", { root: distFolderLocation }); }, false);
 

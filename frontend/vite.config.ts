@@ -30,6 +30,9 @@ export default defineConfig(
 				ws: true,
 				secure: false
 			},
+            "/*": {
+				target: 'https://192.168.8.130:55559'
+			},
 		}
 	},
     build:
