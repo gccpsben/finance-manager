@@ -24,7 +24,8 @@ export default
     },
     methods:
     {
-        goToPage(page: PageDefinition) { this.$router.push('./' + page.name); }
+        goToPage(page: PageDefinition) { this.$router.push( { name: page.name }); },
+        isSelected(page: PageDefinition) { return this.$route.fullPath.startsWith(`/main/${page.name}`); }
     }
 }
 </script>
@@ -46,7 +47,7 @@ export default
                 </div>
                 <div id="leftButtonsContainer">
                     <div v-for="page in store.availablePages" @click="goToPage(page)"
-                    :class="{'activeButton': currentPageName == page.name}">
+                    :class="{'activeButton': isSelected(page)}">
                         <i :class="page.iconClass"></i>
                         <div class="iconTitle">{{page.displayName}}</div>
                     </div>
@@ -54,7 +55,7 @@ export default
             </grid-shortcut>
 
             <div v-basic="'#mobileBar'">
-                <div v-for="page in store.availablePages" :class="{'activeButton': currentPageName == page.name}"
+                <div v-for="page in store.availablePages" :class="{'activeButton': isSelected(page)}"
                 @click="goToPage(page)">
                     <div class="center fullSize">
                         <i class="tight" :class="page.iconClass"></i>

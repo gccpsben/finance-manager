@@ -16,6 +16,7 @@ import numberCell from "@/components/controls/numberCell.vue";
 import listCell from "@/components/controls/listCell.vue";
 import totalValueGraphCell from "@/components/controls/totalValueGraphCell.vue";
 import customTable from "@/components/custom-table.vue";
+import viewTitle from "@/components/controls/viewTitle.vue";
 import customDropdown from "@/components/custom-dropdown.vue"
 import { PrismaClient } from '@prisma/client';
 import vNumberOnly from 'snippets/vite-vue-ts/directives/vNumberOnly';
@@ -36,6 +37,7 @@ app.component('list-cell', listCell)
 app.component('total-value-graph-cell', totalValueGraphCell)
 app.component('custom-dropdown', customDropdown)
 app.component('container-values-graph-cell', containerValuesGraphCellVue);
+app.component('view-title', viewTitle);
 
 // Since router isn't defined in the pinia type, add them manually.
 declare module 'pinia' 

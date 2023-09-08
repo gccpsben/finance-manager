@@ -2,24 +2,21 @@
 import { logGreen, logRed, log, logBlue, getLog, logYellow } from "../extendedLog";
 import { Express, Request, Response } from "express";
 import mongoose, { Model, Mongoose } from "mongoose";
-import { MongoClient } from "mongodb";
-import * as mongo from "mongodb";
-import * as fdbTypes from "./financeDatabase";
-import { TransactionClass, AccountClass, AccessTokenClassModel,AccountClassModel } from "./financeDatabase";
 import { genUUID } from "../uuid";
+import { AccessTokenClassModel } from "../accessToken";
+import { CurrencyModel } from "./currency";
+import { TransactionClass, TransactionModel, TransactionTypeModel } from "./transaction";
+import { TotalValueRecordClass, TotalValueRecordModel } from "./totalValueRecord";
+import { AccountClass, AccountClassModel } from "../account";
+import { CryptoWalletWatchDogClass, CryptoWalletWatchDogModel } from "./cryptoWalletWatchDog";
+import { DataCache } from "./dataCache";
+import { ContainerClass, ContainerModel } from "./container";
 
-var fs = require('fs');
-var fsp = require("fs/promises");
 var jmespath = require('jmespath');
-
-const bcrypt = require('bcrypt');
-var fdb = require("./financeDatabase.js");
-let financeDbMongoose:mongoose.Mongoose = fdb.financeDbMongoose;
 let expressInstance:Express = undefined;
-
 const shortcuts = require("../supexShortcuts");
 
-exports.initialize = function (express_instance:Express)
+export function initialize (express_instance:Express)
 {
     try 
     {
@@ -30,34 +27,56 @@ exports.initialize = function (express_instance:Express)
             // Check for permission and login
             if (!await AccessTokenClassModel.isRequestAuthenticated(req)) { res.status(401).json({}); return; }
 
-            res.json(await fdbTypes.ContainerClass.getAllContainersTotalBalance()); 
+            res.json(await ContainerClass.getAllContainersTotalBalance()); 
         });
 
         expressInstance.get(`/api/finance/transactions`, async (req, res) => 
         { 
-            // Check for permission and login
-            if (!await AccessTokenClassModel.isRequestAuthenticated(req)) { res.status(401).json({}); return; }
-
-            let currencies = await fdbTypes.CurrencyModel.find();
-            let allTxs = await fdbTypes.TransactionModel.find();
-            let onlyUnresolved = req.query.onlyunresolved == "true";
-
-            var output:any = [];
-            for (let index = 0; index < allTxs.length; index++) 
+            try
             {
-                let tx = allTxs[index];
+                // Check for permission and login
+                if (!await AccessTokenClassModel.isRequestAuthenticated(req)) { res.status(401).json({}); return; }
 
-                if (onlyUnresolved && !tx.isTypePending) continue;
-                if (onlyUnresolved && (tx.isTypePending && tx.isResolved)) continue;
+                let startingIndex = 0;
+                let endingIndex:number = undefined;
 
-                output.push(
+                if (req.query.start) startingIndex = parseInt(req.query?.start.toString());
+                if (req.query.end) endingIndex = parseInt(req.query?.end.toString());
+                if (req.query.start !== undefined && req.query.end !== undefined)
                 {
-                    ...tx.toJSON(),
-                    "changeInValue": await tx.getChangeInValue(currencies)
-                });
-            }
+                    if (startingIndex > endingIndex) throw new Error(`Starting index must not be smaller than ending index.`);
+                }
 
-            res.json(output); 
+                let onlyUnresolved = req.query.onlyunresolved == "true";
+                let currencies = await CurrencyModel.find();
+                
+                let allTxs = [];
+                if (startingIndex !== undefined && endingIndex !== undefined)
+                {
+                    allTxs = await TransactionModel.find().limit(endingIndex - startingIndex + 1).sort({"date":-1}).skip(startingIndex);
+                }
+                else { allTxs = await TransactionModel.find().sort({"date":-1}); }
+
+                TransactionModel.find
+
+                var output:any = [];
+                for (let index = 0; index < allTxs.length; index++) 
+                {
+                    let tx = allTxs[index];
+
+                    if (onlyUnresolved && !tx.isTypePending) continue;
+                    if (onlyUnresolved && (tx.isTypePending && tx.isResolved)) continue;
+
+                    output.push(
+                    {
+                        ...tx.toJSON(),
+                        "changeInValue": await tx.getChangeInValue(currencies)
+                    });
+                }
+
+                res.json(output); 
+            }
+            catch(error) { log(error); res.status(400).send({message: error}); }
         });
 
         expressInstance.post(`/api/finance/transactions/resolve`, async (req:any, res:any) => 
@@ -67,7 +86,7 @@ exports.initialize = function (express_instance:Express)
                 // Check for permission and login
                 if (!await AccessTokenClassModel.isRequestAuthenticated(req)) { res.status(401).json({}); return; }
 
-                let allTxs = (await fdbTypes.TransactionModel.find());
+                let allTxs = (await TransactionModel.find());
                 let allUnresolvedTxns = allTxs.filter(x => !x.isResolved);
                 let idToResolve = req.body.resolveID as string;
                 let targetToResolve = allUnresolvedTxns.filter(x => x.pubID == idToResolve)[0];
@@ -84,14 +103,14 @@ exports.initialize = function (express_instance:Express)
             // Check for permission and login
             if (!await AccessTokenClassModel.isRequestAuthenticated(req)) { res.status(401).json({}); return; }
             
-            res.json(await fdbTypes.CurrencyModel.find()); 
+            res.json(await CurrencyModel.find()); 
         });
         expressInstance.get(`/api/finance/transactionTypes`, async (req:any, res:any) => 
         {
             // Check for permission and login
             if (!await AccessTokenClassModel.isRequestAuthenticated(req)) { res.status(401).json({}); return; }
 
-            res.json(await fdbTypes.TransactionTypeModel.find()); 
+            res.json(await TransactionTypeModel.find()); 
         });
 
         expressInstance.post(`/api/finance/types/add`, async (req:any, res:any) => 
@@ -102,7 +121,7 @@ exports.initialize = function (express_instance:Express)
                 if (!await AccessTokenClassModel.isRequestAuthenticated(req)) { res.status(401).json({}); return; }
 
                 let newID = genUUID();
-                let type = new fdbTypes.TransactionTypeModel(
+                let type = new TransactionTypeModel(
                 {
                     pubID: newID,
                     ...req.body,
@@ -123,7 +142,7 @@ exports.initialize = function (express_instance:Express)
                 if (!await AccessTokenClassModel.isRequestAuthenticated(req)) { res.status(401).json({}); return; }
 
                 let newID = genUUID();
-                let currency = new fdbTypes.CurrencyModel(
+                let currency = new CurrencyModel(
                 {
                     ...req.body,
                     "pubID": newID
@@ -139,7 +158,7 @@ exports.initialize = function (express_instance:Express)
             // Check for permission and login
             if (!await AccessTokenClassModel.isRequestAuthenticated(req)) { res.status(401).json({}); return; }
 
-            res.status(200).json(await fdbTypes.ContainerClass.getExpensesAndIncomes());
+            res.status(200).json(await ContainerClass.getExpensesAndIncomes());
         });
         
         expressInstance.get(`/api/finance/summary`, async (req:any, res:any) => 
@@ -147,8 +166,8 @@ exports.initialize = function (express_instance:Express)
             // Check for permission and login
             if (!await AccessTokenClassModel.isRequestAuthenticated(req)) { res.status(401).json({}); return; }
 
-            let allTxns = (await fdbTypes.TransactionModel.find());
-            let allCurrencies = await fdbTypes.CurrencyModel.find();
+            let allTxns = (await TransactionModel.find());
+            let allCurrencies = await CurrencyModel.find();
             var oneWeekAgoDate = new Date();  oneWeekAgoDate.setDate(oneWeekAgoDate.getDate() - 7);
             var oneMonthAgoDate = new Date(); oneMonthAgoDate.setMonth(oneMonthAgoDate.getMonth() - 1);
 
@@ -186,7 +205,7 @@ exports.initialize = function (express_instance:Express)
                 "incomes30d": incomeTxns30d,
                 "expenses30d": expenseTxns30d,
                 "allPendingTransactions": hydratedTxns.filter(x => x.isTypePending && x.resolution == undefined),
-                "totalTransactionsCount": await fdbTypes.TransactionModel.count()
+                "totalTransactionsCount": await TransactionModel.count()
             };
             output['totalValue'] = output.totalIncomes - output.totalExpenses;
             
@@ -201,7 +220,7 @@ exports.initialize = function (express_instance:Express)
                 if (!await AccessTokenClassModel.isRequestAuthenticated(req)) { res.status(401).json({}); return; }
 
                 var newTxnID = genUUID();
-                var txn = new fdbTypes.TransactionModel(
+                var txn = new TransactionModel(
                 {
                     ...req.body, 
                     "pubID": newTxnID,
@@ -211,10 +230,10 @@ exports.initialize = function (express_instance:Express)
                 var fromContainerID = req.body?.from?.containerID ?? undefined;
                 var toContainerID = req.body?.to?.containerID ?? undefined;
                 var typeID = req.body?.typeID ?? undefined;
-                var fromContainerPass = req.body?.from ? await fdbTypes.ContainerModel.isExist(fromContainerID) : true;
-                var toContainerPass = req.body?.to ? await fdbTypes.ContainerModel.isExist(toContainerID) : true;
-                var typeExists = req.body?.typeID && await fdbTypes.TransactionTypeModel.isExist(typeID);
-                
+                var fromContainerPass = req.body?.from ? await ContainerModel.isExist(fromContainerID) : true;
+                var toContainerPass = req.body?.to ? await ContainerModel.isExist(toContainerID) : true;
+                var typeExists = req.body?.typeID && await TransactionTypeModel.isExist(typeID);
+
                 // if (req.body.date != undefined) txn.date = new Date(req.body.date);
 
                 // Check if containers exist
@@ -234,7 +253,7 @@ exports.initialize = function (express_instance:Express)
             if (!await AccessTokenClassModel.isRequestAuthenticated(req)) { res.status(401).json({}); return; }
 
             var idToRemove = req.body.id;
-            try { res.json(await fdbTypes.TransactionModel.findById({"pubID":idToRemove}).deleteOne()); }
+            try { res.json(await TransactionModel.findById({"pubID":idToRemove}).deleteOne()); }
             catch(error) { res.status(400); res.json( { errors: error.errors } ); }
         });
 
@@ -246,7 +265,7 @@ exports.initialize = function (express_instance:Express)
             try 
             { 
                 var newTxnID = genUUID();
-                res.json(await new fdbTypes.ContainerModel({...req.body, "pubID": newTxnID}).save()); 
+                res.json(await new ContainerModel({...req.body, "pubID": newTxnID}).save()); 
             }
             catch(error) { log(error); res.status(400); res.json( { errors: error } ); }
         });
@@ -257,7 +276,7 @@ exports.initialize = function (express_instance:Express)
             if (!await AccessTokenClassModel.isRequestAuthenticated(req)) { res.status(401).json({}); return; }
 
             var idToRemove = req.body.id;
-            try {  res.json(await fdbTypes.ContainerModel.findById({"pubID":idToRemove}).deleteOne()); }
+            try {  res.json(await ContainerModel.findById({"pubID":idToRemove}).deleteOne()); }
             catch(error) { res.status(400); res.json( { errors: error.errors } ); }
         });
 
@@ -268,7 +287,7 @@ exports.initialize = function (express_instance:Express)
                 // Check for permission and login
                 if (!await AccessTokenClassModel.isRequestAuthenticated(req)) { res.status(401).json({}); return; }
 
-                res.json(await fdbTypes.TotalValueRecordModel.find({}));   
+                res.json(await TotalValueRecordModel.find({}));   
             }
             catch(error) { res.status(400); res.json( { errors: error.errors } ); }
         });
@@ -316,7 +335,7 @@ exports.initialize = function (express_instance:Express)
         // Update stats every hour
         (async () =>
         {
-            var updateFunc = async () => { await fdbTypes.TotalValueRecordClass.UpdateHistory(); };
+            var updateFunc = async () => { await TotalValueRecordClass.UpdateHistory(); };
             setInterval(updateFunc, 60000 * 30);
             await updateFunc();
         })();
@@ -326,7 +345,7 @@ exports.initialize = function (express_instance:Express)
         {
             var updateFunc = async () => 
             {
-                (await fdbTypes.CurrencyModel.find()).forEach(currency => 
+                (await CurrencyModel.find()).forEach(currency => 
                 {
                     if (currency.dataSource == undefined) return;
     
@@ -383,12 +402,12 @@ exports.initialize = function (express_instance:Express)
             var syncWalletFunc = async () => 
             {
                 // get all watchdogs and update them.
-                var allWatchdogs = (await fdbTypes.CryptoWalletWatchDogModel.find());
-                var cache = await fdbTypes.DataCache.ensure();
+                var allWatchdogs = (await CryptoWalletWatchDogModel.find());
+                var cache = await DataCache.ensure();
     
                 for (let watchdogIndex = 0; watchdogIndex < allWatchdogs.length; watchdogIndex++) 
                 {
-                    let watchdog:fdbTypes.CryptoWalletWatchDogClass = allWatchdogs[watchdogIndex];
+                    let watchdog:CryptoWalletWatchDogClass = allWatchdogs[watchdogIndex];
                     let txAdded:TransactionClass[] = await watchdog.synchronizeAllTokens(cache);
                     if (txAdded.length > 0) logGreen(`${txAdded.length} txns added for container=${watchdog.linkedContainerID} from blockchain`);
                 }

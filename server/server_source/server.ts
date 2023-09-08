@@ -1,9 +1,9 @@
 'use strict'
 
 import * as dotenv from 'dotenv';
-import { logGreen, logRed, log, logBlue, getLog, logYellow } from "./extendedLog";
-import * as Express from 'express'
-// const Express = require("express");
+import { logGreen, logRed, logBlue, getLog, logYellow } from "./extendedLog";
+import * as Express from 'express';
+
 var fs = require("fs");
 var minify = require('express-minify');
 let envFilePath = process.argv[2] || ".env";
@@ -65,8 +65,11 @@ if (process.env.DIST_FOLDER == undefined) logYellow("Warning: DIST_FOLDER isn't 
     })();
 
     // Finance module
-    var financeModule = require("./finance/financeModule");
-    (function() { financeModule.initialize(app); })();
+    (function() 
+    {
+        let financeEndpoints = require('./finance/financeEndpoints');
+        financeEndpoints.initialize(app); 
+    })();
 
     // Catching signals and logging them
     (function()

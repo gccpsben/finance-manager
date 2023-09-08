@@ -1,23 +1,26 @@
-import { logGreen, logRed, log, logBlue, getLog, logYellow } from "./extendedLog";
+import { logGreen, logRed, log, logYellow } from "./extendedLog";
 import * as mongo from "mongodb";
 import * as mongoose from "mongoose";
 
-export let client:mongo.MongoClient;
 export let databaseURL:string;
-export let mongooseClient: mongoose.Connection;
+
+export const databaseToUse = process.env.FINANCE_DB_NAME || "finance";
 
 export async function init(url:string)
 {
     try
     {
         if (process.env.FINANCE_DB_FULL_URL == undefined) throw new Error("FINANCE_DB_FULL_URL is not defined.");
-        databaseURL = url;
-        logYellow(`Connecting to finance database...`);
-        client = new mongo.MongoClient(url);
-        await this.client.db("admin").command({ping: 1});
-        exports.mongooseClient = await mongoose.createConnection(url).asPromise();   
-        logGreen(`Connected to finance database and set up mongoose.`);
-        return this.client;
+        // databaseURL = url;
+        logYellow(`Connecting to finance database "${databaseToUse}"...`);
+        mongoose.set('strictQuery', true);
+        await mongoose.connect(url, { dbName: databaseToUse });
+
+        // client = new mongo.MongoClient(url + "/" + databaseToUse);
+        // pingDatabase();
+        // mongooseClient = mongoose.createConnection(url); 
+        // logGreen(`Connected to finance database and set up mongoose.`);
+        // return this.client;
     }
     catch(e)
     {
@@ -25,6 +28,11 @@ export async function init(url:string)
         log(e);
     }
 }
+
+// export async function pingDatabase()
+// {
+//     await client.db("admin").command({ping: 1});
+// }
 
 export class Validators
 {

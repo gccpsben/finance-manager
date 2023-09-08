@@ -4,7 +4,8 @@ import LoginView from "../views/loginView.vue"
 
 // MainView Pages
 import dashboardPage from "../mainViewPages/dashboard.vue"
-import chartsPage from "../mainViewPages/charts.vue"
+import chartsPage from "../mainViewPages/charts.vue";
+import currenciesPage from '../mainViewPages/currencies.vue';
 import transactionsPage from "../mainViewPages/transactions.vue"
 import addTransactionsPage from "../views/addTransactionView.vue"
 import addContainerPage from '../views/addContainerView.vue'
@@ -28,18 +29,23 @@ const router = createRouter(
             [
                 {
                     path: 'dashboard',
+                    name: 'dashboard',
                     component: dashboardPage
                 },
                 {
-                    path: 'currencies',
-                    component: dashboardPage
+                    path: 'currencies/:pubID?',
+                    name: "currencies",
+                    component: currenciesPage,
+                    props: true
                 },
                 {
                     path: 'transactions',
+                    name: 'transactions',
                     component: transactionsPage
                 },
                 {
                     path: 'charts',
+                    name: 'charts',
                     component: chartsPage
                 }
             ]
@@ -51,7 +57,7 @@ const router = createRouter(
         },
         {
             path: '/',
-            redirect: { name: 'main' }
+            redirect: { name: 'dashboard' }
         },
         {
             path: '/transactions/add',
