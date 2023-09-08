@@ -11,16 +11,13 @@ export async function init(url:string)
     try
     {
         if (process.env.FINANCE_DB_FULL_URL == undefined) throw new Error("FINANCE_DB_FULL_URL is not defined.");
-        // databaseURL = url;
+        
         logYellow(`Connecting to finance database "${databaseToUse}"...`);
         mongoose.set('strictQuery', true);
         await mongoose.connect(url, { dbName: databaseToUse });
 
-        // client = new mongo.MongoClient(url + "/" + databaseToUse);
-        // pingDatabase();
-        // mongooseClient = mongoose.createConnection(url); 
-        // logGreen(`Connected to finance database and set up mongoose.`);
-        // return this.client;
+        if (process.env.MONGOOSE_VERBOSE == 'true')
+            mongoose.set('debug', function (coll, method, query, doc) { log(`Mongoose Request: ${coll}.${method} ${JSON.stringify(query)}`); });
     }
     catch(e)
     {

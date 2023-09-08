@@ -16,7 +16,7 @@ export class DataCache
     public allTransactionTypes?: Array<TransactionTypeClass>;
 
     // Ensure that all properties in this class are fetched from the database.
-    static async ensure(cache?: DataCache): Promise<DataCache>
+    public static async ensure(cache?: DataCache): Promise<DataCache>
     {
         if (cache == undefined) cache = new DataCache();
         if (cache.allContainers == undefined) 
@@ -40,5 +40,15 @@ export class DataCache
             DataCache.allTransactionTypesGlobal = [...cache.allTransactionTypes];
         }
         return cache;
+    }
+
+    public static async ensureTransactions(cache?: DataCache)
+    {
+        if (cache == undefined) cache = new DataCache();
+        if (cache.allTransactions == undefined) 
+        {
+            cache.allTransactions = await TransactionModel.find(); // fetch all transactions from db
+            DataCache.allTransactionsGlobal = [...cache.allTransactions];
+        }
     }
 }

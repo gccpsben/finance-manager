@@ -12,7 +12,7 @@ import { CryptoWalletWatchDogClass, CryptoWalletWatchDogModel } from "./cryptoWa
 import { DataCache } from "./dataCache";
 import { ContainerClass, ContainerModel } from "./container";
 
-var jmespath = require('jmespath');
+let jmespath = require('jmespath');
 let expressInstance:Express = undefined;
 const shortcuts = require("../supexShortcuts");
 
@@ -59,7 +59,7 @@ export function initialize (express_instance:Express)
 
                 TransactionModel.find
 
-                var output:any = [];
+                let output:any = [];
                 for (let index = 0; index < allTxs.length; index++) 
                 {
                     let tx = allTxs[index];
@@ -168,8 +168,8 @@ export function initialize (express_instance:Express)
 
             let allTxns = (await TransactionModel.find());
             let allCurrencies = await CurrencyModel.find();
-            var oneWeekAgoDate = new Date();  oneWeekAgoDate.setDate(oneWeekAgoDate.getDate() - 7);
-            var oneMonthAgoDate = new Date(); oneMonthAgoDate.setMonth(oneMonthAgoDate.getMonth() - 1);
+            let oneWeekAgoDate = new Date();  oneWeekAgoDate.setDate(oneWeekAgoDate.getDate() - 7);
+            let oneMonthAgoDate = new Date(); oneMonthAgoDate.setMonth(oneMonthAgoDate.getMonth() - 1);
 
             // Calculate all the changeInValue of transactions.
             // An extra properties will be added to the hydrated txns: changeInValue
@@ -194,7 +194,7 @@ export function initialize (express_instance:Express)
             let incomeTxns7d:any = allIncomeTxns.filter(tx => tx.date > oneWeekAgoDate).sort((b,a) => b.date - a.date); 
             let expenseTxns7d:any = allExpenseTxns.filter(tx => tx.date > oneWeekAgoDate).sort((b,a) => b.date - a.date); 
 
-            var output = 
+            let output = 
             {
                 "totalIncomes30d": incomeTxns30d.reduce((acc:any, val:any) => acc + val.changeInValue, 0),
                 "totalExpenses30d": expenseTxns30d.reduce((acc:any, val:any) => acc - val.changeInValue, 0),
@@ -219,20 +219,20 @@ export function initialize (express_instance:Express)
                 // Check for permission and login
                 if (!await AccessTokenClassModel.isRequestAuthenticated(req)) { res.status(401).json({}); return; }
 
-                var newTxnID = genUUID();
-                var txn = new TransactionModel(
+                let newTxnID = genUUID();
+                let txn = new TransactionModel(
                 {
                     ...req.body, 
                     "pubID": newTxnID,
                     "isFromBot": false
                 }); 
 
-                var fromContainerID = req.body?.from?.containerID ?? undefined;
-                var toContainerID = req.body?.to?.containerID ?? undefined;
-                var typeID = req.body?.typeID ?? undefined;
-                var fromContainerPass = req.body?.from ? await ContainerModel.isExist(fromContainerID) : true;
-                var toContainerPass = req.body?.to ? await ContainerModel.isExist(toContainerID) : true;
-                var typeExists = req.body?.typeID && await TransactionTypeModel.isExist(typeID);
+                let fromContainerID = req.body?.from?.containerID ?? undefined;
+                let toContainerID = req.body?.to?.containerID ?? undefined;
+                let typeID = req.body?.typeID ?? undefined;
+                let fromContainerPass = req.body?.from ? await ContainerModel.isExist(fromContainerID) : true;
+                let toContainerPass = req.body?.to ? await ContainerModel.isExist(toContainerID) : true;
+                let typeExists = req.body?.typeID && await TransactionTypeModel.isExist(typeID);
 
                 // if (req.body.date != undefined) txn.date = new Date(req.body.date);
 
@@ -252,7 +252,7 @@ export function initialize (express_instance:Express)
             // Check for permission and login
             if (!await AccessTokenClassModel.isRequestAuthenticated(req)) { res.status(401).json({}); return; }
 
-            var idToRemove = req.body.id;
+            let idToRemove = req.body.id;
             try { res.json(await TransactionModel.findById({"pubID":idToRemove}).deleteOne()); }
             catch(error) { res.status(400); res.json( { errors: error.errors } ); }
         });
@@ -264,7 +264,7 @@ export function initialize (express_instance:Express)
 
             try 
             { 
-                var newTxnID = genUUID();
+                let newTxnID = genUUID();
                 res.json(await new ContainerModel({...req.body, "pubID": newTxnID}).save()); 
             }
             catch(error) { log(error); res.status(400); res.json( { errors: error } ); }
@@ -275,7 +275,7 @@ export function initialize (express_instance:Express)
             // Check for permission and login
             if (!await AccessTokenClassModel.isRequestAuthenticated(req)) { res.status(401).json({}); return; }
 
-            var idToRemove = req.body.id;
+            let idToRemove = req.body.id;
             try {  res.json(await ContainerModel.findById({"pubID":idToRemove}).deleteOne()); }
             catch(error) { res.status(400); res.json( { errors: error.errors } ); }
         });
@@ -335,7 +335,7 @@ export function initialize (express_instance:Express)
         // Update stats every hour
         (async () =>
         {
-            var updateFunc = async () => { await TotalValueRecordClass.UpdateHistory(); };
+            let updateFunc = async () => { await TotalValueRecordClass.UpdateHistory(); };
             setInterval(updateFunc, 60000 * 30);
             await updateFunc();
         })();
@@ -343,27 +343,27 @@ export function initialize (express_instance:Express)
         // Update rate from coingecko every 30 min
         (async () => 
         {
-            var updateFunc = async () => 
+            let updateFunc = async () => 
             {
                 (await CurrencyModel.find()).forEach(currency => 
                 {
                     if (currency.dataSource == undefined) return;
     
-                    var options =
+                    let options =
                     {
                         method: 'GET',
                         hostname: currency.dataSource.jsonURLHost, port: null, path: currency.dataSource.jsonURLPath,
                     };
             
-                    var isNum = (num: any) => (typeof(num) === 'number' || typeof(num) === "string" && num.trim() !== '') && !isNaN(num as number);
-                    var onError = (err,e) => { logRed(`Error while fetching ${currency.dataSource} for ${currency.symbol}: ${JSON.stringify(err)}`); }; 
-                    var onClose = async wholeData => 
+                    let isNum = (num: any) => (typeof(num) === 'number' || typeof(num) === "string" && num.trim() !== '') && !isNaN(num as number);
+                    let onError = (err,e) => { logRed(`Error while fetching ${currency.dataSource} for ${currency.symbol}: ${JSON.stringify(err)}`); }; 
+                    let onClose = async wholeData => 
                     {
                         try
                         {
-                            var json = JSON.parse(wholeData);
-                            var value = jmespath.search(json, currency.dataSource.jmesQuery);
-                            var fullPath = `${currency.dataSource.jsonURLHost}${currency.dataSource.jsonURLPath}`
+                            let json = JSON.parse(wholeData);
+                            let value = jmespath.search(json, currency.dataSource.jmesQuery);
+                            let fullPath = `${currency.dataSource.jsonURLHost}${currency.dataSource.jsonURLPath}`
                             
                             if (value == undefined)
                             {
@@ -399,21 +399,23 @@ export function initialize (express_instance:Express)
         // Sync wallets transactions from blockchain every 60 mins
         (async () => 
         {
-            var syncWalletFunc = async () => 
+            let syncWalletFunc = async () => 
             {
                 // get all watchdogs and update them.
-                var allWatchdogs = (await CryptoWalletWatchDogModel.find());
-                var cache = await DataCache.ensure();
+                let allWatchdogs = (await CryptoWalletWatchDogModel.find());
+                let cache = await DataCache.ensure();
     
                 for (let watchdogIndex = 0; watchdogIndex < allWatchdogs.length; watchdogIndex++) 
                 {
                     let watchdog:CryptoWalletWatchDogClass = allWatchdogs[watchdogIndex];
+                    let container = cache.allContainers.find(x => x.pubID == watchdog.linkedContainerID);
                     let txAdded:TransactionClass[] = await watchdog.synchronizeAllTokens(cache);
-                    if (txAdded.length > 0) logGreen(`${txAdded.length} txns added for container=${watchdog.linkedContainerID} from blockchain`);
+                    if (txAdded.length > 0) logGreen(`${txAdded.length} txns added for container=${container.name} from blockchain`);
+                    else logGreen(`No extra txn added for container=${container.name}`);
                 }
             };
             setInterval(syncWalletFunc, 60000 * 120);
-            syncWalletFunc();
+            setTimeout(syncWalletFunc, 10000);
         })();
     }
     catch (e) { logRed(e); }
