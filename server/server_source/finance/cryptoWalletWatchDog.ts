@@ -95,7 +95,8 @@ export class CryptoWalletWatchDogClass
      */
     public async syncBTCish(token: WalletTokenClass, cache?: DataCache) : Promise<Array<TransactionClass>>
     {
-        if (token.chainType != "LTC" && token.chainType != "BTC") throw new Error(`The given token is not on the BTC or LTC chain.`);
+        if (token.chainType != "LTC" && token.chainType != "BTC") 
+            throw new Error(`The given token is not on the BTC or LTC chain.`);
 
         let addedTxns: any[] = []; // this will be the return value
 
@@ -137,7 +138,8 @@ export class CryptoWalletWatchDogClass
     {
         try
         {
-            if (token.chainType !== "XNO") throw new Error(`The given token is not on the XNO chain.`);
+            if (token.chainType !== "XNO") 
+                throw new Error(`The given token is not on the XNO chain.`);
             
             let addedTxns: any[] = []; // this will be the return value
 
@@ -150,7 +152,11 @@ export class CryptoWalletWatchDogClass
 
             if (fetchResponse.status != 200) 
             {
-                logRed(`Error fetching blockchain data for watchdog id=${this.pubID}: E${fetchResponse.status}: ${fetchResponse.data}`);
+                logRed
+                (
+                    `Error fetching blockchain data for watchdog id=${this.pubID}: ` +
+                    `E${fetchResponse.status}: ${fetchResponse.data}`
+                );
                 return [];
             }
 
@@ -158,7 +164,11 @@ export class CryptoWalletWatchDogClass
 
             if (response.error == "Bad account number") 
             {
-                logRed(`Error fetching blockchain data for watchdog id=${this.pubID}: of chain XNO: The given public address ${token.publicAddress} cannot be found.`);
+                logRed
+                (
+                    `Error fetching blockchain data for watchdog id=${this.pubID}: of chain XNO:` + 
+                    `The given public address ${token.publicAddress} cannot be found.`
+                );
                 return [];
             }
             else if (response.error != undefined) 

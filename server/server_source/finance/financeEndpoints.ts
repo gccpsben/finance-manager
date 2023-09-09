@@ -1,7 +1,6 @@
 
-import { logGreen, logRed, log, logBlue, getLog, logYellow } from "../extendedLog";
+import { logGreen, logRed, log } from "../extendedLog";
 import { Express, Request, Response } from "express";
-import mongoose, { Model, Mongoose } from "mongoose";
 import { genUUID } from "../uuid";
 import { AccessTokenClassModel } from "../accessToken";
 import { CurrencyModel } from "./currency";
@@ -35,29 +34,31 @@ export function initialize (express_instance:Express)
             try
             {
                 // Check for permission and login
-                if (!await AccessTokenClassModel.isRequestAuthenticated(req)) { res.status(401).json({}); return; }
+                if (!await AccessTokenClassModel.isRequestAuthenticated(req)) return res.status(401).json({});
 
+                let query = req.query;
                 let startingIndex = 0;
                 let endingIndex:number = undefined;
 
-                if (req.query.start) startingIndex = parseInt(req.query?.start.toString());
-                if (req.query.end) endingIndex = parseInt(req.query?.end.toString());
-                if (req.query.start !== undefined && req.query.end !== undefined)
+                if (query.start) startingIndex = parseInt(query?.start.toString());
+                if (query.end) endingIndex = parseInt(query?.end.toString());
+                if (query.start !== undefined && query.end !== undefined)
                 {
                     if (startingIndex > endingIndex) throw new Error(`Starting index must not be smaller than ending index.`);
                 }
 
-                let onlyUnresolved = req.query.onlyunresolved == "true";
+                let onlyUnresolved = query.onlyunresolved == "true";
                 let currencies = await CurrencyModel.find();
                 
                 let allTxs = [];
                 if (startingIndex !== undefined && endingIndex !== undefined)
                 {
-                    allTxs = await TransactionModel.find().limit(endingIndex - startingIndex + 1).sort({"date":-1}).skip(startingIndex);
+                    allTxs = await TransactionModel.find()
+                    .limit(endingIndex - startingIndex + 1)
+                    .sort({"date":-1})
+                    .skip(startingIndex);
                 }
                 else { allTxs = await TransactionModel.find().sort({"date":-1}); }
-
-                TransactionModel.find
 
                 let output:any = [];
                 for (let index = 0; index < allTxs.length; index++) 
@@ -296,24 +297,21 @@ export function initialize (express_instance:Express)
         {
             try
             {
-                let accessToken = await AccountClass.login(req.body.username, req.body.password, req.get("User-Agent"));
-                let jwtToken = "Bearer " + await accessToken.generateJWTBearer();
+                let body = req.body;
+                let username = body.username;
+                let password = body.password;
+                let accessToken = await AccountClass.login(username, password, req.get("User-Agent"));
+                let jwtToken = `Bearer ${await accessToken.generateJWTBearer()}`;
                 res.json({"token": jwtToken});
             }
             catch(ex)
             {
-                if (ex == "Username or password don't match")
-                {
-                    res.status(401);
-                    res.json( {"error": ex} );
-                    return;
-                }
-                res.status(400);
-                res.json( {"error": ex} );
+                let statusCode = ex == "Username or password don't match" ? 401 : 400;
+                res.status(statusCode).json( {"error": ex} );
             }
         });
 
-        express_instance.post("/api/finance/accounts/register", async(req,res) => 
+        express_instance.post("/api/finance/accounts/register", async (req,res) => 
         {
             try
             {
@@ -327,8 +325,7 @@ export function initialize (express_instance:Express)
             catch(ex)
             {
                 console.log(ex);
-                res.status(400);
-                res.json( { "error": ex });
+                res.status(400).json( { "error": ex });
             }
         });
 
@@ -352,11 +349,13 @@ export function initialize (express_instance:Express)
                     let options =
                     {
                         method: 'GET',
-                        hostname: currency.dataSource.jsonURLHost, port: null, path: currency.dataSource.jsonURLPath,
+                        hostname: currency.dataSource.jsonURLHost, 
+                        port: null, 
+                        path: currency.dataSource.jsonURLPath,
                     };
             
                     let isNum = (num: any) => (typeof(num) === 'number' || typeof(num) === "string" && num.trim() !== '') && !isNaN(num as number);
-                    let onError = (err,e) => { logRed(`Error while fetching ${currency.dataSource} for ${currency.symbol}: ${JSON.stringify(err)}`); }; 
+                    let onError = err => { logRed(`Error while fetching ${currency.dataSource} for ${currency.symbol}: ${JSON.stringify(err)}`); }; 
                     let onClose = async wholeData => 
                     {
                         try
@@ -402,7 +401,7 @@ export function initialize (express_instance:Express)
             let syncWalletFunc = async () => 
             {
                 // get all watchdogs and update them.
-                let allWatchdogs = (await CryptoWalletWatchDogModel.find());
+                let allWatchdogs = await CryptoWalletWatchDogModel.find();
                 let cache = await DataCache.ensure();
     
                 for (let watchdogIndex = 0; watchdogIndex < allWatchdogs.length; watchdogIndex++) 
