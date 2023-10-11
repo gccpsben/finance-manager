@@ -1,0 +1,1 @@
+wt.exe -w 0 -d "." cmd /k "cd ./server && npm run run_prod";

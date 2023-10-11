@@ -20,18 +20,18 @@ export default defineConfig(
 		{
 			'/api': 
 			{
-				target: 'https://192.168.8.130:55559',
+				target: 'https://192.168.8.130:8081',
 				changeOrigin: true,
 				secure: false
 			},
 			'/socket.io': {
-				target: 'https://192.168.8.130:55559',
+				target: 'https://192.168.8.130:8081',
 				changeOrigin: true,
 				ws: true,
 				secure: false
 			},
             "/*": {
-				target: 'https://192.168.8.130:55559'
+				target: 'https://192.168.8.130:8081'
 			},
 		}
 	},

@@ -4,6 +4,7 @@
 /server/ssl
 /server/*.log
 /server/server_build/*
+/server/server_production
 /dist
 /dist/*
 *.env

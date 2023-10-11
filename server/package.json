@@ -4,12 +4,10 @@
   "description": "",
   "private": true,
   "scripts": {
-    "watch_server": "tsc-watch -p \"./tsconfig.json\" --onSuccess \"node server_build/server.js\"",
-    "start_server": "node server_build/server.js",
-    "test_server": "tsc && node server_build/server.js",
-    "watch_server_dev": "tsc-watch -p \"./tsconfig.json\" --onSuccess \"node server_build/server.js ./dev.env\"",
-    "start_server_dev": "node server_build/server.js ./dev.env",
-    "test_server_dev": "tsc && node server_build/server.js ./dev.env",
+    "dev_watch": "tsc-watch -p \"./tsconfig.json\" --onSuccess \"node server_build/server.js ./dev.env\"",
+    "dev_once": "tsc && node server_build/server.js ./dev.env",    
+    "run_prod": "node ./server_production/server.js ./.env",
+    "build_prod": "tsc --outDir ./server_production",
     "docs:dev": "vuepress dev docs",
     "docs:build": "vuepress build docs"
   },
