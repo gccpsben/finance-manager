@@ -151,7 +151,8 @@ export default
 
     #containersSelectDiv { .size(600px, auto); }
 
-    background: @background; .fullSize;
+    background: @background; .fullWidth;
+    height: 500px;
     color:white;
 
     #typeSelector

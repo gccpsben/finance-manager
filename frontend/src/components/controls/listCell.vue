@@ -65,7 +65,11 @@ export default
     box-sizing:border-box;
 
     .pageSelector  { color:gray !important; transform: translateY(-3px); }
-    #nextArrow, #previousArrow { margin:0px; display:inline; font-size:14px; cursor: pointer; }
+    #nextArrow, #previousArrow 
+    { 
+        margin:0px; display:inline; font-size:14px; cursor: pointer; 
+        &:hover { color: @focus; }
+    }
     #currentPage { .horiMargin(15px); font-size:16px; min-width:15px; display:inline-block; text-align: center; }
     .disabled { pointer-events: none; opacity:0.2; }
 

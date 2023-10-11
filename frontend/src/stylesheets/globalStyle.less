@@ -2,17 +2,59 @@
 @import "snippets/less/baseStyle.less";
 @import url('https://fonts.googleapis.com/css2?family=Lato:wght@300;400;700&family=Roboto:ital,wght@0,100;0,300;0,500;0,700;0,900;1,100;1,300;1,500;1,700;1,900&display=swap');
 
-.viewTitle 
-{ 
-    color:white; font-size:36px; font-weight: 300; 
-    font-family: 'Lato', sans-serif; 
-    font-family: 'Roboto', sans-serif; 
-    .tight;
-    padding-bottom:40px; 
+.gradBackground
+{
+    background-image: url('../assets/gradient.png');
+    background-size: cover;
 }
 
+.minTextarea
+{
+    color:white;
+    border:1px solid #252525;
+    .horiMargin(5px);
+    background:transparent; 
+    padding-left:5px; box-sizing: border-box; text-align: left;
+    appearance: none;
+    outline: none;
+}
+
+.optionIcon
+{
+    padding:5px 10px 5px 10px;
+    font-size:14px;
+    border-radius: 5px;
+    background: @background;
+    cursor:pointer;
+    user-select: none;
+
+    &:hover { background: @focusDark; color:@focus; }
+    &:disabled { opacity: 0.3 !important; pointer-events: none !important; }
+}
+
+.fieldTitle { color:white; .tight; font-size:14px; }
+.fieldText 
+{ 
+    .fullSize;
+    appearance: none;
+    outline: none;
+    background: @background;
+    border:1px solid @border;
+    border-radius: 5px;
+    color:white;
+    padding-left:10px;
+    font-size:14px;
+    margin:0px;
+
+    &:disabled { opacity: 0.6; cursor:not-allowed; }
+ }
 .minButtonBase { cursor:pointer; border:0px; transition: all 0.2s ease; }
 .figureHeader { color: @foreground; font-weight:bold; font-size:30px; }
 .arrowButton { color:white; background:transparent; .minButtonBase; }
 .arrowButton.disabled { opacity: 0.4; cursor:none; }
 .arrowPageNavText { font-size:16px; font-family: Consolas; color:white; .horiMargin(9px); }
+.defaultButton 
+{ 
+    .minButtonBase; background: transparent; border: 1px solid @border; color: @foreground; padding:10px; border-radius: 5px; 
+    &:disabled { opacity: 0.5; user-select: none; cursor:not-allowed; }
+}

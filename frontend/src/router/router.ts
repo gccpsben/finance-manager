@@ -39,9 +39,10 @@ const router = createRouter(
                     props: true
                 },
                 {
-                    path: 'transactions',
+                    path: 'transactions/:pubID?',
                     name: 'transactions',
-                    component: transactionsPage
+                    component: transactionsPage,
+                    props: true
                 },
                 {
                     path: 'charts',

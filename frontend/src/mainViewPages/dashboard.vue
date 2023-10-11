@@ -30,7 +30,7 @@
                         'fullSize': true,
                         'pendingTxn': props.currentItem.isTypePending && !props.currentItem.isResolved,
                         'resolvedTxn': props.currentItem.isTypePending && props.currentItem.isResolved,
-                    }">
+                    }" @click="viewTxn(props.currentItem['pubID'])" class="fullSize highlightableRow">
                         <div class="listItemTitle middleLeft">{{ store.getDateAge(props.currentItem["date"]) }}</div>
                         <div class="listItemTitle middleLeft">
                             {{ props.currentItem["title"] }}
@@ -69,7 +69,8 @@
             <list-cell v-area="'_30dIncomesList'" title="30d Incomes" :noItemsText="'No Incomes'"
             :items="store.toReversed(store.dashboardSummary.incomes30d ?? [])">
                 <template #row="props">
-                    <grid-shortcut columns="50px 1fr 1fr" class="fullSize">
+                    <grid-shortcut columns="50px 1fr 1fr" @click="viewTxn(props.currentItem['pubID'])"
+                    class="fullSize highlightableRow">
                         <div class="listItemTitle middleLeft">{{ store.getDateAge(props.currentItem["date"]) }}</div>
                         <div class="listItemTitle middleLeft">{{ props.currentItem["title"] }}</div>
                         <div :title="getAmountTooltip(props.currentItem)" class="listItemTitle middleRight">
@@ -107,8 +108,7 @@
 {
     overflow-x:hidden; .fullSize; padding:50px; box-sizing: border-box;
     font-family: 'Schibsted Grotesk', sans-serif;
-    background-image: url('../assets/gradient.png');
-    background-size: COVER;
+    .gradBackground;
 
     .pendingTxn { color:@yellow !important; }
     .resolvedTxn { .fg(inherit); }
@@ -131,6 +131,12 @@
         .listItemTitle 
         {
             .fg(inherit); font-size:14px; overflow:hidden; white-space: nowrap; text-overflow: ellipsis; 
+        }
+
+        .highlightableRow
+        {
+            cursor:pointer;
+            &:hover { color: @focus; }
         }
     }
 }
@@ -166,7 +172,12 @@ export default
     directives: {'area':vArea},
     data()
     {
-        return { store: useMainStore() };
+        let data = 
+        { 
+            store: useMainStore(),
+            selectedItem: 'Main'
+        };
+        return data;
     },
     mounted() { this.store.updateAll(); },
     methods:
@@ -186,6 +197,10 @@ export default
                 output += `${currency?.symbol}: ${(value as any).toFixed(3)}\n`;
             }
             return output;
+        },
+        viewTxn(pubID:string)
+        {
+            this.$router.push({name: 'transactions', params: { pubID: pubID }})
         }
     }
 }

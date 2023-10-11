@@ -40,8 +40,8 @@
 -->
 
 <template>
-    <div @focusin="opened=true" @focusout="opened=false" id="topDiv" tabindex=0>
-        <div @click="opened=!opened" style="height:100%;">
+    <div @focusin="opened=true" @focusout="opened=false" id="root_custom_dropdown" tabindex=0>
+        <div @mousedown="opened=!opened" style="height:100%;">
             <slot id="selector" name="main" :currentItem="currentItem">
                 <grid-shortcut columns="1fr 25px" style="padding:5px; cursor:pointer; height:100%; box-sizing: border-box;">
                     <div style="color:white; padding-left:5px;" class="middleLeft">
@@ -109,12 +109,13 @@ export default
 
 <style lang="less" scoped>
 @import '@/stylesheets/globalStyle.less';
-#topDiv
+#root_custom_dropdown
 {
     position:relative;
     width:fit-content;
     background:@backgroundDark;
     height:100%;
+    user-select: none;
 
     #unselectOverlay { position:fixed; top:0; bottom:0; left:0; right:0; }
     #dropdownMenu 

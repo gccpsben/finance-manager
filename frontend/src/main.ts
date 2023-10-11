@@ -17,25 +17,27 @@ import listCell from "@/components/controls/listCell.vue";
 import totalValueGraphCell from "@/components/controls/totalValueGraphCell.vue";
 import customTable from "@/components/custom-table.vue";
 import viewTitle from "@/components/controls/viewTitle.vue";
-import customDropdown from "@/components/custom-dropdown.vue"
+import customDropdown from "@/components/custom-dropdown.vue";
+import vBasic from 'snippets/vite-vue-ts/directives/vBasic'
 import { PrismaClient } from '@prisma/client';
-import vNumberOnly from 'snippets/vite-vue-ts/directives/vNumberOnly';
+// import vNumberOnly from 'snippets/vite-vue-ts/directives/vNumberOnly';
 import containerValuesGraphCellVue from './components/controls/containerValuesGraphCell.vue'
 
 const app = createApp(App)
 app.use(VueAxios, axios)
 app.use(router)
 app.use(createMetaManager())
-app.directive('number-only', vNumberOnly);
-app.component('grid-shortcut',gridShortcut)
-app.component('fa-icon', faIcon)
-app.component('grid-area', gridArea)
-app.component('cell', cell)
-app.component('number-cell', numberCell)
-app.component('custom-table', customTable)
-app.component('list-cell', listCell)
-app.component('total-value-graph-cell', totalValueGraphCell)
-app.component('custom-dropdown', customDropdown)
+// app.directive('number-only', vNumberOnly);
+app.directive('basic', vBasic);
+app.component('grid-shortcut',gridShortcut);
+app.component('fa-icon', faIcon);
+app.component('grid-area', gridArea);
+app.component('cell', cell);
+app.component('number-cell', numberCell);
+app.component('custom-table', customTable);
+app.component('list-cell', listCell);
+app.component('total-value-graph-cell', totalValueGraphCell);
+app.component('custom-dropdown', customDropdown);
 app.component('container-values-graph-cell', containerValuesGraphCellVue);
 app.component('view-title', viewTitle);
 

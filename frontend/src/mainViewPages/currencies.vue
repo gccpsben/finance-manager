@@ -3,7 +3,7 @@
 
         <view-title :title="title"></view-title>
 
-        <pagination v-if="!selectedCurrencyID" :itemsInPage="20" :items="store.currencies" v-slot="props" class="fullSize"> 
+        <pagination v-if="!selectedCurrencyID" :itemsInPage="20" :items="store.currencies" v-slot="props" class="fullSize" style="height:calc(100svh - 170px);"> 
             <div id="panel">
                 <grid-shortcut rows="1fr" columns="1fr auto">
                     <h2 class="panelTitle">All Currencies</h2>
@@ -81,10 +81,9 @@
 #topDiv
 {
     padding:50px; box-sizing: border-box;
-    overflow-x:hidden; .fullSize;
+    overflow-x:hidden;
     font-family: 'Schibsted Grotesk', sans-serif;
-    background-image: url('../assets/gradient.png');
-    background-size: contain;
+    .gradBackground;
 
     input 
     {
@@ -99,7 +98,7 @@
     #panel
     {
         // padding:15px;
-        height: calc(100svh - 190px);
+        height: calc(100svh - 290px);
         box-sizing:border-box;
         .panelTitle { text-align:start; color:gray; font-size:14px; .tight; display:inline; }
         .pageSelector  { color:gray !important; transform: translateY(-3px); }
