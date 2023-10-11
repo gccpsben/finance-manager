@@ -4,6 +4,7 @@ import * as mongoose from "mongoose";
 
 export let databaseURL:string;
 
+export const databaseTimeoutMS = 60000;
 export const databaseToUse = process.env.FINANCE_DB_NAME || "finance";
 
 export async function init(url:string)
@@ -14,7 +15,7 @@ export async function init(url:string)
         
         logYellow(`Connecting to finance database "${databaseToUse}"...`);
         mongoose.set('strictQuery', true);
-        await mongoose.connect(url, { dbName: databaseToUse });
+        await mongoose.connect(url, { dbName: databaseToUse, connectTimeoutMS: databaseTimeoutMS });
 
         if (process.env.MONGOOSE_VERBOSE == 'true')
             mongoose.set('debug', function (coll, method, query, doc) { log(`Mongoose Request: ${coll}.${method} ${JSON.stringify(query)}`); });

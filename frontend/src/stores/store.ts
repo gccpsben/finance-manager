@@ -2,12 +2,34 @@ import type { containers, currencies, totalValueHistory, transactionTypes, trans
 import axios, { AxiosError } from 'axios';
 import { defineStore } from 'pinia'
 
+export type Subpage =
+{
+    name: string;
+}
+
 export type PageDefinition =
 {
     name:string; 
     displayName:string;
     iconClass:string;
+    isExpanded: boolean;
+    subpages: Subpage[];
 }
+
+export class NavBarItem
+{
+    type: string = "folder";
+
+}
+
+export const API_LOGIN_PATH = "./api/v1/finance/login";
+export const API_SUMMARY_PATH = "/api/v1/finance/summary";
+export const API_TOTAL_VALUE_GRAPH_PATH = "/api/v1/finance/charts/totalValue";
+export const API_TRANSACTIONS_PATH = "/api/v1/finance/transactions";
+export const API_CURRENCIES_PATH = "/api/v1/finance/currencies";
+export const API_CONTAINERS_PATH = "/api/v1/finance/containers";
+export const API_TXN_TYPES_PATH = "/api/v1/finance/transactionTypes";
+export const API_GRAPHS_PATH = "/api/v1/finance/graphs";
 
 export const useMainStore = defineStore(
 {
@@ -43,7 +65,6 @@ export const useMainStore = defineStore(
                     iconClass: "fa fa-inbox"
                 }
             ] as PageDefinition[],
-            // allTransactions: [] as Array<transactions>,
             dashboardSummary: {} as any,
             graphsSummary: {} as any,
             currencies: [] as Array<currencies>,
@@ -105,45 +126,33 @@ export const useMainStore = defineStore(
         },
         async updateTotalValueHistory()
         {
-            var self = this;
-            var response = await self.authGet("/api/finance/charts/totalValue");
-            self.valueHistory = response!.data;
+            var response = await this.authGet(API_TOTAL_VALUE_GRAPH_PATH);
+            this.valueHistory = response!.data;
         },
         async updateDashboardSummary()
         {
-            var self = this;
-            var response = await self.authGet("/api/finance/summary");
-            self.dashboardSummary = response!.data;
+            let response = await this.authGet(API_SUMMARY_PATH);
+            this.dashboardSummary = response!.data;
         },
-        // async updateTransactions()
-        // {
-        //     var self = this;
-        //     var response = await self.authGet("/api/finance/transactions");
-        //     self.allTransactions = response!.data;
-        // },
         async updateCurrencies()
         {
-            var self = this;
-            var response = await self.authGet("/api/finance/currencies");
-            self.currencies = response!.data;
+            let response = await this.authGet(API_CURRENCIES_PATH);
+            this.currencies = response!.data;
         },
         async updateContainers()
         {
-            var self = this;
-            var response = await self.authGet("/api/finance/containers");
-            self.containers = response!.data;
+            var response = await this.authGet(API_CONTAINERS_PATH);
+            this.containers = response!.data;
         },
         async updateTxnTypes()
         {
-            var self = this;
-            var response = await self.authGet("/api/finance/transactionTypes");
-            self.txnTypes = response!.data;
+            var response = await this.authGet(API_TXN_TYPES_PATH);
+            this.txnTypes = response!.data;
         },
         async updateGraphsSummary()
         {
-            var self = this;
-            var response = await self.authGet("/api/finance/graphs");
-            self.graphsSummary = response!.data;
+            var response = await this.authGet(API_GRAPHS_PATH);
+            this.graphsSummary = response!.data;
         },
         setCookie(cname:string, cvalue:string, exdays:number): void
         {

@@ -9,7 +9,7 @@ let minify = require('express-minify');
 let envFilePath = process.argv[2] || ".env";
 require('dotenv-expand').expand(dotenv.config({path: envFilePath})); // load env and expand using dotenv-expand
 
-let isDevelopment = process.env.NODE_ENV == "development" || process.env.NODE_ENV == "dev"
+export let isDevelopment = process.env.NODE_ENV == "development" || process.env.NODE_ENV == "dev"
 log(`env file loaded from ${envFilePath}`);
 
 (isDevelopment ? logRed : logGreen)(`Running with isDevelopment=${isDevelopment}`);

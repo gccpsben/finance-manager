@@ -11,7 +11,7 @@ export class ContainerClass
     pubID: string;
 
     @prop( { type:String, required: true} )
-    name: string;
+    name: string;    
 
     @prop( { type:String, required: true, default: [] } )
     ownersID: mongoose.Types.Array<string>;
@@ -188,6 +188,8 @@ export class ContainerClass
     { 
         return (await ContainerModel.find({pubID: containerID})).length > 0 
     };
+
+    public getDelimiter() { return "/"; }
 }
 
 export const ContainerModel = getModelForClass(ContainerClass);

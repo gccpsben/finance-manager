@@ -57,18 +57,16 @@ export default defineComponent(
     props: { "title": { default: "", type: String }, },
     setup()
     {
-        var data = 
+        let data = 
         {
             chartOptions: 
             {
                 responsive: true,
+                animation: false,
                 maintainAspectRatio: false,
                 plugins:
                 {
-                    legend:
-                    {
-                        display: false
-                    },
+                    legend: { display: false },
                 },
                 scales:
                 {
@@ -82,10 +80,7 @@ export default defineComponent(
                             minRotation: 0
                         }
                     },
-                    yAxes:
-                    {
-                        beginAtZero: false
-                    }
+                    yAxes: { beginAtZero: false }
                 }
             } as ChartOptions<'line'>,
         };
@@ -93,7 +88,7 @@ export default defineComponent(
     },
     data()
     {
-        var data = 
+        let data = 
         { 
             store: useMainStore(), 
             selectedVarient: "All" as "All" | "30d" | "7d"
@@ -104,11 +99,11 @@ export default defineComponent(
     {
         chartData()
         {
-            var selectedVarient = this.selectedVarient;
-            var sourceData = [...this.store.valueHistory] ?? [];
+            let selectedVarient = this.selectedVarient;
+            let sourceData = [...this.store.valueHistory] ?? [];
             sourceData.forEach(item => { item.date = new Date(item.date) })
 
-            var terminalDate = new Date();
+            let terminalDate = new Date();
 
             if (selectedVarient != "All")
             {
@@ -117,8 +112,8 @@ export default defineComponent(
                 sourceData = sourceData.filter(item => item.date > terminalDate);
             }
 
-            var xAxisLabels: Array<string> = sourceData.map(item => item.date.toLocaleDateString());
-            var yAxisData = sourceData.map(item => item.value);
+            let xAxisLabels: Array<string> = sourceData.map(item => item.date.toLocaleDateString());
+            let yAxisData = sourceData.map(item => item.value);
 
             const data: ChartData<'line'> = 
             {
@@ -130,7 +125,8 @@ export default defineComponent(
                         fill: false,
                         borderColor: 'rgb(75, 192, 192)',
                         tension: 0.1,
-                        pointRadius: 0
+                        pointRadius: 0,
+                        spanGaps: true
                     },
                 ],
             };
