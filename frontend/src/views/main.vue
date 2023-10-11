@@ -38,7 +38,6 @@ export default
                 <div v-basic="'#userDiv.center'" style="overflow:hidden;">
                     <div>
                         <div v-basic="'#userIcon.center'">P1</div>
-
                         <div id="accountButtonsContainer">
                             <button><i class="fa fa-gear"></i></button>
                             <button><i class="fa fa-right-from-bracket"></i></button>
@@ -69,34 +68,35 @@ export default
     </div>
 </template>
 
-<style lang="less">
+<style lang="less" scoped>
 @import "../stylesheets/globalStyle.less";
 
 #mobileBar { display:none; }
 
-@media only screen and (max-width: 600px) 
+@media only screen and (max-width: 800px) 
 {
     #topGrid
     {
         grid-template-columns: 1fr !important;
         grid-template-rows: 1fr 50px !important;
         grid-template-areas: 'content' 'leftBar' !important;
+
+        & :deep(#mobileBar)
+        { 
+            display:unset; 
+            .bg(#151515); .fg(gray);
+            box-sizing: border-box;
+
+            & > div
+            {
+                .size(50px, 50px); display:inline-block;
+                &.activeButton i { .fg(white); }
+                &.activeButton { .bg(@focusDark); box-sizing: border-box; }
+            }
+        }
     }
 
     #leftBar { display:none; }
-    #mobileBar 
-    { 
-        display:unset; 
-        .bg(#151515); .fg(white);
-        box-sizing: border-box;
-
-        & > div
-        {
-            .size(50px, 50px); display:inline-block;
-            &.activeButton i { color: #d7f6ff; }
-            &.activeButton { .bg(@focusDark); box-sizing: border-box; }
-        }
-    }
 }
 
 #leftBar
@@ -122,20 +122,29 @@ export default
         {
             .center; .gridBase; 
             transition: width 0s ease, background-color 0.5s ease; 
-            .horiPadding(30px); 
+            .horiPadding(10px); 
+            font-size:14px;
             grid-template-columns: 0.5fr 1fr; 
             grid-template-rows: 1fr; 
             grid-template-areas: 'icon header'; 
-            cursor:pointer; height:50px; 
+            cursor:pointer; height:40px; 
+            color: white;
 
-            i { grid-area:icon; display:inline-block; color:white; }
-            &:hover { .bg(@focus); transition: all 0.2s ease; }
-            div { grid-area:header; color:white; text-align: justify; }
+            i { grid-area:icon; display:inline-block; color: inherit; }
+            &:hover 
+            { 
+                .bg(@focusDark); transition: all 0.2s ease;
+            }
+            div { grid-area:header; text-align: justify; }
+        }
+
+        .activeButton 
+        { 
+            .bg(@backgroundDark); border-right:2px solid @focus; color: @focusLight; 
+            i { color: @focusLight; }
         }
     }
     
-    .activeButton i { color: #d7f6ff; }
-    .activeButton { .bg(@focusDark); border-right:2px solid @focus; }
     .mainGridCell { border-radius: @gridCellBorderRadius; box-sizing: border-box; }
 }
 

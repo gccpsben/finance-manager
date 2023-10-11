@@ -83,7 +83,7 @@
 </style>
 
 <script lang="ts">
-import { useMainStore } from '@/stores/store';
+import { API_LOGIN_PATH, useMainStore } from '@/stores/store';
 import { useMeta } from 'vue-meta';
 
 export default
@@ -115,7 +115,7 @@ export default
         login()
         {
             var self = this;
-            this.axios.post("./api/finance/login", 
+            this.axios.post(API_LOGIN_PATH, 
             {
                 "username": self.enteredUsername,
                 "password": self.enteredPassword

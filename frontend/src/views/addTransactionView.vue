@@ -238,7 +238,7 @@ export default
                 }
                 
                 this.isFormUploading = true;
-                this.store.authPost(`/api/finance/transactions/add`, body)
+                this.store.authPost(`/api/v1/finance/transactions`, body)
                 .then(() => { alert("Successfully Added Transaction."); self.reset(); })
                 .catch(error => { alert(`Error trying to upload transaction. ${error}`); })
                 .finally(() => { self.isFormUploading = false; });
