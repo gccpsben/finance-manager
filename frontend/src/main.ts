@@ -18,7 +18,8 @@ import netWorthGraphCell from "@/components/controls/netWorthGraphCell.vue";
 import customTable from "@/components/custom-table.vue";
 import viewTitle from "@/components/controls/viewTitle.vue";
 import customDropdown from "@/components/custom-dropdown.vue";
-import vBasic from 'snippets/vite-vue-ts/directives/vBasic'
+import vBasic from 'snippets/vite-vue-ts/directives/vBasic';
+import vArea from 'snippets/vite-vue-ts/directives/vArea'
 import { PrismaClient } from '@prisma/client';
 // import vNumberOnly from 'snippets/vite-vue-ts/directives/vNumberOnly';
 import containerValuesGraphCellVue from './components/controls/containerValuesGraphCell.vue'
@@ -27,7 +28,7 @@ const app = createApp(App)
 app.use(VueAxios, axios)
 app.use(router)
 app.use(createMetaManager())
-// app.directive('number-only', vNumberOnly);
+app.directive('area', vArea);
 app.directive('basic', vBasic);
 app.component('grid-shortcut',gridShortcut);
 app.component('fa-icon', faIcon);

@@ -2,10 +2,7 @@ import type { containers, currencies, totalValueHistory, transactionTypes, trans
 import axios, { AxiosError } from 'axios';
 import { defineStore } from 'pinia'
 
-export type Subpage =
-{
-    name: string;
-}
+export type Subpage = { name: string; }
 
 export type PageDefinition =
 {
@@ -16,14 +13,19 @@ export type PageDefinition =
     subpages: Subpage[];
 }
 
-export class NavBarItem
-{
-    type: string = "folder";
-}
+export class NavBarItem { type: string = "folder"; }
 
-export type NetWorthAPIResponse = {
+export type NetWorthAPIResponse = 
+{
     "netWorthHistory": {[timestamp:string]:number},
     "netWorthActualHistory": {[timestamp:string]:number}
+};
+
+export type BalanceValueHistoryAPIResponse = 
+{
+    timestamps: string[],
+    balance: {[currencyPubID:string]: number[]},
+    balanceActual: {[currencyPubID:string]: number[]}
 };
 
 export const API_LOGIN_PATH = "./api/v1/finance/login";
@@ -34,6 +36,7 @@ export const API_CURRENCIES_PATH = "/api/v1/finance/currencies";
 export const API_CONTAINERS_PATH = "/api/v1/finance/containers";
 export const API_TXN_TYPES_PATH = "/api/v1/finance/transactionTypes";
 export const API_GRAPHS_PATH = "/api/v1/finance/graphs";
+export const API_BAL_VAL_PATH = "/api/v1/finance/balanceHistory";
 
 export const useMainStore = defineStore(
 {
@@ -75,6 +78,7 @@ export const useMainStore = defineStore(
             containers: [] as Array<containers>,
             txnTypes: [] as Array<transactionTypes>,
             netWorthHistory: { "netWorthHistory": {}, "netWorthActualHistory": {} } as NetWorthAPIResponse,
+            balanceValueHistory: {} as BalanceValueHistoryAPIResponse,
             lastUpdateTime: new Date(0) as Date
         }
     ),
@@ -94,7 +98,8 @@ export const useMainStore = defineStore(
                 this.updateCurrencies(),
                 this.updateContainers(),
                 this.updateTxnTypes(),
-                this.updateNetWorthHistory()
+                this.updateNetWorthHistory(),
+                this.updateBalanceValueHistory()
             ]);
             this.lastUpdateTime = new Date();
         },
@@ -142,6 +147,11 @@ export const useMainStore = defineStore(
         {
             let response = await this.authGet(API_CURRENCIES_PATH);
             this.currencies = response!.data;
+        },
+        async updateBalanceValueHistory()
+        {
+            let response = await this.authGet(API_BAL_VAL_PATH);
+            this.balanceValueHistory = response!.data;
         },
         async updateContainers()
         {

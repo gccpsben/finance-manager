@@ -22,6 +22,11 @@
                     <BarChart :chart-data="compositionContainerGraphData" :options="compositionContainerGraphOptions" style="max-height:100%;"></BarChart>
                 </cell>
             </div>
+            <div v-area.class="'BalanceHistoryGraph'">
+                <cell title="Balance Value History">
+                    <LineChart :chartData="balanceValueHistoryGraphData" :options="balanceValueHistoryGraphOptions" style="max-height:100%;"></LineChart>
+                </cell>
+            </div>
         </div>
     </div>
 </template>
@@ -40,10 +45,10 @@
 
     #mainGrid
     {
-        .fullSize; display:grid; gap:15px;
+        height:auto; .fullWidth; display:grid; gap:15px;
         grid-template-columns: minmax(0,1fr) minmax(0,1fr);
-        grid-template-rows: minmax(0,400px) minmax(0,400px);
-        grid-template-areas: "TotalValueGraph ExpensesIncomesGraph" "AssetsCompositionByCurrencyGraph AssetsCompositionByContainerGraph";
+        grid-template-rows: minmax(0,400px) minmax(0,400px) minmax(0,700px);
+        grid-template-areas: "TotalValueGraph ExpensesIncomesGraph" "AssetsCompositionByCurrencyGraph AssetsCompositionByContainerGraph" "BalanceHistoryGraph BalanceHistoryGraph";
     }
 }
 
@@ -54,7 +59,7 @@
         .fullSize; display:grid; gap:15px;
         grid-template-columns: minmax(0,1fr) !important;
         grid-template-rows: minmax(0,500px) minmax(0,500px) minmax(0,500px) minmax(0,500px) !important;
-        grid-template-areas: 'TotalValueGraph' 'ExpensesIncomesGraph' 'AssetsCompositionByCurrencyGraph' 'AssetsCompositionByContainerGraph' !important;
+        grid-template-areas: 'TotalValueGraph' 'ExpensesIncomesGraph' 'AssetsCompositionByCurrencyGraph' 'AssetsCompositionByContainerGraph' "BalanceHistoryGraph BalanceHistoryGraph" !important;
     }
 }
 
@@ -62,7 +67,7 @@
 
 <script lang="ts">
 import { useMainStore } from "@/stores/store";
-import { BarChart, type ExtractComponentData } from 'vue-chart-3';
+import { BarChart, LineChart, type ExtractComponentData } from 'vue-chart-3';
 import { Chart, registerables, type ChartOptions, type ChartData } from "chart.js";
 import type { containers, transactions } from "@prisma/client";
 Chart.register(...registerables);
@@ -70,7 +75,7 @@ Chart.register(...registerables);
 export default 
 
 {
-    components: { BarChart },
+    components: { BarChart, LineChart },
     async mounted()
     {
         await this.store.updateCurrencies();
@@ -224,6 +229,61 @@ export default
                 },
             };
             return options;
+        },
+        balanceValueHistoryGraphData()
+        {
+            let timestamps = this.store.balanceValueHistory?.timestamps ?? [];
+            let balances = this.store.balanceValueHistory?.balance ?? {};
+
+            let labels = timestamps.map(x => new Date(parseInt(x)).toLocaleDateString());
+            let values: {[pubID:string]:number[]} = balances;
+            let hue = 0;
+
+            const data: ChartData<'line'> = 
+            {
+                labels: labels,
+                datasets: Object.entries(values).map(dataset => 
+                {
+                    let color = `hsl(${hue},50%,50%)`;
+                    hue += 40;
+                    return {
+                        data: dataset[1],
+                        fill: false,
+                        backgroundColor: color,
+                        borderColor: color,
+                        tension: 0.1,
+                        borderWidth: 0.7,
+                        pointRadius: 0,
+                        spanGaps: true,
+                        label: this.store.getCurrencySymbol(dataset[0]) };
+                })
+            };
+            return data;
+        },
+        balanceValueHistoryGraphOptions()
+        {
+            let data: ChartOptions<'line'> = 
+            {
+                responsive: true,
+                animation: false,
+                maintainAspectRatio: false,
+                plugins: { legend: { display: true, position: 'bottom'} },
+                scales:
+                {
+                    xAxes:
+                    {
+                        ticks:
+                        {
+                            autoSkip: true,
+                            maxTicksLimit: 3,
+                            maxRotation: 0,
+                            minRotation: 0
+                        }
+                    },
+                    yAxes: { beginAtZero: false }
+                }
+            };
+            return data;
         }
     }
 }
