@@ -1,7 +1,7 @@
 import { getModelForClass, modelOptions, prop } from "@typegoose/typegoose";
 import { AccountClassModel } from "./account";
 import { v4 as uuidv4 } from 'uuid';
-import { isDevelopment } from "./server";
+import { isDevelopment } from "../server";
 
 let jwt = require("jsonwebtoken");
 const jwtSecret = process.env.JWT_SECRET;

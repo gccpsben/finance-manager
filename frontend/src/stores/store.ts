@@ -19,12 +19,16 @@ export type PageDefinition =
 export class NavBarItem
 {
     type: string = "folder";
-
 }
+
+export type NetWorthAPIResponse = {
+    "netWorthHistory": {[timestamp:string]:number},
+    "netWorthActualHistory": {[timestamp:string]:number}
+};
 
 export const API_LOGIN_PATH = "./api/v1/finance/login";
 export const API_SUMMARY_PATH = "/api/v1/finance/summary";
-export const API_TOTAL_VALUE_GRAPH_PATH = "/api/v1/finance/charts/totalValue";
+export const API_NET_WORTH_GRAPH_PATH = "/api/v1/finance/netWorth";
 export const API_TRANSACTIONS_PATH = "/api/v1/finance/transactions";
 export const API_CURRENCIES_PATH = "/api/v1/finance/currencies";
 export const API_CONTAINERS_PATH = "/api/v1/finance/containers";
@@ -70,7 +74,7 @@ export const useMainStore = defineStore(
             currencies: [] as Array<currencies>,
             containers: [] as Array<containers>,
             txnTypes: [] as Array<transactionTypes>,
-            valueHistory: [] as Array<totalValueHistory>,
+            netWorthHistory: { "netWorthHistory": {}, "netWorthActualHistory": {} } as NetWorthAPIResponse,
             lastUpdateTime: new Date(0) as Date
         }
     ),
@@ -90,7 +94,7 @@ export const useMainStore = defineStore(
                 this.updateCurrencies(),
                 this.updateContainers(),
                 this.updateTxnTypes(),
-                this.updateTotalValueHistory()
+                this.updateNetWorthHistory()
             ]);
             this.lastUpdateTime = new Date();
         },
@@ -124,10 +128,10 @@ export const useMainStore = defineStore(
                 else throw error as any;
             });
         },
-        async updateTotalValueHistory()
+        async updateNetWorthHistory()
         {
-            var response = await this.authGet(API_TOTAL_VALUE_GRAPH_PATH);
-            this.valueHistory = response!.data;
+            var response = await this.authGet(API_NET_WORTH_GRAPH_PATH);
+            this.netWorthHistory = response!.data;
         },
         async updateDashboardSummary()
         {
@@ -219,6 +223,11 @@ export const useMainStore = defineStore(
         {
             if (this.currencies.find(x => x.pubID == currencyID) == undefined) console.log(`Unknown currency ${currencyID} found.`);
             return amount * (this.currencies.find(x => x.pubID == currencyID)?.rate as number ?? 0);
-        }
+        },
+
+        findContainerByPubID(pubID:string) { return this.containers.find(x => x.pubID == pubID); },
+        isContainerExist(pubID:string) { return this.findContainerByPubID(pubID) != undefined; },
+        findCurrencyByPubID(pubID:string) { return this.currencies.find(x => x.pubID == pubID); },
+
     }
 })

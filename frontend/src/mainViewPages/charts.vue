@@ -5,7 +5,7 @@
 
         <div id="mainGrid">
             <grid-area area="TotalValueGraph">
-                <total-value-graph-cell title="Total Value"></total-value-graph-cell>
+                <net-worth-graph-cell title="Net Worth"></net-worth-graph-cell>
             </grid-area>
             <grid-area area="ExpensesIncomesGraph">
                 <cell title="Expenses and Incomes">

@@ -182,32 +182,43 @@
         <div id="viewTxnGrid" v-if="selectedTransaction?.currentData != undefined && selectedTransactionID != ''">
             <div class="field">
                 <div class="tight xLeft yCenter fieldTitle">Public ID: </div>
-                <input type="text" class="fieldText" placeholder="Transaction Name" :value="(selectedTransaction.currentData as any).pubID" disabled/>
+                <input type="text" class="fieldText" placeholder="Transaction Name" 
+                :value="(selectedTransaction.currentData as any).pubID" disabled/>
             </div>
             <div class="field">
                 <div class="tight xLeft yCenter fieldTitle">Name: </div>
-                <input type="text" class="fieldText" placeholder="Transaction Name" v-model="(selectedTransaction.currentData as any).title"/>
+                <input type="text" class="fieldText" placeholder="Transaction Name" 
+                v-model="(selectedTransaction.currentData as any).title"/>
             </div>
-            <div class="field" v-if="(selectedTransaction.currentData as any).from">
+            <div class="field">
                 <div class="tight xLeft yCenter fieldTitle">From Container: </div>
                 <div class="fullSize dropdown">
-                    <custom-dropdown :items="mainStore.containers.map(x => x.pubID)" v-model:currentItem="(selectedTransaction.currentData as any).from.containerID">
+                    <custom-dropdown :items="mainStore.containers.map(x => x.pubID)" 
+                        v-model:currentItem="(selectedTransaction.currentData as any).from.containerID">
                         <template #itemToText="props">
-                            <div class="middleLeft">{{ mainStore.containers.find(x => x.pubID == props.item)?.name }}</div>
+                            <div class="middleLeft" v-if="mainStore.isContainerExist(props.item)">
+                                {{ mainStore.findContainerByPubID(props.item)?.name}}
+                            </div>
+                            <div class="middleLeft disabled" v-else>None</div>
                         </template>
                     </custom-dropdown>
                 </div>
             </div>
-            <div class="field" v-if="(selectedTransaction.currentData as any).to">
+            <div class="field">
                 <div class="tight xLeft yCenter fieldTitle">To Container: </div>
                 <div class="fullSize dropdown">
-                    <custom-dropdown :items="mainStore.containers.map(x => x.pubID)" v-model:currentItem="(selectedTransaction.currentData as any).to.containerID">
+                    <custom-dropdown :items="mainStore.containers.map(x => x.pubID)" 
+                        v-model:currentItem="(selectedTransaction.currentData as any).to.containerID">
                         <template #itemToText="props">
-                            <div class="middleLeft">{{ mainStore.containers.find(x => x.pubID == props.item)?.name }}</div>
+                            <div class="middleLeft" v-if="mainStore.isContainerExist(props.item)">
+                                {{ mainStore.findContainerByPubID(props.item)?.name}}
+                            </div>
+                            <div class="middleLeft disabled" v-else>None</div>
                         </template>
                     </custom-dropdown>
                 </div>
             </div>
+
             <div class="fullSize xRight" v-if="selectedTransaction?.currentData">
                 <button class="defaultButton" :disabled="!hasTxnModified" @click="resetForm()">Reset</button>
                 <button class="defaultButton" :disabled="!hasTxnModified">Save</button>
@@ -474,7 +485,7 @@ textarea
         display:grid;
         gap: 15px;
         grid-template-columns: 1fr;
-        grid-template-rows: auto auto 1fr;
+        grid-template-rows: auto auto auto 1fr;
         height: calc(100svh - 190px);
 
         .field
@@ -617,7 +628,15 @@ watch(selectedTransactionID, async () =>
 {
     let queryURL = API_TRANSACTIONS_PATH;
     let txnObject = (await store.authGet(`${queryURL}?pubid=${selectedTransactionID.value}`))!.data;
-    nextTick(() => { selectedTransaction.value = new ResettableObject<any>(txnObject); });
+
+    if (txnObject.to === undefined) txnObject.to = {};
+    if (txnObject.from === undefined) txnObject.from = {};
+
+    nextTick(() => 
+    { 
+        selectedTransaction.value = new ResettableObject<any>(txnObject);
+        let currentData = selectedTransaction.value.currentData;
+    });
     await mainStore.updateContainers();
 
 }, { immediate: true, deep: true });

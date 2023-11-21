@@ -89,8 +89,8 @@ export class TransactionClass
     public async getChangeInValue(allCurrencies?:CurrencyClass[])
     {
         if (this.from == undefined && this.to != undefined) return await this.to.amount.getValue(allCurrencies);
-        else if (this.from != undefined && this.to != undefined) return await this.to.amount.getValue(allCurrencies) - await this.from.amount.getValue(allCurrencies);
-        else if (this.from != undefined && this.to == undefined) return await this.from.amount.getValue(allCurrencies) * -1;
+        else if (this.from != undefined && this.to != undefined) return (await this.to.amount.getValue(allCurrencies) - await this.from.amount.getValue(allCurrencies));
+        else if (this.from != undefined && this.to == undefined) return (await this.from.amount.getValue(allCurrencies)) * -1;
         return 0;
     }
 }

@@ -10,8 +10,11 @@
                 <h2 :class="{'selected': selectedVarient=='7d'}" @click="selectedVarient = '7d'" 
                 class="graphPanelTitle variantTab">7d</h2>
 
-                <h2 :class="{'selected': selectedVarient=='30d'}" @click="selectedVarient = '30d'" 
-                class="graphPanelTitle variantTab">30d</h2>
+                <h2 :class="{'selected': selectedVarient=='1m'}" @click="selectedVarient = '1m'" 
+                class="graphPanelTitle variantTab">1m</h2>
+
+                <h2 :class="{'selected': selectedVarient=='6m'}" @click="selectedVarient = '6m'" 
+                class="graphPanelTitle variantTab">6m</h2>
 
             </div>
         </grid-shortcut>
@@ -32,6 +35,8 @@
     {
         & > h2:nth-child(2) { margin-left:5px; }
         & > h2:nth-child(3) { margin-left:5px; }
+        & > h2:nth-child(4) { margin-left:5px; }
+        
         .variantTab { cursor: pointer; }
         .variantTab.selected { color:@focus;}
     }
@@ -44,7 +49,7 @@
 </style>
 
 <script lang="ts">
-import { defineComponent } from 'vue';
+import { defineComponent, toRaw } from 'vue';
 import { LineChart, type ExtractComponentData } from 'vue-chart-3';
 import { Chart, registerables, type ChartOptions, type ChartData } from "chart.js";
 import { useMainStore } from '@/stores/store';
@@ -91,7 +96,7 @@ export default defineComponent(
         let data = 
         { 
             store: useMainStore(), 
-            selectedVarient: "All" as "All" | "30d" | "7d"
+            selectedVarient: "All" as "All" | "1m" | "7d" | "6m"
         };
         return data;
     },
@@ -100,20 +105,26 @@ export default defineComponent(
         chartData()
         {
             let selectedVarient = this.selectedVarient;
-            let sourceData = [...this.store.valueHistory] ?? [];
-            sourceData.forEach(item => { item.date = new Date(item.date) })
+
+            let sourceData = structuredClone(toRaw(this.store.netWorthHistory?.netWorthHistory ?? {}));
 
             let terminalDate = new Date();
 
             if (selectedVarient != "All")
             {
-                if (selectedVarient == "30d") terminalDate.setDate(terminalDate.getDate() - 30);
+                if (selectedVarient == "1m") terminalDate.setDate(terminalDate.getDate() - 30);
                 else if (selectedVarient == "7d") terminalDate.setDate(terminalDate.getDate() - 7);
-                sourceData = sourceData.filter(item => item.date > terminalDate);
+                else if (selectedVarient == "6m") terminalDate.setDate(terminalDate.getDate() - 30 * 6);
+                
+                // remove all keys outside the viewing range
+                sourceData = Object.fromEntries(Object.entries(sourceData).filter(([key, value]) => 
+                {
+                    return parseInt(key) >= terminalDate.getTime();
+                }));
             }
 
-            let xAxisLabels: Array<string> = sourceData.map(item => item.date.toLocaleDateString());
-            let yAxisData = sourceData.map(item => item.value);
+            let xAxisLabels: string[] = Object.keys(sourceData).map(k => new Date(parseInt(k)).toLocaleDateString());
+            let yAxisData = Object.values(sourceData);
 
             const data: ChartData<'line'> = 
             {

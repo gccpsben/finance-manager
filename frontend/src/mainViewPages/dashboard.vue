@@ -90,8 +90,8 @@
                 </template>
             </list-cell>
 
-            <total-value-graph-cell v-area="'TotalValueGraph'"
-            title="Total Value"></total-value-graph-cell>
+            <net-worth-graph-cell v-area="'TotalValueGraph'"
+            title="Total Value"></net-worth-graph-cell>
 
             <container-values-graph-cell v-area="'containerValuesGraph'"
             title="Containers Value"></container-values-graph-cell>

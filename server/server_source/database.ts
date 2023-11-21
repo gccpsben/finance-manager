@@ -1,11 +1,18 @@
 import { logGreen, logRed, log, logYellow } from "./extendedLog";
 import * as mongo from "mongodb";
 import * as mongoose from "mongoose";
+import { TransactionModel } from "./finance/transaction";
 
 export let databaseURL:string;
 
 export const databaseTimeoutMS = 60000;
-export const databaseToUse = process.env.FINANCE_DB_NAME || "finance";
+export const databaseToUse = process.env.FINANCE_DB_NAME;
+
+export async function checkDatabaseIntegrity()
+{
+    await TransactionModel.collection.createIndex({ "title": "text" });
+    logGreen(`No database issue found!`);
+}
 
 export async function init(url:string)
 {
@@ -13,12 +20,20 @@ export async function init(url:string)
     {
         if (process.env.FINANCE_DB_FULL_URL == undefined) throw new Error("FINANCE_DB_FULL_URL is not defined.");
         
+        if (databaseToUse == undefined) throw new Error("databaseToUse is not defined in the env file.");
+
         logYellow(`Connecting to finance database "${databaseToUse}"...`);
         mongoose.set('strictQuery', true);
         await mongoose.connect(url, { dbName: databaseToUse, connectTimeoutMS: databaseTimeoutMS });
 
         if (process.env.MONGOOSE_VERBOSE == 'true')
-            mongoose.set('debug', function (coll, method, query, doc) { log(`Mongoose Request: ${coll}.${method} ${JSON.stringify(query)}`); });
+        {
+            mongoose.set('debug', function (coll, method, query, doc) 
+            { 
+                let time = new Date().toISOString();
+                log(`${time} [MONGOSE] ${coll}.${method} ${JSON.stringify(query)}`); 
+            });
+        }
     }
     catch(e)
     {
