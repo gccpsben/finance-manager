@@ -47,7 +47,7 @@
     {
         height:auto; .fullWidth; display:grid; gap:15px;
         grid-template-columns: minmax(0,1fr) minmax(0,1fr);
-        grid-template-rows: minmax(0,400px) minmax(0,400px) minmax(0,700px);
+        grid-template-rows: minmax(0,400px) minmax(0,400px) minmax(0,400px);
         grid-template-areas: "TotalValueGraph ExpensesIncomesGraph" "AssetsCompositionByCurrencyGraph AssetsCompositionByContainerGraph" "BalanceHistoryGraph BalanceHistoryGraph";
     }
 }
@@ -59,7 +59,7 @@
         .fullSize; display:grid; gap:15px;
         grid-template-columns: minmax(0,1fr) !important;
         grid-template-rows: minmax(0,500px) minmax(0,500px) minmax(0,500px) minmax(0,500px) !important;
-        grid-template-areas: 'TotalValueGraph' 'ExpensesIncomesGraph' 'AssetsCompositionByCurrencyGraph' 'AssetsCompositionByContainerGraph' "BalanceHistoryGraph BalanceHistoryGraph" !important;
+        grid-template-areas: 'TotalValueGraph' 'ExpensesIncomesGraph' 'AssetsCompositionByCurrencyGraph' 'AssetsCompositionByContainerGraph' "BalanceHistoryGraph" !important;
     }
 }
 
@@ -275,7 +275,7 @@ export default
                         ticks:
                         {
                             autoSkip: true,
-                            maxTicksLimit: 3,
+                            maxTicksLimit: 5,
                             maxRotation: 0,
                             minRotation: 0
                         }
