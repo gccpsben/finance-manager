@@ -7,4 +7,5 @@
 /server/server_production
 /dist
 /dist/*
+.vscode
 *.env
