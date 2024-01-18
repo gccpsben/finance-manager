@@ -1,7 +1,7 @@
 import express = require("express");
 import { Express, Request, Response } from "express";
 import { AccessTokenClassModel } from "../finance/accessToken";
-import { CurrencyModel, CurrencyRateClass } from "../finance/currency";
+import { CurrencyClass, CurrencyModel, CurrencyRateClass, CurrencyRateModel } from "../finance/currency";
 import { genUUID } from "../uuid";
 import { log } from "../extendedLog";
 
@@ -65,6 +65,20 @@ router.post(`/api/v1/finance/currencies/rates`, async (req: Request, res: Respon
         res.status(200).json({});
     }
     catch(error) { onError(req,res, error); }
+});
+
+router.get(`/api/v1/finance/currencies/rates/public`, async (req: Request, res:Response) => 
+{
+    try
+    {
+        // This is a public API, no need to check for auth
+        let currencySymbol = req.query["symbol"];
+        let currency = await CurrencyModel.findOne({symbol: currencySymbol});
+        if (!currency) throw new Error(`Cannot find currency with symbol "${currencySymbol}"`);
+        let latestRate = await currency.getLatestRate();
+        res.status(200).json({ "latestRate": latestRate, "name": currency.name, "symbol": currency.symbol, "fallbackRate": currency.fallbackRate });
+    }
+    catch(error) { onError(req, res, error); }
 });
 
 export default router;
