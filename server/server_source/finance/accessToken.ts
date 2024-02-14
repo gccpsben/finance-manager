@@ -4,7 +4,6 @@ import { v4 as uuidv4 } from 'uuid';
 import { isDevelopment } from "../server";
 
 let jwt = require("jsonwebtoken");
-const jwtSecret = process.env.JWT_SECRET;
 
 @modelOptions ( { schemaOptions: { autoCreate: true, collection:"accessTokens" } } )
 export class AccessTokenClass
@@ -32,7 +31,10 @@ export class AccessTokenClass
 
     public async generateJWTBearer() : Promise<string>
     {
+        const jwtSecret = process.env.JWT_SECRET;
+
         let ownerAccount = await AccountClassModel.findOne({username: this.username});
+
         if (ownerAccount == undefined) throw "Account not found";
 
         // sign a JWT, with the username-token pair, using password hash as the secret key
@@ -47,6 +49,8 @@ export class AccessTokenClass
     {
         try
         {
+            const jwtSecret = process.env.JWT_SECRET;
+
             if (requestedJWTToken.startsWith("Bearer ")) requestedJWTToken = requestedJWTToken.replace("Bearer ", "");
             let jwtContent = await jwt.verify(requestedJWTToken, jwtSecret);
             let isTokenValid = await AccessTokenClass.isTokenValid(jwtContent.username, jwtContent.token);
@@ -67,6 +71,7 @@ export class AccessTokenClass
         try
         {
             if (isDevelopment) return true;
+            const jwtSecret = process.env.JWT_SECRET;
 
             let rawAuthHeader: string = expressReqObject.get("Authorization");
             if (!rawAuthHeader.startsWith("Bearer ")) { return false; }

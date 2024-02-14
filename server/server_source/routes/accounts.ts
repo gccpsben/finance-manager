@@ -34,7 +34,7 @@ router.post(`/api/v1/finance/login`, async (req:any, res:any) =>
     catch(ex)
     {
         let statusCode = ex == "Username or password don't match" ? 401 : 400;
-        res.status(statusCode).json( {"error": ex} );
+        res.status(statusCode).json( {"error": ex.message} );
     }
 });
 

@@ -1,7 +1,7 @@
 import { getModelForClass, modelOptions, prop } from "@typegoose/typegoose";
 import { AccessTokenClass } from "./accessToken";
 
-const bcrypt = require('bcrypt');
+import bcrypt = require('bcrypt');
 const saltRounds = 10;
 
 @modelOptions ( { schemaOptions: { autoCreate: false, collection: "accounts" }  } )

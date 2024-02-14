@@ -4,7 +4,7 @@ import { CurrencyModel } from "./finance/currency";
 import { DataCache } from "./finance/dataCache";
 import { TotalValueRecordClass } from "./finance/totalValueRecord";
 import { TransactionClass } from "./finance/transaction";
-import { isDevelopment } from "./server";
+import { isDevelopment, isUnitTest } from "./server";
 
 export async function initialize()
 {
@@ -31,7 +31,7 @@ export async function initialize()
                 setInterval(updateFunc, 60000 * 60);
 
                 if (!isDevelopment) updateFunc();
-                else log("Not updating coingecko upon server start due to being in development mode.");
+                else if (!isUnitTest) log("Not updating coingecko upon server start due to being in development mode.");
             })();
 
             // Sync wallets transactions from blockchain every 60 mins
@@ -54,7 +54,7 @@ export async function initialize()
                 };
                 setInterval(syncWalletFunc, 60000 * 120);
                 if (!isDevelopment) setTimeout(syncWalletFunc, 10000);
-                else log("Not fethcing blockchain upon server start due to being in development mode.");
+                else if (!isUnitTest) log("Not fethcing blockchain upon server start due to being in development mode.");
 
             })();
         }

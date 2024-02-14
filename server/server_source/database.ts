@@ -5,8 +5,8 @@ import { TransactionModel } from "./finance/transaction";
 
 export let databaseURL:string;
 
-export const databaseTimeoutMS = 60000;
-export const databaseToUse = process.env.FINANCE_DB_NAME;
+export const databaseTimeoutMS = 60000 as number | undefined;
+export let databaseToUse = undefined as undefined | string;
 
 export async function checkDatabaseIntegrity()
 {
@@ -14,10 +14,17 @@ export async function checkDatabaseIntegrity()
     logGreen(`No database issue found!`);
 }
 
+export function loadDatabaseSettingsFromEnv()
+{
+    databaseToUse = process.env.FINANCE_DB_NAME;
+}
+
 export async function init(url:string)
 {
     try
     {
+        loadDatabaseSettingsFromEnv();
+        
         if (process.env.FINANCE_DB_FULL_URL == undefined) throw new Error("FINANCE_DB_FULL_URL is not defined.");
         
         if (databaseToUse == undefined) throw new Error("databaseToUse is not defined in the env file.");

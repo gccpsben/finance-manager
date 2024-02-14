@@ -4,7 +4,9 @@
     "outDir":"./server_build",
     "experimentalDecorators":true,
     "emitDecoratorMetadata": true,
-    "target": "es5"
+    "target": "es5",
+    "esModuleInterop": false,
+    "resolveJsonModule": true
   },
   "include": [
     "server_source/**/*.ts",
