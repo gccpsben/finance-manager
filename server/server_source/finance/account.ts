@@ -21,7 +21,9 @@ export class AccountClass
 
     public static async register(username:string, passwordRaw: string) : Promise<AccountClass>
     {
+        if (!username) throw "Username cannot be undefined";
         if (!passwordRaw) throw "Password did not pass vaildation";
+
         else if (username.length <= 1 || !username) throw "Username did not pass vaildation";
         else
         {

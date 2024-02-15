@@ -31,7 +31,7 @@ router.post(`/api/v1/finance/types/add`, async (req:any, res:any) =>
 
         res.json(await type.save()); 
     }
-    catch(error) { log(error); res.status(400).send({message: error}); }
+    catch(error) { res.status(400).send({message: error}); }
 });
 
 export default router;

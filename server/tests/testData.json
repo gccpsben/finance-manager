@@ -15,5 +15,15 @@
       },
       "__v": 0
     }
+  ],
+  "currencies":
+  [
+    {
+      "name": "Hong Kong Dollar",
+      "symbol": "HKD",
+      "__v": 0,
+      "pubID": "684fda75-46f3-b4c9-fb38-817065c44f3a",
+      "fallbackRate": 1
+    }
   ]
 }

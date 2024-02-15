@@ -130,7 +130,7 @@ router.post("/api/v1/finance/transactions", async (req, res) =>
 
         res.json(await txn.save()); 
     }
-    catch(error) { log(error); res.status(400).send({message: error}); }
+    catch(error) { res.status(400).send({message: error}); }
 });
 
 router.delete(`/api/v1/finance/transactions`, async (req,res) =>

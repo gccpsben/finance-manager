@@ -17,8 +17,8 @@ export class AccessTokenClass
     @prop( {required:true} )
     public token!: string;
     
-    @prop( {required:true} )
-    public useragent!: string;
+    @prop( {required:false} )
+    public useragent?: string;
 
     @prop( {required:true} )
     public issueTime!: Date;
@@ -70,7 +70,6 @@ export class AccessTokenClass
     {
         try
         {
-            if (isDevelopment) return true;
             const jwtSecret = process.env.JWT_SECRET;
 
             let rawAuthHeader: string = expressReqObject.get("Authorization");

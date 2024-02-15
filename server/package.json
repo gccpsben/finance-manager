@@ -10,7 +10,8 @@
 		"build_prod": "tsc --outDir ./server_production",
 		"docs:dev": "vuepress dev docs",
 		"docs:build": "vuepress build docs",
-		"test": "tsc && npx mocha ./tests/**/*.spec.js --delay --no-deprecation --exit"
+		"test": "tsc && npx mocha ./tests/**/*.spec.js --delay --no-deprecation --exit",
+		"testLong": "tsc && npx mocha ./tests/**/*.spec.js --delay --no-deprecation"
 	},
 	"dependencies": {
 		"@babel/cli": "^7.23.9",

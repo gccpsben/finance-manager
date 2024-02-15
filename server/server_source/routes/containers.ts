@@ -24,7 +24,7 @@ router.post(`/api/v1/finance/containers/add`, async (req:any,res:any) =>
         let newTxnID = genUUID();
         res.json(await new ContainerModel({...req.body, "pubID": newTxnID}).save()); 
     }
-    catch(error) { log(error); res.status(400); res.json( { errors: error } ); }
+    catch(error) { res.status(400); res.json( { errors: error } ); }
 });
 
 router.post(`/api/v1/finance/containers/remove`, async (req:any,res:any) =>

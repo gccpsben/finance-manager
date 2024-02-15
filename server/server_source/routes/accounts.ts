@@ -14,11 +14,7 @@ router.post("/api/v1/finance/accounts/register", async (req,res) =>
             id: newlyCreatedAccount["_id"]
         });
     }
-    catch(ex)
-    {
-        console.log(ex);
-        res.status(400).json( { "error": ex });
-    }
+    catch(ex) { res.status(400).json( { "error": ex }); }
 });
 router.post(`/api/v1/finance/login`, async (req:any, res:any) => 
 {
