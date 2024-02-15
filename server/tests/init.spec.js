@@ -17,6 +17,12 @@ mongoUnit.start().then(async () =>
     await server.startServer();
     server.startLogger();
 
+    // Run tests in this order:
+    require("./database.spec");
+    require("./frontend.spec");
+    require("./auth.spec");
+    require("./txns.spec");
+
     run() // this line start mocha tests
 });
 
