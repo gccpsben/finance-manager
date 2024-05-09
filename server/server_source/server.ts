@@ -11,6 +11,7 @@ import loadSSL, { isSSLDefined, sslCert, sslKey } from './ssl';
 import getMainRouter from './router';
 import morgan = require('morgan');
 import minify = require('express-minify');
+import compress = require('compression');
 import { checkDatabaseIntegrity } from './database';
 
 export let isDevelopment = true;
@@ -54,6 +55,7 @@ export async function startServer()
         // Express server starts
         expressApp = Express();
         expressApp.use(helmet({contentSecurityPolicy: false}));
+        expressApp.use(compress())
         server = isSSLDefined ? require('https').createServer({ key:sslKey, cert:sslCert }, expressApp) : require('http').createServer(expressApp);
         port = parseInt(process.env.PORT) || 55561;
 
