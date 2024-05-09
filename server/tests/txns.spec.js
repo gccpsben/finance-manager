@@ -239,7 +239,7 @@ const mongoUnit = require('mongo-unit');
             });
         });
 
-        it("Adding 1 earning txn: missing tokens", done => 
+        it("Adding 1 expenses txn: missing tokens", done => 
         {
             initBase.request('http://localhost:8081').post('/api/v1/finance/transactions').set('content-type', 'application/json')
             .send({})
@@ -252,7 +252,7 @@ const mongoUnit = require('mongo-unit');
             });
         });
 
-        it("Adding 1 earning txn: missing type", done => 
+        it("Adding 1 expenses txn: missing type", done => 
         {
             initBase.request('http://localhost:8081').post('/api/v1/finance/transactions').set('content-type', 'application/json')
             .set("Authorization", bearerToken)
@@ -279,7 +279,7 @@ const mongoUnit = require('mongo-unit');
             });
         });
 
-        it("Adding 1 earning txn: missing date", done => 
+        it("Adding 1 expenses txn: missing date", done => 
         {
             post('/api/v1/finance/transactions', 
             {
@@ -305,7 +305,7 @@ const mongoUnit = require('mongo-unit');
             });
         });
 
-        it("Adding 1 earning txn: missing containerID", done => 
+        it("Adding 1 expenses txn: missing containerID", done => 
         {
             post('/api/v1/finance/transactions', 
             {
@@ -331,7 +331,7 @@ const mongoUnit = require('mongo-unit');
             });
         });
 
-        it("Adding 1 earning txn: missing currencyID", done => 
+        it("Adding 1 expenses txn: missing currencyID", done => 
         {
             post('/api/v1/finance/transactions', 
             {
@@ -357,7 +357,7 @@ const mongoUnit = require('mongo-unit');
             });
         });
 
-        it("Adding 1 earning txn: missing value", done => 
+        it("Adding 1 expenses txn: missing value", done => 
         {
             post('/api/v1/finance/transactions', 
             {
@@ -383,7 +383,8 @@ const mongoUnit = require('mongo-unit');
             });
         });
 
-        it("Adding 1 valid earning txn", done => 
+        let txn1PubID = undefined;
+        it("Adding 1 valid expenses txn", done => 
         {
             post('/api/v1/finance/transactions', 
             {
@@ -403,6 +404,13 @@ const mongoUnit = require('mongo-unit');
             .end((error, response) =>
             { 
                 initBase.expect(response).status(200); 
+
+                initBase.expect(response.body).to.have.property("pubID");
+                initBase.expect(response.body).to.have.property("title").eql("Txn1");
+                initBase.expect(response.body).to.have.property("isTypePending").eql(false);
+                initBase.expect(response.body).to.have.property("isTypePending").eql(false);
+
+                txn1PubID = response.body.pubID;
 
                 if (error) { done(error); }
                 else done();
@@ -414,8 +422,11 @@ const mongoUnit = require('mongo-unit');
             initBase.request('http://localhost:8081').get('/api/v1/finance/transactions').set('content-type', 'application/json')
             .set("Authorization", bearerToken)
             .end((error, response) =>
-            { 
+            {                
                 initBase.expect(response).status(200); 
+                initBase.expect(response.body['rangeItems']).length(1);
+                initBase.expect(response.body['rangeItems'][0]).to.have.property("pubID");
+                initBase.expect(response.body['rangeItems'][0]).to.have.property("changeInValue").eql(-101.0001);
 
                 if (error) { done(error); }
                 else done();

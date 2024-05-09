@@ -45,7 +45,7 @@ router.get("/api/v1/finance/transactions", async (req, res) =>
                     res.json(
                     {
                         ...txnObject.toJSON(),
-                        changeInValue: await txnObject.getChangeInValue(currencies)
+                        "changeInValue": await txnObject.getChangeInValue(currencies)
                     });
                 }
                 return;
@@ -84,8 +84,8 @@ router.get("/api/v1/finance/transactions", async (req, res) =>
             {
                 hydratedPagedTxns.push(
                 {
-                    ...txn,
-                    changeInValue: await txn.getChangeInValue(currencies)
+                    ...txn.toJSON(),
+                    "changeInValue": await txn.getChangeInValue(currencies)
                 } as Unpacked<typeof hydratedPagedTxns>);
             }
 
@@ -94,7 +94,7 @@ router.get("/api/v1/finance/transactions", async (req, res) =>
                 totalItems: originalLength,
                 startingIndex: Math.min(startingIndex, originalLength),
                 endingIndex: Math.min(endingIndex, originalLength),
-                rangeItems: pagedTxns,
+                rangeItems: hydratedPagedTxns,
             }); 
         })();
     }
