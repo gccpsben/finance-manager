@@ -5,6 +5,7 @@ import { log, logBlue } from "../extendedLog";
 import { ContainerModel } from "../finance/container";
 import { genUUID } from "../uuid";
 import { CurrencyModel } from "../finance/currency";
+import { Unpacked } from "mongoose";
 
 const router = express.Router();
 
@@ -21,7 +22,7 @@ router.get("/api/v1/finance/transactions", async (req, res) =>
         let endingIndex = query.end ? parseInt(query?.end.toString()) : undefined;
         let searchText = query.text ? query?.text.toString() : undefined;
         let txnID = query.pubid ? query?.pubid.toString() : undefined;
-        let onlyUnresolved = query.onlyunresolved == "true";
+        let onlyUnresolved = query?.onlyunresolved == "true";
 
         // Postprocess query
         let rangeFullyDefined = startingIndex !== undefined && endingIndex !== undefined;
@@ -32,68 +33,70 @@ router.get("/api/v1/finance/transactions", async (req, res) =>
 
         // Process queries
         let currencies = await CurrencyModel.find();
-        let queryChain = TransactionModel.find();
-
-        // (If txnID is given, skip everything and return the txn only)
-        if (txnID)
+        (async () => 
         {
-            let txnObject = await TransactionModel.findOne({pubID: txnID});
-            if (txnObject == undefined) res.status(404).json({});
-            else
+            // (If txnID is given, skip everything and return the txn only)
+            if (txnID)
             {
-                res.json(
+                let txnObject = await TransactionModel.findOne({pubID: txnID});
+                if (txnObject == undefined) res.status(404).json({});
+                else
                 {
-                    ...txnObject.toJSON(),
-                    changeInValue: await txnObject.getChangeInValue(currencies)
-                });
+                    res.json(
+                    {
+                        ...txnObject.toJSON(),
+                        changeInValue: await txnObject.getChangeInValue(currencies)
+                    });
+                }
+                return;
             }
-            return;
-        }
 
-        // Filter by name (if any)
-        if (searchText !== undefined) queryChain = queryChain.find( {"$text": {"$search": searchText.toString()}} );
-        queryChain = queryChain.sort({"date":-1});
+            let queryChain = TransactionModel.find();
 
-        // Execute query
-        let originalTxns = await queryChain as any;
+            // Exclude resolved transaction (if onlyUnresolved is set to true)
+            if (onlyUnresolved)
+                queryChain = queryChain.find( { "isTypePending": true, "isResolved": false } );
 
-        // Filter based on resolution, and calculate changeInValue in the process
-        await (async function() 
-        {
-            let tempArray = [] as any;
-            for (let index = 0; index < originalTxns.length; index++) 
+            // Filter by name (if any)
+            if (searchText !== undefined) 
+                queryChain = queryChain.find( {"$text": {"$search": searchText.toString()}} );
+
+            // Sort by most recent
+            queryChain = queryChain.sort({"date":-1});
+
+            // This is the length of the results of the query WITHOUT pagination
+            let originalLength = await queryChain.clone().count();
+
+            // This is the list of txns that are within the [startingIndex, endingIndex], obtained via executing query
+            let pagedTxns = await (async () => 
             {
-                let tx = originalTxns[index];
-
-                if (onlyUnresolved && !tx.isTypePending) continue;
-                if (onlyUnresolved && (tx.isTypePending && tx.isResolved)) continue;
-
-                tempArray.push(
+                if (rangeFullyDefined) 
                 {
-                    ...tx.toJSON(),
-                    "changeInValue": await tx.getChangeInValue(currencies)
-                });
+                    queryChain = queryChain.skip(startingIndex).limit(endingIndex - startingIndex);
+                    return await queryChain;
+                }
+                else return await queryChain;
+            })();
+
+            // A list of txns that are within the requested range, with extra key "changeInValue"
+            let hydratedPagedTxns: (Unpacked<typeof pagedTxns> & { changeInValue: number })[] = [];
+            for (let txn of pagedTxns)
+            {
+                hydratedPagedTxns.push(
+                {
+                    ...txn,
+                    changeInValue: await txn.getChangeInValue(currencies)
+                } as Unpacked<typeof hydratedPagedTxns>);
             }
-            originalTxns = tempArray;
+
+            res.json(
+            {
+                totalItems: originalLength,
+                startingIndex: Math.min(startingIndex, originalLength),
+                endingIndex: Math.min(endingIndex, originalLength),
+                rangeItems: pagedTxns,
+            }); 
         })();
-
-        let originalLength = originalTxns.length;
-
-        // Calculate total value change, (since the changeInValue is already calculated)
-        let totalValueChange = originalTxns.reduce((acc, item) => { return acc + item.changeInValue }, 0);
-        
-        // Pagination should not be done in the DB side, since we lose the original count of items in array.
-        // Do this in the last
-        let pagedTxns = rangeFullyDefined ? originalTxns.slice(startingIndex, endingIndex) : originalTxns;
-
-        res.json(
-        {
-            totalItems: originalLength,
-            startingIndex: Math.min(startingIndex, originalLength),
-            endingIndex: Math.min(endingIndex, originalLength),
-            rangeItems: pagedTxns,
-            totalValueChange: totalValueChange
-        }); 
     }
     catch(error) { log(error); res.status(400).send({message: error}); }
 });

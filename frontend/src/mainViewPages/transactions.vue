@@ -20,9 +20,6 @@
                         <div class="xRight">
                             <div v-basic="'#summaryContainer.yCenter'">
                                 <h2 class="numbersPanelTitle variantTab tight" style="font-size:14px; display:inline; padding-right:15px;">
-                                    Total Value Change: {{ totalValueChange.toFixed(1) }}
-                                </h2>
-                                <h2 class="numbersPanelTitle variantTab tight" style="font-size:14px; display:inline; padding-right:15px;">
                                     {{ uiRangeText }}
                                 </h2>
                             </div>
@@ -492,9 +489,6 @@ const pageReadable = computed(
         mainPagination.pageIndex.value = currentPage.value;
     } 
 });
-// The total value change of the current query. Notice that this also includes the items OUTSIDE the current view, and this value is 
-// returned by the server.
-const totalValueChange = ref(0);
 
 function onSearchTextChange()
 {
@@ -512,7 +506,6 @@ async function updator(start:number, count:number): Promise<updatorReturnType>
     if (searchText.value !== "") fullQuery = `${queryURL}?start=${start}&end=${start+count}&text=${searchText.value}`;
     
     responseJSON = await sendQuery(fullQuery);
-    totalValueChange.value = responseJSON.totalValueChange;
 
     return {
         totalItems: responseJSON.totalItems,
