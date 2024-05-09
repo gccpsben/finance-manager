@@ -1,98 +1,4 @@
 <template>
-    <!-- <div id="topDiv">
-
-        <view-title :title="pageTitle" v-model:selectedItem="selectedItem"
-        :items="!selectedTransactionID ? ['All Transactions', 'Advanced Filter View'] : []">
-        </view-title>
-        
-        <div v-show="!selectedTransactionID">
-            
-            <network-pagination id="mainCell" v-if="selectedItem == 'All Transactions'"
-            style="height:calc(100svh - 190px);" :updator="updator" :total-items="totalItems"
-            ref="pagination" v-slot="props" :itemsInPage="15" :initialItems="100" v-model:currentPage="currentPage">
-
-                <grid-shortcut id="panel" style="padding:0px; box-sizing:border-box; gap:15px;" columns="minmax(0,1fr)" rows="auto minmax(0,1fr)">
-                    <div class="pageSelector">
-                        <div class="xLeft yCenter">
-                            <fa-icon class="optionIcon" icon="fa-solid fa-rotate"></fa-icon>
-                            <input type="text" class="fullHeight minTextarea" placeholder="Search for name..." v-model="searchText"
-                            style="width:50%;">
-                        </div>
-                        <div class="xRight">
-                            <div class="yCenter">
-                                <h2 class="numbersPanelTitle variantTab tight" style="font-size:14px; display:inline; padding-right:15px;">
-                                    {{ `Showing ${props.bounds.lower + 1} - ${props.bounds.upper + 1} of ${props.totalItems}` }}
-                                </h2>
-                            </div>
-                            <fa-icon @click="props.previous()" id="previousArrow" class="optionIcon" :disabled="!props.isPreviousArrowAllowed"
-                            icon="fa-solid fa-chevron-left"></fa-icon>
-                            <input type="number" size="1" v-int-only v-model.lazy="pageReadable"> 
-                            <fa-icon @click="props.next()" id="nextArrow" class="optionIcon" icon="fa-solid fa-chevron-right"></fa-icon>
-                        </div>
-                    </div>
-                    <div class="rel">
-                        <div class="fullSize abs" :class="{'darkened': props.isLoading}"
-                        style="display:grid; grid-template-rows: repeat(15,1fr);">
-                            <div class="row tight" @click="viewTransaction(item?.pubID)" style="font-size:14px;" v-for="item in props.pageItems">
-                                <div @click.stop="" v-area="'checkbox'" class="tight center">
-                                    <div class="checkbox">
-                                        <input type="checkbox"/>
-                                    </div>
-                                </div>
-                                <div v-area="'txnName'" class="tight yCenter ellipsisContainer">
-                                    <div>{{ item?.title }}</div>
-                                </div>
-                                <div v-area="'txnAge'" class="tight yCenter ellipsisContainer">
-                                    <div>{{ store.getDateAge(item?.date) }} ago</div>
-                                </div>
-                                <div v-area="'txnType'" class="tight yCenter ellipsisContainer">
-                                    <div>{{ getTxnTypeName(item?.typeID) }}</div>
-                                </div>
-                                <div v-area="'txnValueChange'" class="tight yCenter consoleFont ellipsisContainer" 
-                                :class="{'disabled': item?.changeInValue == 0}">
-                                    <div>{{ formatChangeInValue(item?.changeInValue) }}</div>
-                                </div>
-                                <div v-area="'txnFrom'" class="tight yCenter xRight ellipsisContainer">
-                                    <div v-if="item?.from">{{ getContainerName(item?.from.containerID) }}</div>
-                                </div>
-                                <div v-area="'arrowIcon'" class="center">
-                                    <fa-icon icon="fa-solid fa-arrow-right"></fa-icon>
-                                </div>
-                                <div v-area="'txnTo'" class="tight yCenter xLeft ellipsisContainer">
-                                    <div v-if="item?.to">{{ getContainerName(item?.to.containerID) }}</div>
-                                </div>
-                                <div v-area="'chips'" class="tight yCenter">
-                                    <div :class="{'botChip': item?.isFromBot}">{{ item?.isFromBot ? 'Bot' : '' }}</div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </grid-shortcut>
-
-            </network-pagination>
-
-            <div style="height:calc(100svh - 190px);" v-if="selectedItem == 'Advanced Filter View'">
-                <div style="display:grid; grid-template-columns: 1fr 30px; grid-template-rows: 1fr;">
-                    <textarea spellcheck="false" class="noResize fullWidth" v-model="advancedFilterViewExpress"></textarea>
-                    <div class="center" id="executeExpression" >
-                        <fa-icon icon="fa-solid fa-chevron-right"></fa-icon>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <div id="viewTxnGrid" v-show="selectedTransactionID">
-            <div class="field">
-                <div class="tight xLeft yCenter fieldTitle">Name: </div>
-                <input type="text" class="fieldText" placeholder="Transaction Name"/>
-            </div>
-            <div class="field">
-                <div class="tight xLeft yCenter fieldTitle">Name: </div>
-                <input type="text" class="fieldText" placeholder="Transaction Name"/>
-            </div>
-        </div>
-
-    </div> -->
 
     <div id="topDiv">
 
@@ -186,6 +92,11 @@
                 :value="(selectedTransaction.currentData as any).pubID" disabled/>
             </div>
             <div class="field">
+                <div class="tight xLeft yCenter fieldTitle">Date: </div>
+                <input type="text" class="fieldText" placeholder="Transaction Date (DD-MM-YYYY HH:MM:SS)" 
+                :value="formatDate(new Date((selectedTransaction.currentData as any).date))" disabled/>
+            </div>
+            <div class="field">
                 <div class="tight xLeft yCenter fieldTitle">Name: </div>
                 <input type="text" class="fieldText" placeholder="Transaction Name" 
                 v-model="(selectedTransaction.currentData as any).title"/>
@@ -219,7 +130,7 @@
                 </div>
             </div>
 
-            <div class="fullSize xRight" v-if="selectedTransaction?.currentData">
+            <div class="fullSize xRight" id="resetSaveContainer" v-if="selectedTransaction?.currentData">
                 <button class="defaultButton" :disabled="!hasTxnModified" @click="resetForm()">Reset</button>
                 <button class="defaultButton" :disabled="!hasTxnModified">Save</button>
             </div>
@@ -485,7 +396,7 @@ textarea
         display:grid;
         gap: 15px;
         grid-template-columns: 1fr;
-        grid-template-rows: auto auto auto 1fr;
+        grid-template-rows: auto auto auto auto 1fr;
         height: calc(100svh - 190px);
 
         .field
@@ -494,6 +405,14 @@ textarea
             grid-template-columns: 150px 1fr;
             grid-template-rows: 1fr;
             height:35px;
+        }
+
+        #resetSaveContainer
+        {
+            button:nth-child(2)
+            {
+                margin-left:5px;
+            }
         }
     }
 }
@@ -656,6 +575,11 @@ function viewTransaction(pubID: string)
         name: "transactions",
         params: { pubID: pubID }
     });
+}
+
+function formatDate(date:Date)
+{
+    return `${date.getFullYear()}-${date.getMonth()}-${date.getDate()} ${date.getHours()}:${date.getMinutes()}:${date.getSeconds()}`;
 }
 
 function resetForm() { if (selectedTransaction) selectedTransaction.value?.reset(); }
