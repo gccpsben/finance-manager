@@ -19,7 +19,8 @@ import customTable from "@/components/custom-table.vue";
 import viewTitle from "@/components/controls/viewTitle.vue";
 import customDropdown from "@/components/custom-dropdown.vue";
 import vBasic from 'snippets/vite-vue-ts/directives/vBasic';
-import vArea from 'snippets/vite-vue-ts/directives/vArea'
+import vArea from 'snippets/vite-vue-ts/directives/vArea';
+import vIntegerOnly from 'snippets/vite-vue-ts/directives/vIntegerOnly'
 import { PrismaClient } from '@prisma/client';
 // import vNumberOnly from 'snippets/vite-vue-ts/directives/vNumberOnly';
 import containerValuesGraphCellVue from './components/controls/containerValuesGraphCell.vue'
@@ -30,6 +31,7 @@ app.use(router)
 app.use(createMetaManager())
 app.directive('area', vArea);
 app.directive('basic', vBasic);
+app.directive('int-only', vIntegerOnly)
 app.component('grid-shortcut',gridShortcut);
 app.component('fa-icon', faIcon);
 app.component('grid-area', gridArea);
