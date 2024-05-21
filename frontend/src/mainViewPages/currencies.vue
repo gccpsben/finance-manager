@@ -3,7 +3,7 @@
 
         <view-title :title="title"></view-title>
 
-        <pagination v-if="!selectedCurrencyID" :itemsInPage="20" :items="store.currencies" v-slot="props" class="fullSize" style="height:calc(100svh - 170px);"> 
+        <pagination v-model:currentPage="currentPage" v-if="!selectedCurrencyID" :itemsInPage="15" :items="store.currencies" v-slot="props" class="fullSize" style="height:calc(100svh - 170px);"> 
             <div id="panel">
                 <grid-shortcut rows="1fr" columns="1fr auto">
                     <h2 class="panelTitle">All Currencies</h2>
@@ -97,7 +97,6 @@
 
     #panel
     {
-        // padding:15px;
         height: calc(100svh - 290px);
         box-sizing:border-box;
         .panelTitle { text-align:start; color:gray; font-size:14px; .tight; display:inline; }
@@ -131,7 +130,6 @@
                 display:grid; box-sizing: border-box;
                 grid-template-columns: 1fr 1fr 1fr;
                 grid-template-rows: 1fr 1fr;
-                
             }
 
             .txnName
@@ -166,13 +164,7 @@ export default
         pageReadable:
         {
             get() { return this.currentPage + 1; },
-            set(value:any) 
-            { 
-                if (this.$refs.pagination === undefined) return;
-                this.currentPage = value - 1; 
-                // alert("setting page to " + this.currentPage);
-                (this.$refs.pagination as any).setPage(this.currentPage);
-            }
+            set(value:any) { this.currentPage = value - 1; }
         },
         selectedCurrency()
         {
