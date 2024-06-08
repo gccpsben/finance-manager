@@ -493,7 +493,7 @@ function onSearchTextChange()
 
 async function updator(start:number, count:number): Promise<updatorReturnType>
 {
-    let sendQuery = async (url:string) => { return (await (store.authGet(url))!)!.data };
+    let sendQuery = async (url:string) => await store.authGet(url);
     let responseJSON = {} as any;
     let queryURL = API_TRANSACTIONS_PATH;
 
@@ -517,12 +517,12 @@ const filteredViewItems = ref([]) as Ref<HydratedTransaction[]>;
 const isAdvancedViewLoading = ref(false);
 const advancedFilterViewExpress = ref("");
 
-async function executeExpression()
-{
-    isAdvancedViewLoading.value = true;
-    let allTxns:any[] = (await (store.authGet(`/api/v1/finance/transactions`))!)!.data;
-    isAdvancedViewLoading.value = false;
-}
+// async function executeExpression()
+// {
+//     isAdvancedViewLoading.value = true;
+//     let allTxns:any[] = (await (store.authGet(`/api/v1/finance/transactions`))!)!.data;
+//     isAdvancedViewLoading.value = false;
+// }
 // #endregion
 
 // #region Single Transaction View

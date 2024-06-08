@@ -24,7 +24,37 @@
             </div>
             <div v-area.class="'BalanceHistoryGraph'">
                 <cell title="Balance Value History">
-                    <LineChart :chartData="balanceValueHistoryGraphData" :options="balanceValueHistoryGraphOptions" style="max-height:100%;"></LineChart>
+                    
+                    <NetworkCircularIndicator style="color:unset;" v-show="store.balanceValueHistory.isLoading || store.balanceValueHistory.error" 
+                    :isLoading="store.balanceValueHistory.isLoading"
+                    :error="store.balanceValueHistory.error"/>
+
+                    <LineChart v-if="balanceValueHistoryGraphData" v-show="!store.balanceValueHistory.isLoading && !store.balanceValueHistory.error" 
+                    :chartData="balanceValueHistoryGraphData" :options="balanceValueHistoryGraphOptions" style="max-height:100%;"></LineChart>
+                    
+                    <VRangeSlider v-show="!store.balanceValueHistory.isLoading && !store.balanceValueHistory.error" 
+                    color="#666666" density="compact" thumb-size="12" hide-details v-model="balanceValueHistoryRange" 
+                    :min="balanceValueHistoryStartDate?.getTime() ?? 0" 
+                    :max="balanceValueHistoryEndDate?.getTime() ?? 1" />
+
+                    <div v-show="!store.balanceValueHistory.isLoading && !store.balanceValueHistory.error"
+                     class="fullWidth" style="display:grid; grid-template-columns: auto 1fr auto 1fr auto; grid-template-rows: 1fr;">
+                        <h2 class="rangeSelectorDetail">
+                            {{ balanceValueHistoryStartDate ? formatDate(balanceValueHistoryStartDate) : '' }}
+                        </h2>
+                        <div class="xRight">
+                            <h2 class="rangeSelectorDetail">{{ formatDate(new Date(balanceValueHistoryRange[0])) }}</h2>
+                        </div>
+                        <div class="center" style="margin-left:16px; margin-right:16px;">
+                            <h2 class="rangeSelectorDetail"> - </h2>
+                        </div>
+                        <div class="xLeft">
+                            <h2 class="rangeSelectorDetail">{{ formatDate(new Date(balanceValueHistoryRange[1])) }}</h2>
+                        </div>
+                        <div class="xRight">
+                            <h2 class="rangeSelectorDetail">{{ balanceValueHistoryEndDate ? formatDate(balanceValueHistoryEndDate) : '' }}</h2>
+                        </div>
+                    </div>
                 </cell>
             </div>
         </div>
@@ -47,10 +77,12 @@
     {
         height:auto; .fullWidth; display:grid; gap:15px;
         grid-template-columns: minmax(0,1fr) minmax(0,1fr);
-        grid-template-rows: minmax(0,400px) minmax(0,400px) minmax(0,400px);
+        grid-template-rows: minmax(0,400px) minmax(0,400px) minmax(0,700px);
         grid-template-areas: "TotalValueGraph ExpensesIncomesGraph" "AssetsCompositionByCurrencyGraph AssetsCompositionByContainerGraph" "BalanceHistoryGraph BalanceHistoryGraph";
     }
 }
+
+.rangeSelectorDetail { text-align:start; color:gray; font-size:14px; .tight; display:inline; }
 
 @media only screen and (max-width: 600px) 
 {
@@ -69,31 +101,39 @@
 import { useMainStore } from "@/stores/store";
 import { BarChart, LineChart, type ExtractComponentData } from 'vue-chart-3';
 import { Chart, registerables, type ChartOptions, type ChartData } from "chart.js";
+import { VRangeSlider } from "vuetify/lib/components/index.mjs";
+import NetworkCircularIndicator from "@/components/networkCircularIndicator.vue";
 Chart.register(...registerables);
 
 export default 
 
 {
-    components: { BarChart, LineChart },
+    components: { BarChart, LineChart, VRangeSlider, NetworkCircularIndicator },
     async mounted()
     {
+        await this.store.graphsSummary.updateData();
         await this.store.currencies.updateData();
         await this.store.containers.updateData();
-        await this.store.graphsSummary.updateData();
+
+        if (!this.balanceValueHistoryStartDate || !this.balanceValueHistoryEndDate) return;
+        this.balanceValueHistoryRange = [this.balanceValueHistoryStartDate.getTime(), this.balanceValueHistoryEndDate.getTime()];
     },
     data()
     {
+        let store = useMainStore();
+
         let data = 
         {
-            store: useMainStore(),
+            store: store,
             columns:
             [
                 {
                     label: "Title",
                     field: "title",
-                    width:"1fr",
+                    width:"1fr"
                 }
-            ]
+            ],
+            balanceValueHistoryRange: [0, 1]
         };
         return data;
     },
@@ -108,7 +148,7 @@ export default
                 [
                     {
                         // Incomes
-                        data: this.store.graphsSummary.lastSuccessfulData?.expensesIncomesByDate?.incomes ?? [],
+                        data: this.store.graphsSummary?.lastSuccessfulData?.expensesIncomesByDate?.incomes ?? [],
                         backgroundColor: 'green'
                     },
                     {
@@ -231,10 +271,23 @@ export default
         },
         balanceValueHistoryGraphData()
         {
-            let timestamps = this.store.balanceValueHistory?.timestamps ?? [];
-            let balances = this.store.balanceValueHistory?.balance ?? {};
+            if (!this.store.balanceValueHistory.lastSuccessfulData) return;
+            if (this.store.balanceValueHistory.isLoading || this.store.balanceValueHistory.error) return;
+            if (!this.balanceValueHistoryRange) return;
 
-            let labels = timestamps.map(x => new Date(parseInt(x)).toLocaleDateString());
+            let timestamps = this.store.balanceValueHistory.lastSuccessfulData.timestamps ?? [];
+            let timestampsAsDates = timestamps.map(x => new Date(parseInt(x)));
+
+            let balances = this.store.balanceValueHistory.lastSuccessfulData.balance ?? {};
+
+            let viewingRange = [new Date(this.balanceValueHistoryRange[0]), new Date(this.balanceValueHistoryRange[1])];
+            let rangeStartTimestampsItem = timestampsAsDates.find(d => d.getTime() >= viewingRange[0].getTime());
+            let rangeEndTimestampsItem = timestampsAsDates.find(d => d.getTime() >= viewingRange[1].getTime());
+            let rangeStartTimestampsIndex = rangeStartTimestampsItem === undefined ? 0 : timestampsAsDates.indexOf(rangeStartTimestampsItem);
+            let rangeEndTimestampsIndex = rangeEndTimestampsItem === undefined ? 0 : timestampsAsDates.indexOf(rangeEndTimestampsItem);
+            let cropArrayToView = (array: any[]) => array.slice(rangeStartTimestampsIndex, rangeEndTimestampsIndex);
+
+            let labels = cropArrayToView(timestampsAsDates.map(x => x.toLocaleDateString()));
             let values: {[pubID:string]:number[]} = balances;
             let hue = 0;
 
@@ -246,7 +299,7 @@ export default
                     let color = `hsl(${hue},50%,50%)`;
                     hue += 40;
                     return {
-                        data: dataset[1],
+                        data: cropArrayToView(dataset[1]),
                         fill: false,
                         backgroundColor: color,
                         borderColor: color,
@@ -283,6 +336,23 @@ export default
                 }
             };
             return data;
+        },
+        balanceValueHistoryStartDate()
+        {
+            if (!this.store?.balanceValueHistory?.lastSuccessfulData?.timestamps) return undefined;
+            return new Date(parseInt(this.store.balanceValueHistory.lastSuccessfulData.timestamps[0]));
+        },
+        balanceValueHistoryEndDate()
+        {
+            if (!this.store?.balanceValueHistory?.lastSuccessfulData?.timestamps) return undefined;
+            return new Date(parseInt(this.store.balanceValueHistory.lastSuccessfulData.timestamps[this.store.balanceValueHistory.lastSuccessfulData.timestamps.length - 1]));
+        }
+    },
+    methods:
+    {
+        formatDate(date:Date)
+        {
+            return `${date.getFullYear()}/${date.getMonth() + 1}/${date.getDay() + 1}`;
         }
     }
 }
