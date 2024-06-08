@@ -1,10 +1,10 @@
 <template>
     <div class="center fullHeight">
-        <VTooltip v-if="error" :text="error">
+        <VTooltip v-if="error" :text="JSON.stringify(error)">
             <template v-slot:activator="{ props }">
-                <v-btn v-bind="props" style="color:pink" class="center">
+                <div v-bind="props" style="color:pink" class="center">
                     <span class="material-symbols-outlined">report</span>
-                </v-btn>
+                </div>
             </template>
         </VTooltip>
         <v-progress-circular v-else-if="isLoading" indeterminate />
@@ -12,12 +12,12 @@
 </template>
 
 <script lang="ts">
-import { VIcon, VProgressCircular, VTooltip } from 'vuetify/lib/components/index.mjs';
+import { VIcon, VProgressCircular, VTooltip, VBtn } from 'vuetify/lib/components/index.mjs';
 import faIcon from './faIcon.vue';
 
 export default
 {
-    components: { VProgressCircular, VIcon, faIcon, VTooltip },
+    components: { VProgressCircular, VIcon, faIcon, VTooltip, VBtn },
     props:
     {
         isLoading: { required: true, type: Boolean, default: true },
@@ -40,7 +40,6 @@ export default
 }
 </script>
 
-<style lang="less">
-@import '@/stylesheets/globalStyle.less';
+<style lang="less" scoped>
 @import 'https://cdn.jsdelivr.net/npm/vuetify@3.6.8/dist/vuetify-labs.css';
 </style>
