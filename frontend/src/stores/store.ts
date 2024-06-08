@@ -5,7 +5,8 @@ import type { RateDefinedCurrency } from '@/types/dtos/currenciesDTO';
 import type { DashboardSummary } from '@/types/dtos/dashboardSummaryDTO';
 import type { TxnType } from '@/types/dtos/txnTypesDTO';
 import axios, { AxiosError } from 'axios';
-import { defineStore } from 'pinia'
+import { defineStore } from 'pinia';
+import type { GraphsSummary } from '../types/dtos/graphsSummaryDTO';
 
 export type Subpage = { name: string; }
 
@@ -73,7 +74,7 @@ export const useMainStore = defineStore(
             containers: useNetworkRequest<ValueHydratedContainer[]>(API_CONTAINERS_PATH, { includeAuthHeaders: true }),
             txnTypes: useNetworkRequest<TxnType[]>(API_TXN_TYPES_PATH, { includeAuthHeaders: true }),
             netWorthHistory: { "netWorthHistory": {}, "netWorthActualHistory": {} } as NetWorthAPIResponse,
-            balanceValueHistory: {} as BalanceValueHistoryAPIResponse,
+            balanceValueHistory: useNetworkRequest<BalanceValueHistoryAPIResponse>(API_BAL_VAL_PATH, { includeAuthHeaders: true }),
             lastUpdateTime: new Date(0) as Date
         }
     ),
@@ -94,7 +95,7 @@ export const useMainStore = defineStore(
                 this.containers.updateData(),
                 this.txnTypes.updateData(),
                 this.updateNetWorthHistory(),
-                this.updateBalanceValueHistory()
+                this.balanceValueHistory.updateData()
             ]);
 
             this.lastUpdateTime = new Date();
@@ -107,14 +108,9 @@ export const useMainStore = defineStore(
         async authGet(url:string, extraHeaders:{[key: string]: string}={})
         {
             let headers = {headers: { "Authorization": this.getCookie("jwt"), ...extraHeaders }};
-            return axios.get(url, headers).catch(error => 
-            {
-                if (error.response && error.response.status == 401)
-                {
-                    this.resetAuth();
-                    throw error;
-                }
-            });
+            let response = await axios.get(url, headers);
+            if (response.status === 401) this.resetAuth();
+            return response;
         },
         async authPost(url:string, body:Object={}, extraHeaders:{[key: string]: string}={})
         {
@@ -134,11 +130,11 @@ export const useMainStore = defineStore(
             let response = await this.authGet(API_NET_WORTH_GRAPH_PATH);
             this.netWorthHistory = response!.data;
         },
-        async updateBalanceValueHistory()
-        {
-            let response = await this.authGet(API_BAL_VAL_PATH);
-            this.balanceValueHistory = response!.data;
-        },
+        // async updateBalanceValueHistory()
+        // {
+        //     let response = await this.authGet(API_BAL_VAL_PATH);
+        //     this.balanceValueHistory = response!.data;
+        // },
         setCookie(cname:string, cvalue:string, exdays:number): void
         {
             const d = new Date();
