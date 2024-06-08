@@ -56,9 +56,9 @@ export default
             isLoading: true,
             store: useMainStore(),
             containerName: "",
+            isFormUploading: false,
             unresolvedTransactions: [] as HydratedTransaction[],
             selectedTransaction: undefined as TxnType|undefined
-            selectedTransaction: undefined as transactionTypes|undefined
         }
     },
     methods:
