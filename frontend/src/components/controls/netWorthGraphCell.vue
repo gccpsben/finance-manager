@@ -125,7 +125,7 @@ export default defineComponent(
             }
 
             let xAxisLabels: string[] = Object.keys(sourceData).map(k => new Date(parseInt(k)).toLocaleDateString());
-            let yAxisData = Object.values(sourceData);
+            let yAxisData: any = Object.values(sourceData);
 
             const data: ChartData<'line'> = 
             {

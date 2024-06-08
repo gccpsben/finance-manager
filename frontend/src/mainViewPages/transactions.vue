@@ -500,7 +500,7 @@ async function updator(start:number, count:number): Promise<updatorReturnType>
     let fullQuery = `${queryURL}?start=${start}&end=${start+count}`;
     if (searchText.value !== "") fullQuery = `${queryURL}?start=${start}&end=${start+count}&text=${searchText.value}`;
     
-    responseJSON = await sendQuery(fullQuery);
+    responseJSON = (await sendQuery(fullQuery)).data;
 
     return {
         totalItems: responseJSON.totalItems,
