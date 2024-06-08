@@ -6,6 +6,7 @@ import { TotalValueRecordModel } from '../finance/totalValueRecord';
 import { TransactionModel } from '../finance/transaction';
 import { CurrencyModel, CurrencyRateModel } from '../finance/currency';
 import { LinearInterpolator } from '../LinearInterpolator';
+import { DataCache } from '../finance/dataCache';
 
 const router = express.Router();
 
@@ -114,9 +115,18 @@ router.get(`/api/v1/finance/summary`, async (req:any, res:any) =>
 { 
     // Check for permission and login
     if (!await AccessTokenClassModel.isRequestAuthenticated(req)) { res.status(401).json({}); return; }
+    res.json(await getSummary());
+});
 
-    let allTxns = (await TransactionModel.find());
-    let allCurrencies = await CurrencyModel.find();
+export async function getSummary(cache?: DataCache|undefined)
+{
+    if (cache == undefined) cache = new DataCache();
+    cache = await DataCache.ensureTransactions(cache);
+    cache = await DataCache.ensureContainers(cache);
+    cache = await DataCache.ensureCurrencies(cache);
+    
+    let allTxns = cache.allTransactions;
+    let allCurrencies = cache.allCurrencies;
     let oneWeekAgoDate = new Date();  oneWeekAgoDate.setDate(oneWeekAgoDate.getDate() - 7);
     let oneMonthAgoDate = new Date(); oneMonthAgoDate.setMonth(oneMonthAgoDate.getMonth() - 1);
 
@@ -127,7 +137,7 @@ router.get(`/api/v1/finance/summary`, async (req:any, res:any) =>
     {
         hydratedTxns.push(
         {
-            ...(allTxns[index].toJSON()),
+            ...allTxns[index],
             "changeInValue": await (allTxns[index].getChangeInValue(allCurrencies))
         });
     }
@@ -157,8 +167,7 @@ router.get(`/api/v1/finance/summary`, async (req:any, res:any) =>
         "totalTransactionsCount": await TransactionModel.count()
     };
     output['totalValue'] = output.totalIncomes - output.totalExpenses;
-    
-    res.json(output);
-});
+    return output;
+}
 
 export default router;
