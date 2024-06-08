@@ -146,9 +146,6 @@
 {
     .rel; .center;
 
-    // Checkbox's Box 
-    input { }
-
     span // Checkmark
     {
         position: absolute;
