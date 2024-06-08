@@ -2,8 +2,8 @@ export type GraphsSummary =
 {
     expensesIncomesByDate: 
     {
-        label: string[],
-        incomes: string[],
-        expenses: string[]
+        labels: string[],
+        incomes: number[],
+        expenses: number[]
     }
 }
