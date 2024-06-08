@@ -21,8 +21,6 @@ import customDropdown from "@/components/custom-dropdown.vue";
 import vBasic from 'snippets/vite-vue-ts/directives/vBasic';
 import vArea from 'snippets/vite-vue-ts/directives/vArea';
 import vIntegerOnly from 'snippets/vite-vue-ts/directives/vIntegerOnly'
-import { PrismaClient } from '@prisma/client';
-// import vNumberOnly from 'snippets/vite-vue-ts/directives/vNumberOnly';
 import containerValuesGraphCellVue from './components/controls/containerValuesGraphCell.vue'
 
 const app = createApp(App)
