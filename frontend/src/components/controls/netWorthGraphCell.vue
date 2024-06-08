@@ -53,12 +53,13 @@ import { defineComponent, toRaw } from 'vue';
 import { LineChart, type ExtractComponentData } from 'vue-chart-3';
 import { Chart, registerables, type ChartOptions, type ChartData } from "chart.js";
 import { useMainStore } from '@/stores/store';
+import NetworkCircularIndicator from '../networkCircularIndicator.vue';
 Chart.register(...registerables);
 
 export default defineComponent(
 {
     name: 'Home',
-    components: { LineChart },
+    components: { LineChart, NetworkCircularIndicator },
     props: { "title": { default: "", type: String }, },
     setup()
     {

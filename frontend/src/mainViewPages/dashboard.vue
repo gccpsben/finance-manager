@@ -8,21 +8,27 @@
             <number-cell title="Expenses" :noItemsText="'No Expenses'" v-area="'expensesPanel'"
             :value7d="store.dashboardSummary.lastSuccessfulData?.totalExpenses7d"
             :value30d="store.dashboardSummary.lastSuccessfulData?.totalExpenses30d"
-            :valueAll="store.dashboardSummary.lastSuccessfulData?.totalExpenses"></number-cell>
+            :valueAll="store.dashboardSummary.lastSuccessfulData?.totalExpenses"
+            :isLoading="store.dashboardSummary.isLoading" :networkError="store.dashboardSummary.error"></number-cell>
         
             <number-cell title="Incomes" :noItemsText="'No Incomes'" v-area="'incomesPanel'"
             :value7d="store.dashboardSummary.lastSuccessfulData?.totalIncomes7d"
             :value30d="store.dashboardSummary.lastSuccessfulData?.totalIncomes30d"
-            :valueAll="store.dashboardSummary.lastSuccessfulData?.totalIncomes"></number-cell>
+            :valueAll="store.dashboardSummary.lastSuccessfulData?.totalIncomes"
+            :isLoading="store.dashboardSummary.isLoading" :networkError="store.dashboardSummary.error"></number-cell>
         
             <number-cell title="Total Value" v-area="'totalValuePanel'"
-            :valueAll="store.dashboardSummary.lastSuccessfulData?.totalValue"></number-cell>
+            :valueAll="store.dashboardSummary.lastSuccessfulData?.totalValue"
+            :isLoading="store.dashboardSummary.isLoading" :networkError="store.dashboardSummary.error"></number-cell>
             
             <number-cell title="Net Change" v-area="'netChangePanel'"
             :value7d="(store.dashboardSummary.lastSuccessfulData?.totalIncomes7d ?? 0) - (store.dashboardSummary.lastSuccessfulData?.totalExpenses7d ?? 0)"
-            :value30d="store.dashboardSummary.lastSuccessfulData?.totalIncomes30d ?? 0 - (store.dashboardSummary.lastSuccessfulData?.totalExpenses30d ?? 0)"></number-cell>
+            :value30d="store.dashboardSummary.lastSuccessfulData?.totalIncomes30d ?? 0 - (store.dashboardSummary.lastSuccessfulData?.totalExpenses30d ?? 0)"
+            :isLoading="store.dashboardSummary.isLoading" :networkError="store.dashboardSummary.error"></number-cell>
 
-            <list-cell v-area="'_30dExpensesList'" title="30d Expenses" :noItemsText="'No Expenses'"
+            <list-cell v-area="'_30dExpensesList'" title="30d Expenses" :noItemsText="'No Expenses'" 
+            :isLoading="store.dashboardSummary.isLoading"
+            :error="store.dashboardSummary.error"
             :items="store.toReversed(store.dashboardSummary.lastSuccessfulData?.expenses30d ?? [])">
                 <template #row="props">
                     <grid-shortcut columns="50px 1fr 1fr" :class="
@@ -45,6 +51,8 @@
             </list-cell>
 
             <list-cell v-area="'_allPendingTransactionsList'" title="All Pending Txns" :noItemsText="'No Pending Txns'"
+            :isLoading="store.dashboardSummary.isLoading"
+            :error="store.dashboardSummary.error"
             :items="store.dashboardSummary?.lastSuccessfulData?.allPendingTransactions ?? []">
                 <template #row="props">
                     <grid-shortcut columns="50px 1fr 1fr" :class="
@@ -67,6 +75,8 @@
             </list-cell>
 
             <list-cell v-area="'_30dIncomesList'" title="30d Incomes" :noItemsText="'No Incomes'"
+            :isLoading="store.dashboardSummary.isLoading"
+            :error="store.dashboardSummary.error"
             :items="store.toReversed(store.dashboardSummary?.lastSuccessfulData?.incomes30d ?? [])">
                 <template #row="props">
                     <grid-shortcut columns="50px 1fr 1fr" @click="viewTxn(props.currentItem['pubID'])"
@@ -81,6 +91,8 @@
             </list-cell>
 
             <list-cell v-area="'ContainersList'" title="Containers" :noItemsText="'No Containers'"
+            :isLoading="store.containers.isLoading"
+            :error="store.containers.error"
             :items="store.toSorted(store.containers.lastSuccessfulData ?? [], (a,b) => { return b.value - a.value; })">
                 <template #row="props">
                     <grid-shortcut :title="getContainerTooltip(props.currentItem)" columns="1fr 1fr" class="fullSize">
@@ -90,8 +102,7 @@
                 </template>
             </list-cell>
 
-            <net-worth-graph-cell v-area="'TotalValueGraph'"
-            title="Total Value"></net-worth-graph-cell>
+            <net-worth-graph-cell v-area="'TotalValueGraph'" title="Total Value"></net-worth-graph-cell>
 
             <container-values-graph-cell v-area="'containerValuesGraph'"
             title="Containers Value"></container-values-graph-cell>

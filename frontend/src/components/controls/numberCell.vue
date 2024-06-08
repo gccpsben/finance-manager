@@ -15,17 +15,26 @@
 
             </div>
         </grid-shortcut>
-        <div class="verticallyBottom">
-            <h2 v-if="selectedVarient=='7d'" class="variantSelectorTab">$ {{ value7d?.toFixed(2) }}</h2>
-            <h2 v-if="selectedVarient=='30d'" class="variantSelectorTab">$ {{ value30d?.toFixed(2) }}</h2>
-            <h2 v-if="selectedVarient=='All'" class="variantSelectorTab">$ {{ valueAll?.toFixed(2) }}</h2>
+        <div class="verticallyBottom fullHeight">
+            <div v-if="!isLoading && !networkError" class="fullHeight">
+                <h2 v-if="selectedVarient=='7d'" class="variantSelectorTab">$ {{ value7d?.toFixed(2) }}</h2>
+                <h2 v-if="selectedVarient=='30d'" class="variantSelectorTab">$ {{ value30d?.toFixed(2) }}</h2>
+                <h2 v-if="selectedVarient=='All'" class="variantSelectorTab">$ {{ valueAll?.toFixed(2) }}</h2>
+            </div>
+            <div v-else class="fullHeight">
+                <NetworkCircularIndicator :error="networkError" :isLoading="isLoading" class="fullHeight"/>
+            </div>
         </div>
     </grid-shortcut>
 </template>
 
 <script lang="ts">
+import { VProgressCircular } from 'vuetify/lib/components/index.mjs';
+import NetworkCircularIndicator from '../networkCircularIndicator.vue';
+
 export default
 {
+    components: { VProgressCircular, NetworkCircularIndicator },
     // props: []"value7d", "valueAll", "value30d", "title"],
     props:
     {
@@ -33,6 +42,8 @@ export default
         "value30d": { default: undefined, type: Number },
         "valueAll": { default: undefined, type: Number },
         "title": { default: "", type: String },
+        "isLoading": { default: true, type: Boolean },
+        "networkError": { default: undefined }
     },
     data() 
     { 

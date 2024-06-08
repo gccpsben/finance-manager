@@ -9,7 +9,8 @@
             </div>
         </grid-shortcut>
         <grid-shortcut style="overflow: hidden; grid-auto-rows: 1fr;" columns="1fr">
-            <div v-if="currentViewItems.length == 0" class="fullSize center"> {{ noItemsText }} </div>
+            <NetworkCircularIndicator v-if="isLoading||error" :isLoading="isLoading" :error="error" class="fullHeight"/>
+            <div v-else-if="currentViewItems.length == 0" class="fullSize center"> {{ noItemsText }} </div>
             <div v-else v-for="currentItem in currentViewItems"><slot name="row" :currentItem="currentItem"></slot></div>
             <!-- Automatically add empty rows if the current page hasn't enough items -->
             <div v-if="currentViewItems.length > 0" v-for="blankRow in new Array(itemsInPage - currentViewItems.length)"></div>
@@ -18,15 +19,19 @@
 </template>
 
 <script lang="ts">
+import NetworkCircularIndicator from '../networkCircularIndicator.vue';
+
 export default
 {
-    // props: []"value7d", "valueAll", "value30d", "title"],
+    components: { NetworkCircularIndicator },
     props:
     {
         "items": { default: [], type: Array<any> },
         "itemsInPage": { default:7, type:Number },
         "title": { default: "Title", type: String },
-        "noItemsText": { default: '', type: String }
+        "noItemsText": { default: '', type: String },
+        "isLoading": { default: true, type: Boolean },
+        "error": { default: undefined }
     },
     data() 
     { 
