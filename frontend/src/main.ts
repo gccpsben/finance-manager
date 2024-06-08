@@ -4,6 +4,7 @@ import axios from 'axios'
 import VueAxios from 'vue-axios'
 import { markRaw } from 'vue'
 import { createMetaManager } from 'vue-meta'
+import { createVuetify } from 'vuetify';
 
 import App from './App.vue'
 import router from './router/router.js'
@@ -22,6 +23,11 @@ import vBasic from 'snippets/vite-vue-ts/directives/vBasic';
 import vArea from 'snippets/vite-vue-ts/directives/vArea';
 import vIntegerOnly from 'snippets/vite-vue-ts/directives/vIntegerOnly'
 import containerValuesGraphCellVue from './components/controls/containerValuesGraphCell.vue'
+
+export const vuetify = createVuetify(
+{
+    theme: { defaultTheme: 'dark' },
+})
 
 const app = createApp(App)
 app.use(VueAxios, axios)
@@ -48,7 +54,7 @@ declare module 'pinia'
     export interface PiniaCustomProperties { $router: Router; } 
 }
 const pinia = createPinia();
-pinia.use(({ store }) => { store.$router = markRaw(router) })
+pinia.use(({ store }) => { store.$router = markRaw(router) });
 app.use(pinia)
-
+app.use(vuetify)
 app.mount('#app')
