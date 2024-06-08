@@ -1,0 +1,9 @@
+export const API_LOGIN_PATH = "./api/v1/finance/login";
+export const API_SUMMARY_PATH = "/api/v1/finance/summary";
+export const API_NET_WORTH_GRAPH_PATH = "/api/v1/finance/netWorth";
+export const API_TRANSACTIONS_PATH = "/api/v1/finance/transactions";
+export const API_CURRENCIES_PATH = "/api/v1/finance/currencies";
+export const API_CONTAINERS_PATH = "/api/v1/finance/containers";
+export const API_TXN_TYPES_PATH = "/api/v1/finance/transactionTypes";
+export const API_GRAPHS_PATH = "/api/v1/finance/graphs";
+export const API_BAL_VAL_PATH = "/api/v1/finance/balanceHistory";
