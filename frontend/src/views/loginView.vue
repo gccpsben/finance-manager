@@ -102,7 +102,7 @@ export default
     },
     data()
     {
-        var data = 
+        let data = 
         {
             enteredUsername: "",
             enteredPassword: "",
@@ -115,7 +115,7 @@ export default
     {
         login()
         {
-            var self = this;
+            let self = this;
             this.axios.post(API_LOGIN_PATH, 
             {
                 "username": self.enteredUsername,
@@ -123,7 +123,7 @@ export default
             })
             .then(response => 
             {
-                var jwtToken = response.data.token; // "Bearer xxxxxx..."
+                let jwtToken = response.data.token; // "Bearer xxxxxx..."
                 this.store.setCookie("jwt", jwtToken, 30);
                 this.$router.push("/main/dashboard");
             })

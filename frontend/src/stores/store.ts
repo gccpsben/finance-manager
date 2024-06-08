@@ -222,7 +222,7 @@ export const useMainStore = defineStore(
         },
         
         isContainerExist(pubID:string) { return this.findContainerByPubID(pubID) != undefined; },
-
+        
         findCurrencyByPubID(pubID:string) 
         {
             if (!this.currencies.lastSuccessfulData) return undefined;

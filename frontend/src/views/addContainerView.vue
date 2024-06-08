@@ -61,8 +61,8 @@ export default
     {
         async upload()
         {
-            var self = this;
-            var body = 
+            let self = this;
+            let body = 
             {
                 "name": this.containerName,
             };

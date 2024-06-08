@@ -72,11 +72,11 @@ export default
         },
         async upload()
         {
-            var self = this;
+            let self = this;
 
             if (this.selectedTransaction == undefined) { alert("Please select a target!"); return; }
 
-            var body = { "resolveID": this.selectedTransaction.pubID, };
+            let body = { "resolveID": this.selectedTransaction.pubID, };
             
             this.isFormUploading = true;
             this.store.authPost(`/api/finance/transactions/resolve`, body)

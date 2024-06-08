@@ -36,7 +36,7 @@ export default
     },
     data() 
     { 
-        var data = { selectedVarient: "30d" };
+        let data = { selectedVarient: "30d" };
         return data;
     },
     methods:

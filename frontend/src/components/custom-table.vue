@@ -99,7 +99,7 @@ export default
         },
         computedRows()
         {
-            var headerRow = this.headerHeight;
+            let headerRow = this.headerHeight;
             return [headerRow, ...this.rows.map(row => row.height ?? this.defaultRowHeight ?? "min-content")].join(" ");
         },
         computedCells()

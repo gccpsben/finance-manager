@@ -5,7 +5,7 @@ let pastLines:any = [];
 
 async function _log(arg, color)
 {
-    var colorMethod = colors[color];
+    let colorMethod = colors[color];
     console.log(colorMethod(arg));
     pastLines.push({message:arg, date: new Date().toLocaleString(), color:color});
     if (pastLines.length > 10000) pastLines.shift();

@@ -84,7 +84,7 @@
             <grid-shortcut v-if="selectedToContainer" columns="100px 1fr 100px" class="fullWidth field">
                 <div class="middleLeft">Receiving:</div>
                 <input class="noSpin" inputmode="decimal" type="number" v-model="toAmount" v-number-only/>
-                <custom-dropdown :items="store.currencies" v-model:currentItem="selectedReceivingCurrency">
+                <custom-dropdown :items="store.currencies.lastSuccessfulData" v-model:currentItem="selectedReceivingCurrency">
                     <template #itemToText="props">
                         {{ props.item?.symbol ?? '-' }}
                     </template>
@@ -201,8 +201,8 @@ export default
             if (!this.isFormValid) alert("Please complete the form.");
             else
             {
-                var self = this;
-                var body = 
+                let self = this;
+                let body = 
                 {
                     "title": this.txnTitle,
                     "typeID": this.selectedTxnType?.pubID,

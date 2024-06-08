@@ -30,7 +30,7 @@ export default
     },
     data() 
     { 
-        var data = { page: 0 };
+        let data = { page: 0 };
         return data;
     },
     methods:
@@ -46,8 +46,8 @@ export default
         {
             if (this.items.length == 0) return [];
             if (this.items.length <= this.itemsInPage) return this.items;
-            var lowerBoundIndex = this.page * this.itemsInPage;
-            var upperBoundIndex = lowerBoundIndex + this.itemsInPage;
+            let lowerBoundIndex = this.page * this.itemsInPage;
+            let upperBoundIndex = lowerBoundIndex + this.itemsInPage;
             if (upperBoundIndex >= this.items.length) upperBoundIndex = this.items.length - 1;
             return this.items.slice(lowerBoundIndex, upperBoundIndex);
         }

@@ -99,7 +99,7 @@ export default defineComponent(
     },
     data()
     {
-        var data = 
+        let data = 
         { 
             store: useMainStore(), 
             currentPage: 0

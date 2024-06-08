@@ -91,7 +91,7 @@ export default
     emits:["update:items", "update:currentItem"],
     data() 
     { 
-        var data = { "opened": false };
+        let data = { "opened": false };
         return data;
     },
     setup() { return; },
