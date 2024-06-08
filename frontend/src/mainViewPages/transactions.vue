@@ -101,7 +101,7 @@
             <div class="field">
                 <div class="tight xLeft yCenter fieldTitle">From Container: </div>
                 <div class="fullSize dropdown">
-                    <custom-dropdown :items="mainStore.containers.map(x => x.pubID)" 
+                    <custom-dropdown :items="(mainStore.containers.lastSuccessfulData ?? []).map(x => x.pubID)" 
                         v-model:currentItem="(selectedTransaction.currentData as any).from.containerID">
                         <template #itemToText="props">
                             <div class="middleLeft" v-if="mainStore.isContainerExist(props.item)">
@@ -115,7 +115,7 @@
             <div class="field">
                 <div class="tight xLeft yCenter fieldTitle">To Container: </div>
                 <div class="fullSize dropdown">
-                    <custom-dropdown :items="mainStore.containers.map(x => x.pubID)" 
+                    <custom-dropdown :items="(mainStore.containers.lastSuccessfulData ?? []).map(x => x.pubID)" 
                         v-model:currentItem="(selectedTransaction.currentData as any).to.containerID">
                         <template #itemToText="props">
                             <div class="middleLeft" v-if="mainStore.isContainerExist(props.item)">
@@ -427,21 +427,22 @@ textarea
 </style>
 
 <script lang="ts" setup> 
-import { API_TRANSACTIONS_PATH, useMainStore } from "@/stores/store";
-import type { transactions } from '@prisma/client';
+import { useMainStore } from "@/stores/store";
 import vIntOnly from "snippets/vite-vue-ts/directives/vIntegerOnly";
 import vArea from "snippets/vite-vue-ts/directives/vArea";
 import { ref, onMounted, withDirectives, type Ref, computed, watch, nextTick, type UnwrapRef, unref } from 'vue';
 import router from "@/router/router";
 import useNetworkPagination, { type updatorReturnType } from "@/networkedPagination";
 import { ResettableObject } from "@/resettableObject";
+import { API_TRANSACTIONS_PATH } from "@/apiPaths";
+import type { HydratedTransaction, Transaction } from "@/types/dtos/transactionsDTO";
 
 // CONSTANTS:
 const itemsInPage = 15;
 
 const store = useMainStore();
 const pageTitle = computed(() => { return "Transactions" });
-const getTxnType = (txn:transactions) =>
+const getTxnType = (txn:Transaction) =>
 { 
     if (txn.from && txn.to) return "Transfer";
     else if (txn.from && !txn.to) return "Expense";
@@ -449,13 +450,10 @@ const getTxnType = (txn:transactions) =>
 };
 const getTxnTypeName = (typePubID: string) => 
 {
-    return store?.txnTypes?.find(x => x.pubID == typePubID)?.name ?? "<undefined>";
+    return store.txnTypes.lastSuccessfulData?.find(x => x.pubID == typePubID)?.name ?? "<undefined>";
 };
 const moveToPageZero = () => { mainPagination.pageIndex.value = 0; };
-function getContainerName(pubID: string)
-{
-    return store?.containers?.find(x => x.pubID == pubID)?.name ?? "undefined";
-}
+const getContainerName = (pubID: string) => (store?.containers?.lastSuccessfulData ?? []).find(x => x.pubID == pubID)?.name ?? undefined;
 function formatChangeInValue(value:number)
 {
     if (value == undefined) return '';
@@ -518,7 +516,7 @@ async function updator(start:number, count:number): Promise<updatorReturnType>
 // #endregion
 
 // #region Advanced Filter View:
-const filteredViewItems = ref([]) as Ref<transactions[]>;
+const filteredViewItems = ref([]) as Ref<HydratedTransaction[]>;
 const isAdvancedViewLoading = ref(false);
 const advancedFilterViewExpress = ref("");
 
@@ -533,11 +531,13 @@ async function executeExpression()
 // #region Single Transaction View
 const hasTxnModified = ref(false) as Ref<boolean>;
 const selectedItem = ref('All Transactions');
-const selectedTransaction = ref(undefined) as Ref<undefined | ResettableObject<any>>;
+const selectedTransaction = ref(undefined) as Ref<undefined | ResettableObject<HydratedTransaction>>;
 
 const mainStore = useMainStore();
 watch(selectedTransactionID, async () => 
 {
+    if (selectedTransactionID.value === undefined) return;
+
     let queryURL = API_TRANSACTIONS_PATH;
     let txnObject = (await store.authGet(`${queryURL}?pubid=${selectedTransactionID.value}`))!.data;
 
@@ -546,10 +546,11 @@ watch(selectedTransactionID, async () =>
 
     nextTick(() => 
     { 
-        selectedTransaction.value = new ResettableObject<any>(txnObject);
+        selectedTransaction.value = new ResettableObject<HydratedTransaction>(txnObject);
         let currentData = selectedTransaction.value.currentData;
     });
-    await mainStore.updateContainers();
+    await mainStore.containers.updateData();
+    // await mainStore.updateContainers();
 
 }, { immediate: true, deep: true });
 

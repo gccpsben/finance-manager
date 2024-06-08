@@ -83,7 +83,8 @@
 </style>
 
 <script lang="ts">
-import { API_LOGIN_PATH, useMainStore } from '@/stores/store';
+import { API_LOGIN_PATH } from '@/apiPaths';
+import { useMainStore } from '@/stores/store';
 import { useMeta } from 'vue-meta';
 
 export default

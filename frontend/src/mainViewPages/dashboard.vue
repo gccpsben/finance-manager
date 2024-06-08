@@ -6,24 +6,24 @@
         <grid-shortcut id="mainGrid">
 
             <number-cell title="Expenses" :noItemsText="'No Expenses'" v-area="'expensesPanel'"
-            :value7d="store.dashboardSummary.totalExpenses7d"
-            :value30d="store.dashboardSummary.totalExpenses30d"
-            :valueAll="store.dashboardSummary.totalExpenses"></number-cell>
+            :value7d="store.dashboardSummary.lastSuccessfulData?.totalExpenses7d"
+            :value30d="store.dashboardSummary.lastSuccessfulData?.totalExpenses30d"
+            :valueAll="store.dashboardSummary.lastSuccessfulData?.totalExpenses"></number-cell>
         
             <number-cell title="Incomes" :noItemsText="'No Incomes'" v-area="'incomesPanel'"
-            :value7d="store.dashboardSummary.totalIncomes7d"
-            :value30d="store.dashboardSummary.totalIncomes30d"
-            :valueAll="store.dashboardSummary.totalIncomes"></number-cell>
+            :value7d="store.dashboardSummary.lastSuccessfulData?.totalIncomes7d"
+            :value30d="store.dashboardSummary.lastSuccessfulData?.totalIncomes30d"
+            :valueAll="store.dashboardSummary.lastSuccessfulData?.totalIncomes"></number-cell>
         
             <number-cell title="Total Value" v-area="'totalValuePanel'"
-            :valueAll="store.dashboardSummary.totalValue"></number-cell>
+            :valueAll="store.dashboardSummary.lastSuccessfulData?.totalValue"></number-cell>
             
             <number-cell title="Net Change" v-area="'netChangePanel'"
-            :value7d="(store.dashboardSummary.totalIncomes7d - store.dashboardSummary.totalExpenses7d) ?? 0"
-            :value30d="(store.dashboardSummary.totalIncomes30d - store.dashboardSummary.totalExpenses30d) ?? 0"></number-cell>
+            :value7d="(store.dashboardSummary.lastSuccessfulData?.totalIncomes7d ?? 0) - (store.dashboardSummary.lastSuccessfulData?.totalExpenses7d ?? 0)"
+            :value30d="store.dashboardSummary.lastSuccessfulData?.totalIncomes30d ?? 0 - (store.dashboardSummary.lastSuccessfulData?.totalExpenses30d ?? 0)"></number-cell>
 
             <list-cell v-area="'_30dExpensesList'" title="30d Expenses" :noItemsText="'No Expenses'"
-            :items="store.toReversed(store.dashboardSummary.expenses30d ?? [])">
+            :items="store.toReversed(store.dashboardSummary.lastSuccessfulData?.expenses30d ?? [])">
                 <template #row="props">
                     <grid-shortcut columns="50px 1fr 1fr" :class="
                     {
@@ -45,7 +45,7 @@
             </list-cell>
 
             <list-cell v-area="'_allPendingTransactionsList'" title="All Pending Txns" :noItemsText="'No Pending Txns'"
-            :items="store.dashboardSummary?.allPendingTransactions ?? []">
+            :items="store.dashboardSummary?.lastSuccessfulData?.allPendingTransactions ?? []">
                 <template #row="props">
                     <grid-shortcut columns="50px 1fr 1fr" :class="
                     {
@@ -67,7 +67,7 @@
             </list-cell>
 
             <list-cell v-area="'_30dIncomesList'" title="30d Incomes" :noItemsText="'No Incomes'"
-            :items="store.toReversed(store.dashboardSummary.incomes30d ?? [])">
+            :items="store.toReversed(store.dashboardSummary?.lastSuccessfulData?.incomes30d ?? [])">
                 <template #row="props">
                     <grid-shortcut columns="50px 1fr 1fr" @click="viewTxn(props.currentItem['pubID'])"
                     class="fullSize highlightableRow">
@@ -81,7 +81,7 @@
             </list-cell>
 
             <list-cell v-area="'ContainersList'" title="Containers" :noItemsText="'No Containers'"
-            :items="store.toSorted(store.containers ?? [], (a:any,b:any) => { return b.value - a.value; })">
+            :items="store.toSorted(store.containers.lastSuccessfulData ?? [], (a,b) => { return b.value - a.value; })">
                 <template #row="props">
                     <grid-shortcut :title="getContainerTooltip(props.currentItem)" columns="1fr 1fr" class="fullSize">
                         <div class="listItemTitle middleLeft">{{ props.currentItem.name }}</div>
@@ -164,7 +164,8 @@
 
 <script lang="ts">
 import { useMainStore } from "@/stores/store";
-import type { containers, transactions } from "@prisma/client";
+import type { Container, ValueHydratedContainer } from "@/types/dtos/containersDTO";
+import type { HydratedTransaction } from "@/types/dtos/transactionsDTO";
 import vArea from "snippets/vite-vue-ts/directives/vArea";
 
 export default 
@@ -182,18 +183,18 @@ export default
     mounted() { this.store.updateAll(); },
     methods:
     {
-        getAmountTooltip(txn: any)
+        getAmountTooltip(txn: HydratedTransaction)
         {
             if (txn == undefined) return "";
             return txn.changeInValue.toFixed(3) + ' HKD';
         },
-        getContainerTooltip(container: any)
+        getContainerTooltip(container: ValueHydratedContainer)
         {
             if (container == undefined) return "";
             let output = "";
             for (let [key, value] of Object.entries(container.balance))
             {
-                let currency = this.store.currencies.find(curr => curr.pubID == key);
+                let currency = (this.store.currencies.lastSuccessfulData ?? []).find(curr => curr.pubID == key);
                 output += `${currency?.symbol}: ${(value as any).toFixed(3)}\n`;
             }
             return output;

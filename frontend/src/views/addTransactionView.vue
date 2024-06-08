@@ -40,7 +40,7 @@
 
             <grid-shortcut columns="100px 1fr" class="fullWidth field">
                 <div class="middleLeft">Type:</div>
-                <custom-dropdown :items="store.txnTypes" v-model:currentItem="selectedTxnType">
+                <custom-dropdown :items="store.txnTypes.lastSuccessfulData ?? []" v-model:currentItem="selectedTxnType">
                     <template #itemToText="props">
                         <div class="middleLeft" :class="{'grayText': !props.item?.name }">{{ props.item?.name ?? 'No Type Selected' }}</div>
                     </template>
@@ -49,7 +49,7 @@
             
             <grid-shortcut v-if="selectedMode == 'transfer' || selectedMode == 'spending'" columns="100px 1fr" class="fullWidth field">
                 <div class="middleLeft">From:</div>
-                <custom-dropdown :items="store.containers" v-model:currentItem="selectedFromContainer">
+                <custom-dropdown :items="store.containers.lastSuccessfulData ?? []" v-model:currentItem="selectedFromContainer">
                     <template #itemToText="props">
                         <grid-shortcut :style="{'padding-left': props.isSelector ? '0px' : '5px', 'padding-right': props.isSelector ? '5px' : '0px'}" columns="1fr auto" class="fullWidth">
                             <div class="middleLeft" :class="{'grayText': !props.item?.name }">{{ props.item?.name ?? '/' }}</div>
@@ -61,7 +61,7 @@
 
             <grid-shortcut v-if="selectedMode == 'transfer' || selectedMode == 'earning'" columns="100px 1fr" class="fullWidth field">
                 <div class="middleLeft">To:</div>
-                <custom-dropdown :items="store.containers" v-model:currentItem="selectedToContainer">
+                <custom-dropdown :items="store.containers.lastSuccessfulData ?? []" v-model:currentItem="selectedToContainer">
                     <template #itemToText="props">
                         <grid-shortcut :style="{'padding-left': props.isSelector ? '0px' : '5px', 'padding-right': props.isSelector ? '5px' : '0px' }" columns="1fr 1fr" class="fullWidth">
                             <div class="middleLeft" :class="{'grayText': !props.item?.name }">{{ props.item?.name ?? '/' }}</div>
@@ -74,7 +74,7 @@
             <grid-shortcut id="spendingFieldContainer" v-if="selectedFromContainer" class="fullWidth field">
                 <div class="middleLeft">Spending:</div>
                 <input class="noSpin" inputmode="decimal" type="number" v-model="fromAmount" v-number-only/>
-                <custom-dropdown :items="store.currencies" v-model:currentItem="selectedSpendingCurrency">
+                <custom-dropdown :items="store.currencies.lastSuccessfulData" v-model:currentItem="selectedSpendingCurrency">
                     <template #itemToText="props">
                         {{ props.item?.symbol ?? '-' }}
                     </template>
@@ -131,7 +131,9 @@
 
 <script lang="ts">
 import { useMainStore } from "@/stores/store";
-import type { containers, currencies, transactionTypes } from "@prisma/client";
+import type { Container } from "@/types/dtos/containersDTO";
+import type { RateDefinedCurrency } from "@/types/dtos/currenciesDTO";
+import type { TxnType } from "@/types/dtos/txnTypesDTO";
 import { useMeta } from 'vue-meta';
 
 export default
@@ -169,11 +171,11 @@ export default
         return { 
             isLoading: true,
             store: useMainStore(),
-            selectedFromContainer: undefined as undefined | containers,
-            selectedToContainer: undefined as undefined | containers,
-            selectedSpendingCurrency: undefined as undefined | currencies,
-            selectedReceivingCurrency: undefined as undefined | currencies,
-            selectedTxnType: undefined as undefined | transactionTypes,
+            selectedFromContainer: undefined as undefined | Container,
+            selectedToContainer: undefined as undefined | Container,
+            selectedSpendingCurrency: undefined as undefined | RateDefinedCurrency,
+            selectedReceivingCurrency: undefined as undefined | RateDefinedCurrency,
+            selectedTxnType: undefined as undefined | TxnType,
             fromAmount: 0 as number,
             toAmount: 0 as number,
             txnTitle: '' as string,

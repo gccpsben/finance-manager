@@ -27,7 +27,6 @@
 
 <script lang="ts">
 import { useMainStore } from "@/stores/store";
-import type { containers, currencies, transactionTypes } from "@prisma/client";
 import { useMeta } from 'vue-meta';
 
 export default

@@ -32,7 +32,8 @@
 
 <script lang="ts">
 import { useMainStore } from "@/stores/store";
-import type { containers, currencies, transactionTypes } from "@prisma/client";
+import type { HydratedTransaction, Transaction } from "@/types/dtos/transactionsDTO";
+import type { TxnType } from "@/types/dtos/txnTypesDTO";
 import { useMeta } from 'vue-meta';
 
 export default
@@ -55,8 +56,8 @@ export default
             isLoading: true,
             store: useMainStore(),
             containerName: "",
-            isFormUploading: false,
-            unresolvedTransactions: [] as transactionTypes[],
+            unresolvedTransactions: [] as HydratedTransaction[],
+            selectedTransaction: undefined as TxnType|undefined
             selectedTransaction: undefined as transactionTypes|undefined
         }
     },

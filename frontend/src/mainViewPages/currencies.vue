@@ -3,7 +3,8 @@
 
         <view-title :title="title"></view-title>
 
-        <pagination v-model:currentPage="currentPage" v-if="!selectedCurrencyID" :itemsInPage="15" :items="store.currencies" v-slot="props" class="fullSize" style="height:calc(100svh - 170px);"> 
+        <pagination v-model:currentPage="currentPage" v-if="!selectedCurrencyID" :itemsInPage="15" :items="store.currencies.lastSuccessfulData ?? []" 
+                    v-slot="props" class="fullSize" style="height:calc(100svh - 170px);"> 
             <div id="panel">
                 <grid-shortcut rows="1fr" columns="1fr auto">
                     <h2 class="panelTitle">All Currencies</h2>
@@ -143,7 +144,7 @@
 
 <script lang="ts">
 import { useMainStore } from '@/stores/store';
-import type { currencies } from '@prisma/client';
+import type { RateDefinedCurrency } from '@/types/dtos/currenciesDTO';
 import paginationVue from 'snippets/vite-vue-ts/components/pagination.vue';
 
 export default
@@ -169,8 +170,8 @@ export default
         selectedCurrency()
         {
             if (this.selectedCurrencyID == undefined) return undefined;
-            let currency = this.store.currencies.find(x => x.pubID == this.selectedCurrencyID);
-            return currency as currencies|undefined;
+            let currency = (this.store.currencies.lastSuccessfulData ?? []).find(x => x.pubID == this.selectedCurrencyID);
+            return currency as RateDefinedCurrency|undefined;
         },
         title()
         {

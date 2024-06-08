@@ -86,7 +86,6 @@ import { defineComponent } from 'vue';
 import { LineChart, type ExtractComponentData } from 'vue-chart-3';
 import { Chart, registerables, type ChartOptions, type ChartData } from "chart.js";
 import { useMainStore } from '@/stores/store';
-import type { containers } from '@prisma/client';
 Chart.register(...registerables);
 
 export default defineComponent(
@@ -111,14 +110,14 @@ export default defineComponent(
     {
         sortedContainers()
         {
-            return this.store.toSorted(this.store.containers ?? [], (a:any,b:any) => { return b.value - a.value; });
+            return this.store.toSorted(this.store.containers.lastSuccessfulData ?? [], (a,b) => b.value - a.value);
         }
     },
     methods:
     {
         getCurrencyValue(currencyPubID:string, amount:number)
         {   
-            let currency = this.store.currencies.find(x => x.pubID == currencyPubID);
+            let currency = (this.store.currencies.lastSuccessfulData ?? []).find(x => x.pubID == currencyPubID);
             if (currency == undefined) return 0;
             else return currency.rate as number * amount;
         },

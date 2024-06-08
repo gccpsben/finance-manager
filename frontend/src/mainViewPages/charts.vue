@@ -69,7 +69,6 @@
 import { useMainStore } from "@/stores/store";
 import { BarChart, LineChart, type ExtractComponentData } from 'vue-chart-3';
 import { Chart, registerables, type ChartOptions, type ChartData } from "chart.js";
-import type { containers, transactions } from "@prisma/client";
 Chart.register(...registerables);
 
 export default 
@@ -78,9 +77,9 @@ export default
     components: { BarChart, LineChart },
     async mounted()
     {
-        await this.store.updateCurrencies();
-        await this.store.updateContainers();
-        await this.store.updateGraphsSummary();
+        await this.store.currencies.updateData();
+        await this.store.containers.updateData();
+        await this.store.graphsSummary.updateData();
     },
     data()
     {
@@ -104,17 +103,17 @@ export default
         {
             const data: ChartData<'bar'> = 
             {
-                labels: this.store.graphsSummary?.expensesIncomesByDate?.labels ?? [],
+                labels: this.store.graphsSummary.lastSuccessfulData?.expensesIncomesByDate?.labels ?? [],
                 datasets: 
                 [
                     {
                         // Incomes
-                        data: this.store.graphsSummary?.expensesIncomesByDate?.incomes ?? [],
+                        data: this.store.graphsSummary.lastSuccessfulData?.expensesIncomesByDate?.incomes ?? [],
                         backgroundColor: 'green'
                     },
                     {
                         // Expenses
-                        data: this.store.graphsSummary?.expensesIncomesByDate?.expenses ?? [],
+                        data: this.store.graphsSummary.lastSuccessfulData?.expensesIncomesByDate?.expenses ?? [],
                         backgroundColor: 'red'
                     },
                 ],
@@ -141,12 +140,12 @@ export default
         compositionCurrencyGraphData()
         {
             let valuesByCurrency: {[key:string]: number} = {};
-            for (let container of this.store.containers)
+            for (let container of this.store.containers.lastSuccessfulData ?? [])
             {
-                let c = container as any;
+                let c = container;
                 for (let currencyPubID in c.balance)
                 {
-                    let currency = this.store.currencies.find(c => c.pubID == currencyPubID);
+                    let currency = (this.store.currencies.lastSuccessfulData ?? []).find(c => c.pubID == currencyPubID);
                     if (currency === undefined || currency.rate == undefined) continue;
                     let currencySymbol = currency.symbol;
                     let rate = Number.parseFloat(currency.rate.toString());
@@ -191,9 +190,9 @@ export default
         compositionContainerGraphData()
         {
             let valuesByContainer: {[key:string]: number} = {};
-            for (let container of this.store.containers)
+            for (let container of this.store.containers.lastSuccessfulData ?? [])
             {
-                let c = container as any;
+                let c = container;
                 valuesByContainer[container.name] = c.value;
             }
             
