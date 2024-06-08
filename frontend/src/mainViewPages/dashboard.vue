@@ -22,8 +22,8 @@
             :isLoading="store.dashboardSummary.isLoading" :networkError="store.dashboardSummary.error"></number-cell>
             
             <number-cell title="Net Change" v-area="'netChangePanel'"
-            :value7d="(store.dashboardSummary.lastSuccessfulData?.totalIncomes7d ?? 0) - (store.dashboardSummary.lastSuccessfulData?.totalExpenses7d ?? 0)"
-            :value30d="store.dashboardSummary.lastSuccessfulData?.totalIncomes30d ?? 0 - (store.dashboardSummary.lastSuccessfulData?.totalExpenses30d ?? 0)"
+            :value7d="netChange7d"
+            :value30d="netChange30d"
             :isLoading="store.dashboardSummary.isLoading" :networkError="store.dashboardSummary.error"></number-cell>
 
             <list-cell v-area="'_30dExpensesList'" title="30d Expenses" :noItemsText="'No Expenses'" 
@@ -192,6 +192,19 @@ export default
         return data;
     },
     mounted() { this.store.updateAll(); },
+    computed:
+    {
+        netChange30d()
+        {
+            if (!this.store.dashboardSummary?.lastSuccessfulData) return;
+            return this.store.dashboardSummary.lastSuccessfulData.totalIncomes30d - this.store.dashboardSummary.lastSuccessfulData.totalExpenses30d;
+        },
+        netChange7d()
+        {
+            if (!this.store.dashboardSummary?.lastSuccessfulData) return;
+            return this.store.dashboardSummary.lastSuccessfulData.totalIncomes30d - this.store.dashboardSummary.lastSuccessfulData.totalExpenses30d;
+        }
+    },
     methods:
     {
         getAmountTooltip(txn: HydratedTransaction)
