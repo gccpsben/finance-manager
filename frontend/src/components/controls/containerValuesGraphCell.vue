@@ -1,5 +1,5 @@
 <template>
-    <pagination id="pagination" :items="sortedContainers" :itemsInPage="1" v-model:currentPage="currentPage" v-slot="props:any" style="overflow:hidden; box-sizing:border-box;">
+    <pagination id="pagination" :items="sortedContainers" :itemsInPage="1" v-model:currentPage="currentPage" v-slot="props" style="overflow:hidden; box-sizing:border-box;">
         <grid-shortcut id="graphPanel" style="padding:15px; gap:15px;" columns="1fr" rows="auto 1fr">
             <grid-shortcut rows="1fr" columns="1fr auto">
                 <h2 class="graphPanelTitle">{{ title }}</h2>
@@ -31,8 +31,8 @@
                 </div>
                 <div style="height:fit-content;">
                     <div class="containerRow" v-for="container in props.pageItems">
-                        <div class="xLeft yCenter">{{ (container as containers).name }}</div>
-                        <div class="xRight yCenter">{{ (container.value as number).toFixed(2) }} HKD</div>
+                        <div class="xLeft yCenter">{{ container.name }}</div>
+                        <div class="xRight yCenter">{{ container.value.toFixed(2) }} HKD</div>
                     </div>
                 </div>
             </div>
