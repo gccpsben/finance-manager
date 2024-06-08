@@ -124,7 +124,7 @@ export async function getSummary(cache?: DataCache|undefined)
     cache = await DataCache.ensureTransactions(cache);
     cache = await DataCache.ensureContainers(cache);
     cache = await DataCache.ensureCurrencies(cache);
-    
+   
     let allTxns = cache.allTransactions;
     let allCurrencies = cache.allCurrencies;
     let oneWeekAgoDate = new Date();  oneWeekAgoDate.setDate(oneWeekAgoDate.getDate() - 7);
@@ -137,7 +137,7 @@ export async function getSummary(cache?: DataCache|undefined)
     {
         hydratedTxns.push(
         {
-            ...allTxns[index],
+            ...allTxns[index]["_doc"],
             "changeInValue": await (allTxns[index].getChangeInValue(allCurrencies))
         });
     }
@@ -145,7 +145,8 @@ export async function getSummary(cache?: DataCache|undefined)
     // a list of txns with changeInValue > 0
     // type is lost since an extra property "changeInValue" is added.
     let allIncomeTxns:any = hydratedTxns.filter(tx => tx.changeInValue > 0); 
-    let allExpenseTxns:any = hydratedTxns.filter(tx => tx.changeInValue < 0);        
+    let allExpenseTxns:any = hydratedTxns.filter(tx => tx.changeInValue < 0);       
+
 
     // The income/expense of last 30d will be sorted from oldest to newest.
     let incomeTxns30d:any = allIncomeTxns.filter(tx => tx.date > oneMonthAgoDate).sort((b,a) => b.date - a.date); 
