@@ -570,7 +570,10 @@ function viewTransaction(pubID: string)
 
 function formatDate(date:Date)
 {
-    return `${date.getFullYear()}-${date.getMonth()}-${date.getDate()} ${date.getHours()}:${date.getMinutes()}:${date.getSeconds()}`;
+    const padStart = (n:number) => n.toString().padStart(2, '0');
+    let datePart = `${date.getFullYear()}-${date.getMonth() + 1}-${date.getDate()}`;
+    let timePart = `${padStart(date.getHours())}:${padStart(date.getMinutes())}:${padStart(date.getSeconds())}`;
+    return `${datePart} ${timePart}`;
 }
 
 function resetForm() { if (selectedTransaction) selectedTransaction.value?.reset(); }
