@@ -20,7 +20,8 @@ export default
     },
     computed:
     {
-        currentPageName() { return this.$router.currentRoute.value.fullPath.split('/').pop(); }
+        currentPageName() { return this.$router.currentRoute.value.fullPath.split('/').pop(); },
+        topGridColumns() { return this.store.mainViewSidebarVisible ? `minmax(13vw, 225px) 1fr` : `0px 1fr` }
     },
     methods:
     {
@@ -32,10 +33,10 @@ export default
 
 <template>
     <div id="topDiv">
-        <grid-shortcut v-basic="'#topGrid.fullSize'" columns="minmax(13vw, 225px) 1fr" rows="1fr" areas="'leftBar content'">
+        <grid-shortcut v-basic="'#topGrid.fullSize'" columns="auto 1fr" rows="1fr" areas="'leftBar content'">
 
-            <grid-shortcut v-basic="'#leftBar.fullSize'" v-area="'leftBar'" columns="1fr" rows="250px 1fr">
-                <div v-basic="'#userDiv.center'" style="overflow:hidden;">
+            <grid-shortcut v-basic="'#leftBar.fullSize'" v-area="'leftBar'" columns="1fr" rows="250px 1fr" class="rel" :class="{'hidden': !store.mainViewSidebarVisible}">
+                <div v-basic="'#userDiv.center'" style="overflow: hidden;">
                     <div>
                         <div v-basic="'#userIcon.center'">P1</div>
                         <div id="accountButtonsContainer">
@@ -44,11 +45,17 @@ export default
                         </div>
                     </div>
                 </div>
-                <div id="leftButtonsContainer">
+                <div id="leftButtonsContainer" style="overflow: hidden;">
                     <div v-for="page in store.availablePages" @click="goToPage(page)"
                     :class="{'activeButton': isSelected(page)}">
                         <i :class="page.iconClass"></i>
                         <div class="iconTitle">{{page.displayName}}</div>
+                    </div>
+                </div>
+                <div class="xRight yCenter abs fullSize" style="pointer-events:none">
+                    <div id="sideBarButton" @click="store.mainViewSidebarVisible = !store.mainViewSidebarVisible" class="debug" style="pointer-events:all">
+                        <fa-icon v-if="store.mainViewSidebarVisible" icon="fa-solid fa-chevron-left"></fa-icon>
+                        <fa-icon v-else icon="fa-solid fa-chevron-right"></fa-icon>
                     </div>
                 </div>
             </grid-shortcut>
@@ -103,6 +110,10 @@ export default
 {
     border-right:1px solid @border; z-index:999;
     box-sizing: border-box; box-shadow: 0px 0px 10px black;
+    width: 225px;
+    transition: all 0.3s ease-in-out;
+    
+    &.hidden { width: 0px; }
 
     #userDiv
     {
@@ -146,6 +157,28 @@ export default
     }
     
     .mainGridCell { border-radius: @gridCellBorderRadius; box-sizing: border-box; }
+}
+
+#sideBarButton
+{
+    position:fixed;
+    height:25px; 
+    width:15px; 
+    transform:translateX(100%);
+    background: @background;
+    border: 1px solid @border;
+    border-radius: 0px 5px 5px 0px;
+    border-left: 0px;
+    color: @foreground;
+    z-index: 999;
+    font-size: 10px;
+    .center;
+    cursor:pointer;
+
+    &:hover
+    {
+        background: @surfaceHigh;
+    }
 }
 
 #topDiv 

@@ -75,7 +75,8 @@ export const useMainStore = defineStore(
             txnTypes: useNetworkRequest<TxnType[]>(API_TXN_TYPES_PATH, { includeAuthHeaders: true }),
             netWorthHistory: { "netWorthHistory": {}, "netWorthActualHistory": {} } as NetWorthAPIResponse,
             balanceValueHistory: useNetworkRequest<BalanceValueHistoryAPIResponse>(API_BAL_VAL_PATH, { includeAuthHeaders: true }),
-            lastUpdateTime: new Date(0) as Date
+            lastUpdateTime: new Date(0) as Date,
+            mainViewSidebarVisible: true
         }
     ),
     getters: 
