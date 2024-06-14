@@ -133,7 +133,7 @@
     {
         box-sizing: border-box; gap:15px;
         .fullSize; .gridColumns_4;
-        grid-template-rows:100px 220px 220px 200px 1fr;
+        grid-template-rows:100px 220px 220px 400px 1fr;
         height:2000px; .fg(gray);
 
         grid-template-areas: 
