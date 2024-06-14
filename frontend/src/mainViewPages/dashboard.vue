@@ -117,6 +117,9 @@
 
 #topDiv
 {
+    container-type: size;
+    container-name: topDiv;
+
     overflow-x:hidden; .fullSize; padding:50px; box-sizing: border-box;
     font-family: 'Schibsted Grotesk', sans-serif;
     .gradBackground;
@@ -152,7 +155,7 @@
     }
 }
 
-@media only screen and (max-width: 600px) 
+@container topDiv (width <= 600px)
 {
     #mainGrid
     {
