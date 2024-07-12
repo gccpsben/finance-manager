@@ -111,6 +111,70 @@
     </div>
 </template>
 
+<script lang="ts">
+import { useMainStore } from "@/stores/store";
+import type { Container, ValueHydratedContainer } from "@/types/dtos/containersDTO";
+import type { HydratedTransaction } from "@/types/dtos/transactionsDTO";
+import vArea from "snippets/vite-vue-ts/directives/vArea";
+
+export default 
+{
+    directives: {'area':vArea},
+    data()
+    {
+        let data = 
+        { 
+            store: useMainStore(),
+            selectedItem: 'Main'
+        };
+        return data;
+    },
+    mounted() 
+    { 
+        // this.store.updateAll();
+        this.store.updateDashboardBatch();     
+        this.store.balanceValueHistory.updateData();
+        this.store.txnTypes.updateData();
+    },
+    computed:
+    {
+        netChange30d()
+        {
+            if (!this.store.dashboardSummary?.lastSuccessfulData) return;
+            return this.store.dashboardSummary.lastSuccessfulData.totalIncomes30d - this.store.dashboardSummary.lastSuccessfulData.totalExpenses30d;
+        },
+        netChange7d()
+        {
+            if (!this.store.dashboardSummary?.lastSuccessfulData) return;
+            return this.store.dashboardSummary.lastSuccessfulData.totalIncomes30d - this.store.dashboardSummary.lastSuccessfulData.totalExpenses30d;
+        }
+    },
+    methods:
+    {
+        getAmountTooltip(txn: HydratedTransaction)
+        {
+            if (txn == undefined) return "";
+            return txn.changeInValue.toFixed(3) + ' HKD';
+        },
+        getContainerTooltip(container: ValueHydratedContainer)
+        {
+            if (container == undefined) return "";
+            let output = "";
+            for (let [key, value] of Object.entries(container.balance))
+            {
+                let currency = (this.store.currencies.lastSuccessfulData ?? []).find(curr => curr.pubID == key);
+                output += `${currency?.symbol}: ${(value as any).toFixed(3)}\n`;
+            }
+            return output;
+        },
+        viewTxn(pubID:string)
+        {
+            this.$router.push({name: 'transactions', params: { pubID: pubID }})
+        }
+    }
+}
+</script>
+
 <style lang="less" scoped>
 @import '@/stylesheets/globalStyle.less';
 @import url('https://fonts.googleapis.com/css2?family=Schibsted+Grotesk:ital,wght@0,400;0,500;0,600;1,400;1,500;1,600&display=swap');
@@ -175,61 +239,3 @@
 }
 
 </style>
-
-<script lang="ts">
-import { useMainStore } from "@/stores/store";
-import type { Container, ValueHydratedContainer } from "@/types/dtos/containersDTO";
-import type { HydratedTransaction } from "@/types/dtos/transactionsDTO";
-import vArea from "snippets/vite-vue-ts/directives/vArea";
-
-export default 
-{
-    directives: {'area':vArea},
-    data()
-    {
-        let data = 
-        { 
-            store: useMainStore(),
-            selectedItem: 'Main'
-        };
-        return data;
-    },
-    mounted() { this.store.updateAll(); },
-    computed:
-    {
-        netChange30d()
-        {
-            if (!this.store.dashboardSummary?.lastSuccessfulData) return;
-            return this.store.dashboardSummary.lastSuccessfulData.totalIncomes30d - this.store.dashboardSummary.lastSuccessfulData.totalExpenses30d;
-        },
-        netChange7d()
-        {
-            if (!this.store.dashboardSummary?.lastSuccessfulData) return;
-            return this.store.dashboardSummary.lastSuccessfulData.totalIncomes30d - this.store.dashboardSummary.lastSuccessfulData.totalExpenses30d;
-        }
-    },
-    methods:
-    {
-        getAmountTooltip(txn: HydratedTransaction)
-        {
-            if (txn == undefined) return "";
-            return txn.changeInValue.toFixed(3) + ' HKD';
-        },
-        getContainerTooltip(container: ValueHydratedContainer)
-        {
-            if (container == undefined) return "";
-            let output = "";
-            for (let [key, value] of Object.entries(container.balance))
-            {
-                let currency = (this.store.currencies.lastSuccessfulData ?? []).find(curr => curr.pubID == key);
-                output += `${currency?.symbol}: ${(value as any).toFixed(3)}\n`;
-            }
-            return output;
-        },
-        viewTxn(pubID:string)
-        {
-            this.$router.push({name: 'transactions', params: { pubID: pubID }})
-        }
-    }
-}
-</script>
