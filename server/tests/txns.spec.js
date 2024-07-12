@@ -18,7 +18,7 @@ const mongoUnit = require('mongo-unit');
             {
                 await mongoUnit.load(testData);
 
-                initBase.request('http://localhost:8081').post('/api/v1/finance/accounts/register').set('content-type', 'application/json')
+                initBase.request(`http://localhost:${process.env.PORT}`).post('/api/v1/finance/accounts/register').set('content-type', 'application/json')
                 .send({ username: username, password: password })
                 .end((error, response, body) =>
                 { 
@@ -33,7 +33,7 @@ const mongoUnit = require('mongo-unit');
         let bearerToken = "";
         it("Logging to the created account without useragent", done => 
         {
-            initBase.request('http://localhost:8081').post('/api/v1/finance/login').set('content-type', 'application/json')
+            initBase.request(`http://localhost:${process.env.PORT}`).post('/api/v1/finance/login').set('content-type', 'application/json')
             .send({ username: username, password: password })
             .end((error, response) =>
             { 
@@ -48,7 +48,7 @@ const mongoUnit = require('mongo-unit');
 
         it("Adding 1 container without token", done => 
         {
-            initBase.request('http://localhost:8081').post('/api/v1/finance/containers/add').set('content-type', 'application/json')
+            initBase.request(`http://localhost:${process.env.PORT}`).post('/api/v1/finance/containers/add').set('content-type', 'application/json')
             .send({name: "myNewContainer"})
             .end((error, response) =>
             { 
@@ -61,7 +61,7 @@ const mongoUnit = require('mongo-unit');
 
         it("Adding 1 container without name", done => 
         {
-            initBase.request('http://localhost:8081').post('/api/v1/finance/containers/add').set('content-type', 'application/json')
+            initBase.request(`http://localhost:${process.env.PORT}`).post('/api/v1/finance/containers/add').set('content-type', 'application/json')
             .set("Authorization", bearerToken)
             .send({})
             .end((error, response) =>
@@ -77,7 +77,7 @@ const mongoUnit = require('mongo-unit');
         let container1PubID = undefined;
         it("Adding 1 container with a valid name", done => 
         {
-            initBase.request('http://localhost:8081').post('/api/v1/finance/containers/add').set('content-type', 'application/json')
+            initBase.request(`http://localhost:${process.env.PORT}`).post('/api/v1/finance/containers/add').set('content-type', 'application/json')
             .set("Authorization", bearerToken)
             .send({name: "myNewContainer"})
             .end((error, response) =>
@@ -95,7 +95,7 @@ const mongoUnit = require('mongo-unit');
 
         it("Retriving added containers without tokens", done => 
         {
-            initBase.request('http://localhost:8081').get('/api/v1/finance/containers')
+            initBase.request(`http://localhost:${process.env.PORT}`).get('/api/v1/finance/containers')
             .end((error, response) =>
             { 
                 initBase.expect(response).status(401); 
@@ -107,7 +107,7 @@ const mongoUnit = require('mongo-unit');
 
         it("Retriving added containers with tokens", done => 
         {
-            initBase.request('http://localhost:8081').get('/api/v1/finance/containers')
+            initBase.request(`http://localhost:${process.env.PORT}`).get('/api/v1/finance/containers')
             .set("Authorization", bearerToken)
             .end((error, response) =>
             { 
@@ -139,7 +139,7 @@ const mongoUnit = require('mongo-unit');
 
         it("Adding 1 transaction type without token", done => 
         {
-            initBase.request('http://localhost:8081').post('/api/v1/finance/types/add').set('content-type', 'application/json')
+            initBase.request(`http://localhost:${process.env.PORT}`).post('/api/v1/finance/types/add').set('content-type', 'application/json')
             .send({name: "Food Txn Type"})
             .end((error, response) =>
             { 
@@ -152,7 +152,7 @@ const mongoUnit = require('mongo-unit');
 
         it("Adding 1 transaction type without name", done => 
         {
-            initBase.request('http://localhost:8081').post('/api/v1/finance/types/add').set('content-type', 'application/json')
+            initBase.request(`http://localhost:${process.env.PORT}`).post('/api/v1/finance/types/add').set('content-type', 'application/json')
             .set("Authorization", bearerToken)
             .send({})
             .end((error, response) =>
@@ -167,7 +167,7 @@ const mongoUnit = require('mongo-unit');
         let foodTypePubID = undefined;
         it("Adding 1 valid transaction type", done => 
         {
-            initBase.request('http://localhost:8081').post('/api/v1/finance/types/add').set('content-type', 'application/json')
+            initBase.request(`http://localhost:${process.env.PORT}`).post('/api/v1/finance/types/add').set('content-type', 'application/json')
             .set("Authorization", bearerToken)
             .send({name: "my food type"})
             .end((error, response) =>
@@ -187,7 +187,7 @@ const mongoUnit = require('mongo-unit');
 
         it("Retriving added txn type without token", done => 
         {
-            initBase.request('http://localhost:8081').get('/api/v1/finance/transactionTypes').set('content-type', 'application/json')
+            initBase.request(`http://localhost:${process.env.PORT}`).get('/api/v1/finance/transactionTypes').set('content-type', 'application/json')
             .end((error, response) =>
             { 
                 initBase.expect(response).status(401); 
@@ -199,7 +199,7 @@ const mongoUnit = require('mongo-unit');
 
         it("Retriving added txn type with token", done => 
         {
-            initBase.request('http://localhost:8081').get('/api/v1/finance/transactionTypes').set('content-type', 'application/json')
+            initBase.request(`http://localhost:${process.env.PORT}`).get('/api/v1/finance/transactionTypes').set('content-type', 'application/json')
             .set("Authorization", bearerToken)
             .end((error, response) =>
             { 
@@ -224,7 +224,7 @@ const mongoUnit = require('mongo-unit');
         let container2PubID = undefined;
         it("Adding another container with a valid name", done => 
         {
-            initBase.request('http://localhost:8081').post('/api/v1/finance/containers/add').set('content-type', 'application/json')
+            initBase.request(`http://localhost:${process.env.PORT}`).post('/api/v1/finance/containers/add').set('content-type', 'application/json')
             .set("Authorization", bearerToken)
             .send({name: "myNewContainer 2"})
             .end((error, response) =>
@@ -241,7 +241,7 @@ const mongoUnit = require('mongo-unit');
 
         it("Adding 1 expenses txn: missing tokens", done => 
         {
-            initBase.request('http://localhost:8081').post('/api/v1/finance/transactions').set('content-type', 'application/json')
+            initBase.request(`http://localhost:${process.env.PORT}`).post('/api/v1/finance/transactions').set('content-type', 'application/json')
             .send({})
             .end((error, response) =>
             { 
@@ -254,7 +254,7 @@ const mongoUnit = require('mongo-unit');
 
         it("Adding 1 expenses txn: missing type", done => 
         {
-            initBase.request('http://localhost:8081').post('/api/v1/finance/transactions').set('content-type', 'application/json')
+            initBase.request(`http://localhost:${process.env.PORT}`).post('/api/v1/finance/transactions').set('content-type', 'application/json')
             .set("Authorization", bearerToken)
             .send(
             {
@@ -419,7 +419,7 @@ const mongoUnit = require('mongo-unit');
 
         it("Retriving added txns", done => 
         {
-            initBase.request('http://localhost:8081').get('/api/v1/finance/transactions').set('content-type', 'application/json')
+            initBase.request(`http://localhost:${process.env.PORT}`).get('/api/v1/finance/transactions').set('content-type', 'application/json')
             .set("Authorization", bearerToken)
             .end((error, response) =>
             {                
@@ -432,8 +432,72 @@ const mongoUnit = require('mongo-unit');
                 else done();
             });
         });
-
     });
+
+    describe('API: Data Correctness - Suit 1', () => 
+    {
+        let bearerToken = "";
+        // Start using the testData.json
+        const testData = require('./dataCorrectnessData1.json');
+        const username = "myNewUsername_____2";
+        const password = "myNewPassword_____2";
+
+        after(async () => { await mongoUnit.drop(); });
+
+        it('Register with both valid password and username', async () => 
+        {
+            return new Promise(async (resolve, reject) => 
+            {
+                await mongoUnit.load(testData);
+
+                initBase.request(`http://localhost:${process.env.PORT}`).post('/api/v1/finance/accounts/register').set('content-type', 'application/json')
+                .send({ username: username, password: password })
+                .end((error, response, body) =>
+                { 
+                    initBase.expect(response).status(200); 
+
+                    if (error) resolve(error);   
+                    else resolve();
+                });
+            });
+        });
+
+        it("Logging to the created account without useragent", done => 
+        {
+            initBase.request(`http://localhost:${process.env.PORT}`).post('/api/v1/finance/login').set('content-type', 'application/json')
+            .send({ username: username, password: password })
+            .end((error, response) =>
+            { 
+                initBase.expect(response).status(200); 
+                initBase.expect(response.body).to.have.property("token");
+                bearerToken = response.body.token;
+
+                if (error) { done(error); }
+                else done();
+            });
+        });
+
+        it("Checking Dashboard Summary", done => 
+        {
+            initBase.request(`http://localhost:${process.env.PORT}`).get('/api/v1/finance/summary').set('content-type', 'application/json')
+            .set("Authorization", bearerToken)
+            .end((error, response) =>
+            {                
+                initBase.expect(response).status(200); 
+                initBase.expect(response.body['totalIncomes30d']).equals(0);
+                initBase.expect(response.body['totalExpenses30d']).equals(101.0001);
+                initBase.expect(response.body['totalIncomes7d']).equals(0);
+                initBase.expect(response.body['totalExpenses7d']).equals(101.0001);
+                initBase.expect(response.body['totalIncomes']).equals(0);
+                initBase.expect(response.body['totalExpenses']).equals(101.0001);
+                initBase.expect(response.body['expenses30d']).length(1);
+
+                if (error) { done(error); }
+                else done();
+            });
+        });
+    });
+
 })();
 
 /**
@@ -445,7 +509,7 @@ const mongoUnit = require('mongo-unit');
  */
 function post(url, body, authToken)
 {
-    let initBasen = initBase.request('http://localhost:8081')
+    let initBasen = initBase.request(`http://localhost:${process.env.PORT}`)
     .post(url)
     .set('content-type', 'application/json');
     if (authToken) initBasen = initBasen.set("Authorization", authToken);

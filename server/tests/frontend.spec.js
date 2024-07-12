@@ -7,7 +7,7 @@ const initBase = require('./init.spec');
         it('Index.html Access', done => 
         {
             initBase
-            .request('http://localhost:8081')
+            .request(`http://localhost:${process.env.PORT}`)
             .get('/')
             .end(function(err, res) 
             { 

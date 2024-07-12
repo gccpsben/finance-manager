@@ -15,7 +15,6 @@ mongoUnit.start().then(async () =>
     process.env.FINANCE_DB_FULL_URL = mongoUnit.getUrl() // this var process.env.DATABASE_URL = will keep link to fake mongo
 
     await server.startServer();
-    server.startLogger();
 
     // Run tests in this order:
     require("./database.spec");

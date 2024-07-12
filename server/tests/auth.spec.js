@@ -7,7 +7,7 @@ const mongoUnit = require('mongo-unit');
     {
         it('Register with missing username in json', done => 
         {
-            initBase.request('http://localhost:8081')
+            initBase.request(`http://localhost:${process.env.PORT}`)
             .post('/api/v1/finance/accounts/register')
             .set('content-type', 'application/json')
             .send({ password: "this is my new password" })
@@ -20,7 +20,7 @@ const mongoUnit = require('mongo-unit');
 
         it('Register with missing password in json', done => 
         {
-            initBase.request('http://localhost:8081')
+            initBase.request(`http://localhost:${process.env.PORT}`)
             .post('/api/v1/finance/accounts/register')
             .set('content-type', 'application/json')
             .send({ username: "usernameHere" })
@@ -33,7 +33,7 @@ const mongoUnit = require('mongo-unit');
 
         it('Register with empty username in json', done => 
         {
-            initBase.request('http://localhost:8081')
+            initBase.request(`http://localhost:${process.env.PORT}`)
             .post('/api/v1/finance/accounts/register')
             .set('content-type', 'application/json')
             .send({ username: "", password: "newpassword" })
@@ -46,7 +46,7 @@ const mongoUnit = require('mongo-unit');
 
         it('Register with empty passsword in json', done => 
         {
-            initBase.request('http://localhost:8081')
+            initBase.request(`http://localhost:${process.env.PORT}`)
             .post('/api/v1/finance/accounts/register')
             .set('content-type', 'application/json')
             .send({ username: "usernameHere", password: "" })
@@ -67,7 +67,7 @@ const mongoUnit = require('mongo-unit');
             {
                 await mongoUnit.load(testData);
 
-                initBase.request('http://localhost:8081').post('/api/v1/finance/accounts/register').set('content-type', 'application/json')
+                initBase.request(`http://localhost:${process.env.PORT}`).post('/api/v1/finance/accounts/register').set('content-type', 'application/json')
                 .send({ username: "myNewUsername", password: "myNewPassword" })
                 .end((error, response, body) =>
                 { 
@@ -81,7 +81,7 @@ const mongoUnit = require('mongo-unit');
 
         it("Logging to the created account with wrong username", done => 
         {
-            initBase.request('http://localhost:8081').post('/api/v1/finance/login').set('content-type', 'application/json')
+            initBase.request(`http://localhost:${process.env.PORT}`).post('/api/v1/finance/login').set('content-type', 'application/json')
             .send({ username: "this is a wrong username", password: "myNewPassword" })
             .end((error, response) =>
             { 
@@ -95,7 +95,7 @@ const mongoUnit = require('mongo-unit');
 
         it("Logging to the created account with wrong password", done => 
         {
-            initBase.request('http://localhost:8081').post('/api/v1/finance/login').set('content-type', 'application/json')
+            initBase.request(`http://localhost:${process.env.PORT}`).post('/api/v1/finance/login').set('content-type', 'application/json')
             .send({ username: "myNewUsername", password: "this is a wrong password" })
             .end((error, response) =>
             { 
@@ -109,7 +109,7 @@ const mongoUnit = require('mongo-unit');
 
         it("Logging to the created account without useragent", done => 
         {
-            initBase.request('http://localhost:8081').post('/api/v1/finance/login').set('content-type', 'application/json')
+            initBase.request(`http://localhost:${process.env.PORT}`).post('/api/v1/finance/login').set('content-type', 'application/json')
             .send({ username: "myNewUsername", password: "myNewPassword" })
             .end((error, response) =>
             { 
@@ -132,7 +132,7 @@ const mongoUnit = require('mongo-unit');
  */
 function post(url, body, authToken)
 {
-    let initBasen = initBase.request('http://localhost:8081')
+    let initBasen = initBase.request(`http://localhost:${process.env.PORT}`)
     .post(url)
     .set('content-type', 'application/json');
     if (authToken) initBasen = initBasen.set("Authorization", authToken);
