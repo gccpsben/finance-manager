@@ -1,8 +1,8 @@
-import { getModelForClass, modelOptions, prop } from "@typegoose/typegoose";
+import { getModelForClass, modelOptions, mongoose, prop } from "@typegoose/typegoose";
 import { CurrencyClass } from "./currency";
 import { AmountClass } from "./amount";
 
-@modelOptions ( { schemaOptions: { autoCreate: false , _id : false } } )
+@modelOptions ( { schemaOptions: { autoCreate: false , _id : false }, existingMongoose: mongoose } )
 export class ContainerBoundAmountClass
 {
     @prop({required:true})
@@ -18,7 +18,7 @@ export const ContainerBoundAmountModel = getModelForClass(ContainerBoundAmountCl
  */
 export type TransactionMovementType = "Receive" | "Spent";
 
-@modelOptions ( { schemaOptions: { autoCreate: false , _id : false } } )
+@modelOptions ( { schemaOptions: { autoCreate: false , _id : false } , existingMongoose: mongoose} )
 export class TransactionResolutionClass
 {
     @prop({required:true})
@@ -26,7 +26,7 @@ export class TransactionResolutionClass
 }
 export const TransactionResolutionModel = getModelForClass(TransactionResolutionClass);
 
-@modelOptions ( { schemaOptions: {  collection: "transactionTypes" }} )
+@modelOptions ( { schemaOptions: {  collection: "transactionTypes" }, existingMongoose: mongoose} )
 export class TransactionTypeClass
 {
     @prop( { required: true } )
@@ -45,7 +45,7 @@ export class TransactionTypeClass
 }
 export const TransactionTypeModel = getModelForClass(TransactionTypeClass);
 
-@modelOptions ( {schemaOptions: { collection: "transactions", toJSON: { virtuals: true } }} )
+@modelOptions ( {schemaOptions: { collection: "transactions", toJSON: { virtuals: true } }, existingMongoose: mongoose } )
 export class TransactionClass
 {
     @prop( { required: true } )

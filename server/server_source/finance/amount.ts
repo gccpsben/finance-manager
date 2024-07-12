@@ -1,8 +1,8 @@
-import { getModelForClass, modelOptions, prop } from "@typegoose/typegoose";
+import { getModelForClass, modelOptions, mongoose, prop } from "@typegoose/typegoose";
 import { CurrencyClass, CurrencyModel } from "./currency";
 import { logYellow } from "../extendedLog";
 
-@modelOptions ( { schemaOptions: { autoCreate: false , _id : false } } )
+@modelOptions ( { schemaOptions: { autoCreate: false , _id : false }, existingMongoose: mongoose  } )
 export class AmountClass
 {
     @prop({required:true})

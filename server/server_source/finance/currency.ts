@@ -1,4 +1,4 @@
-import { getModelForClass, modelOptions, prop } from "@typegoose/typegoose";
+import { getModelForClass, modelOptions, mongoose, prop } from "@typegoose/typegoose";
 import { DataCache, ExpiringValueCache } from "./dataCache";
 import { logGreen, logRed, logYellow } from "../extendedLog";
 let jmespath = require('jmespath');
@@ -15,7 +15,7 @@ let jmespath = require('jmespath');
             timeField: "date",
             metaField: "currencyPubID"
         } 
-    }
+    }, existingMongoose: mongoose 
 } ) 
 export class CurrencyRateClass
 {
@@ -72,7 +72,7 @@ export class CurrencyRateClass
 }
 export const CurrencyRateModel = getModelForClass(CurrencyRateClass);
 
-@modelOptions ( { schemaOptions: { autoCreate:false, _id : false } } )
+@modelOptions ( { schemaOptions: { autoCreate:false, _id : false }, existingMongoose: mongoose  } )
 export class CurrencyDataSourceClass
 {
     @prop( { required: true } )
@@ -86,7 +86,7 @@ export const CurrencyDataSourceModel = getModelForClass(CurrencyDataSourceClass)
 
 export type LatestRateHydratedCurrencyClass = CurrencyClass & { rate: number; _id: string; };
 
-@modelOptions ( {schemaOptions: { collection: "currencies" }} )
+@modelOptions ( {schemaOptions: { collection: "currencies" }, existingMongoose: mongoose } )
 export class CurrencyClass
 {
     /**

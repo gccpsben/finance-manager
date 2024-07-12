@@ -1,9 +1,9 @@
-import { getModelForClass, modelOptions, prop } from "@typegoose/typegoose";
+import { getModelForClass, modelOptions, mongoose, prop } from "@typegoose/typegoose";
 import { DataCache } from "./dataCache";
 import { ContainerClass } from "./container";
 import { TransactionClass, TransactionModel } from "./transaction";
 
-@modelOptions ( {schemaOptions: { collection: "totalValueHistory" }} )
+@modelOptions ( {schemaOptions: { collection: "totalValueHistory" }, existingMongoose: mongoose } )
 export class TotalValueRecordClass
 {
     @prop( {required: true} )

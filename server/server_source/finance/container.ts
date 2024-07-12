@@ -13,7 +13,7 @@ export type balanceSnapshot =
 };
 
 
-@modelOptions ( {schemaOptions: { collection: "containers" } } )
+@modelOptions ( {schemaOptions: { collection: "containers" }, existingMongoose: mongoose  } )
 export class ContainerClass
 {
     @prop( { type:String, required: true } )
@@ -218,13 +218,10 @@ export class ContainerClass
         let allTxn: (TransactionClassWithoutTitle | TransactionClass)[] = [];
         if (!cache.allTransactionWithoutTitle && !cache.allTransactions)
         {
-            console.log("getTotalBalanceHistory");
             cache = await DataCache.ensureTransactionsWithoutTitle(cache);
             allTxn = cache.allTransactionWithoutTitle;
         }
         else allTxn = cache.allTransactionWithoutTitle || cache.allTransactions;
-
-        // let allTxn = c
 
         allTxn.sort((a:TransactionClass,b:TransactionClass) => a.date.getTime() - b.date.getTime());
         let oldestDate = Math.min(...allTxn.map(txn => txn.date.getTime()));

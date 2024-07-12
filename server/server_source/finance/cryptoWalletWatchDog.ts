@@ -1,11 +1,11 @@
-import { getModelForClass, modelOptions, prop } from "@typegoose/typegoose";
+import { getModelForClass, modelOptions, mongoose, prop } from "@typegoose/typegoose";
 import { DataCache } from "./dataCache";
 import { TransactionClass, TransactionModel, TransactionMovementType } from "./transaction";
 import { genUUID } from "../uuid";
 import axios from "axios";
 import { log, logRed } from "../extendedLog";
 
-@modelOptions ( { schemaOptions: { autoCreate:false, _id : false }} )
+@modelOptions ( { schemaOptions: { autoCreate:false, _id : false }, existingMongoose: mongoose } )
 export class WalletTokenClass
 {
     @prop( { required: true } )
@@ -19,7 +19,7 @@ export class WalletTokenClass
 }
 export const WalletTokenModel = getModelForClass(WalletTokenClass);
 
-@modelOptions ( {schemaOptions: { collection: "cryptoWalletWatchdogs" }} )
+@modelOptions ( {schemaOptions: { collection: "cryptoWalletWatchdogs" }, existingMongoose: mongoose } )
 export class CryptoWalletWatchDogClass
 {
     @prop( { required: true } )

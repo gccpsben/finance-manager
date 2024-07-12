@@ -1,11 +1,11 @@
-import { getModelForClass, modelOptions, prop } from "@typegoose/typegoose";
+import { getModelForClass, modelOptions, mongoose, prop } from "@typegoose/typegoose";
 import { AccountClassModel } from "./account";
 import { v4 as uuidv4 } from 'uuid';
 import { isDevelopment } from "../server";
 
 let jwt = require("jsonwebtoken");
 
-@modelOptions ( { schemaOptions: { autoCreate: true, collection:"accessTokens" } } )
+@modelOptions ( { schemaOptions: { autoCreate: true, collection:"accessTokens" }, existingMongoose: mongoose  } )
 export class AccessTokenClass
 {
     @prop( {required:true} )
