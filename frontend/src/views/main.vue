@@ -14,10 +14,6 @@ export default
             store: useMainStore(),
         };
     },
-    mounted()
-    {
-        this.store.updateAll();
-    },
     computed:
     {
         currentPageName() { return this.$router.currentRoute.value.fullPath.split('/').pop(); },

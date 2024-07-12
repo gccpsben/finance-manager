@@ -17,20 +17,7 @@ router.get(`/api/v1/finance/currencies`, async (req:any, res:any) =>
 {
     // Check for permission and login
     if (!await AccessTokenClassModel.isRequestAuthenticated(req)) { res.status(401).json({}); return; }
-    
-    // Hydrate the currencies documents with the latest rates
-    let originals = (await CurrencyModel.find().select(['symbol', 'name', 'pubID', 'fallbackRate']));
-    let hydrated: (Partial<CurrencyRateClass> & { rate: number })[] = [];
-    
-    for (let currency of originals)
-    {
-        hydrated.push({
-            rate: await currency.getLatestRate(),
-            ...currency.toJSON()
-        });
-    }
-
-    res.json(hydrated); 
+    res.json(await CurrencyModel.getLatestRateHydratedCurrencies()); 
 });
 
 router.post(`/api/v1/finance/currencies/add`, async (req:any, res:any) => 

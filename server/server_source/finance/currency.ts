@@ -1,5 +1,5 @@
 import { getModelForClass, modelOptions, prop } from "@typegoose/typegoose";
-import { ExpiringValueCache } from "./dataCache";
+import { DataCache, ExpiringValueCache } from "./dataCache";
 import { logGreen, logRed, logYellow } from "../extendedLog";
 let jmespath = require('jmespath');
 
@@ -83,6 +83,8 @@ export class CurrencyDataSourceClass
     jmesQuery!: string;
 }
 export const CurrencyDataSourceModel = getModelForClass(CurrencyDataSourceClass);
+
+export type LatestRateHydratedCurrencyClass = CurrencyClass & { rate: number; _id: string; };
 
 @modelOptions ( {schemaOptions: { collection: "currencies" }} )
 export class CurrencyClass
@@ -180,6 +182,23 @@ export class CurrencyClass
         }
 
         return rate;
+    }
+
+    public static async getLatestRateHydratedCurrencies(cache? : DataCache | undefined)
+    {
+        // Hydrate the currencies documents with the latest rates
+        let originals = cache?.allCurrencies || await CurrencyModel.find({});
+        let hydrated: (Partial<CurrencyRateClass> & { rate: number })[] = [];
+        
+        for (let currency of originals)
+        {
+            hydrated.push({
+                rate: await currency.getLatestRate(),
+                ...currency["_doc"]
+            });
+        }
+
+        return hydrated;
     }
 }
 export const CurrencyModel = getModelForClass(CurrencyClass);

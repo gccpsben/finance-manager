@@ -7,6 +7,7 @@ import txnTypesRouter from './routes/transactionTypes';
 import apiRouter from './routes/api';
 import staticAssetsRouter from './routes/staticAssets';
 import devOnlyRouter from './routes/dev';
+import batchRouter from './routes/batch';
 import express = require("express");
 import { isDevelopment } from './server';
 
@@ -22,6 +23,7 @@ export default function getMainRouter()
     router.use("/", graphsRouter);
     router.use("/", txnTypesRouter);
     router.use("/", apiRouter);
+    router.use("/", batchRouter);
     router.use("/", staticAssetsRouter); // static assets should be the last router
 
     return router;

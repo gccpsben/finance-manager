@@ -26,12 +26,14 @@ function clearCookie(cname:string) { setCookie(cname, "", -1); }
 type UseNetworkRequestInterface = {
     autoResetOnUnauthorized?: boolean;
     includeAuthHeaders?: boolean;
+    updateOnMount?: boolean;
 };
 
 export function useNetworkRequest<T>(url: string|undefined, config: UseNetworkRequestInterface | undefined)
 {
     const shouldAutoResetOnUnauthorized = config?.autoResetOnUnauthorized ?? false;
     const shouldIncludeAuthHeaders = config?.includeAuthHeaders ?? false;
+    const updateOnMount = config?.updateOnMount ?? true;
 
     const isLoading = ref<boolean>(false);
     const lastSuccessfulData = ref<T | null>(null);
@@ -75,7 +77,8 @@ export function useNetworkRequest<T>(url: string|undefined, config: UseNetworkRe
         }
     };
 
-    watchEffect(() => { updateData(); });
+    if (updateOnMount)
+        watchEffect(() => { updateData(); });
 
     return {
         isLoading,

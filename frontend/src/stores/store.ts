@@ -1,4 +1,4 @@
-import { API_BAL_VAL_PATH, API_CONTAINERS_PATH, API_CURRENCIES_PATH, API_GRAPHS_PATH, API_NET_WORTH_GRAPH_PATH, API_SUMMARY_PATH, API_TXN_TYPES_PATH } from '@/apiPaths';
+import { API_BAL_VAL_PATH, API_CONTAINERS_PATH, API_CURRENCIES_PATH, API_DASHBOARD_BATCH_PATH, API_GRAPHS_PATH, API_NET_WORTH_GRAPH_PATH, API_SUMMARY_PATH, API_TXN_TYPES_PATH } from '@/apiPaths';
 import { useNetworkRequest } from '@/composables/useNetworkRequest';
 import type { ValueHydratedContainer } from '@/types/dtos/containersDTO';
 import type { RateDefinedCurrency } from '@/types/dtos/currenciesDTO';
@@ -7,6 +7,7 @@ import type { TxnType } from '@/types/dtos/txnTypesDTO';
 import axios, { AxiosError } from 'axios';
 import { defineStore } from 'pinia';
 import type { GraphsSummary } from '../types/dtos/graphsSummaryDTO';
+import type { DashboardBatchDTO } from '@/types/dtos/dashboardBatchDTO';
 
 export type Subpage = { name: string; }
 
@@ -68,10 +69,10 @@ export const useMainStore = defineStore(
                     iconClass: "fa fa-inbox"
                 }
             ] as PageDefinition[],
-            dashboardSummary: useNetworkRequest<DashboardSummary>(API_SUMMARY_PATH, { includeAuthHeaders: true }),
+            dashboardSummary: useNetworkRequest<DashboardSummary>(API_SUMMARY_PATH, { includeAuthHeaders: true, updateOnMount: false }),
             graphsSummary: useNetworkRequest<GraphsSummary>(API_GRAPHS_PATH, { includeAuthHeaders: true }),
-            currencies: useNetworkRequest<RateDefinedCurrency[]>(API_CURRENCIES_PATH, { includeAuthHeaders: true }),
-            containers: useNetworkRequest<ValueHydratedContainer[]>(API_CONTAINERS_PATH, { includeAuthHeaders: true }),
+            currencies: useNetworkRequest<RateDefinedCurrency[]>(API_CURRENCIES_PATH, { includeAuthHeaders: true, updateOnMount: false }),
+            containers: useNetworkRequest<ValueHydratedContainer[]>(API_CONTAINERS_PATH, { includeAuthHeaders: true, updateOnMount: false }),
             txnTypes: useNetworkRequest<TxnType[]>(API_TXN_TYPES_PATH, { includeAuthHeaders: true }),
             netWorthHistory: { "netWorthHistory": {}, "netWorthActualHistory": {} } as NetWorthAPIResponse,
             balanceValueHistory: useNetworkRequest<BalanceValueHistoryAPIResponse>(API_BAL_VAL_PATH, { includeAuthHeaders: true }),
@@ -85,6 +86,29 @@ export const useMainStore = defineStore(
     },
     actions: 
     {
+        /** A batch endpoint is available at backend. The endpoint combines dashboardSummary, containers, currencies and netWorth into a single endpoint. */
+        async updateDashboardBatch()
+        {
+            const request = useNetworkRequest<DashboardBatchDTO>(API_DASHBOARD_BATCH_PATH, 
+            {
+                autoResetOnUnauthorized: true,
+                includeAuthHeaders: true,
+                updateOnMount: false
+            });
+            this.dashboardSummary.isLoading = true;
+            this.containers.isLoading = true;
+            this.currencies.isLoading = true;
+            await request.updateData();
+            if (request.lastSuccessfulData.value)
+            {
+                this.dashboardSummary.lastSuccessfulData = request.lastSuccessfulData.value!.summary;
+                this.currencies.lastSuccessfulData = request.lastSuccessfulData.value!.currenciesHydrated;
+                this.containers.lastSuccessfulData = request.lastSuccessfulData.value!.containersHydrated;
+            }
+            this.dashboardSummary.isLoading = false;
+            this.containers.isLoading = false;
+            this.currencies.isLoading = false;
+        },
         async updateAll()
         {
             if (new Date().getTime() - this.lastUpdateTime.getTime() < 10000) return;

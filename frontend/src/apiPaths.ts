@@ -7,3 +7,4 @@ export const API_CONTAINERS_PATH = "/api/v1/finance/containers";
 export const API_TXN_TYPES_PATH = "/api/v1/finance/transactionTypes";
 export const API_GRAPHS_PATH = "/api/v1/finance/graphs";
 export const API_BAL_VAL_PATH = "/api/v1/finance/balanceHistory";
+export const API_DASHBOARD_BATCH_PATH = `/api/v1/finance/batch/dashboard`;
