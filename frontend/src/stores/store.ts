@@ -70,12 +70,12 @@ export const useMainStore = defineStore(
                 }
             ] as PageDefinition[],
             dashboardSummary: useNetworkRequest<DashboardSummary>(API_SUMMARY_PATH, { includeAuthHeaders: true, updateOnMount: false }),
-            graphsSummary: useNetworkRequest<GraphsSummary>(API_GRAPHS_PATH, { includeAuthHeaders: true }),
+            graphsSummary: useNetworkRequest<GraphsSummary>(API_GRAPHS_PATH, { includeAuthHeaders: true, updateOnMount: false }),
             currencies: useNetworkRequest<RateDefinedCurrency[]>(API_CURRENCIES_PATH, { includeAuthHeaders: true, updateOnMount: false }),
             containers: useNetworkRequest<ValueHydratedContainer[]>(API_CONTAINERS_PATH, { includeAuthHeaders: true, updateOnMount: false }),
             txnTypes: useNetworkRequest<TxnType[]>(API_TXN_TYPES_PATH, { includeAuthHeaders: true }),
             netWorthHistory: useNetworkRequest<NetWorthAPIResponse>(API_NET_WORTH_GRAPH_PATH, { includeAuthHeaders: true, updateOnMount: false }),
-            balanceValueHistory: useNetworkRequest<BalanceValueHistoryAPIResponse>(API_BAL_VAL_PATH, { includeAuthHeaders: true }),
+            balanceValueHistory: useNetworkRequest<BalanceValueHistoryAPIResponse>(API_BAL_VAL_PATH, { includeAuthHeaders: true, updateOnMount: false }),
             lastUpdateTime: new Date(0) as Date,
             mainViewSidebarVisible: true
         }
