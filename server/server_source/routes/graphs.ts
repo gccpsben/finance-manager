@@ -5,7 +5,7 @@ import { ContainerClass } from '../finance/container';
 import { TransactionClass } from '../finance/transaction';
 import { CurrencyModel, CurrencyRateModel } from '../finance/currency';
 import { LinearInterpolator } from '../LinearInterpolator';
-import { DataCache } from '../finance/dataCache';
+import { DataCache, TransactionClassWithoutTitle } from '../finance/dataCache';
 
 const router = express.Router();
 
@@ -120,11 +120,21 @@ router.get(`/api/v1/finance/summary`, async (req:any, res:any) =>
 export async function getSummary(cache?: DataCache|undefined)
 {
     if (cache == undefined) cache = new DataCache();
-    cache = await DataCache.ensureTransactions(cache);
+    
+    let allTxns: (TransactionClassWithoutTitle | TransactionClass)[] = [];
+
+    // We dont care about the title, if cache contains `allTransactions`, use that to proces. Otherwise, try fetching `allTransactionsWithTitle` instead
+    // to save bandwidth
+    if (!cache.allTransactionWithoutTitle && !cache.allTransactions)
+    {
+        cache = await DataCache.ensureTransactionsWithoutTitle(cache);
+        allTxns = cache.allTransactionWithoutTitle;
+    }
+    else allTxns = cache.allTransactionWithoutTitle || cache.allTransactions;
+
     cache = await DataCache.ensureContainers(cache);
     cache = await DataCache.ensureCurrencies(cache);
    
-    let allTxns = cache.allTransactions;
     let allCurrencies = cache.allCurrencies;
     let oneWeekAgoDate = new Date();  oneWeekAgoDate.setDate(oneWeekAgoDate.getDate() - 7);
     let oneMonthAgoDate = new Date(); oneMonthAgoDate.setMonth(oneMonthAgoDate.getMonth() - 1);
@@ -143,7 +153,6 @@ export async function getSummary(cache?: DataCache|undefined)
     }
 
     // a list of txns with changeInValue > 0
-    // type is lost since an extra property "changeInValue" is added.
     let allIncomeTxns:Array<hydratedTxn> = hydratedTxns.filter(tx => tx.changeInValue > 0); 
     let allExpenseTxns:Array<hydratedTxn> = hydratedTxns.filter(tx => tx.changeInValue < 0);       
 

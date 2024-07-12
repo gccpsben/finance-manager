@@ -2,6 +2,13 @@ import { TransactionClass, TransactionModel, TransactionTypeClass, TransactionTy
 import { ContainerClass, ContainerModel } from "./container";
 import { CurrencyClass, CurrencyModel } from "./currency";
 
+// DataCache is an object that is passed to different methods in this project to avoid refetch the same docs from the database.
+
+// For certain operations, we only care about certains fields in each document.
+// For example, to calculate the total income, we dont care about the title of each transaction.
+// The `findTotalIncome` method can try to look for `DataCache.allTransactionWithoutTitle` instead of `DataCache.allTransactions`
+// The method can finally use `allTransactions` is it's already loaded, or  `allTransactionWithoutTitle` if cache object doesnt have both.
+export type TransactionClassWithoutTitle = (Omit<TransactionClass, 'title'>);
 
 export class DataCache
 {
@@ -14,6 +21,7 @@ export class DataCache
     public allCurrencies?: Array<CurrencyClass>;
     public allContainers?: Array<ContainerClass>;
     public allTransactionTypes?: Array<TransactionTypeClass>;
+    public allTransactionWithoutTitle?: Array<TransactionClassWithoutTitle>;
 
     // Ensure that all properties in this class are fetched from the database.
     public static async ensure(cache?: DataCache): Promise<DataCache>
@@ -47,6 +55,16 @@ export class DataCache
         {
             cache.allTransactions = await TransactionModel.find(); // fetch all transactions from db
             DataCache.allTransactionsGlobal = [...cache.allTransactions];
+        }
+        return cache;
+    }
+
+    public static async ensureTransactionsWithoutTitle(cache? : DataCache)
+    {
+        if (cache == undefined) cache = new DataCache();
+        if (cache.allTransactionWithoutTitle === undefined)
+        {
+            cache.allTransactionWithoutTitle = await TransactionModel.find({}, { title: 0 });
         }
         return cache;
     }
