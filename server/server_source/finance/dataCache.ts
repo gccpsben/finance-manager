@@ -19,24 +19,22 @@ export class DataCache
     public static async ensure(cache?: DataCache): Promise<DataCache>
     {
         if (cache == undefined) cache = new DataCache();
-        if (cache.allContainers == undefined) 
-        { 
-            cache.allContainers = await ContainerModel.find(); // fetch all containers from db
-            DataCache.allContainersGlobal = [...cache.allContainers];
-        }
-        if (cache.allCurrencies == undefined) 
-        {
-            cache.allCurrencies = await CurrencyModel.find(); // fetch all currencies from db
-            DataCache.allCurrenciesGlobal = [...cache.allCurrencies];
-        }
-        if (cache.allTransactions == undefined) 
-        {
-            cache.allTransactions = await TransactionModel.find(); // fetch all transactions from db
-            DataCache.allTransactionsGlobal = [...cache.allTransactions];
-        }
+        await Promise.all(
+        [
+            this.ensureContainers(cache),
+            this.ensureCurrencies(cache),
+            this.ensureTransactions(cache),
+            this.ensureTransactionTypes(cache)
+        ]);
+        return cache;
+    }
+
+    public static async ensureTransactionTypes(cache?: DataCache)
+    {
+        if (cache == undefined) cache = new DataCache();
         if (cache.allTransactionTypes == undefined) 
         {
-            cache.allTransactionTypes = await TransactionTypeModel.find(); // fetch all types from db
+            cache.allTransactionTypes = await TransactionTypeModel.find(); // fetch all transactions types from db
             DataCache.allTransactionTypesGlobal = [...cache.allTransactionTypes];
         }
         return cache;
