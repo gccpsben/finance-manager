@@ -31,7 +31,7 @@ export async function init(url:string)
 
         logYellow(`Connecting to finance database "${databaseToUse}"...`);
         mongoose.set('strictQuery', true);
-        await mongoose.connect(url, { dbName: databaseToUse, connectTimeoutMS: databaseTimeoutMS });
+        await mongoose.connect(url, { dbName: databaseToUse, connectTimeoutMS: databaseTimeoutMS, maxPoolSize:30 });
 
         if (process.env.MONGOOSE_VERBOSE == 'true')
         {
