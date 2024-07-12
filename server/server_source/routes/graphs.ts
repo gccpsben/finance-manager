@@ -1,9 +1,8 @@
 import express = require('express');
-import { Express, Request, Response } from "express";
+import { Request, Response } from "express";
 import { AccessTokenClassModel } from '../finance/accessToken';
 import { ContainerClass } from '../finance/container';
-import { TotalValueRecordModel } from '../finance/totalValueRecord';
-import { TransactionModel } from '../finance/transaction';
+import { TransactionClass } from '../finance/transaction';
 import { CurrencyModel, CurrencyRateModel } from '../finance/currency';
 import { LinearInterpolator } from '../LinearInterpolator';
 import { DataCache } from '../finance/dataCache';
@@ -132,7 +131,8 @@ export async function getSummary(cache?: DataCache|undefined)
 
     // Calculate all the changeInValue of transactions.
     // An extra properties will be added to the hydrated txns: changeInValue
-    let hydratedTxns:any = [];
+    type hydratedTxn = (TransactionClass & {changeInValue: number});
+    let hydratedTxns: hydratedTxn[] = [];
     for (let index in allTxns)
     {
         hydratedTxns.push(
@@ -144,28 +144,27 @@ export async function getSummary(cache?: DataCache|undefined)
 
     // a list of txns with changeInValue > 0
     // type is lost since an extra property "changeInValue" is added.
-    let allIncomeTxns:any = hydratedTxns.filter(tx => tx.changeInValue > 0); 
-    let allExpenseTxns:any = hydratedTxns.filter(tx => tx.changeInValue < 0);       
-
+    let allIncomeTxns:Array<hydratedTxn> = hydratedTxns.filter(tx => tx.changeInValue > 0); 
+    let allExpenseTxns:Array<hydratedTxn> = hydratedTxns.filter(tx => tx.changeInValue < 0);       
 
     // The income/expense of last 30d will be sorted from oldest to newest.
-    let incomeTxns30d:any = allIncomeTxns.filter(tx => tx.date > oneMonthAgoDate).sort((b,a) => b.date - a.date); 
-    let expenseTxns30d:any = allExpenseTxns.filter(tx => tx.date > oneMonthAgoDate).sort((b,a) => b.date - a.date); 
-    let incomeTxns7d:any = allIncomeTxns.filter(tx => tx.date > oneWeekAgoDate).sort((b,a) => b.date - a.date); 
-    let expenseTxns7d:any = allExpenseTxns.filter(tx => tx.date > oneWeekAgoDate).sort((b,a) => b.date - a.date); 
+    let incomeTxns30d:Array<hydratedTxn> = allIncomeTxns.filter(tx => tx.date > oneMonthAgoDate).sort((b,a) => b.date.getTime() - a.date.getTime()); 
+    let expenseTxns30d:Array<hydratedTxn> = allExpenseTxns.filter(tx => tx.date > oneMonthAgoDate).sort((b,a) => b.date.getTime() - a.date.getTime()); 
+    let incomeTxns7d:Array<hydratedTxn> = allIncomeTxns.filter(tx => tx.date > oneWeekAgoDate).sort((b,a) => b.date.getTime() - a.date.getTime()); 
+    let expenseTxns7d:Array<hydratedTxn> = allExpenseTxns.filter(tx => tx.date > oneWeekAgoDate).sort((b,a) => b.date.getTime() - a.date.getTime()); 
 
     let output = 
     {
-        "totalIncomes30d": incomeTxns30d.reduce((acc:any, val:any) => acc + val.changeInValue, 0),
-        "totalExpenses30d": expenseTxns30d.reduce((acc:any, val:any) => acc - val.changeInValue, 0),
-        "totalIncomes7d": incomeTxns7d.reduce((acc:any, val:any) => acc + val.changeInValue, 0),
-        "totalExpenses7d": expenseTxns7d.reduce((acc:any, val:any) => acc - val.changeInValue, 0),
-        "totalIncomes": allIncomeTxns.reduce((acc:any, val:any) => acc + val.changeInValue, 0),
-        "totalExpenses": allExpenseTxns.reduce((acc:any, val:any) => acc - val.changeInValue, 0),
+        "totalIncomes30d": incomeTxns30d.reduce((acc, val) => acc + val.changeInValue, 0),
+        "totalExpenses30d": expenseTxns30d.reduce((acc, val) => acc - val.changeInValue, 0),
+        "totalIncomes7d": incomeTxns7d.reduce((acc, val) => acc + val.changeInValue, 0),
+        "totalExpenses7d": expenseTxns7d.reduce((acc, val) => acc - val.changeInValue, 0),
+        "totalIncomes": allIncomeTxns.reduce((acc, val) => acc + val.changeInValue, 0),
+        "totalExpenses": allExpenseTxns.reduce((acc, val) => acc - val.changeInValue, 0),
         "incomes30d": incomeTxns30d,
         "expenses30d": expenseTxns30d,
         "allPendingTransactions": hydratedTxns.filter(x => x.isTypePending && x.resolution == undefined),
-        "totalTransactionsCount": await TransactionModel.count()
+        "totalTransactionsCount": hydratedTxns.length
     };
     output['totalValue'] = output.totalIncomes - output.totalExpenses;
     return output;
