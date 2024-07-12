@@ -105,7 +105,7 @@ router.get(`/api/v1/finance/netWorth`, async (req:any,res:any) =>
         // Check for permission and login
         if (!await AccessTokenClassModel.isRequestAuthenticated(req)) { res.status(401).json({}); return; }
 
-        res.json(await ContainerClass.getNetWorthHistory(8640000));   
+        res.json(await ContainerClass.getNetWorthHistory(undefined, 8640000));   
     }
     catch(error) { res.status(400); res.json( { errors: error.errors } ); }
 });

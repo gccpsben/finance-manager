@@ -1,7 +1,7 @@
 
 import { getModelForClass, modelOptions, mongoose, prop } from "@typegoose/typegoose";
 import { AmountClass } from "./amount";
-import { DataCache } from "./dataCache";
+import { DataCache, TransactionClassWithoutTitle } from "./dataCache";
 import { CurrencyClass, CurrencyModel, CurrencyRateModel } from "./currency";
 import { TransactionClass, TransactionModel } from "./transaction";
 import { LinearInterpolator } from "../LinearInterpolator";
@@ -98,7 +98,6 @@ export class ContainerClass
             value: number,
             valueActual: number
         } = { pubID: this.pubID, balance:{}, balanceActual:{}, value: 0, valueActual: 0 };
-        // let output = {pubID: this.pubID, balance:{}, value:0};
 
         for (let tx of cache.allTransactions)
         {
@@ -162,9 +161,12 @@ export class ContainerClass
         return output;
     }
 
-    public static async getNetWorthHistory(intervalMs:number = 86400000)
+    public static async getNetWorthHistory(cache?: DataCache | undefined, intervalMs:number = 86400000)
     {
-        let currencies = (await CurrencyModel.find());
+        if (cache == undefined) cache = new DataCache();
+        cache = await DataCache.ensureCurrencies();
+
+        let currencies = cache.allCurrencies;
         let getCurrency = (pubID:string) => { return currencies.find(x => x.pubID == pubID); };
         let allRates = await CurrencyRateModel.find();
         let currenciesInterpolators: {[key: string]: LinearInterpolator} = {};
@@ -187,7 +189,7 @@ export class ContainerClass
             }
         };
     
-        let balHistory = await ContainerModel.getTotalBalanceHistory(intervalMs);
+        let balHistory = await ContainerModel.getTotalBalanceHistory(cache, intervalMs);
         let worthHistory: {[timestamp:string]:number} = {};
         let worthActualHistory: {[timestamp:string]:number} = {};
     
@@ -209,10 +211,22 @@ export class ContainerClass
     /**
      * Get the balance history of all containers combined.
      */
-    public static async getTotalBalanceHistory(intervalMs: number = 86400000)
+    public static async getTotalBalanceHistory(cache?: DataCache | undefined, intervalMs: number = 86400000)
     {
-        let allTxn = await TransactionModel.find();
-        allTxn.sort((a:TransactionClass,b:TransactionClass) => { return a.date.getTime() - b.date.getTime() });
+        if (cache == undefined) cache = new DataCache();
+
+        let allTxn: (TransactionClassWithoutTitle | TransactionClass)[] = [];
+        if (!cache.allTransactionWithoutTitle && !cache.allTransactions)
+        {
+            console.log("getTotalBalanceHistory");
+            cache = await DataCache.ensureTransactionsWithoutTitle(cache);
+            allTxn = cache.allTransactionWithoutTitle;
+        }
+        else allTxn = cache.allTransactionWithoutTitle || cache.allTransactions;
+
+        // let allTxn = c
+
+        allTxn.sort((a:TransactionClass,b:TransactionClass) => a.date.getTime() - b.date.getTime());
         let oldestDate = Math.min(...allTxn.map(txn => txn.date.getTime()));
         let currentDate = oldestDate;
         let now = Date.now();
