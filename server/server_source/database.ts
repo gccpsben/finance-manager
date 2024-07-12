@@ -14,24 +14,18 @@ export async function checkDatabaseIntegrity()
     logGreen(`No database issue found!`);
 }
 
-export function loadDatabaseSettingsFromEnv()
-{
-    databaseToUse = process.env.FINANCE_DB_NAME;
-}
-
 export async function init(url:string)
 {
     try
     {
-        loadDatabaseSettingsFromEnv();
-        
-        if (process.env.FINANCE_DB_FULL_URL == undefined) throw new Error("FINANCE_DB_FULL_URL is not defined.");
-        
-        if (databaseToUse == undefined) throw new Error("databaseToUse is not defined in the env file.");
-
+        if (url == undefined) throw new Error("FINANCE_DB_FULL_URL is not defined.");
         logYellow(`Connecting to finance database "${databaseToUse}"...`);
         mongoose.set('strictQuery', true);
-        await mongoose.connect(url, { dbName: databaseToUse, connectTimeoutMS: databaseTimeoutMS, maxPoolSize:30 });
+        await mongoose.connect(url, 
+        { 
+            connectTimeoutMS: databaseTimeoutMS, 
+            maxPoolSize:30
+        });
 
         if (process.env.MONGOOSE_VERBOSE == 'true')
         {
