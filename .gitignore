@@ -9,6 +9,7 @@
 /dist/*
 .vscode
 *.env
+!.template.env
 
 # used for unit test
 !server/test.env
