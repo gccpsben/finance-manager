@@ -163,7 +163,7 @@ export default
     async mounted() 
     { 
         this.isLoading = true;
-        await this.store.updateAll(); 
+        await this.store.updateDashboardBatch();
         this.isLoading = false;
     },
     data()
