@@ -1,21 +1,5 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import MainView from '../views/main.vue'
-import LoginView from "../views/loginView.vue"
-
-// MainView Pages
-import dashboardPage from "../mainViewPages/dashboard.vue"
-import chartsPage from "../mainViewPages/charts.vue";
-import currenciesPage from '../mainViewPages/currencies.vue';
-import transactionsPage from "../mainViewPages/transactions.vue"
-import addTransactionsPage from "../views/addTransactionView.vue"
-import addContainerPage from '../views/addContainerView.vue'
-import addTypePage from '../views/addTypeView.vue'
-import addCurrencyPage from '../views/addCurrencyView.vue'
-import resolveTransactionPage from '../views/resolveTransactionView.vue';
-import containersPage from '../mainViewPages/containers.vue';
-
-// lazy loading:
-// () => import('../views/AboutView.vue')
 
 const router = createRouter(
 {
@@ -31,36 +15,36 @@ const router = createRouter(
                 {
                     path: 'dashboard',
                     name: 'dashboard',
-                    component: dashboardPage
+                    component: () => import('../mainViewPages/dashboard.vue')
                 },
                 {
                     path: 'currencies/:pubID?',
                     name: "currencies",
-                    component: currenciesPage,
+                    component: () => import('../mainViewPages/currencies.vue'),
                     props: true
                 },
                 {
                     path: 'transactions/:pubID?',
                     name: 'transactions',
-                    component: transactionsPage,
+                    component: () => import('../mainViewPages/transactions.vue'),
                     props: true
                 },
                 {
                     path: 'charts',
                     name: 'charts',
-                    component: chartsPage
+                    component: () => import('../mainViewPages/charts.vue'),
                 },
                 {
                     path: 'containers',
                     name: 'containers',
-                    component: containersPage
+                    component: () => import('../mainViewPages/containers.vue'),
                 }
             ]
 		},
         {
             path: '/login',
             name: 'login',
-            component: LoginView
+            component: () => import("../views/loginView.vue")
         },
         {
             path: '/',
@@ -69,27 +53,27 @@ const router = createRouter(
         {
             path: '/transactions/add',
             name: 'addTransaction',
-            component: addTransactionsPage
+            component: () => import("../views/addTransactionView.vue")
         },
         {
             path: '/containers/add',
             name: 'addContainer',
-            component: addContainerPage
+            component: () => import('../views/addContainerView.vue')
         },
         {
             path: '/types/add',
             name: 'addType',
-            component: addTypePage
+            component: () => import('../views/addTypeView.vue')
         },
         {
             path: '/currencies/add',
             name: 'addCurrency',
-            component: addCurrencyPage
+            component: () => import('../views/addCurrencyView.vue')
         },
         {
             path: '/transactions/resolve',
             name: 'resolveTransaction',
-            component: resolveTransactionPage
+            component: () => import('../views/resolveTransactionView.vue')
         },
 	]
 })
