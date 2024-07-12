@@ -49,7 +49,7 @@
 </style>
 
 <script lang="ts">
-import { defineComponent, toRaw } from 'vue';
+import { defineComponent, isRef, toRaw, unref } from 'vue';
 import { LineChart, type ExtractComponentData } from 'vue-chart-3';
 import { Chart, registerables, type ChartOptions, type ChartData } from "chart.js";
 import { useMainStore } from '@/stores/store';
@@ -58,7 +58,7 @@ Chart.register(...registerables);
 
 export default defineComponent(
 {
-    name: 'Home',
+    name: 'NetworthGraph',
     components: { LineChart, NetworkCircularIndicator },
     props: { "title": { default: "", type: String }, },
     setup()
@@ -89,6 +89,7 @@ export default defineComponent(
                     yAxes: { beginAtZero: false }
                 }
             } as ChartOptions<'line'>,
+            store: useMainStore()
         };
         return data;
     },
@@ -96,7 +97,6 @@ export default defineComponent(
     {
         let data = 
         { 
-            store: useMainStore(), 
             selectedVarient: "All" as "All" | "1m" | "7d" | "6m"
         };
         return data;
@@ -106,9 +106,7 @@ export default defineComponent(
         chartData()
         {
             let selectedVarient = this.selectedVarient;
-
-            let sourceData = structuredClone(toRaw(this.store.netWorthHistory?.netWorthHistory ?? {}));
-
+            let sourceData = structuredClone(toRaw(this.store.netWorthHistory!.lastSuccessfulData?.netWorthHistory) ?? {});
             let terminalDate = new Date();
 
             if (selectedVarient != "All")

@@ -74,7 +74,7 @@ export const useMainStore = defineStore(
             currencies: useNetworkRequest<RateDefinedCurrency[]>(API_CURRENCIES_PATH, { includeAuthHeaders: true, updateOnMount: false }),
             containers: useNetworkRequest<ValueHydratedContainer[]>(API_CONTAINERS_PATH, { includeAuthHeaders: true, updateOnMount: false }),
             txnTypes: useNetworkRequest<TxnType[]>(API_TXN_TYPES_PATH, { includeAuthHeaders: true }),
-            netWorthHistory: { "netWorthHistory": {}, "netWorthActualHistory": {} } as NetWorthAPIResponse,
+            netWorthHistory: useNetworkRequest<NetWorthAPIResponse>(API_NET_WORTH_GRAPH_PATH, { includeAuthHeaders: true, updateOnMount: false }),
             balanceValueHistory: useNetworkRequest<BalanceValueHistoryAPIResponse>(API_BAL_VAL_PATH, { includeAuthHeaders: true }),
             lastUpdateTime: new Date(0) as Date,
             mainViewSidebarVisible: true
@@ -101,6 +101,7 @@ export const useMainStore = defineStore(
             await request.updateData();
             if (request.lastSuccessfulData.value)
             {
+                this.netWorthHistory.lastSuccessfulData = request.lastSuccessfulData.value!.netWorth;
                 this.dashboardSummary.lastSuccessfulData = request.lastSuccessfulData.value!.summary;
                 this.currencies.lastSuccessfulData = request.lastSuccessfulData.value!.currenciesHydrated;
                 this.containers.lastSuccessfulData = request.lastSuccessfulData.value!.containersHydrated;
@@ -114,12 +115,11 @@ export const useMainStore = defineStore(
             if (new Date().getTime() - this.lastUpdateTime.getTime() < 10000) return;
             await Promise.all(
             [
-                // this.updateTransactions(),
                 this.dashboardSummary.updateData(),
                 this.currencies.updateData(),
                 this.containers.updateData(),
                 this.txnTypes.updateData(),
-                this.updateNetWorthHistory(),
+                this.netWorthHistory.updateData(),
                 this.balanceValueHistory.updateData()
             ]);
 
@@ -150,11 +150,11 @@ export const useMainStore = defineStore(
                 else throw error as any;
             });
         },
-        async updateNetWorthHistory()
-        {
-            let response = await this.authGet(API_NET_WORTH_GRAPH_PATH);
-            this.netWorthHistory = response!.data;
-        },
+        // async updateNetWorthHistory()
+        // {
+        //     let response = await this.authGet(API_NET_WORTH_GRAPH_PATH);
+        //     this.netWorthHistory = response!.data;
+        // },
         // async updateBalanceValueHistory()
         // {
         //     let response = await this.authGet(API_BAL_VAL_PATH);

@@ -111,6 +111,7 @@ export default
     components: { BarChart, LineChart, VRangeSlider, NetworkCircularIndicator },
     async mounted()
     {
+        await this.store.netWorthHistory.updateData();
         await this.store.graphsSummary.updateData();
         await this.store.currencies.updateData();
         await this.store.containers.updateData();
