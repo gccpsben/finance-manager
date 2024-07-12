@@ -16,7 +16,7 @@ import { checkDatabaseIntegrity } from './database';
 
 export let isDevelopment = true;
 export let isUnitTest = false;
-export let expressApp = undefined;
+export let expressApp = undefined as undefined | Express.Express;
 export let port = undefined as undefined | number;
 export let server = undefined as any;
 
@@ -39,6 +39,23 @@ export function loadEnv(filePath?:string)
     distFolderLocation = require('node:path').resolve(process.env.DIST_FOLDER ?? "./dist/")
 }
 
+export function attachMorganLogger(expressApp: Express.Express)
+{
+    expressApp.use(morgan((tokens, req, res) => 
+    {
+        const msg = 
+        [
+            tokens.method(req, res),
+            tokens.url(req, res),
+            tokens.status(req, res),
+            tokens.res(req, res, 'content-length'), '-',
+            tokens['response-time'](req, res), 'ms'
+        ].join(' ');
+        log(msg, true, false);
+        return msg;
+    }, { skip: () => false }));
+}
+
 export async function startServer()
 {
     return new Promise<void>(async (resolve, reject) => 
@@ -54,6 +71,8 @@ export async function startServer()
 
         // Express server starts
         expressApp = Express();
+        if (process.env.RESTFUL_VERBOSE == 'true') attachMorganLogger(expressApp);
+        else logYellow(`Morgan logger is disabled since RESFUL_VERBOSE is not set to true.`);
         expressApp.use(helmet({contentSecurityPolicy: false}));
         expressApp.use(compress())
         server = isSSLDefined ? require('https').createServer({ key:sslKey, cert:sslCert }, expressApp) : require('http').createServer(expressApp);
@@ -75,12 +94,4 @@ export async function startServer()
             logGreen(`Started listening on ${port}`); 
         });
     });
-}
-
-export function startLogger()
-{
-    let logFormat = `:date[iso] :remote-addr :method :url :status - :response-time ms`;
-    let logStream = { stream: fs.createWriteStream('./log.log', { flags: 'a' }) };
-    expressApp.use(morgan(logFormat, logStream));
-    expressApp.use(morgan(logFormat));
 }

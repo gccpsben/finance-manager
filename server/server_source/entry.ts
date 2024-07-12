@@ -4,5 +4,4 @@ import * as server from './server';
 {
     server.loadEnv();
     await server.startServer();
-    server.startLogger();
 })();

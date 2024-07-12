@@ -17,9 +17,9 @@ export function getLog(numberOfLastLines?: number)
     else { return pastLines.slice(pastLines.length - numberOfLastLines); }
 }
 
-export function log(arg:any, logToFile:boolean=true)
+export function log(arg:any, logToFile:boolean=true, logToConsole=true)
 {
-    console.log(arg);
+    if (logToConsole) console.log(arg);
     if (logToFile) { logNPM(arg, "./log.log"); }
 }
 
