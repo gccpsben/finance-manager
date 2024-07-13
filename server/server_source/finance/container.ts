@@ -133,7 +133,7 @@ export class ContainerClass
             if (tx.from != undefined && tx.from != null)
             {
                 // Check if the transaction relates to the current container:
-                if (tx.from.containerID == this.pubID.toString())
+                if (tx.from.containerID === this.pubID.toString())
                 {
                     let cID = tx.from.amount.currencyID;
                     let respectiveCurrency:CurrencyClass|undefined = cache!.allCurrencies!.find(x => x.pubID.toString() == cID);
@@ -164,11 +164,20 @@ export class ContainerClass
     public static async getNetWorthHistory(cache?: DataCache | undefined, intervalMs:number = 86400000)
     {
         if (cache == undefined) cache = new DataCache();
+        
         cache = await DataCache.ensureCurrencies();
-
         let currencies = cache.allCurrencies;
-        let getCurrency = (pubID:string) => { return currencies.find(x => x.pubID == pubID); };
-        let allRates = await CurrencyRateModel.find();
+
+        /** Use mapping instead of array.find for performance. (around 50ms faster for 8k output items in output.netWorthHistory) */
+        const currenciesPubIDMapping: { [pubID: string]: CurrencyClass } = (() => 
+        {
+            let mapping = {};
+            for (let i = 0; i < currencies.length; i++)
+                mapping[currencies[i].pubID] = currencies[i];
+            return mapping;
+        })();
+        
+        const allRates = await CurrencyRateModel.find();
         let currenciesInterpolators: {[key: string]: LinearInterpolator} = {};
         for (let currency of currencies)
         {
@@ -177,22 +186,28 @@ export class ContainerClass
             .map(x => { return {"key": x.date.getTime(), "value": x.rate} });
             currenciesInterpolators[currency.pubID] = LinearInterpolator.fromEntries(rates);
         }
-    
-        let sum = (numbers:number[]) => { return numbers.reduce((pv, cv) => pv + cv, 0); };
-        let getBalanceWorth = (bal: balanceSnapshot, timestamp: number) => 
+
+        /** use for loop instead of reduce for slight performance increase */
+        const sum = (numbers:number[]) => 
+        { 
+            let sum = 0;
+            for (let num of numbers) sum += num;
+            return sum
+        };
+
+        const getBalanceWorth = (bal: balanceSnapshot, timestamp: number) => 
         {
-            let getCurrencyRate = (pubID:string) => { return currenciesInterpolators[pubID].getValueNew(timestamp) ?? getCurrency(pubID).fallbackRate ?? 0; };
-    
+            let getCurrencyRate = (pubID:string) => { return currenciesInterpolators[pubID].getValueNew(timestamp) ?? currenciesPubIDMapping[pubID].fallbackRate ?? 0; };
             return {
                 "balance": sum(Object.entries(bal.balance).map(entry => entry[1] * getCurrencyRate(entry[0]))),
                 "balanceActual": sum(Object.entries(bal.balanceActual).map(entry => entry[1] * getCurrencyRate(entry[0])))
-            }
+            };
         };
     
+        
         let balHistory = await ContainerModel.getTotalBalanceHistory(cache, intervalMs);
         let worthHistory: {[timestamp:string]:number} = {};
         let worthActualHistory: {[timestamp:string]:number} = {};
-    
         for (let timestampStr in balHistory)
         {
             let timestamp = parseInt(timestampStr);
@@ -201,7 +216,6 @@ export class ContainerClass
             worthHistory[timestampStr] = worths.balance;
             worthActualHistory[timestampStr] = worths.balanceActual;
         }
-
         return {
             "netWorthHistory": worthHistory,
             "netWorthActualHistory": worthActualHistory,
@@ -211,6 +225,7 @@ export class ContainerClass
     /**
      * Get the balance history of all containers combined.
      */
+    // 500-600 ms
     public static async getTotalBalanceHistory(cache?: DataCache | undefined, intervalMs: number = 86400000)
     {
         if (cache == undefined) cache = new DataCache();
@@ -222,9 +237,11 @@ export class ContainerClass
             allTxn = cache.allTransactionWithoutTitle;
         }
         else allTxn = cache.allTransactionWithoutTitle || cache.allTransactions;
-
-        allTxn.sort((a:TransactionClass,b:TransactionClass) => a.date.getTime() - b.date.getTime());
+    
+        allTxn.sort((a:TransactionClass,b:TransactionClass) => a.date.getTime() - b.date.getTime()); // 3-4ms
+        
         let oldestDate = Math.min(...allTxn.map(txn => txn.date.getTime()));
+        
         let currentDate = oldestDate;
         let now = Date.now();
         let currentBalance: {[key: string]: number} = {};
@@ -253,6 +270,7 @@ export class ContainerClass
 
                 txnToRemove.push(txn.pubID);
             }
+
             allTxn = allTxn.filter(x => !txnToRemove.includes(x.pubID));
 
             output[currentDate] = 
