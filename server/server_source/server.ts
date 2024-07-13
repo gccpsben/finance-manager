@@ -10,7 +10,6 @@ import helmet from 'helmet';
 import loadSSL, { isSSLDefined, sslCert, sslKey } from './ssl';
 import getMainRouter from './router';
 import morgan = require('morgan');
-import minify = require('express-minify');
 import compress = require('compression');
 import { checkDatabaseIntegrity } from './database';
 
@@ -81,7 +80,6 @@ export async function startServer()
         // Initialize endpoints
         if (process.env.DIST_FOLDER == undefined) logYellow("Warning: DIST_FOLDER isn't defined in the env file.");
         expressApp.use(Express.json({limit: '50mb'}));
-        expressApp.use(minify());
         expressApp.use(require('express-useragent').express());
         expressApp.use("/", getMainRouter());
 
