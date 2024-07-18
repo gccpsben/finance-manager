@@ -1,5 +1,5 @@
 import router from '@/router/router';
-import axios, { type AxiosResponse, type RawAxiosRequestHeaders } from 'axios';
+import axios, { AxiosError, type AxiosResponse, type RawAxiosRequestHeaders } from 'axios';
 import { ref, watchEffect, toValue } from 'vue';
 
 function setCookie(cname:string, cvalue:string, exdays:number): void
@@ -64,14 +64,19 @@ export function useNetworkRequest<T>(url: string|undefined, config: UseNetworkRe
         {
             let response = await authGet(toValue(url), { });
             lastAxiosStatusCode.value = response.status;
-            lastSuccessfulData.value = response.status === 200 ? response.data : undefined;
+            lastSuccessfulData.value = response.data;
             Promise.resolve<T>(lastSuccessfulData.value as T);
-            if (shouldAutoResetOnUnauthorized && response.status === 401) resetAuth();
             isLoading.value = false;
         }
-        catch(e) 
+        catch(err) 
         { 
-            error.value = e; 
+            if (axios.isAxiosError(err))
+            {
+                error.value = err.response?.statusText;
+                if (err.response?.status === 401 && shouldAutoResetOnUnauthorized)
+                    resetAuth();
+            }
+            else error.value = err; 
             Promise.resolve(undefined);
             isLoading.value = false;
         }
@@ -85,6 +90,7 @@ export function useNetworkRequest<T>(url: string|undefined, config: UseNetworkRe
         lastSuccessfulData,
         lastAxiosStatusCode,
         error,
-        updateData
+        updateData,
+        resetAuth
     }
 }
