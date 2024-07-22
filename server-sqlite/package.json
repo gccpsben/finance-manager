@@ -1,0 +1,36 @@
+{
+	"name": "finance-manager-server",
+	"version": "1.0.0",
+	"description": "",
+	"private": true,
+	"type": "module",
+	"scripts": {
+		"dev_watch": "tsc-watch -p \"./tsconfig.json\" --onSuccess \"node server_build/entry.js ./dev.env\"",
+		"dev_once": "tsc && node server_build/entry.js ./dev.env",
+		"run_prod": "node ./server_production/entry.js ./.env",
+		"build_prod": "tsc --outDir ./server_production",
+		"docs:dev": "vuepress dev docs",
+		"docs:build": "vuepress build docs",
+		"test": "tsc && npx mocha ./tests/init.spec.js --delay --no-deprecation --exit",
+		"testLong": "tsc && npx mocha ./tests/init.spec.js --delay --no-deprecation"
+	},
+	"devDependencies": {
+		"@types/node": "^20.14.11"
+	},
+	"browserslist": [
+		"> 1%",
+		"last 2 versions",
+		"not dead",
+		"not ie 11"
+	],
+	"dependencies": {
+		"@types/express": "^4.17.21",
+		"@types/fs-extra": "^11.0.4",
+		"chalk": "^5.3.0",
+		"dotenv": "^16.4.5",
+		"dotenv-expand": "^11.0.6",
+		"express": "^4.19.2",
+		"fs-extra": "^11.2.0",
+		"rotating-file-stream": "^3.2.3"
+	}
+}

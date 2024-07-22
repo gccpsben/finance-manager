@@ -5,6 +5,12 @@
 /server/*.log
 /server/server_build/*
 /server/server_production
+/server-sqlite/node_modules
+/server-sqlite/ssl
+/server-sqlite/*.log
+/server-sqlite/server_build
+/server-sqlite/server_production
+/server-sqlite/logs
 /dist
 /dist/*
 .vscode

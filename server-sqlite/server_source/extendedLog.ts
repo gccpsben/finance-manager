@@ -1,0 +1,102 @@
+
+import chalk, * as colors from 'chalk';
+import * as fse from 'fs-extra/esm';
+import path from 'path';
+import { createStream, RotatingFileStream } from 'rotating-file-stream';
+import { Stream } from 'stream';
+
+// let pastLines:any = [];
+
+export class ExtendedLog
+{
+    public static writeStream: RotatingFileStream;
+
+    private static formatDateTime(time: Date)
+    {   
+        let year = time.getFullYear().toString().padStart(4, '0');
+        let month = (time.getMonth() + 1).toString().padStart(2, '0');
+        let day = time.getDate().toString().padStart(2, '0');
+        let hours = time.getHours().toString().padStart(2, '0');
+        let minutes = time.getMinutes().toString().padStart(2, '0');
+        let seconds = time.getSeconds().toString().padStart(2, '0');
+        let ms = time.getMilliseconds().toString().padStart(4, '0');
+        return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}.${ms}`;
+    }
+
+    public static generateLogFileName(time: Date, index: number)
+    {     
+        const dateTime = time ?? new Date();
+        const pad = num => (num > 9 ? "" : "0") + num;
+        let year = dateTime.getFullYear();
+        let month = pad(dateTime.getMonth() + 1);
+
+        return `${year}-${month}-(${index ?? 0}).log`;
+    }
+
+    private static async ensureWriteStream()
+    {
+        const logsFolderName = `logs`;
+        const relPathToLogFolder = `./${logsFolderName}/`;
+
+        if (ExtendedLog.writeStream) return;
+        fse.mkdirs(relPathToLogFolder);
+        ExtendedLog.writeStream = createStream
+        (
+            (time: Date, index: number) => 
+            {
+                return path.join(relPathToLogFolder, ExtendedLog.generateLogFileName(time, index));
+            }, 
+            {
+                interval: '1M'
+            }
+        ); 
+    }
+ 
+    private static async logToFile(line: string)
+    {
+        await ExtendedLog.ensureWriteStream();
+        ExtendedLog.writeStream.write(`\n[${ExtendedLog.formatDateTime(new Date())}] ${line}`);
+    }
+ 
+    public static async log(arg:any, logToFile=true, logToConsole=true)
+    {
+        if (logToFile) ExtendedLog.logToFile(arg);
+        if (logToConsole) console.log(arg);
+    }
+
+    public static async logGreen(arg:any, logToFile=true, logToConsole=true)
+    {
+        if (logToFile) ExtendedLog.logToFile(arg);
+        if (logToConsole) console.log(chalk.green(arg));
+    }
+
+    public static async logRed(arg:any, logToFile=true, logToConsole=true)
+    {
+        if (logToFile) ExtendedLog.logToFile(arg);
+        if (logToConsole) console.log(chalk.red(arg));
+    }
+
+    public static async logYellow(arg:any, logToFile=true, logToConsole=true)
+    {
+        if (logToFile) ExtendedLog.logToFile(arg);
+        if (logToConsole) console.log(chalk.yellow(arg));
+    }
+
+    public static async logCyan(arg:any, logToFile=true, logToConsole=true)
+    {
+        if (logToFile) ExtendedLog.logToFile(arg);
+        if (logToConsole) console.log(chalk.cyan(arg));
+    }
+
+    public static async logMagenta(arg:any, logToFile=true, logToConsole=true)
+    {
+        if (logToFile) ExtendedLog.logToFile(arg);
+        if (logToConsole) console.log(chalk.magenta(arg));
+    }
+
+    public static async logBlue(arg:any, logToFile=true, logToConsole=true)
+    {
+        if (logToFile) ExtendedLog.logToFile(arg);
+        if (logToConsole) console.log(chalk.blue(arg));
+    }
+}
