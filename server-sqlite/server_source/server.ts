@@ -2,6 +2,7 @@ import { Request, Response } from 'express';
 import express from 'express';
 import * as core from "express-serve-static-core";
 import { ExtendedLog } from './extendedLog.js';
+import getMainRouter from './router/mainRouter.js';
 
 export class Server
 {
@@ -15,6 +16,8 @@ export class Server
         return new Promise<void>(resolve => 
         {
             Server.expressApp = express();
+            Server.expressApp.use("/", getMainRouter());
+
             Server.expressServer = Server.expressApp.listen(3010, () => 
             {
                 ExtendedLog.logGreen(`Server running at port ${3010}`);
