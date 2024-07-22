@@ -41,7 +41,7 @@
 
 <template>
     <div @focusin="opened=true" @focusout="opened=false" id="root_custom_dropdown" tabindex=0>
-        <div @mousedown="opened=!opened" style="height:100%;">
+        <div @mouseup="opened=!opened" style="height:100%;">
             <slot id="selector" name="main" :currentItem="currentItem">
                 <grid-shortcut columns="1fr 25px" style="padding:5px; cursor:pointer; height:100%; box-sizing: border-box;">
                     <div style="color:white; padding-left:5px;" class="middleLeft">
