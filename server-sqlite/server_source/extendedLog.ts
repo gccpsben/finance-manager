@@ -1,5 +1,6 @@
 
 import chalk, * as colors from 'chalk';
+import { Chalk } from 'chalk';
 import * as fse from 'fs-extra/esm';
 import path from 'path';
 import { createStream, RotatingFileStream } from 'rotating-file-stream';
@@ -62,6 +63,12 @@ export class ExtendedLog
     {
         if (logToFile) ExtendedLog.logToFile(arg);
         if (logToConsole) console.log(arg);
+    }
+
+    public static async logGray(arg:any, logToFile=true, logToConsole=true)
+    {
+        if (logToFile) ExtendedLog.logToFile(arg);
+        if (logToConsole) console.log(chalk.dim.gray(arg));
     }
 
     public static async logGreen(arg:any, logToFile=true, logToConsole=true)
