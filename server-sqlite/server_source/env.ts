@@ -9,6 +9,7 @@ export class EnvManager
 {
     public static currentEnvFilePath = undefined as undefined | string;
     public static distFolderLocation = undefined as undefined | string;
+    public static sqliteFilePath = undefined as undefined | string;
     public static envType:EnvType = "Production";
 
     public static readEnv(filePath:string)
@@ -26,6 +27,9 @@ export class EnvManager
     {
         if (!process.env.NODE_ENV) throw new Error(`NODE_ENV is not defined in env file. (Received "${process.env.NODE_ENV}")`);
         this.envType = EnvManager.getEnvType();
+
+        if (!process.env.SQLITE_FILE_PATH) throw new Error(`SQLITE_FILE_PATH is not defined in env file. (Received "${process.env.SQLITE_FILE_PATH}")`);
+        this.sqliteFilePath = path.resolve(process.env.SQLITE_FILE_PATH);
     }
 
     public static getEnvType(): EnvType
