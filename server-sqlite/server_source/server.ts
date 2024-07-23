@@ -1,10 +1,9 @@
-import { Request, Response } from 'express';
 import express from 'express';
 import * as core from "express-serve-static-core";
 import { ExtendedLog } from './extendedLog.js';
 import getMainRouter from './router/mainRouter.js';
 import morgan from 'morgan';
-import { PassThrough, Stream } from 'stream';
+import { PassThrough } from 'stream';
 
 export type StartServerConfig =
 {
@@ -38,7 +37,7 @@ export class Server
         }, { skip: () => false, stream: xs })
     }
 
-    public static startServer(config: Partial<StartServerConfig> = {})
+    public static startServer(port:number, config: Partial<StartServerConfig> = {})
     {
         const shouldAttachMorgan = config?.attachMorgan ?? true;
 
@@ -48,9 +47,9 @@ export class Server
             if (shouldAttachMorgan) Server.expressApp.use(Server.getMorganLoggerMiddleware());
             Server.expressApp.use("/", getMainRouter());
 
-            Server.expressServer = Server.expressApp.listen(3010, () => 
+            Server.expressServer = Server.expressApp.listen(port, () => 
             {
-                ExtendedLog.logGreen(`Server running at port ${3010}`);
+                ExtendedLog.logGreen(`Server running at port ${port}`);
                 resolve();
             }); 
         });

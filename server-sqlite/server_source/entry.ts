@@ -38,7 +38,7 @@ try
     // Start Server
     await (async () => 
     {
-        await Server.startServer();
+        await Server.startServer(EnvManager.serverPort);
     })();
 }
 catch(e)

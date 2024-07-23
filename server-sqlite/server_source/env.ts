@@ -3,10 +3,12 @@ import { ExtendedLog } from './extendedLog.js';
 import dotenv from 'dotenv';
 import dotenvExpand from 'dotenv-expand';
 import path = require('path');
+import { isInt, isNumber, IsNumber, isNumberString, ValidateBy } from 'class-validator';
 export type EnvType = "Development" | "UnitTest" | "Production";
 
 export class EnvManager
 {
+    public static serverPort = undefined as undefined | number;
     public static currentEnvFilePath = undefined as undefined | string;
     public static distFolderLocation = undefined as undefined | string;
     public static sqliteFilePath = undefined as undefined | string;
@@ -25,11 +27,27 @@ export class EnvManager
 
     public static parseEnv()
     {
-        if (!process.env.NODE_ENV) throw new Error(`NODE_ENV is not defined in env file. (Received "${process.env.NODE_ENV}")`);
-        this.envType = EnvManager.getEnvType();
+        const buildNotDefinedMsg = (keyName:string) => `${keyName} is not defined in env file. (Received "${process.env[keyName]}")`;
 
-        if (!process.env.SQLITE_FILE_PATH) throw new Error(`SQLITE_FILE_PATH is not defined in env file. (Received "${process.env.SQLITE_FILE_PATH}")`);
-        this.sqliteFilePath = path.resolve(process.env.SQLITE_FILE_PATH);
+        (() => 
+        {
+            if (!process.env.NODE_ENV) throw new Error(buildNotDefinedMsg(`NODE_ENV`));
+            this.envType = EnvManager.getEnvType();
+        })();
+
+        (() => 
+        {
+            if (!process.env.SQLITE_FILE_PATH) throw new Error(buildNotDefinedMsg(`SQLITE_FILE_PATH`));
+            this.sqliteFilePath = path.resolve(process.env.SQLITE_FILE_PATH); 
+        })();
+
+        (() => 
+        {
+            if (!process.env.SERVER_PORT) throw new Error(buildNotDefinedMsg(`SERVER_PORT`));
+            if (!isNumberString(process.env.SERVER_PORT)) throw new Error(`SERVER_PORT is must be a number. (Received "${process.env.SERVER_PORT}")`);
+            if (!isInt(parseFloat(process.env.SERVER_PORT))) throw new Error(`SERVER_PORT is must be an int. (Received "${process.env.SERVER_PORT}")`);      
+            EnvManager.serverPort = parseInt(process.env.SERVER_PORT);
+        })();
     }
 
     public static getEnvType(): EnvType
