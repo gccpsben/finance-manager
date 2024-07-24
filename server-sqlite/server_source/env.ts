@@ -14,6 +14,7 @@ export class EnvManager
     public static distFolderLocation = undefined as undefined | string;
     public static sqliteFilePath = undefined as undefined | string;
     public static logsFolderPath = undefined as undefined | string;
+    public static tokenExpiryMs = undefined as undefined | number;
     public static envType:EnvType = "Production";
 
     public static readEnv(filePath:string)
@@ -46,8 +47,8 @@ export class EnvManager
         (() =>  
         {
             if (!process.env.SERVER_PORT) throw new Error(buildNotDefinedMsg(`SERVER_PORT`));
-            if (!isNumberString(process.env.SERVER_PORT)) throw new Error(`SERVER_PORT is must be a number. (Received "${process.env.SERVER_PORT}")`);
-            if (!isInt(parseFloat(process.env.SERVER_PORT))) throw new Error(`SERVER_PORT is must be an int. (Received "${process.env.SERVER_PORT}")`);      
+            if (!isNumberString(process.env.SERVER_PORT)) throw new Error(`SERVER_PORT must be a number. (Received "${process.env.SERVER_PORT}")`);
+            if (!isInt(parseFloat(process.env.SERVER_PORT))) throw new Error(`SERVER_PORT must be an int. (Received "${process.env.SERVER_PORT}")`);      
             EnvManager.serverPort = parseInt(process.env.SERVER_PORT);
         })();
 
@@ -59,6 +60,15 @@ export class EnvManager
             const stat = fs.lstatSync(parsedPath);
             if (!stat.isDirectory()) throw new Error(`Path "${parsedPath}" is not a directory.`);
             EnvManager.logsFolderPath = parsedPath;
+        })();
+
+        (() => 
+        {
+            const keyName = `TOKEN_EXPIRE_MS`;
+            if (!process.env[keyName]) throw new Error(buildNotDefinedMsg(keyName));
+            if (!isNumberString(process.env[keyName])) throw new Error(`${keyName} must be a number. (Recevied "${process.env[keyName]}")`);
+            if (!isInt(parseFloat(process.env[keyName]))) throw new Error(`SERVER_PORT must be an int. (Received "${process.env[keyName]}")`);
+            EnvManager.tokenExpiryMs = parseInt(process.env[keyName]);
         })();
     }
 
