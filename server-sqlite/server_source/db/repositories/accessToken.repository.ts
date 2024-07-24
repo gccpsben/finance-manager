@@ -1,5 +1,4 @@
 import { Database } from "../db.js";
-import { User } from "@entities/user.entity.js";
 import { Repository } from "typeorm";
 import { AccessToken } from "../entities/accessToken.entity.js";
 

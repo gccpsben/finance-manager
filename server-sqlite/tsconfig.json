@@ -8,13 +8,7 @@
     "esModuleInterop": true,
     "resolveJsonModule": true,
     "module": "NodeNext",
-    "lib": ["ES7"],
-    "paths": {
-      "@/*": ["./server_source/*"],
-      "@entities/*": ["./server_source/db/entities/*"],
-      "@repositories/*": ["./server_source/db/repositories/*"],
-      "@services/*": ["./server_source/db/services/*"]
-    },
+    "lib": ["ES6"]
   },
   "include": [
     "server_source/**/*.ts",
