@@ -5,6 +5,7 @@ import * as fse from 'fs-extra/esm';
 import path from 'path';
 import { createStream, RotatingFileStream } from 'rotating-file-stream';
 import { Stream } from 'stream';
+import { EnvManager } from './env.js';
 
 // let pastLines:any = [];
 
@@ -36,16 +37,15 @@ export class ExtendedLog
 
     private static async ensureWriteStream()
     {
-        const logsFolderName = `logs`;
-        const relPathToLogFolder = `./${logsFolderName}/`;
-
         if (ExtendedLog.writeStream) return;
-        fse.mkdirs(relPathToLogFolder);
+        if (!EnvManager.logsFolderPath) throw new Error(`ensureWriteStream: EnvManager.logsFolderPath is not defined.`);
+
+        fse.mkdirs(EnvManager.logsFolderPath);
         ExtendedLog.writeStream = createStream
         (
             (time: Date, index: number) => 
             {
-                return path.join(relPathToLogFolder, ExtendedLog.generateLogFileName(time, index));
+                return path.join(EnvManager.logsFolderPath, ExtendedLog.generateLogFileName(time, index));
             }, 
             {
                 interval: '1M'
@@ -64,49 +64,49 @@ export class ExtendedLog
  
     public static async log(arg:any, logToFile=true, logToConsole=true)
     {
-        if (logToFile) ExtendedLog.logToFile(arg);
+        if (logToFile) ExtendedLog.logToFile(`${arg}`);
         if (logToConsole) console.log(arg);
     }
 
     public static async logGray(arg:any, logToFile=true, logToConsole=true)
     {
-        if (logToFile) ExtendedLog.logToFile(arg);
-        if (logToConsole) console.log(chalk.dim.gray(arg));
+        if (logToFile) ExtendedLog.logToFile(`${arg}`);
+        if (logToConsole) console.log(chalk.dim.gray(`${arg}`));
     }
 
     public static async logGreen(arg:any, logToFile=true, logToConsole=true)
     {
-        if (logToFile) ExtendedLog.logToFile(arg);
-        if (logToConsole) console.log(chalk.green(arg));
+        if (logToFile) ExtendedLog.logToFile(`${arg}`);
+        if (logToConsole) console.log(chalk.green(`${arg}`));
     }
 
     public static async logRed(arg:any, logToFile=true, logToConsole=true)
     {
-        if (logToFile) ExtendedLog.logToFile(arg);
-        if (logToConsole) console.log(chalk.red(arg));
+        if (logToFile) ExtendedLog.logToFile(`${arg}`);
+        if (logToConsole) console.log(chalk.red(`${arg}`));
     }
 
     public static async logYellow(arg:any, logToFile=true, logToConsole=true)
     {
-        if (logToFile) ExtendedLog.logToFile(arg);
-        if (logToConsole) console.log(chalk.yellow(arg));
+        if (logToFile) ExtendedLog.logToFile(`${arg}`);
+        if (logToConsole) console.log(chalk.yellow(`${arg}`));
     }
 
     public static async logCyan(arg:any, logToFile=true, logToConsole=true)
     {
-        if (logToFile) ExtendedLog.logToFile(arg);
-        if (logToConsole) console.log(chalk.cyan(arg));
+        if (logToFile) ExtendedLog.logToFile(`${arg}`);
+        if (logToConsole) console.log(chalk.cyan(`${arg}`));
     }
 
     public static async logMagenta(arg:any, logToFile=true, logToConsole=true)
     {
-        if (logToFile) ExtendedLog.logToFile(arg);
-        if (logToConsole) console.log(chalk.magenta(arg));
+        if (logToFile) ExtendedLog.logToFile(`${arg}`);
+        if (logToConsole) console.log(chalk.magenta(`${arg}`));
     }
 
     public static async logBlue(arg:any, logToFile=true, logToConsole=true)
     {
-        if (logToFile) ExtendedLog.logToFile(arg);
-        if (logToConsole) console.log(chalk.blue(arg));
+        if (logToFile) ExtendedLog.logToFile(`${arg}`);
+        if (logToConsole) console.log(chalk.blue(`${arg}`));
     }
 }
