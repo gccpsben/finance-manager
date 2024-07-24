@@ -2,8 +2,9 @@ import * as fs from 'fs';
 import { ExtendedLog } from './extendedLog.js';
 import dotenv from 'dotenv';
 import dotenvExpand from 'dotenv-expand';
-import path = require('path');
 import { isInt, isNumber, IsNumber, isNumberString, ValidateBy } from 'class-validator';
+import path from 'path';
+import fsExtra from 'fs-extra/esm';
 export type EnvType = "Development" | "UnitTest" | "Production";
 
 export class EnvManager
@@ -12,6 +13,7 @@ export class EnvManager
     public static currentEnvFilePath = undefined as undefined | string;
     public static distFolderLocation = undefined as undefined | string;
     public static sqliteFilePath = undefined as undefined | string;
+    public static logsFolderPath = undefined as undefined | string;
     public static envType:EnvType = "Production";
 
     public static readEnv(filePath:string)
@@ -22,7 +24,7 @@ export class EnvManager
         EnvManager.currentEnvFilePath = path.resolve(EnvManager.currentEnvFilePath);
         if (!fs.existsSync(EnvManager.currentEnvFilePath)) throw new Error(`Cannot find env file ${EnvManager.currentEnvFilePath}`);
 
-        dotenvExpand.expand(dotenv.config({path:  EnvManager.currentEnvFilePath}));
+        dotenvExpand.expand(dotenv.config({path: EnvManager.currentEnvFilePath}));
     }
 
     public static parseEnv()
@@ -34,19 +36,29 @@ export class EnvManager
             if (!process.env.NODE_ENV) throw new Error(buildNotDefinedMsg(`NODE_ENV`));
             this.envType = EnvManager.getEnvType();
         })();
-
+ 
         (() => 
         {
             if (!process.env.SQLITE_FILE_PATH) throw new Error(buildNotDefinedMsg(`SQLITE_FILE_PATH`));
             this.sqliteFilePath = path.resolve(process.env.SQLITE_FILE_PATH); 
         })();
 
-        (() => 
+        (() =>  
         {
             if (!process.env.SERVER_PORT) throw new Error(buildNotDefinedMsg(`SERVER_PORT`));
             if (!isNumberString(process.env.SERVER_PORT)) throw new Error(`SERVER_PORT is must be a number. (Received "${process.env.SERVER_PORT}")`);
             if (!isInt(parseFloat(process.env.SERVER_PORT))) throw new Error(`SERVER_PORT is must be an int. (Received "${process.env.SERVER_PORT}")`);      
             EnvManager.serverPort = parseInt(process.env.SERVER_PORT);
+        })();
+
+        (() => 
+        { 
+            if (!process.env.LOGS_FOLDER_PATH) throw new Error(buildNotDefinedMsg(`LOGS_FOLDER_PATH`));
+            const parsedPath = path.resolve(process.env.LOGS_FOLDER_PATH);
+            if (!fsExtra.pathExistsSync(parsedPath)) throw new Error(`Path "${parsedPath}" is not found!`);
+            const stat = fs.lstatSync(parsedPath);
+            if (!stat.isDirectory()) throw new Error(`Path "${parsedPath}" is not a directory.`);
+            EnvManager.logsFolderPath = parsedPath;
         })();
     }
 
