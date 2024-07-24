@@ -13,6 +13,7 @@ export class User
     @Column({ unique: true, nullable: false })
     @IsString()
     @IsNotEmpty()
+    @MaxLength(256)
     username: string;
 
     @OneToMany(type => AccessToken, accessToken => accessToken.owner)
