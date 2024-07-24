@@ -5,6 +5,9 @@ import getMainRouter from './router/mainRouter.js';
 import morgan from 'morgan';
 import { PassThrough } from 'stream';
 import { ValidationError } from 'class-validator';
+import { randomUUID } from 'crypto';
+import createHttpError from 'http-errors';
+import { QueryFailedError } from 'typeorm';
 
 export type StartServerConfig =
 {
@@ -40,7 +43,7 @@ export class Server
 
     public static getErrorHandlerMiddleware()
     {
-        const returnErrorToRes = (res:express.Response, code: number, returns: { msg: string, name: string, details: Object | undefined }) => 
+        const returnErrorToRes = (res:express.Response, code: number, returns: { msg: string, name: string, details: Object | undefined, errorRef: string | undefined }) => 
         {
             return res.status(code).json(returns);
         }; 
@@ -53,14 +56,53 @@ export class Server
                 {
                     details: err,
                     msg: "Request failed with validation error(s)",
-                    name: "ValidationError"
+                    name: "ValidationError",
+                    errorRef: undefined
                 });
             }
+            if (err instanceof createHttpError.HttpError && err.status !== 500)
+            {
+                return returnErrorToRes(res, err.statusCode, 
+                {
+                    details: undefined,
+                    msg: err.message,
+                    name: err.name,
+                    errorRef: undefined
+                });
+            }           
+            if (err instanceof QueryFailedError)
+            {
+                const msgUUID = randomUUID();
+                const consoleMsg = `Error while querying database (ErrorRefNo: ${msgUUID})`;
+                const logFileMsg = `Error while querying database (ErrorRefNo: ${msgUUID}).`
+                + `\n${JSON.stringify(err, null, 4)}`
+                + `\nAbove error stack trace: ${err.stack}`;
+                ExtendedLog.logRed(consoleMsg, false, true);
+                ExtendedLog.logRed(logFileMsg, true, false);    
+
+                return returnErrorToRes(res, 500, 
+                {
+                    details: undefined,
+                    msg: "Error while querying database",
+                    name: err.name,
+                    errorRef: msgUUID
+                });
+            }
+            
+            const msgUUID = randomUUID();
+            const consoleMsg = `Uncaught error from handler middleware (ErrorRefNo: ${msgUUID})`;
+            const logFileMsg = `Uncaught error from handler middleware (ErrorRefNo: ${msgUUID}).`
+            + `\n${JSON.stringify(err, null, 4)}`
+            + `\nAbove error stack trace: ${err.stack}`;
+            ExtendedLog.logRed(consoleMsg, false, true);
+            ExtendedLog.logRed(logFileMsg, true, false);
+
             return returnErrorToRes(res, 500, 
             {
                 details: undefined,
                 msg: err.message,
-                name: err.name
+                name: err.name,
+                errorRef: msgUUID
             });
         };
     }

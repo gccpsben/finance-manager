@@ -1,4 +1,4 @@
-import { Entity, PrimaryGeneratedColumn, Column, BeforeInsert, BeforeUpdate } from "typeorm";
+import { Entity, PrimaryGeneratedColumn, Column, BeforeInsert, BeforeUpdate, PrimaryColumn } from "typeorm";
 import "reflect-metadata"
 import { ManyToOne } from "typeorm";
 import { User } from "./user.entity.js";
@@ -8,12 +8,16 @@ import { EntityClass } from "../dbEntityNase.js";
 @Entity()
 export class AccessToken extends EntityClass
 {
-    @PrimaryGeneratedColumn("uuid")
-    id: string;
+    @PrimaryColumn({nullable: false})
+    token: string;
 
-    @Column()
+    @Column({nullable:false})
     @IsDate()
     creationDate: Date;
+
+    @Column({nullable:false})
+    @IsDate()
+    expiryDate: Date;
 
     @ManyToOne(type => User, user => user.accessTokens, { nullable: false })
     owner: User;

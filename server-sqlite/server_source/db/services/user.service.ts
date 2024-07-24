@@ -1,4 +1,6 @@
+import argon2 from "argon2";
 import { UserRepository } from "../repositories/user.repository.js";
+import { User } from "../entities/user.entity.js";
 
 export class UserService
 {
@@ -7,5 +9,29 @@ export class UserService
         return await UserRepository
         .getInstance()
         .findOne( { where: { id: userId } });
+    }
+
+    public static async findAllUsers()
+    {
+        return await UserRepository.
+        getInstance().
+        find({ select: { passwordHash: false } });
+    }
+
+    public static async registerUser(username: string, passwordRaw: string)
+    {
+        const newUser = UserRepository.getInstance().create();
+        newUser.username = username;
+        newUser.passwordHash = await argon2.hash(passwordRaw, { type: argon2.argon2id }); // salt is already included in the hash
+        return await UserRepository.getInstance().save(newUser);
+    }
+
+    public static async validatePassword(username: string, passwordRaw: string) 
+        : Promise<{success: boolean, userId: string | undefined, passwordHash: string | undefined}>
+    {
+        const user = await UserRepository.getInstance().findOne({where: {username: username}, select: { passwordHash: true, id: true }});
+        if (user === null) return { success: false, userId: undefined, passwordHash: undefined }
+        if (!(await argon2.verify(user.passwordHash, passwordRaw))) return { success: false, userId: user.id, passwordHash: user.passwordHash };
+        return { success: true, userId: user.id, passwordHash: user.passwordHash }
     }
 }
