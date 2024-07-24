@@ -72,6 +72,7 @@ export class Server
         return new Promise<void>(resolve => 
         {
             Server.expressApp = express();
+            Server.expressApp.use(express.json());
             if (shouldAttachMorgan) Server.expressApp.use(Server.getMorganLoggerMiddleware());
             Server.expressApp.use("/", getMainRouter());
             Server.expressApp.use(Server.getErrorHandlerMiddleware());
