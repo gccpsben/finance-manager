@@ -19,9 +19,9 @@ export class AccessTokenService
     /** Check if a token is valid, and which user it refers to. */
     public static async validateToken(tokenRaw: string): Promise<{isTokenValid: boolean, tokenFound: boolean, ownerUserId: string | undefined}>
     {
-        const tokenInDatabase = await AccessTokenRepository.getInstance().findOne({ where: { token: tokenRaw } });
+        const tokenInDatabase = await AccessTokenRepository.getInstance().findOne({ where: { token: tokenRaw }, relations: { owner: true } });
         if (tokenInDatabase === null) return { isTokenValid: false, tokenFound: false, ownerUserId: undefined };
-        if (tokenInDatabase.expiryDate.getTime() > new Date().getTime())
+        if (new Date().getTime() >= tokenInDatabase.expiryDate.getTime())
         {
             await AccessTokenRepository.getInstance().delete({ token: tokenInDatabase.token });
             return {
