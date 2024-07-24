@@ -4,6 +4,7 @@ import { ExtendedLog } from './extendedLog.js';
 import getMainRouter from './router/mainRouter.js';
 import morgan from 'morgan';
 import { PassThrough } from 'stream';
+import { ValidationError } from 'class-validator';
 
 export type StartServerConfig =
 {
@@ -37,6 +38,33 @@ export class Server
         }, { skip: () => false, stream: xs })
     }
 
+    public static getErrorHandlerMiddleware()
+    {
+        const returnErrorToRes = (res:express.Response, code: number, returns: { msg: string, name: string, details: Object | undefined }) => 
+        {
+            return res.status(code).json(returns);
+        }; 
+
+        return (err: Error, req: express.Request, res: express.Response, next: Function) => 
+        {
+            if (err instanceof ValidationError)
+            {
+                return returnErrorToRes(res, 400, 
+                {
+                    details: err,
+                    msg: "Request failed with validation error(s)",
+                    name: "ValidationError"
+                });
+            }
+            return returnErrorToRes(res, 500, 
+            {
+                details: undefined,
+                msg: err.message,
+                name: err.name
+            });
+        };
+    }
+
     public static startServer(port:number, config: Partial<StartServerConfig> = {})
     {
         const shouldAttachMorgan = config?.attachMorgan ?? true;
@@ -46,7 +74,7 @@ export class Server
             Server.expressApp = express();
             if (shouldAttachMorgan) Server.expressApp.use(Server.getMorganLoggerMiddleware());
             Server.expressApp.use("/", getMainRouter());
-
+            Server.expressApp.use(Server.getErrorHandlerMiddleware());
             Server.expressServer = Server.expressApp.listen(port, () => 
             {
                 ExtendedLog.logGreen(`Server running at port ${port}`);
