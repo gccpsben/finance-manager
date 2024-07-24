@@ -4,7 +4,7 @@ import { AccessToken } from "./entities/accessToken.entity.js";
 import { EnvManager } from "../env.js";
 import { UserRepository } from "./repositories/user.repository.js";
 import { AccessTokenRepository } from "./repositories/accessToken.repository.js";
-import { ExtendedLog } from "../extendedLog.js";
+import { ExtendedLog } from "../logging/extendedLog.js";
 
 export class Database
 {

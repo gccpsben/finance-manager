@@ -1,7 +1,7 @@
 import 'reflect-metadata';
 import path from "path";
 import { EnvManager } from "./env.js";
-import { ExtendedLog } from "./extendedLog.js";
+import { ExtendedLog } from "./logging/extendedLog.js";
 import { Server } from "./server.js";
 import { Database } from "./db/db.js";
 try

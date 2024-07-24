@@ -5,7 +5,7 @@ import * as fse from 'fs-extra/esm';
 import path from 'path';
 import { createStream, RotatingFileStream } from 'rotating-file-stream';
 import { Stream } from 'stream';
-import { EnvManager } from './env.js';
+import { EnvManager } from '../env.js';
 
 // let pastLines:any = [];
 

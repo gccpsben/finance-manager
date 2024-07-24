@@ -1,5 +1,5 @@
 import * as fs from 'fs';
-import { ExtendedLog } from './extendedLog.js';
+import { ExtendedLog } from './logging/extendedLog.js';
 import dotenv from 'dotenv';
 import dotenvExpand from 'dotenv-expand';
 import { isInt, isNumber, IsNumber, isNumberString, ValidateBy } from 'class-validator';
