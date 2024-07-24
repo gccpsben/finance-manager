@@ -11,9 +11,10 @@
 /server-sqlite/server_build
 /server-sqlite/server_production
 /server-sqlite/logs
+/server-sqlite/dev
+/server-sqlite/*.db
 /dist
 /dist/*
-/server-sqlite/dev
 .vscode
 *.env
 !.template.env
