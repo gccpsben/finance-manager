@@ -1,8 +1,8 @@
-import { Entity, PrimaryGeneratedColumn, Column, OneToOne, JoinColumn, PrimaryColumn, Unique, BeforeInsert, BeforeUpdate } from "typeorm";
+import { Entity, PrimaryGeneratedColumn, Column, BeforeInsert, BeforeUpdate } from "typeorm";
 import "reflect-metadata"
-import { DataSource, OneToMany, ManyToOne } from "typeorm";
+import { OneToMany } from "typeorm";
 import { AccessToken } from "./accessToken.entity.js";
-import { IsArray, IsNotEmpty, IsString, validate } from "class-validator";
+import { IsNotEmpty, IsString, MaxLength, validate } from "class-validator";
 
 @Entity()
 export class User 

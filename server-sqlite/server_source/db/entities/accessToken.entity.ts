@@ -1,6 +1,6 @@
-import { Entity, PrimaryGeneratedColumn, Column, OneToOne, JoinColumn, PrimaryColumn, BeforeInsert, BeforeUpdate } from "typeorm";
+import { Entity, PrimaryGeneratedColumn, Column, BeforeInsert, BeforeUpdate } from "typeorm";
 import "reflect-metadata"
-import { DataSource, OneToMany, ManyToOne } from "typeorm";
+import { ManyToOne } from "typeorm";
 import { User } from "./user.entity.js";
 import { IsDate, validate } from "class-validator";
 
