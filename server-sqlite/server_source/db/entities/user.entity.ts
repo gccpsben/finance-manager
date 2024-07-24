@@ -3,9 +3,10 @@ import "reflect-metadata"
 import { OneToMany } from "typeorm";
 import { AccessToken } from "./accessToken.entity.js";
 import { IsNotEmpty, IsString, MaxLength, validate } from "class-validator";
+import { EntityClass } from "../dbEntityNase.js";
 
 @Entity()
-export class User 
+export class User extends EntityClass
 {
     @PrimaryGeneratedColumn("uuid")
     id: string;
@@ -16,18 +17,12 @@ export class User
     @MaxLength(256)
     username: string;
 
+    @Column({nullable: false, select: false})
+    @IsString() 
+    @IsNotEmpty()
+    @MaxLength(256)
+    passwordHash: string;
+
     @OneToMany(type => AccessToken, accessToken => accessToken.owner)
     accessTokens: AccessToken[];
-    
-    @BeforeInsert()
-    @BeforeUpdate()
-    public async validate() 
-    {
-        const errors = await validate(this);
-        if (errors?.length) 
-        {
-            console.error(errors[0]);
-            throw errors[0];
-        }
-    }
 }

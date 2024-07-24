@@ -3,9 +3,10 @@ import "reflect-metadata"
 import { ManyToOne } from "typeorm";
 import { User } from "./user.entity.js";
 import { IsDate, validate } from "class-validator";
+import { EntityClass } from "../dbEntityNase.js";
 
 @Entity()
-export class AccessToken
+export class AccessToken extends EntityClass
 {
     @PrimaryGeneratedColumn("uuid")
     id: string;
@@ -16,16 +17,4 @@ export class AccessToken
 
     @ManyToOne(type => User, user => user.accessTokens, { nullable: false })
     owner: User;
-
-    @BeforeInsert()
-    @BeforeUpdate()
-    public async validate() 
-    {
-        const errors = await validate(this);
-        if (errors?.length) 
-        {
-            console.error(errors[0]);
-            throw errors[0];
-        }
-    }
 }
