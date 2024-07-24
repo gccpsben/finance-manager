@@ -1,5 +1,8 @@
 import argon2 from "argon2";
 import { UserRepository } from "../repositories/user.repository.js";
+import { User } from "../entities/user.entity.js";
+import { FindOptionsWhere } from "typeorm";
+import { AccessTokenService } from "./accessToken.service.js";
 
 export class UserNameTakenError extends Error
 {
@@ -26,6 +29,15 @@ export class UserService
         return await UserRepository.
         getInstance().
         find({ select: { passwordHash: false } });
+    }
+
+    public static async tryDeleteUser(userId: string): Promise<{successful: boolean, userFound: boolean}>
+    {
+        const targetUser = await UserRepository.getInstance().findOne({where: { id: userId }});
+        if (targetUser === null) return { successful: false, userFound: false };
+        await AccessTokenService.deleteTokensOfUser(targetUser.id); // delete access tokens
+        await UserRepository.getInstance().delete({ id: userId });
+        return { successful: true, userFound: true };
     }
 
     public static async registerUser(username: string, passwordRaw: string)

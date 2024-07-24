@@ -52,4 +52,10 @@ export class AccessTokenService
             } satisfies Partial<AccessToken>
         });
     }
+
+    public static async deleteTokensOfUser(userId: string)
+    {
+        const result = await AccessTokenRepository.getInstance().delete({ owner: <any>userId });
+        return result;
+    }
 }

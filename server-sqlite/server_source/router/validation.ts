@@ -26,5 +26,6 @@ export class ExpressValidations
         const validationErrors = await validate(transformedObject);
         if (validationErrors[0])
             throw validationErrors[0];
+        return transformedObject;
     }
 }
