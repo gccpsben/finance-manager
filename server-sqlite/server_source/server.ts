@@ -28,8 +28,11 @@ export class Server
 
         return morgan((tokens, req, res) => 
         {
+            // @ts-ignore
+            const ip = (req.headers['x-forwarded-for'] || req.connection.remoteAddress || '').split(',')[0].trim();
             const msg = 
             [
+                ip,
                 tokens.method(req, res),
                 tokens.url(req, res),
                 tokens.status(req, res),
