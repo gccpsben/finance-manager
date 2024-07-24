@@ -3,7 +3,7 @@ import "reflect-metadata"
 import { ManyToOne } from "typeorm";
 import { User } from "./user.entity.js";
 import { IsDate, validate } from "class-validator";
-import { EntityClass } from "../dbEntityNase.js";
+import { EntityClass } from "../dbEntityBase.js";
 
 @Entity()
 export class AccessToken extends EntityClass
