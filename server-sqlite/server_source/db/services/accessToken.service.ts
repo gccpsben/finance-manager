@@ -1,6 +1,7 @@
 import { randomUUID } from "crypto";
 import { AccessTokenRepository } from "../repositories/accessToken.repository.js";
 import { EnvManager } from "../../env.js";
+import { AccessToken } from '../entities/accessToken.entity.js';
 
 export class AccessTokenService
 {
@@ -39,8 +40,16 @@ export class AccessTokenService
 
     public static async getAccessTokensOfUser(userId: string)
     {
-        return await AccessTokenRepository
+        return (await AccessTokenRepository
         .getInstance()
-        .find( { where: { owner: { id: userId } } });
+        .find( { where: { owner: { id: userId } } }))
+        .map(incompleteRow => 
+        {
+            return {
+                expiryDate: incompleteRow.expiryDate,
+                creationDate: incompleteRow.creationDate,
+                token: incompleteRow.token
+            } satisfies Partial<AccessToken>
+        });
     }
 }
