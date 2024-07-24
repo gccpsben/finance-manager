@@ -53,10 +53,13 @@ export class ExtendedLog
         ); 
     }
  
-    private static async logToFile(line: string)
+    private static async logToFile(msg: string)
     {
         await ExtendedLog.ensureWriteStream();
-        ExtendedLog.writeStream.write(`\n[${ExtendedLog.formatDateTime(new Date())}] ${line}`);
+        // we want to support multi-line error, and the preserve the error format too: [DATE_TIME] [ERROR]
+        const lines = msg.split("\n");
+        const linePrefix = `[${ExtendedLog.formatDateTime(new Date())}]`;
+        for (const line of lines) ExtendedLog.writeStream.write(`\n${linePrefix} ${line}`);
     }
  
     public static async log(arg:any, logToFile=true, logToConsole=true)
