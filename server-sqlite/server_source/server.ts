@@ -8,6 +8,7 @@ import { ValidationError } from 'class-validator';
 import { randomUUID } from 'crypto';
 import createHttpError from 'http-errors';
 import { QueryFailedError } from 'typeorm';
+import { UserNameTakenError } from './db/services/user.service.js';
 
 export type StartServerConfig =
 {
@@ -89,6 +90,16 @@ export class Server
                     msg: "Error while querying database",
                     name: err.name,
                     errorRef: msgUUID
+                });
+            }
+            if (err instanceof UserNameTakenError)
+            {
+                return returnErrorToRes(res, 400, 
+                {
+                    details: undefined,
+                    msg: err.message,
+                    name: err.name,
+                    errorRef: undefined
                 });
             }
             
