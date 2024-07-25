@@ -2,6 +2,8 @@ import { randomUUID } from "crypto";
 import { AccessTokenRepository } from "../repositories/accessToken.repository.js";
 import { EnvManager } from "../../env.js";
 import { AccessToken } from '../entities/accessToken.entity.js';
+import * as express from 'express';
+import createHttpError from "http-errors";
 
 export class AccessTokenService
 {
@@ -51,6 +53,14 @@ export class AccessTokenService
                 token: incompleteRow.token
             } satisfies Partial<AccessToken>
         });
+    }
+
+    public static async ensureRequestTokenValidated(request: express.Request)
+    {
+        const authorizationHeader = request.headers["authorization"];
+        const validationResult = await AccessTokenService.validateToken(authorizationHeader);
+        if (!validationResult.isTokenValid) throw createHttpError(401);
+        return validationResult;
     }
 
     public static async deleteTokensOfUser(userId: string)

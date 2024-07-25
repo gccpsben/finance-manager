@@ -4,8 +4,12 @@ import { EnvManager } from "./env.js";
 import { ExtendedLog } from "./logging/extendedLog.js";
 import { Server } from "./server.js";
 import { Database } from "./db/db.js";
+import { Decimal } from 'decimal.js';
 try
 {
+    // Set precision of calculations
+    Decimal.set({ precision: 32 });
+
     // Read env file from disk
     (() => 
     {

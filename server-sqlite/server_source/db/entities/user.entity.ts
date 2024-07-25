@@ -1,11 +1,12 @@
-import { Entity, PrimaryGeneratedColumn, Column, BeforeInsert, BeforeUpdate } from "typeorm";
+import { Entity, PrimaryGeneratedColumn, Column, BeforeInsert, BeforeUpdate, OneToOne } from "typeorm";
 import "reflect-metadata"
 import { OneToMany } from "typeorm";
 import { AccessToken } from "./accessToken.entity.js";
 import { IsNotEmpty, IsString, MaxLength, validate } from "class-validator";
 import { EntityClass } from "../dbEntityBase.js";
+import { Currency } from "./currency.entity.js";
 
-@Entity()
+@Entity() 
 export class User extends EntityClass
 {
     @PrimaryGeneratedColumn("uuid")
@@ -25,4 +26,7 @@ export class User extends EntityClass
 
     @OneToMany(type => AccessToken, accessToken => accessToken.owner)
     accessTokens: AccessToken[];
+
+    @OneToMany(type => Currency, currency => currency.owner)
+    currencies: Currency[];
 }

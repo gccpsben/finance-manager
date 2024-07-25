@@ -3,6 +3,7 @@ import { EnvManager } from '../env.js';
 import devOnlyRouter from './routes/dev.router.js';
 import userRouter from './routes/users.router.js';
 import authRouter from './routes/auth.router.js';
+import currenciesRouter from './routes/currencies.router.js';
 
 export default function getMainRouter()
 {
@@ -12,6 +13,7 @@ export default function getMainRouter()
         router.use("/", devOnlyRouter);
     router.use("/", userRouter);
     router.use("/", authRouter);
+    router.use("/", currenciesRouter);
 
     return router;
 }
