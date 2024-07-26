@@ -11,7 +11,7 @@
 		"build_prod": "tsc --outDir ./server_production",
 		"docs:dev": "vuepress dev docs",
 		"docs:build": "vuepress build docs",
-		"test": "tsc && npx mocha ./tests/.index.test.js  --no-deprecation"
+		"test": "npx tsc && npx mocha tests/.index.test.js --node-options --no-deprecation --exit"
 	},
 	"devDependencies": {
 		"@types/node": "^20.14.11",
