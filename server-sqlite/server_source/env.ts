@@ -14,6 +14,8 @@ export class EnvManager
     public static distFolderLocation = undefined as undefined | string;
     public static sqliteFilePath = undefined as undefined | string;
     public static logsFolderPath = undefined as undefined | string;
+    public static sslPemFullPath = undefined as undefined | string;
+    public static sslKeyFullPath = undefined as undefined | string;
     public static tokenExpiryMs = undefined as undefined | number;
     public static envType:EnvType = "Production";
 
@@ -81,7 +83,20 @@ export class EnvManager
             if (!isInt(parseFloat(process.env[keyName]))) throw new Error(`SERVER_PORT must be an int. (Received "${process.env[keyName]}")`);
             EnvManager.tokenExpiryMs = parseInt(process.env[keyName]);
         })();
+
+        (() => 
+        {
+            const sslKeyPathKeyName = `SSL_KEY_PATH`;
+            const sslPemPathKeyName = `SSL_PEM_PATH`;
+
+            const sslEnabled = process.env[sslKeyPathKeyName] && process.env[sslPemPathKeyName];
+            if (!sslEnabled) return;
+            EnvManager.sslKeyFullPath = path.resolve(path.join(process.cwd(), process.env[sslKeyPathKeyName]));
+            EnvManager.sslPemFullPath = path.resolve(path.join(process.cwd(), process.env[sslPemPathKeyName]));
+        })();
     }
+
+    public static isSSLDefined() { return this.sslKeyFullPath && this.sslPemFullPath }
 
     public static getEnvType(): EnvType
     {

@@ -9,6 +9,10 @@ import { randomUUID } from 'crypto';
 import createHttpError from 'http-errors';
 import { QueryFailedError } from 'typeorm';
 import { UserNameTakenError } from './db/services/user.service.js';
+import { EnvManager } from './env.js';
+import { readFileSync } from 'fs';
+import { createServer as createHttpServer, Server as HTTPServer } from 'http';
+import { createServer as createHttpsServer, Server as HTTPSServer } from 'https';
 
 export type StartServerConfig =
 {
@@ -18,9 +22,9 @@ export type StartServerConfig =
 export class Server
 {
     private static expressApp: core.Express;
-    private static _expressServer: Server;
+    private static _expressServer: HTTPSServer | HTTPServer;
     public static get expressServer() { return Server._expressServer; }
-    private static set expressServer(value: Server) { Server._expressServer = value; }
+    private static set expressServer(value: HTTPSServer | HTTPServer) { Server._expressServer = value; }
 
     private static getMorganLoggerMiddleware()
     {
@@ -124,7 +128,23 @@ export class Server
     public static startServer(port:number, config: Partial<StartServerConfig> = {})
     {
         const shouldAttachMorgan = config?.attachMorgan ?? true;
+        let sslKeyFile = undefined as undefined | Buffer;
+        let sslPemFile = undefined as undefined | Buffer;
 
+        if (EnvManager.isSSLDefined())
+        {
+            try
+            {
+                sslKeyFile = readFileSync(EnvManager.sslKeyFullPath);
+                sslPemFile = readFileSync(EnvManager.sslPemFullPath);
+            }
+            catch(e)
+            {
+                ExtendedLog.logRed(`Error loading SSL key or pem: ${e}`);
+                return;
+            }
+        }
+ 
         return new Promise<void>(resolve => 
         {
             Server.expressApp = express();
@@ -132,11 +152,16 @@ export class Server
             if (shouldAttachMorgan) Server.expressApp.use(Server.getMorganLoggerMiddleware());
             Server.expressApp.use("/", getMainRouter());
             Server.expressApp.use(Server.getErrorHandlerMiddleware());
-            Server.expressServer = Server.expressApp.listen(port, () => 
+
+            Server.expressServer = EnvManager.isSSLDefined() ? 
+                createHttpsServer({ key: sslKeyFile, cert: sslPemFile }, Server.expressApp) :
+                createHttpServer(Server.expressApp);
+            
+            Server.expressServer.listen(port, () => 
             {
-                ExtendedLog.logGreen(`Server running at port ${port}`);
+                ExtendedLog.logGreen(`${EnvManager.isSSLDefined() ? 'HTTPS' : 'HTTP'} server running at port ${port}`);
                 resolve();
-            }); 
+            });
         });
     }
 }

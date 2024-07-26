@@ -30,6 +30,10 @@ try
 
         ExtendedLog.logMagenta(`SQLite file path resolved to "${EnvManager.sqliteFilePath}"`);
         ExtendedLog.logMagenta(`Dist folder path resolved to "${EnvManager.distFolderLocation}"`);
+
+        EnvManager.isSSLDefined() ? 
+            ExtendedLog.logGreen(`SSL is defined, will run in HTTPS mode.`) :
+            ExtendedLog.logYellow(`SSL is not defined, will run in HTTP mode.`);
     })();
     
     // Initialize database
