@@ -29,6 +29,7 @@ try
         else if (EnvManager.envType === "Production") ExtendedLog.logGreen(`EnvType determined to be "${EnvManager.envType}"`);
 
         ExtendedLog.logMagenta(`SQLite file path resolved to "${EnvManager.sqliteFilePath}"`);
+        ExtendedLog.logMagenta(`Dist folder path resolved to "${EnvManager.distFolderLocation}"`);
     })();
     
     // Initialize database

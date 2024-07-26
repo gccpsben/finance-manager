@@ -53,13 +53,24 @@ export class EnvManager
         })();
 
         (() => 
-        { 
+        {
             if (!process.env.LOGS_FOLDER_PATH) throw new Error(buildNotDefinedMsg(`LOGS_FOLDER_PATH`));
             const parsedPath = path.resolve(process.env.LOGS_FOLDER_PATH);
             if (!fsExtra.pathExistsSync(parsedPath)) throw new Error(`Path "${parsedPath}" is not found!`);
             const stat = fs.lstatSync(parsedPath);
             if (!stat.isDirectory()) throw new Error(`Path "${parsedPath}" is not a directory.`);
             EnvManager.logsFolderPath = parsedPath;
+        })();
+
+        (() => 
+        { 
+            const keyName = `DIST_FOLDER_PATH`;
+            if (!process.env[keyName]) throw new Error(buildNotDefinedMsg(keyName));
+            const parsedPath = path.resolve(process.env[keyName]);
+            if (!fsExtra.pathExistsSync(parsedPath)) throw new Error(`Path "${parsedPath}" is not found!`);
+            const stat = fs.lstatSync(parsedPath);
+            if (!stat.isDirectory()) throw new Error(`Path "${parsedPath}" is not a directory.`);
+            EnvManager.distFolderLocation = parsedPath;
         })();
 
         (() => 
