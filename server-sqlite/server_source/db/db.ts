@@ -14,12 +14,14 @@ export class Database
     /** Create a Database data source from the env file. */
     public static createAppDataSource()
     {   
-        if (!EnvManager.sqliteFilePath) throw new Error(`createAppDataSource: EnvManager.sqliteFilePath is not defined.`);
+        if (!EnvManager.sqliteFilePath && !EnvManager.sqliteInMemory) 
+            throw new Error(`createAppDataSource: EnvManager.sqliteFilePath is not defined.`);
+        
         Database.AppDataSource = new DataSource(
         {
             type: "sqlite",
             entities: [User, AccessToken, Currency],
-            database: EnvManager.sqliteFilePath, 
+            database: EnvManager.sqliteInMemory ? ":memory:" : EnvManager.sqliteFilePath, 
             synchronize: true
         }); 
         return Database.AppDataSource;

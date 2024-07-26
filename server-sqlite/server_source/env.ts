@@ -13,6 +13,7 @@ export class EnvManager
     public static currentEnvFilePath = undefined as undefined | string;
     public static distFolderLocation = undefined as undefined | string;
     public static sqliteFilePath = undefined as undefined | string;
+    public static sqliteInMemory = false;
     public static logsFolderPath = undefined as undefined | string;
     public static sslPemFullPath = undefined as undefined | string;
     public static sslKeyFullPath = undefined as undefined | string;
@@ -42,8 +43,16 @@ export class EnvManager
  
         (() => 
         {
-            if (!process.env.SQLITE_FILE_PATH) throw new Error(buildNotDefinedMsg(`SQLITE_FILE_PATH`));
-            this.sqliteFilePath = path.resolve(process.env.SQLITE_FILE_PATH); 
+            const sqliteInMemory = process.env.SQLITE_IN_MEMORY === 'true';
+            const sqliteFilePath = process.env.SQLITE_FILE_PATH;
+
+            if (!sqliteInMemory && !sqliteFilePath) 
+                throw new Error(`SQLITE_FILE_PATH is not defined in env file and SQLITE_IN_MEMORY is not set to true.`);
+            if (sqliteFilePath && sqliteInMemory)
+                throw new Error(`SQLITE_FILE_PATH cannot be defined if SQLITE_IN_MEMORY is set to true.`);
+
+            if (!sqliteInMemory) EnvManager.sqliteFilePath = path.resolve(process.env.SQLITE_FILE_PATH); 
+            else EnvManager.sqliteInMemory = true;
         })();
 
         (() =>  

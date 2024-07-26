@@ -34,7 +34,11 @@ export async function main(envFilePath: string | undefined)
             else if (EnvManager.envType === 'UnitTest') ExtendedLog.logCyan(`EnvType determined to be "${EnvManager.envType}"`);
             else if (EnvManager.envType === "Production") ExtendedLog.logGreen(`EnvType determined to be "${EnvManager.envType}"`);
     
-            ExtendedLog.logMagenta(`SQLite file path resolved to "${EnvManager.sqliteFilePath}"`);
+            if (!EnvManager.sqliteInMemory)
+                ExtendedLog.logMagenta(`SQLite file path resolved to "${EnvManager.sqliteFilePath}"`);
+            else
+                ExtendedLog.logYellow(`SQLite running in memory mode.`);
+
             ExtendedLog.logMagenta(`Dist folder path resolved to "${EnvManager.distFolderLocation}"`);
     
             EnvManager.isSSLDefined() ? 
