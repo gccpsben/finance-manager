@@ -7,7 +7,7 @@ import createHttpError from 'http-errors';
 
 const router = express.Router();
 
-router.post("/api/v1/login", async (req:express.Request, res:express.Response, next: NextFunction) => 
+router.post("/api/v1/auth/login", async (req:express.Request, res:express.Response, next: NextFunction) => 
 { 
     try
     {

@@ -24,6 +24,7 @@ export class Database
             database: EnvManager.sqliteInMemory ? ":memory:" : EnvManager.sqliteFilePath, 
             synchronize: true
         }); 
+        
         return Database.AppDataSource;
     }
 

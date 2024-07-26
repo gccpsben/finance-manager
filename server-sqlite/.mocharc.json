@@ -1,0 +1,10 @@
+{
+    "extensions": ["ts"],
+    "spec": ["./tests/.index.spec.ts"],
+    "package": "./package.json",
+    "exit": true,
+    "node-option": [
+      "experimental-specifier-resolution=node",
+      "import=./tests/mocharc.register.js"
+    ]
+  }

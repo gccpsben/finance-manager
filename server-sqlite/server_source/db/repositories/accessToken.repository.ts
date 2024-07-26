@@ -1,7 +1,6 @@
 import { Database } from "../db.js";
 import { Repository } from "typeorm";
 import { AccessToken } from "../entities/accessToken.entity.js";
-import { User } from "../entities/user.entity.js";
 
 class AccessTokenRepositoryExtension
 {
