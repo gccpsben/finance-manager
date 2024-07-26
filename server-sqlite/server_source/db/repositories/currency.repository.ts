@@ -4,11 +4,22 @@ import { Database } from "../db.js";
 
 class CurrencyRepositoryExtension
 {
-    public async customFind(this: Repository<Currency>) 
+    public async isCurrencyByIdExists(this: Repository<Currency>, currencyId: string, userId: string): Promise<boolean>
     {
-        const result = await this.createQueryBuilder()
-        .getMany();
-        return result;
+        const currency = await this.findOne({where: { id: currencyId, owner: { id: userId } }});
+        return !!currency;
+    }
+
+    public async isCurrencyByNameExists(this: Repository<Currency>, name: string, userId: string): Promise<boolean>
+    {
+        const currency = await this.findOne({where: { currencyName: name, owner: { id: userId } }});
+        return !!currency;
+    }
+
+    public async isCurrencyByTickerExists(this: Repository<Currency>, ticker: string, userId: string): Promise<boolean>
+    {
+        const currency = await this.findOne({where: { ticker: ticker, owner: { id: userId } }});
+        return !!currency;
     }
 }
 

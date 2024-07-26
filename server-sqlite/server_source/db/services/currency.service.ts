@@ -14,24 +14,6 @@ export class CurrencyService
         CurrencyRepository.getInstance().findOne( { where: { owner: <any>userId, isBase: true } });
     }
 
-    public static async tryGetCurrencyById(currencyId: string, userId: string): Promise<boolean>
-    {
-        const currency = await CurrencyRepository.getInstance().findOne({where: { id: currencyId, owner: { id: userId } }});
-        return !!currency;
-    }
-
-    public static async tryGetCurrencyByName(name: string, userId: string): Promise<boolean>
-    {
-        const currency = await CurrencyRepository.getInstance().findOne({where: { currencyName: name, owner: { id: userId } }});
-        return !!currency;
-    }
-
-    public static async tryGetCurrencyByTicker(ticker: string, userId: string): Promise<boolean>
-    {
-        const currency = await CurrencyRepository.getInstance().findOne({where: { ticker: ticker, owner: { id: userId } }});
-        return !!currency;
-    }
-
     public static async createCurrency(userId: string, 
         name: string, 
         amount: Decimal | undefined, 
@@ -39,13 +21,13 @@ export class CurrencyService
         ticker: string)
     {
         // Check refCurrencyId exists if refCurrencyId is defined.
-        if (refCurrencyId && !(await CurrencyService.tryGetCurrencyById(refCurrencyId, userId)))
+        if (refCurrencyId && !(await CurrencyRepository.getInstance().isCurrencyByIdExists(refCurrencyId, userId)))
             throw createHttpError(404, `Cannot find ref currency with id '${refCurrencyId}'`);
 
-        if (!!(await CurrencyService.tryGetCurrencyByName(name, userId)))
+        if (!!(await CurrencyRepository.getInstance().isCurrencyByNameExists(name, userId)))
             throw createHttpError(400, `Currency with name '${name}' already exists.`);
 
-        if (!!(await CurrencyService.tryGetCurrencyByTicker(ticker, userId)))
+        if (!!(await CurrencyRepository.getInstance().isCurrencyByTickerExists(ticker, userId)))
             throw createHttpError(400, `Currency with ticker '${ticker}' already exists.`);
 
         const newCurrency = CurrencyRepository.getInstance().create();
