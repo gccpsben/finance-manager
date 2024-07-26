@@ -11,6 +11,7 @@ export default function getMainRouter()
 
     if (EnvManager.envType === 'Development') 
         router.use("/", devOnlyRouter);
+    
     router.use("/", userRouter);
     router.use("/", authRouter);
     router.use("/", currenciesRouter);

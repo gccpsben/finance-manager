@@ -5,16 +5,17 @@
 	"private": true,
 	"type": "module",
 	"scripts": {
-		"dev_watch": "tsc-watch -p \"./tsconfig.json\" --onSuccess \"node server_build/entry.js ./.dev.env\"",
-		"dev_once": "tsc && node server_build/entry.js ./dev.env",
-		"run_prod": "node ./server_production/entry.js ./.env",
+		"dev_watch": "tsc-watch -p \"./tsconfig.json\" --onSuccess \"node server_build/index.js ./.dev.env\"",
+		"dev_once": "tsc && node server_build/index.js ./dev.env",
+		"run_prod": "node ./server_production/index.js ./.env",
 		"build_prod": "tsc --outDir ./server_production",
 		"docs:dev": "vuepress dev docs",
 		"docs:build": "vuepress build docs",
-		"test": "tsc && npx mocha ./tests/.index.test.js --no-deprecation --exit"
+		"test": "tsc && npx mocha ./tests/.index.test.js  --no-deprecation"
 	},
 	"devDependencies": {
-		"@types/node": "^20.14.11"
+		"@types/node": "^20.14.11",
+		"mocha": "^10.7.0"
 	},
 	"browserslist": [
 		"> 1%",
