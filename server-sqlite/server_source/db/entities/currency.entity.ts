@@ -8,9 +8,10 @@ import { CurrencyRepository } from "../repositories/currency.repository.js";
 
 @Entity() 
 @Unique("UniqueCurrencyNameWithinUser",["currencyName", "owner"]) // For each user, no currencies with the same name is allowed
+@Unique("UniqueCurrencyTickerWithinUser",["ticker", "owner"]) // For each user, no currencies with the same ticker is allowed
 @Check(/*sql*/`CASE WHEN amount IS NOT NULL THEN NOT isBase ELSE isBase END`) // If isBase then amount must be null.
 export class Currency extends EntityClass 
-{ 
+{
     @PrimaryGeneratedColumn('uuid')
     id: string;
 

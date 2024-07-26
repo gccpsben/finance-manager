@@ -26,6 +26,12 @@ export class CurrencyService
         return !!currency;
     }
 
+    public static async tryGetCurrencyByTicker(ticker: string, userId: string): Promise<boolean>
+    {
+        const currency = await CurrencyRepository.getInstance().findOne({where: { ticker: ticker, owner: { id: userId } }});
+        return !!currency;
+    }
+
     public static async createCurrency(userId: string, 
         name: string, 
         amount: Decimal | undefined, 
@@ -38,6 +44,9 @@ export class CurrencyService
 
         if (!!(await CurrencyService.tryGetCurrencyByName(name, userId)))
             throw createHttpError(400, `Currency with name '${name}' already exists.`);
+
+        if (!!(await CurrencyService.tryGetCurrencyByTicker(ticker, userId)))
+            throw createHttpError(400, `Currency with ticker '${ticker}' already exists.`);
 
         const newCurrency = CurrencyRepository.getInstance().create();
         newCurrency.currencyName = name;
