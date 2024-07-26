@@ -6,6 +6,7 @@ import { isInt, isNumber, IsNumber, isNumberString, ValidateBy } from 'class-val
 import path from 'path';
 import fsExtra from 'fs-extra/esm';
 export type EnvType = "Development" | "UnitTest" | "Production";
+export enum RESTfulLogType { "DISABLED","TO_FILE_ONLY","TO_CONSOLE_ONLY","TO_BOTH" };
 
 export class EnvManager
 {
@@ -18,6 +19,7 @@ export class EnvManager
     public static sslPemFullPath = undefined as undefined | string;
     public static sslKeyFullPath = undefined as undefined | string;
     public static tokenExpiryMs = undefined as undefined | number;
+    public static restfulLogMode: RESTfulLogType;
     public static envType:EnvType = "Production";
 
     public static readEnv(filePath:string)
@@ -102,6 +104,15 @@ export class EnvManager
             if (!sslEnabled) return;
             EnvManager.sslKeyFullPath = path.resolve(path.join(process.cwd(), process.env[sslKeyPathKeyName]));
             EnvManager.sslPemFullPath = path.resolve(path.join(process.cwd(), process.env[sslPemPathKeyName]));
+        })();
+
+        (() => 
+        {
+            const keyName = `RESTFUL_LOG_MODE`;
+            const keyValue = process.env[keyName];
+            if (!keyValue) return EnvManager.restfulLogMode = RESTfulLogType.TO_BOTH;
+            if (!(keyValue in RESTfulLogType)) throw new Error(`${keyName} must be one of ${Object.keys(RESTfulLogType)}`);
+            EnvManager.restfulLogMode = RESTfulLogType[keyValue];
         })();
     }
 

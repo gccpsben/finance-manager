@@ -9,7 +9,7 @@ import { randomUUID } from 'crypto';
 import createHttpError from 'http-errors';
 import { QueryFailedError } from 'typeorm';
 import { UserNameTakenError } from '../db/services/user.service.js';
-import { EnvManager } from '../env.js';
+import { EnvManager, RESTfulLogType } from '../env.js';
 import { readFileSync } from 'fs';
 import { createServer as createHttpServer, Server as HTTPServer } from 'http';
 import { createServer as createHttpsServer, Server as HTTPSServer } from 'https';
@@ -26,7 +26,7 @@ export class Server
     public static get expressServer() { return Server._expressServer; }
     private static set expressServer(value: HTTPSServer | HTTPServer) { Server._expressServer = value; }
 
-    private static getMorganLoggerMiddleware()
+    private static getMorganLoggerMiddleware(toFile = true, toConsole = true)
     {
         // Create an empty stream for morgan, we will handle the logging ourself
         const xs = new PassThrough({objectMode: true});
@@ -44,7 +44,8 @@ export class Server
                 tokens.res(req, res, 'content-length'), '-',
                 tokens['response-time'](req, res), 'ms'
             ].join(' ');
-            ExtendedLog.logGray(msg, true, true);
+            
+            if (toFile || toConsole) ExtendedLog.logGray(msg, toFile, toConsole);
             return '';
         }, { skip: () => false, stream: xs })
     }
@@ -149,7 +150,14 @@ export class Server
         {
             Server.expressApp = express();
             Server.expressApp.use(express.json());
-            if (shouldAttachMorgan) Server.expressApp.use(Server.getMorganLoggerMiddleware());
+
+            if (shouldAttachMorgan) 
+                Server.expressApp.use(Server.getMorganLoggerMiddleware
+                (
+                    EnvManager.restfulLogMode === RESTfulLogType.TO_BOTH || EnvManager.restfulLogMode === RESTfulLogType.TO_FILE_ONLY,
+                    EnvManager.restfulLogMode === RESTfulLogType.TO_BOTH || EnvManager.restfulLogMode === RESTfulLogType.TO_CONSOLE_ONLY
+                ));
+
             Server.expressApp.use("/", getMainRouter());
             Server.expressApp.use(Server.getErrorHandlerMiddleware());
 

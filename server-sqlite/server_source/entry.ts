@@ -1,6 +1,6 @@
 import 'reflect-metadata';
 import path from "path";
-import { EnvManager } from "./env.js";
+import { EnvManager, RESTfulLogType } from "./env.js";
 import { ExtendedLog } from "./logging/extendedLog.js";
 import { Server } from "./router/server.js";
 import { Database } from "./db/db.js";
@@ -44,6 +44,11 @@ export async function main(envFilePath: string | undefined)
             EnvManager.isSSLDefined() ? 
                 ExtendedLog.logGreen(`SSL is defined, will run in HTTPS mode.`) :
                 ExtendedLog.logYellow(`SSL is not defined, will run in HTTP mode.`);
+
+            if (EnvManager.restfulLogMode === RESTfulLogType.DISABLED) ExtendedLog.logYellow(`RESTTUL logging is disabled.`);
+            else if (EnvManager.restfulLogMode === RESTfulLogType.TO_BOTH) ExtendedLog.logGreen(`RESTTUL logging is enabled for file and console.`);
+            else if (EnvManager.restfulLogMode === RESTfulLogType.TO_FILE_ONLY) ExtendedLog.logYellow(`RESTTUL logging is enabled only for file.`);
+            else if (EnvManager.restfulLogMode === RESTfulLogType.TO_CONSOLE_ONLY) ExtendedLog.logYellow(`RESTTUL logging is enabled only for console.`);
         })();
         
         // Initialize database
@@ -58,7 +63,13 @@ export async function main(envFilePath: string | undefined)
         // Start Server
         await (async () => 
         {
-            await Server.startServer(EnvManager.serverPort);
+            await Server.startServer
+            (
+                EnvManager.serverPort,
+                {
+                    attachMorgan: EnvManager.restfulLogMode !== RESTfulLogType.DISABLED
+                }
+            );
         })();
     }
     catch(e)
