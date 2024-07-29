@@ -5,6 +5,7 @@ import { AccessToken } from "./accessToken.entity.js";
 import { IsNotEmpty, IsString, MaxLength, validate } from "class-validator";
 import { EntityClass } from "../dbEntityBase.js";
 import { Currency } from "./currency.entity.js";
+import { Container } from "./container.entity.js";
 
 @Entity() 
 export class User extends EntityClass
@@ -29,4 +30,7 @@ export class User extends EntityClass
 
     @OneToMany(type => Currency, currency => currency.owner)
     currencies: Currency[];
+
+    @OneToMany(type => Container, container => container.owner)
+    containers: Container[];
 }
