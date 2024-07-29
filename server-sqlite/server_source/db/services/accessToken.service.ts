@@ -23,7 +23,7 @@ export class AccessTokenService
     public static async validateToken(tokenRaw: string): Promise<{isTokenValid: boolean, tokenFound: boolean, ownerUserId: string | undefined}>
     {
         const tokenInDatabase = await AccessTokenRepository.getInstance().findOne({ where: { token: tokenRaw }, relations: { owner: true } });
-        if (tokenInDatabase === null) return { isTokenValid: false, tokenFound: false, ownerUserId: undefined };
+        if (!tokenRaw || tokenInDatabase === null) return { isTokenValid: false, tokenFound: false, ownerUserId: undefined };
         if (new Date().getTime() >= tokenInDatabase.expiryDate.getTime())
         {
             await AccessTokenRepository.getInstance().delete({ token: tokenInDatabase.token });
