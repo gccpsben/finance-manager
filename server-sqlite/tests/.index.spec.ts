@@ -3,7 +3,7 @@
 
 import { validate, ValidationError } from 'class-validator';
 import { Database } from '../server_build/db/db.js';
-import { use, expect, AssertionError } from 'chai';
+import { expect } from 'chai';
 import { main } from '../server_build/entry.js';
 import { EnvManager } from '../server_build/env.js';
 import { ClassConstructor, plainToInstance } from 'class-transformer';
@@ -11,6 +11,7 @@ import authTest from './auth.spec.js';
 import containersTest from './container.spec.js';
 import request from 'superagent';
 import { CBHandler } from 'superagent/types.js';
+import Response from 'superagent/lib/node/response.js';
 
 export type HTTPMethod = "GET" | "PATCH" | "POST" | "DELETE";
 
@@ -40,89 +41,98 @@ export class ChaiValidationError extends Error
 type AddParameters< TFunction extends (...args: any) => any, TParameters extends [...args: any]> =  
     (...args: [...Parameters<TFunction>, ...TParameters] ) => ReturnType<TFunction>;
 
+export class HTTPTestsBuilderUtils
+{
+    public static defaultContentType = 'application/json';
+
+    public static methodNameToMethodFunc(method: HTTPMethod, executor: ChaiHttp.Agent)
+    {
+        if (method === 'DELETE') return executor.delete;
+        if (method === 'GET') return executor.get;
+        if (method === 'PATCH') return executor.patch;
+        if (method === 'POST') return executor.post;
+        throw new Error(`Unknown method ${method}!`);
+    }
+
+    public static setRequestHeaders(headers: Record<string, any> | undefined, request: request.Request)
+    {
+        for (let keyValuePair of Object.entries(headers ?? {}))
+            request = request.set(keyValuePair[0], keyValuePair[1]);
+        return request;
+    }
+
+    public static buildHTTPTest(config: HTTPTestShortcutConfig, testFunc: AddParameters<CBHandler, [doneFunc: Mocha.Done]>, chai: Chai.ChaiStatic)
+    {
+        return function(done: Mocha.Done)
+        {
+            const executor = chai.request.execute(config.serverURL);
+            const contentType = config.contentType ?? HTTPTestsBuilderUtils.defaultContentType;
+            const body = config.body ?? {};
+
+            let chain = HTTPTestsBuilderUtils.methodNameToMethodFunc(config.method, executor)(config.endpoint);
+            chain = chain.set('Content-Type', contentType);
+            chain = HTTPTestsBuilderUtils.setRequestHeaders(config.headers, chain);
+            if (config.query) chain = chain.query(config.query);
+            chain = chain.send(body);
+
+            chain.end(function (err, res) { testFunc(err, res, done); });
+        }
+    }
+
+    public static hydrateTestNameWithMethod(originalTestName: string, method: HTTPMethod)
+    {
+        let output = originalTestName;
+        output = output.replace('{{method}}', method.toLowerCase());   
+        output = output.replace('{{method_cap}}', method.toUpperCase());   
+        return output;
+    }
+}
+
 /** 
  * Contain functions to quickly build unit tests' test cases.
  * Should be used alongside Chai and Mocha.
  */
-export namespace HTTPTestsBuilder
+export class HTTPTestsBuilder
 {
-    export class HTTPTestsBuilderUtils
+    public static expectStatus(config: HTTPTestShortcutConfig & 
     {
-        public static defaultContentType = 'application/json';
+        statusCode: number,
+        validator? : (res: Response, done: Mocha.Done) => Promise<void> | undefined
+    }, testFunc: Mocha.TestFunction, chai: Chai.ChaiStatic)
+    {
+        const validator = config.validator ?? function (res: Response, done: Mocha.Done) { done(); };
 
-        public static methodNameToMethodFunc(method: HTTPMethod, executor: ChaiHttp.Agent)
+        testFunc(config.testName, function(done)
         {
-            if (method === 'DELETE') return executor.delete;
-            if (method === 'GET') return executor.get;
-            if (method === 'PATCH') return executor.patch;
-            if (method === 'POST') return executor.post;
-            throw new Error(`Unknown method ${method}!`);
-        }
-    
-        public static setRequestHeaders(headers: Record<string, any> | undefined, request: request.Request)
-        {
-            for (let keyValuePair of Object.entries(headers ?? {}))
-                request = request.set(keyValuePair[0], keyValuePair[1]);
-            return request;
-        }
-
-        public static buildHTTPTest(config: HTTPTestShortcutConfig, testFunc: AddParameters<CBHandler, [doneFunc: Mocha.Done]>, chai: Chai.ChaiStatic)
-        {
-            return function(done: Mocha.Done)
+            HTTPTestsBuilderUtils.buildHTTPTest(config, function (err, res, done)
             {
-                const executor = chai.request.execute(config.serverURL);
-                const contentType = config.contentType ?? HTTPTestsBuilderUtils.defaultContentType;
-                const body = config.body ?? {};
-
-                let chain = HTTPTestsBuilderUtils.methodNameToMethodFunc(config.method, executor)(config.endpoint);
-                chain = chain.set('Content-Type', contentType);
-                chain = HTTPTestsBuilderUtils.setRequestHeaders(config.headers, chain);
-                if (config.query) chain = chain.query(config.query);
-                chain = chain.send(body);
-
-                chain.end(function (err, res) { testFunc(err, res, done); });
-            }
-        }
-
-        public static hydrateTestNameWithMethod(originalTestName: string, method: HTTPMethod)
-        {
-            let output = originalTestName;
-            output = output.replace('{{method}}', method.toLowerCase());   
-            output = output.replace('{{method_cap}}', method.toUpperCase());   
-            return output;
-        }
+                expect(res).to.have.status(config.statusCode);
+                validator(res, done);
+            }, chai)(done);
+        });
     }
 
-    export class UnauthorizedTestsBuilder
+    public static expectStatusMultipleMethods
+    (
+        config: Omit<HTTPTestShortcutConfig, 'method'> & 
+        {
+            methods: HTTPMethod[],
+            statusCode: number
+        },
+        testFunc: Mocha.TestFunction, 
+        chai: Chai.ChaiStatic
+    )
     {
-        /** A shortcut function that quickly call `expectUnauthorized` with different methods */
-        public static expectUnauthorizedMethods(config: Omit<HTTPTestShortcutConfig, 'method'> & { methods: HTTPMethod[] },
-            testFunc: Mocha.TestFunction, 
-            chai: Chai.ChaiStatic
-        )
+        for (const method of config.methods)
         {
-            for (const method of config.methods)
+            const newTestName = `${HTTPTestsBuilderUtils.hydrateTestNameWithMethod(config.testName, method)}`;
+            HTTPTestsBuilder.expectStatus(
             {
-                const newTestName = `${HTTPTestsBuilderUtils.hydrateTestNameWithMethod(config.testName, method)}`;
-                UnauthorizedTestsBuilder.expectUnauthorized(
-                {
-                    ...config,
-                    testName: newTestName,
-                    method: method
-                }, testFunc, chai);
-            }
-        }
-
-        public static expectUnauthorized(config: HTTPTestShortcutConfig, testFunc: Mocha.TestFunction, chai: Chai.ChaiStatic)
-        {
-            testFunc(config.testName, function(done)
-            {
-                HTTPTestsBuilderUtils.buildHTTPTest(config, function (err, res, done)
-                {
-                    expect(res).to.have.status(401);
-                    done();
-                }, chai)(done);
-            });
+                ...config,
+                testName: newTestName,
+                method: method,
+                statusCode: config.statusCode
+            }, testFunc, chai);
         }
     }
 }

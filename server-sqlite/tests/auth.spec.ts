@@ -2,7 +2,7 @@ import { before } from 'mocha';
 import { use, expect, AssertionError } from 'chai';
 import chaiHttp from 'chai-http';
 import { IsDateString, IsDefined, IsNumber, IsString } from 'class-validator';
-import { validateBodyAgainstModel } from './.index.spec.js';
+import { HTTPTestsBuilder, validateBodyAgainstModel } from './.index.spec.js';
 const chai = use(chaiHttp);
 
 const POST_USER_ENDPOINT = `/api/v1/users`;
@@ -19,148 +19,123 @@ export default async function(parameters)
 
     describe("Access Tokens and Users" , () => 
     {
-        it("Create User without body", function(done) 
-        {
-            chai.request.execute(serverURL)
-            .post(POST_USER_ENDPOINT)
-            .end((err, res) => 
-            {
-                expect(res).to.have.status(400);
-                done();
-            });
-        });
+        HTTPTestsBuilder.expectStatus({
+            statusCode: 400,
+            testName: "Create User without body",
+            method: "POST",
+            endpoint: POST_USER_ENDPOINT,
+            serverURL: serverURL,
+            body: { },
+        }, it, chai);
 
-        it("Create User without username", function(done) 
-        {
-            chai.request.execute(serverURL)
-            .post(POST_USER_ENDPOINT)
-            .set('Content-Type', 'application/json')
-            .send({ password: '123' })
-            .end((err, res) => 
-            {
-                expect(res).to.have.status(400);
-                done();
-            });
-        });
+        HTTPTestsBuilder.expectStatus({
+            statusCode: 400,
+            testName: "Create User without username",
+            method: "POST",
+            endpoint: POST_USER_ENDPOINT,
+            serverURL: serverURL,
+            body: { password: '123' },
+        }, it, chai);
 
-        it("Create User without password", function(done) 
-        {
-            chai.request.execute(serverURL)
-            .post(POST_USER_ENDPOINT)
-            .set('Content-Type', 'application/json')
-            .send({ username: 'Username here' })
-            .end((err, res) => 
-            {
-                expect(res).to.have.status(400);
-                done();
-            });
-        });
+        HTTPTestsBuilder.expectStatus({
+            statusCode: 400,
+            testName: "Create User without password",
+            method: "POST",
+            endpoint: POST_USER_ENDPOINT,
+            serverURL: serverURL,
+            body: { username: 'Username here' },
+        }, it, chai);
 
         const correctUsername = "User 1";
         const correctPassword = "password123";
 
-        it("Create User with valid body", function(done) 
-        {
-            class expectedBodyType
+        HTTPTestsBuilder.expectStatus({
+            statusCode: 200,
+            testName: "POST User with valid body",
+            method: "POST",
+            endpoint: POST_USER_ENDPOINT,
+            serverURL: serverURL,
+            body: { username: correctUsername, password: correctPassword },
+            validator: async function (res, done) 
             {
-                // @ts-ignore
-                @IsString() userid: string;
-            }
+                class expectedBodyType
+                {
+                    // @ts-ignore
+                    @IsString() userid: string;
+                }
 
-            chai.request.execute(serverURL)
-            .post(POST_USER_ENDPOINT)
-            .set('Content-Type', 'application/json')
-            .send({ username: correctUsername, password: correctPassword })
-            .end(async (err, res) => 
-            {
-                expect(res).to.have.status(200);
                 const validationResult = await validateBodyAgainstModel(expectedBodyType, res.body);
                 done(validationResult.errors[0]);
-            });
-        });
+            }
+        }, it, chai);
 
-        it("Login without password", function(done) 
-        {
-            chai.request.execute(serverURL)
-            .post(POST_LOGIN_ENDPOINT)
-            .set('Content-Type', 'application/json')
-            .send({ username: correctUsername })
-            .end((err, res) => 
-            {
-                expect(res).to.have.status(400);
-                done();
-            });
-        });
+        HTTPTestsBuilder.expectStatus({
+            statusCode: 400,
+            testName: "Login without password",
+            method: "POST",
+            endpoint: POST_LOGIN_ENDPOINT,
+            serverURL: serverURL,
+            body: { username: correctUsername },
+        }, it, chai);
 
-        it("Login without username", function(done) 
-        {
-            chai.request.execute(serverURL)
-            .post(POST_LOGIN_ENDPOINT)
-            .set('Content-Type', 'application/json')
-            .send({ password: correctPassword })
-            .end((err, res) => 
-            {
-                expect(res).to.have.status(400);
-                done();
-            });
-        });
+        HTTPTestsBuilder.expectStatus({
+            statusCode: 400,
+            testName: "Login without username",
+            method: "POST",
+            endpoint: POST_LOGIN_ENDPOINT,
+            serverURL: serverURL,
+            body: { password: correctPassword },
+        }, it, chai);
 
-        it("Login with incorrect username", function(done) 
-        {
-            chai.request.execute(serverURL)
-            .post(POST_LOGIN_ENDPOINT)
-            .set('Content-Type', 'application/json')
-            .send({ username: correctUsername + "123", password: correctPassword })
-            .end((err, res) => 
-            {
-                expect(res).to.have.status(401);
-                done();
-            });
-        });
+        HTTPTestsBuilder.expectStatus({
+            statusCode: 401,
+            testName: "Login with incorrect username",
+            method: "POST",
+            endpoint: POST_LOGIN_ENDPOINT,
+            serverURL: serverURL,
+            body: { username: correctUsername + "123", password: correctPassword },
+        }, it, chai);
         
-        it("Login with incorrect password", function(done) 
-        {
-            chai.request.execute(serverURL)
-            .post(POST_LOGIN_ENDPOINT)
-            .set('Content-Type', 'application/json')
-            .send({ username: correctUsername, password: correctPassword + '1231s' })
-            .end((err, res) => 
-            {
-                expect(res).to.have.status(401);
-                done();
-            });
-        });
+        HTTPTestsBuilder.expectStatus({
+            statusCode: 401,
+            testName: "Login with incorrect password",
+            method: "POST",
+            endpoint: POST_LOGIN_ENDPOINT,
+            serverURL: serverURL,
+            body: { username: correctUsername, password: correctPassword + '1231s' },
+        }, it, chai);
 
         let loginToken = undefined as undefined | string;
 
-        it("Login with correct username and password", function(done) 
+        HTTPTestsBuilder.expectStatus(
         {
-            class expectedBodyType
+            statusCode: 200,
+            testName: "Login with correct username and password",
+            method: "POST",
+            endpoint: POST_LOGIN_ENDPOINT,
+            serverURL: serverURL,
+            body: { username: correctUsername, password: correctPassword },
+            validator: async function (res, done) 
             {
-                // @ts-ignore
-                @IsString() token: string;
+                class expectedBodyType
+                {
+                    // @ts-ignore
+                    @IsString() token: string;
+    
+                    // @ts-ignore
+                    @IsString() owner: string;
+    
+                    // @ts-ignore
+                    @IsDateString() creationDate: string;
+    
+                    // @ts-ignore
+                    @IsDateString() expiryDate: string;
+                }
 
-                // @ts-ignore
-                @IsString() owner: string;
-
-                // @ts-ignore
-                @IsDateString() creationDate: string;
-
-                // @ts-ignore
-                @IsDateString() expiryDate: string;
-            }
-
-            chai.request.execute(serverURL)
-            .post(POST_LOGIN_ENDPOINT)
-            .set('Content-Type', 'application/json')
-            .send({ username: correctUsername, password: correctPassword })
-            .end(async (err, res) => 
-            {
-                expect(res).to.have.status(200);
                 const validationResult = await validateBodyAgainstModel(expectedBodyType, res.body);
                 loginToken = validationResult.transformedObject.token;
                 done(validationResult.errors[0]);
-            });           
-        });
+            }
+        }, it, chai);
     });    
 }

@@ -6,8 +6,7 @@ import { HTTPTestsBuilder } from './.index.spec.js';
 import { randomUUID } from 'crypto';
 const chai = use(chaiHttp);
 
-const GET_CONTAINERS_ENDPOINT = `/api/v1/container`;
-const POST_CONTAINERS_ENDPOINT = `/api/v1/container`;
+const GET_POST_CONTAINERS_ENDPOINT = `/api/v1/container`;
 
 export default async function(parameters)
 {
@@ -20,18 +19,20 @@ export default async function(parameters)
 
     describe("Containers" , () => 
     {
-        HTTPTestsBuilder.UnauthorizedTestsBuilder.expectUnauthorizedMethods({
+        HTTPTestsBuilder.expectStatusMultipleMethods({
+            statusCode: 401,
             testName: "{{method_cap}} Container without tokens",
             methods: ["GET", "POST"],
-            endpoint: GET_CONTAINERS_ENDPOINT,
+            endpoint: GET_POST_CONTAINERS_ENDPOINT,
             serverURL: serverURL,
             body: {}
         }, it, chai);
 
-        HTTPTestsBuilder.UnauthorizedTestsBuilder.expectUnauthorizedMethods({
+        HTTPTestsBuilder.expectStatusMultipleMethods({
+            statusCode: 401,
             testName: "{{method_cap}} Container with wrong tokens",
             methods: ["GET", "POST"],
-            endpoint: GET_CONTAINERS_ENDPOINT,
+            endpoint: GET_POST_CONTAINERS_ENDPOINT,
             serverURL: serverURL,
             headers: { "authorization": randomUUID() },
             body: {}
