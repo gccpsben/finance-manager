@@ -45,10 +45,10 @@ export async function main(envFilePath: string | undefined)
                 ExtendedLog.logGreen(`SSL is defined, will run in HTTPS mode.`) :
                 ExtendedLog.logYellow(`SSL is not defined, will run in HTTP mode.`);
 
-            if (EnvManager.restfulLogMode === RESTfulLogType.DISABLED) ExtendedLog.logYellow(`RESTTUL logging is disabled.`);
-            else if (EnvManager.restfulLogMode === RESTfulLogType.TO_BOTH) ExtendedLog.logGreen(`RESTTUL logging is enabled for file and console.`);
-            else if (EnvManager.restfulLogMode === RESTfulLogType.TO_FILE_ONLY) ExtendedLog.logYellow(`RESTTUL logging is enabled only for file.`);
-            else if (EnvManager.restfulLogMode === RESTfulLogType.TO_CONSOLE_ONLY) ExtendedLog.logYellow(`RESTTUL logging is enabled only for console.`);
+            if (EnvManager.restfulLogMode === RESTfulLogType.DISABLED) ExtendedLog.logYellow(`RESTFUL logging is disabled.`);
+            else if (EnvManager.restfulLogMode === RESTfulLogType.TO_BOTH) ExtendedLog.logGreen(`RESTFUL logging is enabled for file and console.`);
+            else if (EnvManager.restfulLogMode === RESTfulLogType.TO_FILE_ONLY) ExtendedLog.logYellow(`RESTFUL logging is enabled only for file.`);
+            else if (EnvManager.restfulLogMode === RESTfulLogType.TO_CONSOLE_ONLY) ExtendedLog.logYellow(`RESTFUL logging is enabled only for console.`);
         })();
         
         // Initialize database
