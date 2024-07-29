@@ -5,8 +5,9 @@ import { validate, ValidationError } from 'class-validator';
 import { Database } from '../server_build/db/db.js';
 import { main } from '../server_build/entry.js';
 import { EnvManager } from '../server_build/env.js';
-import { plainToInstance } from 'class-transformer';
+import { ClassConstructor, plainToInstance } from 'class-transformer';
 import authTest from './auth.spec.js';
+import containersTest from './container.spec.js';
 
 export class ChaiValidationError extends Error
 {
@@ -18,7 +19,7 @@ export class ChaiValidationError extends Error
     }
 }
 
-export const validateBodyAgainstModel = async (modelClass, bodyObject) =>
+export async function validateBodyAgainstModel<T extends object>(modelClass: ClassConstructor<T>, bodyObject: object)
 {
     const transformedObject = plainToInstance(modelClass, bodyObject);
     const validationErrors = await validate(transformedObject);
@@ -38,4 +39,5 @@ await (async () =>
 
     const testSuitParameters = { serverPort, resetDatabase, validateBodyAgainstModel };
     authTest(testSuitParameters);
+    containersTest(testSuitParameters);
 })();

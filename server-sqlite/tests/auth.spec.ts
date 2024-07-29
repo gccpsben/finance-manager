@@ -61,14 +61,21 @@ export default async function(parameters)
 
         it("Create User with valid body", function(done) 
         {
+            class expectedBodyType
+            {
+                // @ts-ignore
+                @IsString() userid: string;
+            }
+
             chai.request.execute(serverURL)
             .post(POST_USER_ENDPOINT)
             .set('Content-Type', 'application/json')
             .send({ username: correctUsername, password: correctPassword })
-            .end((err, res) => 
+            .end(async (err, res) => 
             {
                 expect(res).to.have.status(200);
-                done();
+                const validationResult = await validateBodyAgainstModel(expectedBodyType, res.body);
+                done(validationResult.errors[0]);
             });
         });
 
@@ -124,6 +131,8 @@ export default async function(parameters)
             });
         });
 
+        let loginToken = undefined as undefined | string;
+
         it("Login with correct username and password", function(done) 
         {
             class expectedBodyType
@@ -149,8 +158,9 @@ export default async function(parameters)
             {
                 expect(res).to.have.status(200);
                 const validationResult = await validateBodyAgainstModel(expectedBodyType, res.body);
+                loginToken = validationResult.transformedObject.token;
                 done(validationResult.errors[0]);
-            });
+            });           
         });
     });    
 }
