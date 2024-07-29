@@ -10,6 +10,8 @@ import { CurrencyRepository } from "../repositories/currency.repository.js";
 @Unique("UniqueCurrencyNameWithinUser",["currencyName", "owner"]) // For each user, no currencies with the same name is allowed
 @Unique("UniqueCurrencyTickerWithinUser",["ticker", "owner"]) // For each user, no currencies with the same ticker is allowed
 @Check(/*sql*/`CASE WHEN amount IS NOT NULL THEN NOT isBase ELSE isBase END`) // If isBase then amount must be null.
+@Check(/*sql*/`CASE WHEN NOT isBase THEN amount IS NOT NULL ELSE amount IS NULL END`) // If not isBase then amount must also not be null.
+@Check(/*sql*/`CASE WHEN NOT isBase THEN refCurrencyId IS NOT NULL ELSE refCurrencyId IS NULL END`) // If not isBase then refCurrency must also not be null
 export class Currency extends EntityClass 
 {
     @PrimaryGeneratedColumn('uuid')
@@ -24,7 +26,7 @@ export class Currency extends EntityClass
     @Column({nullable: true}) 
     amount: string;
 
-    @OneToOne(type => Currency, currency => currency.refCurrency, { nullable: true })
+    @ManyToOne(type => Currency, currency => currency.refCurrency, { nullable: true })
     @JoinColumn()
     refCurrency: Currency;
 
