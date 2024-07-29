@@ -10,12 +10,12 @@ router.get("/api/v1/container", async (req: express.Request, res: express.Respon
 {
    try
    {
+        const authResult = await AccessTokenService.ensureRequestTokenValidated(req);
         class query
         {
             @IsOptional() @IsString() id: string;
             @IsOptional() @IsString() name: string;
         }
-        const authResult = await AccessTokenService.ensureRequestTokenValidated(req);
         const parsedBody = await ExpressValidations.validateBodyAgainstModel<query>(query, req.query);
         res.json(await ContainerService.getManyContainers(authResult.ownerUserId, parsedBody))
    }
@@ -26,12 +26,11 @@ router.post("/api/v1/container", async (req: express.Request, res: express.Respo
 {
     try
     {
+        const authResult = await AccessTokenService.ensureRequestTokenValidated(req);
         class body
         {
             @IsString() name: string; 
         }
-
-        const authResult = await AccessTokenService.ensureRequestTokenValidated(req);
         const parsedBody = await ExpressValidations.validateBodyAgainstModel<body>(body, req.body);
         res.json(await ContainerService.createContainer(authResult.ownerUserId, parsedBody.name)); 
     }
