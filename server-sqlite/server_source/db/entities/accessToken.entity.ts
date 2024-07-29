@@ -4,6 +4,7 @@ import { ManyToOne } from "typeorm";
 import { User } from "./user.entity.js";
 import { IsDate, validate } from "class-validator";
 import { EntityClass } from "../dbEntityBase.js";
+import { EnsureNotPlainForeignKey } from "../validators.js";
 
 @Entity()
 export class AccessToken extends EntityClass
@@ -20,5 +21,6 @@ export class AccessToken extends EntityClass
     expiryDate: Date;
 
     @ManyToOne(type => User, user => user.accessTokens, { nullable: false })
+    @EnsureNotPlainForeignKey() 
     owner: User;
 }

@@ -32,9 +32,10 @@ export class CurrencyService
 
         const newCurrency = CurrencyRepository.getInstance().create();
         newCurrency.currencyName = name;
-        newCurrency.owner = <any>userId;
+        newCurrency.owner = await UserRepository.getInstance().findOne({where:{id: userId}});
         newCurrency.ticker = ticker;
-        newCurrency.refCurrency = <any>refCurrencyId;
+        if (refCurrencyId)
+            newCurrency.refCurrency = await CurrencyRepository.getInstance().findOne({where:{id: refCurrencyId}});
         newCurrency.isBase = (amount === undefined && refCurrencyId === undefined);
         newCurrency.amount = amount == undefined ? undefined : amount.toFixed();
         await CurrencyRepository.getInstance().save(newCurrency);

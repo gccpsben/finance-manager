@@ -1,5 +1,6 @@
 import createHttpError from "http-errors";
 import { ContainerRepository } from "../repositories/container.repository.js";
+import { UserRepository } from "../repositories/user.repository.js";
 
 export class ContainerService
 {
@@ -29,7 +30,7 @@ export class ContainerService
         const newContainer = ContainerRepository.getInstance().create();
         newContainer.creationDate = creationDate;
         newContainer.name = name;
-        newContainer.owner = <any>ownerId;
+        newContainer.owner = await UserRepository.getInstance().findOne({where: {id: ownerId}});
         return await ContainerRepository.getInstance().save(newContainer);
     }
 

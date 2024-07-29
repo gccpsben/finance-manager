@@ -2,6 +2,7 @@ import { Check, Column, Entity, JoinColumn, ManyToOne, PrimaryGeneratedColumn, U
 import { EntityClass } from "../dbEntityBase.js";
 import { IsDate, IsNotEmpty, IsNumber, IsString, MaxLength } from "class-validator";
 import { User } from "./user.entity.js";
+import { EnsureNotPlainForeignKey } from "../validators.js";
 
 @Entity()
 export class Container extends EntityClass
@@ -21,5 +22,6 @@ export class Container extends EntityClass
 
     @ManyToOne(type => User, user => user.containers, { nullable: false })
     @JoinColumn()
+    @EnsureNotPlainForeignKey() 
     owner: User;
 }   

@@ -4,6 +4,7 @@ import { EnvManager } from "../../env.js";
 import { AccessToken } from '../entities/accessToken.entity.js';
 import * as express from 'express';
 import createHttpError from "http-errors";
+import { UserRepository } from "../repositories/user.repository.js";
 
 export class AccessTokenService
 {
@@ -12,7 +13,7 @@ export class AccessTokenService
         if (!EnvManager.tokenExpiryMs) throw new Error(`AccessTokenService.generateTokenForUser: EnvManager.tokenExpiryMs is not defined.`);
         const newToken = AccessTokenRepository.getInstance().create();
         newToken.token = randomUUID();
-        newToken.owner = <any>userId;
+        newToken.owner = await UserRepository.getInstance().findOne({where: {id: userId}});
         newToken.creationDate = new Date();
         newToken.expiryDate = new Date(newToken.creationDate.getTime() + EnvManager.tokenExpiryMs);
         await AccessTokenRepository.getInstance().save(newToken);
@@ -65,7 +66,10 @@ export class AccessTokenService
 
     public static async deleteTokensOfUser(userId: string)
     {
-        const result = await AccessTokenRepository.getInstance().delete({ owner: <any>userId });
+        const result = await AccessTokenRepository.getInstance().delete(
+        { 
+            owner: <any>userId 
+        });
         return result;
     }
 }

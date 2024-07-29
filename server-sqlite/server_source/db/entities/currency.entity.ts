@@ -1,10 +1,11 @@
-import { Entity, PrimaryGeneratedColumn, Column, BeforeInsert, BeforeUpdate, PrimaryColumn, OneToOne, JoinColumn, Check, Unique, Index } from "typeorm";
+import { Entity, PrimaryGeneratedColumn, Column, BeforeInsert, BeforeUpdate, PrimaryColumn, OneToOne, JoinColumn, Check, Unique, Index, AfterLoad, EntitySubscriberInterface, EventSubscriber, InsertEvent } from "typeorm";
 import "reflect-metadata"
 import { ManyToOne } from "typeorm";
 import { User } from "./user.entity.js";
-import { IsBoolean, IsDate, IsNotEmpty, isNumber, IsString, MaxLength, validate, ValidationError } from "class-validator";
+import { IsBoolean, IsDate, IsNotEmpty, isNumber, IsObject, IsString, MaxLength, validate, ValidationError } from "class-validator";
 import { EntityClass } from "../dbEntityBase.js";
 import { CurrencyRepository } from "../repositories/currency.repository.js";
+import { EnsureNotPlainForeignKey } from "../validators.js";
 
 @Entity() 
 @Unique("UniqueCurrencyNameWithinUser",["currencyName", "owner"]) // For each user, no currencies with the same name is allowed
@@ -28,9 +29,12 @@ export class Currency extends EntityClass
 
     @ManyToOne(type => Currency, currency => currency.refCurrency, { nullable: true })
     @JoinColumn()
+    @EnsureNotPlainForeignKey() 
     refCurrency: Currency;
 
-    @ManyToOne(type => User, user => user.accessTokens, { nullable: false })
+    @ManyToOne(type => User, user => user.currencies, { nullable: false })
+    @JoinColumn()
+    @EnsureNotPlainForeignKey() 
     owner: User;
 
     @Column()
@@ -57,7 +61,17 @@ export class Currency extends EntityClass
         }       
 
         // Ensure only 1 base currency is for each user.
-        if (this.isBase && await CurrencyRepository.getInstance().count({where: { owner: { id: this.owner.id }, isBase: true }}) >= 1)
+        if (this.isBase && await CurrencyRepository.getInstance().count
+        (
+            {
+                where: 
+                { 
+                    owner: { id: this.owner.id }, 
+                    isBase: true 
+                },
+                relations: { owner: true }
+            }
+        ) >= 1)
         {
             const error = new ValidationError();
             error.target = this;

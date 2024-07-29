@@ -6,6 +6,7 @@ import { IsNotEmpty, IsString, MaxLength, validate } from "class-validator";
 import { EntityClass } from "../dbEntityBase.js";
 import { Currency } from "./currency.entity.js";
 import { Container } from "./container.entity.js";
+import { EnsureNotPlainForeignKey } from "../validators.js";
 
 @Entity() 
 export class User extends EntityClass
@@ -26,11 +27,14 @@ export class User extends EntityClass
     passwordHash: string;
 
     @OneToMany(type => AccessToken, accessToken => accessToken.owner)
+    @EnsureNotPlainForeignKey() 
     accessTokens: AccessToken[];
 
     @OneToMany(type => Currency, currency => currency.owner)
+    @EnsureNotPlainForeignKey() 
     currencies: Currency[];
 
     @OneToMany(type => Container, container => container.owner)
+    @EnsureNotPlainForeignKey() 
     containers: Container[];
 }
