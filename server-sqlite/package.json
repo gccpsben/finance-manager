@@ -43,6 +43,7 @@
 		"esm": "^3.2.25",
 		"express": "^4.19.2",
 		"fs-extra": "^11.2.0",
+		"helmet": "^7.1.0",
 		"http-errors": "^2.0.0",
 		"morgan": "^1.10.0",
 		"rotating-file-stream": "^3.2.3",

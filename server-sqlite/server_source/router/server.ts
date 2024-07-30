@@ -13,6 +13,7 @@ import { EnvManager, RESTfulLogType } from '../env.js';
 import { readFileSync } from 'fs';
 import { createServer as createHttpServer, Server as HTTPServer } from 'http';
 import { createServer as createHttpsServer, Server as HTTPSServer } from 'https';
+import helmet from "helmet";
 
 export type StartServerConfig =
 {
@@ -149,6 +150,7 @@ export class Server
         return new Promise<void>(resolve => 
         {
             Server.expressApp = express();
+            Server.expressApp.use(helmet());
             Server.expressApp.use(express.json());
 
             if (shouldAttachMorgan) 
