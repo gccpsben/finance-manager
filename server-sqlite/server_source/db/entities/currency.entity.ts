@@ -2,10 +2,10 @@ import { Entity, PrimaryGeneratedColumn, Column, BeforeInsert, BeforeUpdate, Pri
 import "reflect-metadata"
 import { ManyToOne } from "typeorm";
 import { User } from "./user.entity.js";
-import { IsBoolean, IsDate, IsNotEmpty, isNumber, IsObject, IsString, MaxLength, validate, ValidationError } from "class-validator";
+import { IsBoolean, IsDate, IsNotEmpty, isNumber, IsObject, IsOptional, IsString, MaxLength, validate, ValidationError } from "class-validator";
 import { EntityClass } from "../dbEntityBase.js";
 import { CurrencyRepository } from "../repositories/currency.repository.js";
-import { EnsureNotPlainForeignKey } from "../validators.js";
+import { EnsureNotPlainForeignKey, IsDecimalJSString } from "../validators.js";
 
 @Entity() 
 @Unique("UniqueCurrencyNameWithinUser",["currencyName", "owner"]) // For each user, no currencies with the same name is allowed
@@ -25,6 +25,9 @@ export class Currency extends EntityClass
     currencyName: string;
 
     @Column({nullable: true}) 
+    @IsOptional()
+    @IsString()
+    @IsDecimalJSString()
     amount: string;
 
     @ManyToOne(type => Currency, currency => currency.refCurrency, { nullable: true })

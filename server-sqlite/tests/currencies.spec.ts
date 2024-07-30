@@ -311,6 +311,31 @@ export default async function(parameters)
                         method: "POST"
                     }, chai);
                 });
+
+                it(`POST Regular Currency with non-number amount - ${userKeyName}`, async function () 
+                {
+                    await HTTPTestsBuilder.runRestExecution(
+                    {
+                        ...basePostReq,
+                        expectedStatusCode: 400,
+                        headers: { 'authorization': userObj.token },
+                        body: { ...getBaseObj(), amount: "100a" },
+                        method: "POST"
+                    }, chai);
+                });
+
+                
+                it(`POST Regular Currency with floating point amount - ${userKeyName}`, async function () 
+                {
+                    await HTTPTestsBuilder.runRestExecution(
+                    {
+                        ...basePostReq,
+                        expectedStatusCode: 200,
+                        headers: { 'authorization': userObj.token },
+                        body: { ...getBaseObj(), name: "New Currency", ticker: "NEW_TICKER", amount: "100.00001" },
+                        method: "POST"
+                    }, chai);
+                });
     
                 it(`POST Regular Currency with valid args - ${userKeyName}`, async function () 
                 {

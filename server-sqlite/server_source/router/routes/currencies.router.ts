@@ -4,6 +4,7 @@ import { CurrencyService } from '../../db/services/currency.service.js';
 import { Decimal } from 'decimal.js';
 import { IsOptional, IsString } from 'class-validator';
 import { ExpressValidations } from '../validation.js';
+import { IsDecimalJSString } from '../../db/validators.js';
 
 const router = express.Router();
 
@@ -14,7 +15,7 @@ router.post("/api/v1/currencies", async (req: express.Request, res: express.Resp
         class body
         {
             @IsString() name: string; 
-            @IsOptional() @IsString() amount: string;
+            @IsOptional() @IsString() @IsDecimalJSString() amount: string;
             @IsOptional() @IsString() refCurrencyId: string;
             @IsString() ticker: string;
         }
