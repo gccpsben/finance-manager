@@ -19,123 +19,149 @@ export default async function(parameters)
 
     describe("Access Tokens and Users" , () => 
     {
-        HTTPTestsBuilder.expectStatus({
-            statusCode: 400,
-            testName: "Create User without body",
-            method: "POST",
-            endpoint: POST_USER_ENDPOINT,
-            serverURL: serverURL,
-            body: { },
-        }, it, chai);
+        it("Create User without body", async function()
+        {
+            await HTTPTestsBuilder.runRestExecution(
+            {
+                expectedStatusCode: 400,
+                endpoint: POST_USER_ENDPOINT,
+                serverURL: serverURL,
+                body: {},
+                method: "POST"
+            }, chai);
+        });
 
-        HTTPTestsBuilder.expectStatus({
-            statusCode: 400,
-            testName: "Create User without username",
-            method: "POST",
-            endpoint: POST_USER_ENDPOINT,
-            serverURL: serverURL,
-            body: { password: '123' },
-        }, it, chai);
+        it("Create User without username", async function()
+        {
+            await HTTPTestsBuilder.runRestExecution(
+            {
+                expectedStatusCode: 400,
+                endpoint: POST_USER_ENDPOINT,
+                serverURL: serverURL,
+                body: { password: '123' },
+                method: "POST"
+            }, chai);
+        });
 
-        HTTPTestsBuilder.expectStatus({
-            statusCode: 400,
-            testName: "Create User without password",
-            method: "POST",
-            endpoint: POST_USER_ENDPOINT,
-            serverURL: serverURL,
-            body: { username: 'Username here' },
-        }, it, chai);
+        it("Create User without password", async function()
+        {
+            await HTTPTestsBuilder.runRestExecution(
+            {
+                expectedStatusCode: 400,
+                endpoint: POST_USER_ENDPOINT,
+                serverURL: serverURL,
+                body: { username: 'Username here' },
+                method: "POST"
+            }, chai);
+        });
 
         const correctUsername = "User 1";
         const correctPassword = "password123";
 
-        HTTPTestsBuilder.expectStatus({
-            statusCode: 200,
-            testName: "POST User with valid body",
-            method: "POST",
-            endpoint: POST_USER_ENDPOINT,
-            serverURL: serverURL,
-            body: { username: correctUsername, password: correctPassword },
-            validator: async function (res, done) 
+        it("POST User with valid body", async function()
+        {
+            await HTTPTestsBuilder.runRestExecution(
             {
-                class expectedBodyType
+                expectedStatusCode: 200,
+                endpoint: POST_USER_ENDPOINT,
+                serverURL: serverURL,
+                body: { username: correctUsername, password: correctPassword },
+                method: "POST",
+                responseValidator: async function(res)
                 {
-                    // @ts-ignore
-                    @IsString() userid: string;
+                    class expectedBodyType
+                    {
+                        // @ts-ignore
+                        @IsNumber() userid: string;
+                    }
+
+                    const validationResult = await validateBodyAgainstModel(expectedBodyType, res.body);
+                    if (validationResult[0]) throw validationResult[0];
                 }
+            }, chai);
+        });
 
-                const validationResult = await validateBodyAgainstModel(expectedBodyType, res.body);
-                done(validationResult.errors[0]);
-            }
-        }, it, chai);
+        it("Login without password", async function()
+        {
+            await HTTPTestsBuilder.runRestExecution(
+            {
+                expectedStatusCode: 400,
+                endpoint: POST_LOGIN_ENDPOINT,
+                serverURL: serverURL,
+                body: { username: correctUsername },
+                method: "POST"
+            }, chai);
+        });
 
-        HTTPTestsBuilder.expectStatus({
-            statusCode: 400,
-            testName: "Login without password",
-            method: "POST",
-            endpoint: POST_LOGIN_ENDPOINT,
-            serverURL: serverURL,
-            body: { username: correctUsername },
-        }, it, chai);
+        it("Login without username", async function()
+        {
+            await HTTPTestsBuilder.runRestExecution(
+            {
+                expectedStatusCode: 400,
+                endpoint: POST_LOGIN_ENDPOINT,
+                serverURL: serverURL,
+                body: { password: correctPassword },
+                method: "POST"
+            }, chai);
+        });
 
-        HTTPTestsBuilder.expectStatus({
-            statusCode: 400,
-            testName: "Login without username",
-            method: "POST",
-            endpoint: POST_LOGIN_ENDPOINT,
-            serverURL: serverURL,
-            body: { password: correctPassword },
-        }, it, chai);
+        it("Login with incorrect username", async function()
+        {
+            await HTTPTestsBuilder.runRestExecution(
+            {
+                expectedStatusCode: 401,
+                endpoint: POST_LOGIN_ENDPOINT,
+                serverURL: serverURL,
+                body: { username: correctUsername + "123", password: correctPassword },
+                method: "POST"
+            }, chai);
+        });
 
-        HTTPTestsBuilder.expectStatus({
-            statusCode: 401,
-            testName: "Login with incorrect username",
-            method: "POST",
-            endpoint: POST_LOGIN_ENDPOINT,
-            serverURL: serverURL,
-            body: { username: correctUsername + "123", password: correctPassword },
-        }, it, chai);
+        it("Login with incorrect password", async function()
+        {
+            await HTTPTestsBuilder.runRestExecution(
+            {
+                expectedStatusCode: 401,
+                endpoint: POST_LOGIN_ENDPOINT,
+                serverURL: serverURL,
+                body: { username: correctUsername, password: correctPassword + '1231s' },
+                method: "POST"
+            }, chai);
+        });
         
-        HTTPTestsBuilder.expectStatus({
-            statusCode: 401,
-            testName: "Login with incorrect password",
-            method: "POST",
-            endpoint: POST_LOGIN_ENDPOINT,
-            serverURL: serverURL,
-            body: { username: correctUsername, password: correctPassword + '1231s' },
-        }, it, chai);
-
         let loginToken = undefined as undefined | string;
 
-        HTTPTestsBuilder.expectStatus(
+        it("Login with correct username and password", async function()
         {
-            statusCode: 200,
-            testName: "Login with correct username and password",
-            method: "POST",
-            endpoint: POST_LOGIN_ENDPOINT,
-            serverURL: serverURL,
-            body: { username: correctUsername, password: correctPassword },
-            validator: async function (res, done) 
+            await HTTPTestsBuilder.runRestExecution(
             {
-                class expectedBodyType
+                expectedStatusCode: 200,
+                endpoint: POST_LOGIN_ENDPOINT,
+                serverURL: serverURL,
+                body: { username: correctUsername, password: correctPassword },
+                method: "POST",
+                responseValidator: async function(res)
                 {
-                    // @ts-ignore
-                    @IsString() token: string;
-    
-                    // @ts-ignore
-                    @IsString() owner: string;
-    
-                    // @ts-ignore
-                    @IsDateString() creationDate: string;
-    
-                    // @ts-ignore
-                    @IsDateString() expiryDate: string;
-                }
+                    class expectedBodyType
+                    {
+                        // @ts-ignore
+                        @IsString() token: string;
+        
+                        // @ts-ignore
+                        @IsString() owner: string;
+        
+                        // @ts-ignore
+                        @IsDateString() creationDate: string;
+        
+                        // @ts-ignore
+                        @IsDateString() expiryDate: string;
+                    }
 
-                const validationResult = await validateBodyAgainstModel(expectedBodyType, res.body);
-                loginToken = validationResult.transformedObject.token;
-                done(validationResult.errors[0]);
-            }
-        }, it, chai);
+                    const validationResult = await validateBodyAgainstModel(expectedBodyType, res.body);
+                    if (validationResult[0]) throw validationResult[0];
+                    loginToken = validationResult.transformedObject.token;
+                }
+            }, chai);
+        });
     });    
 }

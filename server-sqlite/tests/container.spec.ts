@@ -2,7 +2,7 @@ import { before } from 'mocha';
 import { use, expect, AssertionError } from 'chai';
 import chaiHttp from 'chai-http';
 import { IsDateString, IsDefined, IsNumber, IsString } from 'class-validator';
-import { HTTPTestsBuilder } from './.index.spec.js';
+import { HTTPMethod, HTTPTestsBuilder } from './.index.spec.js';
 import { randomUUID } from 'crypto';
 const chai = use(chaiHttp);
 
@@ -19,23 +19,32 @@ export default async function(parameters)
 
     describe("Containers" , () => 
     {
-        HTTPTestsBuilder.expectStatusMultipleMethods({
-            statusCode: 401,
-            testName: "{{method_cap}} Container without tokens",
-            methods: ["GET", "POST"],
-            endpoint: GET_POST_CONTAINERS_ENDPOINT,
-            serverURL: serverURL,
-            body: {}
-        }, it, chai);
+        for (const method of (["GET", "POST"] as HTTPMethod[]))
+        {
+            it(`${method} Container without tokens`, async function () 
+            {
+                await HTTPTestsBuilder.runRestExecution(
+                {
+                    expectedStatusCode: 401,
+                    body: {},
+                    method: method,
+                    endpoint: GET_POST_CONTAINERS_ENDPOINT,
+                    serverURL: serverURL,
+                }, chai);
+            });
 
-        HTTPTestsBuilder.expectStatusMultipleMethods({
-            statusCode: 401,
-            testName: "{{method_cap}} Container with wrong tokens",
-            methods: ["GET", "POST"],
-            endpoint: GET_POST_CONTAINERS_ENDPOINT,
-            serverURL: serverURL,
-            headers: { "authorization": randomUUID() },
-            body: {}
-        }, it, chai);
+            it(`${method} Container with wrong tokens`, async function () 
+            {
+                await HTTPTestsBuilder.runRestExecution(
+                {
+                    expectedStatusCode: 401,
+                    body: {},
+                    method: method,
+                    endpoint: GET_POST_CONTAINERS_ENDPOINT,
+                    serverURL: serverURL,
+                    headers: { "authorization": randomUUID() },
+                }, chai);
+            });
+        }
     });    
 }

@@ -9,6 +9,7 @@ import { EnvManager } from '../server_build/env.js';
 import { ClassConstructor, plainToInstance } from 'class-transformer';
 import authTest from './auth.spec.js';
 import containersTest from './container.spec.js';
+import currenciesTest from './currencies.spec.js';
 import request from 'superagent';
 import { CBHandler } from 'superagent/types.js';
 import Response from 'superagent/lib/node/response.js';
@@ -17,14 +18,15 @@ export type HTTPMethod = "GET" | "PATCH" | "POST" | "DELETE";
 
 export type HTTPTestShortcutConfig = 
 {
+    expectedStatusCode?: number,
     serverURL: string,
     endpoint: string,
     contentType?: string | undefined,
     body?: Object | undefined,
-    testName: string,
     method: HTTPMethod,
     query?: Record<string, any> | string | undefined,
     headers? : Record<string, any> | undefined,
+    responseValidator?: (response: Response) => Promise<void>
 };
 
 
@@ -37,9 +39,6 @@ export class ChaiValidationError extends Error
         this.name = "ChaiValidationError";
     }
 }
-
-type AddParameters< TFunction extends (...args: any) => any, TParameters extends [...args: any]> =  
-    (...args: [...Parameters<TFunction>, ...TParameters] ) => ReturnType<TFunction>;
 
 export class HTTPTestsBuilderUtils
 {
@@ -61,24 +60,6 @@ export class HTTPTestsBuilderUtils
         return request;
     }
 
-    public static buildHTTPTest(config: HTTPTestShortcutConfig, testFunc: AddParameters<CBHandler, [doneFunc: Mocha.Done]>, chai: Chai.ChaiStatic)
-    {
-        return function(done: Mocha.Done)
-        {
-            const executor = chai.request.execute(config.serverURL);
-            const contentType = config.contentType ?? HTTPTestsBuilderUtils.defaultContentType;
-            const body = config.body ?? {};
-
-            let chain = HTTPTestsBuilderUtils.methodNameToMethodFunc(config.method, executor)(config.endpoint);
-            chain = chain.set('Content-Type', contentType);
-            chain = HTTPTestsBuilderUtils.setRequestHeaders(config.headers, chain);
-            if (config.query) chain = chain.query(config.query);
-            chain = chain.send(body);
-
-            chain.end(function (err, res) { testFunc(err, res, done); });
-        }
-    }
-
     public static hydrateTestNameWithMethod(originalTestName: string, method: HTTPMethod)
     {
         let output = originalTestName;
@@ -94,46 +75,32 @@ export class HTTPTestsBuilderUtils
  */
 export class HTTPTestsBuilder
 {
-    public static expectStatus(config: HTTPTestShortcutConfig & 
+    public static async runRestExecution(config: HTTPTestShortcutConfig, chai: Chai.ChaiStatic)
     {
-        statusCode: number,
-        validator? : (res: Response, done: Mocha.Done) => Promise<void> | undefined
-    }, testFunc: Mocha.TestFunction, chai: Chai.ChaiStatic)
-    {
-        const validator = config.validator ?? function (res: Response, done: Mocha.Done) { done(); };
-
-        testFunc(config.testName, function(done)
+        return new Promise<void>(function (resolve, reject)
         {
-            HTTPTestsBuilderUtils.buildHTTPTest(config, function (err, res, done)
-            {
-                expect(res).to.have.status(config.statusCode);
-                validator(res, done);
-            }, chai)(done);
+            const executor = chai.request.execute(config.serverURL);
+            let chain = HTTPTestsBuilderUtils.methodNameToMethodFunc(config.method, executor)(config.endpoint);
+            chain = chain.set('Content-Type', config.contentType ?? HTTPTestsBuilderUtils.defaultContentType);
+            chain = HTTPTestsBuilderUtils.setRequestHeaders(config.headers, chain);
+            if (config.query) chain = chain.query(config.query);
+            chain = chain.send(config.body);
+            chain.end(async function (err, res) 
+            { 
+                if (err) return reject(err);
+                try
+                {
+                    if (config.expectedStatusCode)
+                        expect(res).to.have.status(config.expectedStatusCode);
+
+                    if (config.responseValidator) 
+                        await config.responseValidator(res);
+
+                    resolve();
+                }
+                catch(e) { reject(e); }
+            });
         });
-    }
-
-    public static expectStatusMultipleMethods
-    (
-        config: Omit<HTTPTestShortcutConfig, 'method'> & 
-        {
-            methods: HTTPMethod[],
-            statusCode: number
-        },
-        testFunc: Mocha.TestFunction, 
-        chai: Chai.ChaiStatic
-    )
-    {
-        for (const method of config.methods)
-        {
-            const newTestName = `${HTTPTestsBuilderUtils.hydrateTestNameWithMethod(config.testName, method)}`;
-            HTTPTestsBuilder.expectStatus(
-            {
-                ...config,
-                testName: newTestName,
-                method: method,
-                statusCode: config.statusCode
-            }, testFunc, chai);
-        }
     }
 }
 
@@ -158,4 +125,5 @@ await (async () =>
     const testSuitParameters = { serverPort, resetDatabase, validateBodyAgainstModel };
     authTest(testSuitParameters);
     containersTest(testSuitParameters);
+    currenciesTest(testSuitParameters);
 })();
