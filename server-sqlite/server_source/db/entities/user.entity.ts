@@ -7,6 +7,7 @@ import { EntityClass } from "../dbEntityBase.js";
 import { Currency } from "./currency.entity.js";
 import { Container } from "./container.entity.js";
 import { EnsureNotPlainForeignKey } from "../validators.js";
+import { Transaction } from "./transaction.entity.js";
 
 @Entity() 
 export class User extends EntityClass
@@ -37,4 +38,8 @@ export class User extends EntityClass
     @OneToMany(type => Container, container => container.owner)
     @EnsureNotPlainForeignKey() 
     containers: Container[];
+
+    @OneToMany(type => Transaction, transaction => transaction.owner)
+    @EnsureNotPlainForeignKey() 
+    transactions: Transaction[];
 }

@@ -7,6 +7,7 @@ import { AccessTokenRepository } from "./repositories/accessToken.repository.js"
 import { ExtendedLog } from "../logging/extendedLog.js";
 import { Currency } from "./entities/currency.entity.js";
 import { Container } from "./entities/container.entity.js";
+import { Transaction } from "./entities/transaction.entity.js";
 
 export class Database
 {
@@ -21,7 +22,7 @@ export class Database
         Database.AppDataSource = new DataSource(
         {
             type: "sqlite",
-            entities: [User, AccessToken, Currency, Container],
+            entities: [User, AccessToken, Currency, Container, Transaction],
             database: EnvManager.sqliteInMemory ? ":memory:" : EnvManager.sqliteFilePath, 
             synchronize: true
         }); 
