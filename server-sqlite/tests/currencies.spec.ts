@@ -5,6 +5,7 @@ import { IsDateString, IsDefined, IsNumber, IsString } from 'class-validator';
 import { ensureBodyConfirmToModel, HTTPMethod, HTTPTestsBuilder, HTTPTestsBuilderUtils, TestUserDict, UnitTestEndpoints } from './.index.spec.js';
 import { randomUUID } from 'crypto';
 import { BodyGenerator } from './lib/bodyGenerator.js';
+import { HookShortcuts } from './lib/hookShortcuts.js';
 const chai = use(chaiHttp);
 
 function createBaseCurrencyPostBody(name: string, ticker: string)
@@ -34,38 +35,7 @@ export default async function(parameters)
                 "user3" : { username: "user3", password: "user3password" }
             };
     
-            before(async () =>
-            { 
-                await resetDatabase(); 
-        
-                for (let user of Object.entries(testUsersCreds))
-                {
-                    const body = { username: user[1].username, password: user[1].password };
-                    const baseReq = { body: body, serverURL: serverURL, method: "POST" as HTTPMethod };
-
-                    await HTTPTestsBuilder.runRestExecution(
-                    {
-                        expectedStatusCode: 200,
-                        endpoint: UnitTestEndpoints.userEndpoints['post'],
-                        ...baseReq
-                    }, chai);
-        
-                    await HTTPTestsBuilder.runRestExecution(
-                    {
-                        expectedStatusCode: 200,
-                        endpoint: UnitTestEndpoints.loginEndpoints['post'],
-                        ...baseReq,
-                        responseValidator: async function (res)
-                        {
-                            // @ts-ignore
-                            class expectedBodyType { @IsString() token: string; }
-                            const transformedObject = await ensureBodyConfirmToModel(expectedBodyType, res.body);
-                            testUsersCreds[user[0]].token = transformedObject.token;
-                        }
-                    }, chai);
-                }
-        
-            });
+            HookShortcuts.registerMockUsers(chai, serverURL, testUsersCreds, resetDatabase);
     
             for (const user of Object.entries(testUsersCreds))
             {
@@ -146,38 +116,13 @@ export default async function(parameters)
                 "user2" : { username: "user2", password: "user2password", baseCurrencyId: undefined },
                 "user3" : { username: "user3", password: "user3password", baseCurrencyId: undefined }
             };
+
+            HookShortcuts.registerMockUsers(chai, serverURL, testUsersCreds, resetDatabase);
     
             before(async function ()
-            {
-                await resetDatabase();
-    
+            {   
                 for (let user of Object.entries(testUsersCreds))
                 {
-                    await HTTPTestsBuilder.runRestExecution(
-                    {
-                        expectedStatusCode: 200,
-                        endpoint: UnitTestEndpoints.userEndpoints['post'],
-                        serverURL: serverURL,
-                        body: { username: user[1].username, password: user[1].password },
-                        method: "POST"
-                    }, chai);
-        
-                    await HTTPTestsBuilder.runRestExecution(
-                    {
-                        expectedStatusCode: 200,
-                        endpoint: UnitTestEndpoints.loginEndpoints['post'],
-                        serverURL: serverURL,
-                        body: { username: user[1].username, password: user[1].password },
-                        method: "POST",
-                        responseValidator: async function (res)
-                        {
-                            // @ts-ignore
-                            class expectedBodyType { @IsString() token: string; }
-                            const transformedObject = await ensureBodyConfirmToModel(expectedBodyType, res.body);
-                            testUsersCreds[user[0]].token = transformedObject.token;
-                        }
-                    }, chai);
-    
                     await HTTPTestsBuilder.runRestExecution(
                     {
                         expectedStatusCode: 200,
@@ -190,7 +135,6 @@ export default async function(parameters)
                         {
                             // @ts-ignore
                             class expectedBodyType { @IsString() id: string; }
-        
                             const transformedObject = await ensureBodyConfirmToModel(expectedBodyType, res.body);
                             testUsersCreds[user[0]].baseCurrencyId = transformedObject.id;
                         }

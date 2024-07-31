@@ -16,15 +16,16 @@ import Response from 'superagent/lib/node/response.js';
 
 export type HTTPMethod = "GET" | "PATCH" | "POST" | "DELETE";
 
+export type TestUserEntry = 
+{
+    username: string,
+    password: string,
+    token?: string | undefined,
+    baseCurrencyId?: string | undefined
+};
 export type TestUserDict = 
 {
-    [key: string]: 
-    {
-        username: string,
-        password: string,
-        token?: string | undefined,
-        baseCurrencyId?: string | undefined
-    }
+    [key: string]: TestUserEntry
 };
 
 export type HTTPTestShortcutConfig = 

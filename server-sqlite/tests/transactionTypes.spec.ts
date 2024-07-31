@@ -2,8 +2,10 @@ import { before } from 'mocha';
 import { use, expect, AssertionError } from 'chai';
 import chaiHttp from 'chai-http';
 import { IsDateString, IsDefined, IsNumber, IsString } from 'class-validator';
-import { ensureBodyConfirmToModel, HTTPMethod, HTTPTestsBuilder, TestUserDict, UnitTestEndpoints } from './.index.spec.js';
+import { ensureBodyConfirmToModel, HTTPMethod, HTTPTestsBuilder, TestUserDict, TestUserEntry, UnitTestEndpoints } from './.index.spec.js';
 import { randomUUID } from 'crypto';
+import { BodyGenerator } from './lib/bodyGenerator.js';
+import { HookShortcuts } from './lib/hookShortcuts.js';
 const chai = use(chaiHttp);
 
 const createTransactionTypeBody = (name: string) => ({ "name": name });
@@ -19,98 +21,87 @@ export default async function(parameters)
 
     describe("Transaction Types", function()
     {
-        const testUsersCreds: TestUserDict = 
+        describe("Posting Types", function()
         {
-            "user1" : { username: "user1", password: "user1password" },
-            "user2" : { username: "user2", password: "user2password" },
-            "user3" : { username: "user3", password: "user3password" }
-        };
-
-        before(async () =>
-        { 
-            await resetDatabase(); 
-    
-            for (let user of Object.entries(testUsersCreds))
+            const testUsersCreds: TestUserDict = 
             {
-                await HTTPTestsBuilder.runRestExecution(
+                "user1" : { username: "user1", password: "user1password" },
+                "user2" : { username: "user2", password: "user2password" },
+                "user3" : { username: "user3", password: "user3password" }
+            };
+
+            HookShortcuts.registerMockUsers(chai, serverURL, testUsersCreds, resetDatabase);
+
+            for (const user of Object.entries(testUsersCreds))
+            {
+                it(`POST Types without name - ${user[0]}`, async function()
                 {
-                    expectedStatusCode: 200,
-                    endpoint: UnitTestEndpoints.userEndpoints['post'],
-                    serverURL: serverURL,
-                    body: { username: user[1].username, password: user[1].password },
-                    method: "POST"
-                }, chai);
-    
-                await HTTPTestsBuilder.runRestExecution(
-                {
-                    expectedStatusCode: 200,
-                    endpoint: UnitTestEndpoints.loginEndpoints['post'],
-                    serverURL: serverURL,
-                    body: { username: user[1].username, password: user[1].password },
-                    method: "POST",
-                    responseValidator: async function (res)
+                    await HTTPTestsBuilder.runRestExecution(
                     {
-                        // @ts-ignore
-                        class expectedBodyType { @IsString() token: string; }
-                        const transformedObject = await ensureBodyConfirmToModel(expectedBodyType, res.body);
-                        testUsersCreds[user[0]].token = transformedObject.token;
-                    }
-                }, chai);
+                        expectedStatusCode: 400,
+                        endpoint: UnitTestEndpoints.transactionTypesEndpoints['post'],
+                        serverURL: serverURL,
+                        headers: { 'authorization': user[1].token },
+                        body: { name: '' },
+                        method: "POST"
+                    }, chai);
+                });
+
+                it(`POST Types without tokens - ${user[0]}`, async function()
+                {
+                    await HTTPTestsBuilder.runRestExecution(
+                    {
+                        expectedStatusCode: 401,
+                        endpoint: UnitTestEndpoints.transactionTypesEndpoints['post'],
+                        serverURL: serverURL,
+                        body: createTransactionTypeBody(`Type-${user[0]}`),
+                        method: "POST"
+                    }, chai);
+                });
+
+                it(`POST Types with valid body - ${user[0]}`, async function()
+                {
+                    await HTTPTestsBuilder.runRestExecution(
+                    {
+                        expectedStatusCode: 200,
+                        endpoint: UnitTestEndpoints.transactionTypesEndpoints['post'],
+                        headers: { 'authorization': user[1].token },
+                        serverURL: serverURL,
+                        body: createTransactionTypeBody(`Type-${user[0]}`),
+                        method: "POST"
+                    }, chai);
+                });
             }
         });
 
-        for (const user of Object.entries(testUsersCreds))
+        describe("Posting Types (Primary-SubPrimary Relationship)", function()
         {
-            it(`POST Types without name - ${user[0]}`, async function()
-            {
-                await HTTPTestsBuilder.runRestExecution(
-                {
-                    expectedStatusCode: 400,
-                    endpoint: UnitTestEndpoints.transactionTypesEndpoints['post'],
-                    serverURL: serverURL,
-                    headers: { 'authorization': user[1].token },
-                    body: { name: '' },
-                    method: "POST"
-                }, chai);
-            });
+            const relationshipMatrix = BodyGenerator.enumeratePrimarySubPrimaryMatrixUUID(4,4);
 
-            it(`POST Types without tokens - ${user[0]}`, async function()
+            const testUsersCreds: TestUserEntry[] = relationshipMatrix.userIDs.map(user => (
             {
-                await HTTPTestsBuilder.runRestExecution(
-                {
-                    expectedStatusCode: 401,
-                    endpoint: UnitTestEndpoints.transactionTypesEndpoints['post'],
-                    serverURL: serverURL,
-                    body: createTransactionTypeBody(`Type-${user[0]}`),
-                    method: "POST"
-                }, chai);
-            });
+                password: `${user}password`,
+                username: user,
+            }));
 
-            it(`POST Types with valid body - ${user[0]}`, async function()
-            {
-                await HTTPTestsBuilder.runRestExecution(
-                {
-                    expectedStatusCode: 200,
-                    endpoint: UnitTestEndpoints.transactionTypesEndpoints['post'],
-                    headers: { 'authorization': user[1].token },
-                    serverURL: serverURL,
-                    body: createTransactionTypeBody(`Type-${user[0]}`),
-                    method: "POST"
-                }, chai);
-            });
+            // Register users for each user in matrix
+            HookShortcuts.registerMockUsersArray(chai, serverURL, testUsersCreds, resetDatabase);
 
-            it(`POST Types with repeated name - ${user[0]}`, async function()
+            for (const testCase of relationshipMatrix.matrix)
             {
-                await HTTPTestsBuilder.runRestExecution(
+                it(`POST Types with repeated name - ${testCase.primaryValueIndex}-${testCase.subValueIndex}`, async function()
                 {
-                    expectedStatusCode: 400,
-                    endpoint: UnitTestEndpoints.transactionTypesEndpoints['post'],
-                    headers: { 'authorization': user[1].token },
-                    serverURL: serverURL,
-                    body: createTransactionTypeBody(`Type-${user[0]}`),
-                    method: "POST"
-                }, chai);
-            });
-        }
-    });
+                    await HTTPTestsBuilder.runRestExecution(
+                    {
+                        expectedStatusCode: testCase.expectedPass ? 200 : 400,
+                        endpoint: UnitTestEndpoints.transactionTypesEndpoints['post'],
+                        headers: { 'authorization': testUsersCreds.find(x => x.username === testCase.primaryValue)!.token },
+                        serverURL: serverURL,
+                        body: createTransactionTypeBody(testCase.subPrimaryValue),
+                        method: "POST"
+                    }, chai);
+                });
+            }
+        });
+    })
 }
