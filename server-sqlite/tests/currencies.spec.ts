@@ -197,7 +197,7 @@ export default async function(parameters)
                     await HTTPTestsBuilder.runRestExecution(
                     {
                         expectedStatusCode: 200,
-                        endpoint: UnitTestEndpoints.userEndpoints['post'],
+                        endpoint: UnitTestEndpoints.loginEndpoints['post'],
                         serverURL: serverURL,
                         body: { username: user[1].username, password: user[1].password },
                         method: "POST",
