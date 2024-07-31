@@ -2,11 +2,9 @@ import { before } from 'mocha';
 import { use, expect, AssertionError } from 'chai';
 import chaiHttp from 'chai-http';
 import { IsDateString, IsDefined, IsNumber, IsString } from 'class-validator';
-import { HTTPMethod, HTTPTestsBuilder } from './.index.spec.js';
+import { HTTPMethod, HTTPTestsBuilder, UnitTestEndpoints } from './.index.spec.js';
 import { randomUUID } from 'crypto';
 const chai = use(chaiHttp);
-
-const GET_POST_CONTAINERS_ENDPOINT = `/api/v1/container`;
 
 export default async function(parameters)
 {
@@ -28,7 +26,7 @@ export default async function(parameters)
                     expectedStatusCode: 401,
                     body: {},
                     method: method,
-                    endpoint: GET_POST_CONTAINERS_ENDPOINT,
+                    endpoint: UnitTestEndpoints.containersEndpoints[method.toLowerCase()],
                     serverURL: serverURL,
                 }, chai);
             });
@@ -40,7 +38,7 @@ export default async function(parameters)
                     expectedStatusCode: 401,
                     body: {},
                     method: method,
-                    endpoint: GET_POST_CONTAINERS_ENDPOINT,
+                    endpoint: UnitTestEndpoints.containersEndpoints[method.toLowerCase()],
                     serverURL: serverURL,
                     headers: { "authorization": randomUUID() },
                 }, chai);

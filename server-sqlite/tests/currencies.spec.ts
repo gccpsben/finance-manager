@@ -2,13 +2,9 @@ import { before } from 'mocha';
 import { use, expect, AssertionError } from 'chai';
 import chaiHttp from 'chai-http';
 import { IsDateString, IsDefined, IsNumber, IsString } from 'class-validator';
-import { HTTPTestsBuilder, HTTPTestsBuilderUtils, validateBodyAgainstModel } from './.index.spec.js';
+import { HTTPTestsBuilder, HTTPTestsBuilderUtils, UnitTestEndpoints, validateBodyAgainstModel } from './.index.spec.js';
 import { randomUUID } from 'crypto';
 const chai = use(chaiHttp);
-
-const GET_POST_CURRENCIES_ENDPOINT = `/api/v1/currencies`;
-const POST_USER_ENDPOINT = `/api/v1/users`;
-const POST_LOGIN_ENDPOINT = `/api/v1/auth/login`;
 
 function createBaseCurrencyPostBody(name: string, ticker: string)
 {
@@ -67,7 +63,7 @@ export default async function(parameters)
                     await HTTPTestsBuilder.runRestExecution(
                     {
                         expectedStatusCode: undefined, // dont check
-                        endpoint: POST_USER_ENDPOINT,
+                        endpoint: UnitTestEndpoints.userEndpoints['post'],
                         serverURL: serverURL,
                         body: { username: user[1].username, password: user[1].password },
                         method: "POST"
@@ -76,7 +72,7 @@ export default async function(parameters)
                     await HTTPTestsBuilder.runRestExecution(
                     {
                         expectedStatusCode: undefined, // dont check
-                        endpoint: POST_LOGIN_ENDPOINT,
+                        endpoint: UnitTestEndpoints.loginEndpoints['post'],
                         serverURL: serverURL,
                         body: { username: user[1].username, password: user[1].password },
                         method: "POST",
@@ -103,7 +99,7 @@ export default async function(parameters)
                     await HTTPTestsBuilder.runRestExecution(
                     {
                         expectedStatusCode: 400,
-                        endpoint: GET_POST_CURRENCIES_ENDPOINT,
+                        endpoint: UnitTestEndpoints.currenciesEndpoints['post'],
                         serverURL: serverURL,
                         headers: { 'authorization': user[1].token },
                         body: { ticker: "USER-TICKER" },
@@ -116,7 +112,7 @@ export default async function(parameters)
                     await HTTPTestsBuilder.runRestExecution(
                     {
                         expectedStatusCode: 400,
-                        endpoint: GET_POST_CURRENCIES_ENDPOINT,
+                        endpoint: UnitTestEndpoints.currenciesEndpoints['post'],
                         serverURL: serverURL,
                         headers: { 'authorization': user[1].token },
                         body: { name: "Currency1" },
@@ -129,7 +125,7 @@ export default async function(parameters)
                     await HTTPTestsBuilder.runRestExecution(
                     {
                         expectedStatusCode: 401,
-                        endpoint: GET_POST_CURRENCIES_ENDPOINT,
+                        endpoint: UnitTestEndpoints.currenciesEndpoints['post'],
                         serverURL: serverURL,
                         body: createBaseCurrencyPostBody(`User-Currency`, `USER-TICKER`),
                         method: "POST"
@@ -141,7 +137,7 @@ export default async function(parameters)
                     await HTTPTestsBuilder.runRestExecution(
                     {
                         expectedStatusCode: 200,
-                        endpoint: GET_POST_CURRENCIES_ENDPOINT,
+                        endpoint: UnitTestEndpoints.currenciesEndpoints['post'],
                         serverURL: serverURL,
                         headers: { 'authorization': user[1].token },
                         body: createBaseCurrencyPostBody(`${user[0]}-Currency`, `${user[0]}-TICKER`),
@@ -157,7 +153,7 @@ export default async function(parameters)
                     await HTTPTestsBuilder.runRestExecution(
                     {
                         expectedStatusCode: 400,
-                        endpoint: GET_POST_CURRENCIES_ENDPOINT,
+                        endpoint: UnitTestEndpoints.currenciesEndpoints['post'],
                         serverURL: serverURL,
                         headers: { 'authorization': user[1].token },
                         body: createBaseCurrencyPostBody(`${user[0]}-Currency`, `${user[0]}-TICKER`),
@@ -192,7 +188,7 @@ export default async function(parameters)
                     await HTTPTestsBuilder.runRestExecution(
                     {
                         expectedStatusCode: 200,
-                        endpoint: POST_USER_ENDPOINT,
+                        endpoint: UnitTestEndpoints.userEndpoints['post'],
                         serverURL: serverURL,
                         body: { username: user[1].username, password: user[1].password },
                         method: "POST"
@@ -201,7 +197,7 @@ export default async function(parameters)
                     await HTTPTestsBuilder.runRestExecution(
                     {
                         expectedStatusCode: 200,
-                        endpoint: POST_LOGIN_ENDPOINT,
+                        endpoint: UnitTestEndpoints.userEndpoints['post'],
                         serverURL: serverURL,
                         body: { username: user[1].username, password: user[1].password },
                         method: "POST",
@@ -221,7 +217,7 @@ export default async function(parameters)
                     await HTTPTestsBuilder.runRestExecution(
                     {
                         expectedStatusCode: 200,
-                        endpoint: GET_POST_CURRENCIES_ENDPOINT,
+                        endpoint: UnitTestEndpoints.currenciesEndpoints['post'],
                         serverURL: serverURL,
                         body: createBaseCurrencyPostBody("Base Currency", "BC"),
                         method: "POST",
@@ -249,7 +245,7 @@ export default async function(parameters)
 
                 const basePostReq = 
                 {
-                    endpoint: GET_POST_CURRENCIES_ENDPOINT,
+                    endpoint: UnitTestEndpoints.currenciesEndpoints['post'],
                     serverURL: serverURL
                 };
     

@@ -11,7 +11,6 @@ import authTest from './auth.spec.js';
 import containersTest from './container.spec.js';
 import currenciesTest from './currencies.spec.js';
 import request from 'superagent';
-import { CBHandler } from 'superagent/types.js';
 import Response from 'superagent/lib/node/response.js';
 
 export type HTTPMethod = "GET" | "PATCH" | "POST" | "DELETE";
@@ -111,6 +110,27 @@ export async function validateBodyAgainstModel<T extends object>(modelClass: Cla
     return { errors: validationErrors.map(x => new ChaiValidationError(x)), transformedObject: transformedObject };
 } 
 
+export class UnitTestEndpoints
+{
+    public static userEndpoints = { "post": "/api/v1/users", };
+    public static loginEndpoints = { "post": `/api/v1/auth/login` };
+    public static containersEndpoints = 
+    {
+        "post": `/api/v1/container`,
+        "get": `/api/v1/container`
+    };
+    public static currenciesEndpoints = 
+    {
+        "post": `/api/v1/currencies`,
+        "get": `/api/v1/currencies`
+    };
+    public static transactionTypesEndpoints = 
+    {
+        "post": `/api/v1/transactionTypes`,
+        "get": `/api/v1/transactionTypes`,
+    };
+}
+
 await (async () => 
 {
     await main(".test.env");
@@ -126,4 +146,5 @@ await (async () =>
     authTest(testSuitParameters);
     containersTest(testSuitParameters);
     currenciesTest(testSuitParameters);
+
 })();

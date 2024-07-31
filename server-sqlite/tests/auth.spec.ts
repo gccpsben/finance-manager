@@ -2,11 +2,8 @@ import { before } from 'mocha';
 import { use, expect, AssertionError } from 'chai';
 import chaiHttp from 'chai-http';
 import { IsDateString, IsDefined, IsNumber, IsString } from 'class-validator';
-import { HTTPTestsBuilder, validateBodyAgainstModel } from './.index.spec.js';
+import { HTTPTestsBuilder, UnitTestEndpoints, validateBodyAgainstModel } from './.index.spec.js';
 const chai = use(chaiHttp);
-
-const POST_USER_ENDPOINT = `/api/v1/users`;
-const POST_LOGIN_ENDPOINT = `/api/v1/auth/login`;
 
 export default async function(parameters)
 {
@@ -24,7 +21,7 @@ export default async function(parameters)
             await HTTPTestsBuilder.runRestExecution(
             {
                 expectedStatusCode: 400,
-                endpoint: POST_USER_ENDPOINT,
+                endpoint: UnitTestEndpoints.userEndpoints.post,
                 serverURL: serverURL,
                 body: {},
                 method: "POST"
@@ -36,7 +33,7 @@ export default async function(parameters)
             await HTTPTestsBuilder.runRestExecution(
             {
                 expectedStatusCode: 400,
-                endpoint: POST_USER_ENDPOINT,
+                endpoint: UnitTestEndpoints.userEndpoints.post,
                 serverURL: serverURL,
                 body: { password: '123' },
                 method: "POST"
@@ -48,7 +45,7 @@ export default async function(parameters)
             await HTTPTestsBuilder.runRestExecution(
             {
                 expectedStatusCode: 400,
-                endpoint: POST_USER_ENDPOINT,
+                endpoint: UnitTestEndpoints.userEndpoints.post,
                 serverURL: serverURL,
                 body: { username: 'Username here' },
                 method: "POST"
@@ -63,7 +60,7 @@ export default async function(parameters)
             await HTTPTestsBuilder.runRestExecution(
             {
                 expectedStatusCode: 200,
-                endpoint: POST_USER_ENDPOINT,
+                endpoint: UnitTestEndpoints.userEndpoints.post,
                 serverURL: serverURL,
                 body: { username: correctUsername, password: correctPassword },
                 method: "POST",
@@ -86,7 +83,7 @@ export default async function(parameters)
             await HTTPTestsBuilder.runRestExecution(
             {
                 expectedStatusCode: 400,
-                endpoint: POST_LOGIN_ENDPOINT,
+                endpoint: UnitTestEndpoints.loginEndpoints.post,
                 serverURL: serverURL,
                 body: { username: correctUsername },
                 method: "POST"
@@ -98,7 +95,7 @@ export default async function(parameters)
             await HTTPTestsBuilder.runRestExecution(
             {
                 expectedStatusCode: 400,
-                endpoint: POST_LOGIN_ENDPOINT,
+                endpoint: UnitTestEndpoints.loginEndpoints.post,
                 serverURL: serverURL,
                 body: { password: correctPassword },
                 method: "POST"
@@ -110,7 +107,7 @@ export default async function(parameters)
             await HTTPTestsBuilder.runRestExecution(
             {
                 expectedStatusCode: 401,
-                endpoint: POST_LOGIN_ENDPOINT,
+                endpoint: UnitTestEndpoints.loginEndpoints.post,
                 serverURL: serverURL,
                 body: { username: correctUsername + "123", password: correctPassword },
                 method: "POST"
@@ -122,7 +119,7 @@ export default async function(parameters)
             await HTTPTestsBuilder.runRestExecution(
             {
                 expectedStatusCode: 401,
-                endpoint: POST_LOGIN_ENDPOINT,
+                endpoint: UnitTestEndpoints.loginEndpoints.post,
                 serverURL: serverURL,
                 body: { username: correctUsername, password: correctPassword + '1231s' },
                 method: "POST"
@@ -136,7 +133,7 @@ export default async function(parameters)
             await HTTPTestsBuilder.runRestExecution(
             {
                 expectedStatusCode: 200,
-                endpoint: POST_LOGIN_ENDPOINT,
+                endpoint: UnitTestEndpoints.loginEndpoints.post,
                 serverURL: serverURL,
                 body: { username: correctUsername, password: correctPassword },
                 method: "POST",
