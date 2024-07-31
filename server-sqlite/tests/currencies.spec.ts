@@ -2,8 +2,9 @@ import { before } from 'mocha';
 import { use, expect, AssertionError } from 'chai';
 import chaiHttp from 'chai-http';
 import { IsDateString, IsDefined, IsNumber, IsString } from 'class-validator';
-import { HTTPTestsBuilder, HTTPTestsBuilderUtils, UnitTestEndpoints, validateBodyAgainstModel } from './.index.spec.js';
+import { ensureBodyConfirmToModel, HTTPMethod, HTTPTestsBuilder, HTTPTestsBuilderUtils, TestUserDict, UnitTestEndpoints } from './.index.spec.js';
 import { randomUUID } from 'crypto';
+import { BodyGenerator } from './lib/bodyGenerator.js';
 const chai = use(chaiHttp);
 
 function createBaseCurrencyPostBody(name: string, ticker: string)
@@ -26,32 +27,11 @@ export default async function(parameters)
     {
         describe("Base Currencies" , function ()
         {
-            const testUsersCreds: 
+            const testUsersCreds: TestUserDict = 
             {
-                [key: string]: 
-                {
-                    username: string,
-                    password: string,
-                    token?: string | undefined,
-                    baseCurrencyId?: string | undefined
-                }
-            } = 
-            {
-                "user1" : 
-                {
-                    username: "user1",
-                    password: "user1password"
-                },
-                "user2" : 
-                {
-                    username: "user2",
-                    password: "user2password"
-                },
-                "user3" : 
-                {
-                    username: "user3",
-                    password: "user3password"
-                }
+                "user1" : { username: "user1", password: "user1password" },
+                "user2" : { username: "user2", password: "user2password" },
+                "user3" : { username: "user3", password: "user3password" }
             };
     
             before(async () =>
@@ -60,32 +40,27 @@ export default async function(parameters)
         
                 for (let user of Object.entries(testUsersCreds))
                 {
+                    const body = { username: user[1].username, password: user[1].password };
+                    const baseReq = { body: body, serverURL: serverURL, method: "POST" as HTTPMethod };
+
                     await HTTPTestsBuilder.runRestExecution(
                     {
-                        expectedStatusCode: undefined, // dont check
+                        expectedStatusCode: 200,
                         endpoint: UnitTestEndpoints.userEndpoints['post'],
-                        serverURL: serverURL,
-                        body: { username: user[1].username, password: user[1].password },
-                        method: "POST"
+                        ...baseReq
                     }, chai);
         
                     await HTTPTestsBuilder.runRestExecution(
                     {
-                        expectedStatusCode: undefined, // dont check
+                        expectedStatusCode: 200,
                         endpoint: UnitTestEndpoints.loginEndpoints['post'],
-                        serverURL: serverURL,
-                        body: { username: user[1].username, password: user[1].password },
-                        method: "POST",
+                        ...baseReq,
                         responseValidator: async function (res)
                         {
-                            class expectedBodyType
-                            {
-                                // @ts-ignore
-                                @IsString() token: string;
-                            }
-                            const validationResult = await validateBodyAgainstModel(expectedBodyType, res.body);
-                            if (validationResult.errors[0]) throw validationResult.errors[0];
-                            testUsersCreds[user[0]].token = validationResult.transformedObject.token;
+                            // @ts-ignore
+                            class expectedBodyType { @IsString() token: string; }
+                            const transformedObject = await ensureBodyConfirmToModel(expectedBodyType, res.body);
+                            testUsersCreds[user[0]].token = transformedObject.token;
                         }
                     }, chai);
                 }
@@ -165,14 +140,7 @@ export default async function(parameters)
     
         describe("Regular Currencies" , function ()
         {
-            const testUsersCreds: 
-            {
-                [key: string]: 
-                {
-                    username: string, password: string,
-                    token?: string | undefined, baseCurrencyId?: string | undefined
-                }
-            } = 
+            const testUsersCreds: TestUserDict = 
             {
                 "user1" : { username: "user1", password: "user1password", baseCurrencyId: undefined },
                 "user2" : { username: "user2", password: "user2password", baseCurrencyId: undefined },
@@ -203,14 +171,10 @@ export default async function(parameters)
                         method: "POST",
                         responseValidator: async function (res)
                         {
-                            class expectedBodyType
-                            {
-                                // @ts-ignore
-                                @IsString() token: string;
-                            }
-                            const validationResult = await validateBodyAgainstModel(expectedBodyType, res.body);
-                            if (validationResult.errors[0]) throw validationResult.errors[0];
-                            testUsersCreds[user[0]].token = validationResult.transformedObject.token;
+                            // @ts-ignore
+                            class expectedBodyType { @IsString() token: string; }
+                            const transformedObject = await ensureBodyConfirmToModel(expectedBodyType, res.body);
+                            testUsersCreds[user[0]].token = transformedObject.token;
                         }
                     }, chai);
     
@@ -224,15 +188,11 @@ export default async function(parameters)
                         headers: { 'authorization': testUsersCreds[user[0]].token },
                         responseValidator: async function (res)
                         {
-                            class expectedBodyType
-                            {
-                                // @ts-ignore
-                                @IsString() id: string;
-                            }
+                            // @ts-ignore
+                            class expectedBodyType { @IsString() id: string; }
         
-                            const validationResult = await validateBodyAgainstModel(expectedBodyType, res.body);
-                            if (validationResult.errors[0]) throw validationResult.errors[0];
-                            testUsersCreds[user[0]].baseCurrencyId = validationResult.transformedObject.id;
+                            const transformedObject = await ensureBodyConfirmToModel(expectedBodyType, res.body);
+                            testUsersCreds[user[0]].baseCurrencyId = transformedObject.id;
                         }
                     }, chai);
                 }
@@ -248,65 +208,25 @@ export default async function(parameters)
                     endpoint: UnitTestEndpoints.currenciesEndpoints['post'],
                     serverURL: serverURL
                 };
-    
-                it(`POST Regular Currency without name - ${userKeyName}`, async function () 
+
+                // Generate missing field requests 
+                for (const testCase of BodyGenerator.enumerateMissingField(getBaseObj()))
                 {
-                    await HTTPTestsBuilder.runRestExecution(
+                    const missedField = testCase.fieldMissed;
+                    const obj = testCase.obj;   
+
+                    it(`POST Regular Currency without ${missedField} - ${userKeyName}`, async function () 
                     {
-                        ...basePostReq,
-                        expectedStatusCode: 400,
-                        headers: { 'authorization': userObj.token },
-                        body: { ...getBaseObj(), name: undefined },
-                        method: "POST"
-                    }, chai);
-                });
-    
-                it(`POST Regular Currency without ticker - ${userKeyName}`, async function () 
-                {
-                    await HTTPTestsBuilder.runRestExecution(
-                    {
-                        ...basePostReq,
-                        expectedStatusCode: 400,
-                        headers: { 'authorization': userObj.token },
-                        body: { ...getBaseObj(), ticker: undefined },
-                        method: "POST"
-                    }, chai);
-                });
-    
-                it(`POST Regular Currency without amount - ${userKeyName}`, async function () 
-                {
-                    await HTTPTestsBuilder.runRestExecution(
-                    {
-                        ...basePostReq,
-                        expectedStatusCode: 400,
-                        headers: { 'authorization': userObj.token },
-                        body: { ...getBaseObj(), amount: undefined },
-                        method: "POST"
-                    }, chai);
-                });
-    
-                it(`POST Regular Currency without refCurrencyId - ${userKeyName}`, async function () 
-                {
-                    await HTTPTestsBuilder.runRestExecution(
-                    {
-                        ...basePostReq,
-                        expectedStatusCode: 400,
-                        headers: { 'authorization': userObj.token },
-                        body: { ...getBaseObj(), refCurrencyId: undefined },
-                        method: "POST"
-                    }, chai);
-                });
-    
-                it(`POST Regular Currency without token - ${userKeyName}`, async function () 
-                {
-                    await HTTPTestsBuilder.runRestExecution(
-                    {
-                        ...basePostReq,
-                        expectedStatusCode: 401,
-                        body: { ...getBaseObj() },
-                        method: "POST"
-                    }, chai);
-                });
+                        await HTTPTestsBuilder.runRestExecution(
+                        {
+                            ...basePostReq,
+                            expectedStatusCode: 400,
+                            headers: { 'authorization': userObj.token },
+                            body: { ...obj },
+                            method: "POST"
+                        }, chai);
+                    });
+                }
 
                 it(`POST Regular Currency with non-number amount - ${userKeyName}`, async function () 
                 {

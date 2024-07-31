@@ -1,8 +1,9 @@
 import { before } from 'mocha';
 import { use, expect, AssertionError } from 'chai';
 import chaiHttp from 'chai-http';
-import { IsDateString, IsDefined, IsNumber, IsString } from 'class-validator';
-import { HTTPTestsBuilder, UnitTestEndpoints, validateBodyAgainstModel } from './.index.spec.js';
+import { IsDateString, IsDefined, IsNumber, IsObject, IsString } from 'class-validator';
+import { ensureBodyConfirmToModel, HTTPTestsBuilder, UnitTestEndpoints } from './.index.spec.js';
+import { BodyGenerator } from './lib/bodyGenerator.js';
 const chai = use(chaiHttp);
 
 export default async function(parameters)
@@ -16,44 +17,21 @@ export default async function(parameters)
 
     describe("Access Tokens and Users" , () => 
     {
-        it("Create User without body", async function()
-        {
-            await HTTPTestsBuilder.runRestExecution(
-            {
-                expectedStatusCode: 400,
-                endpoint: UnitTestEndpoints.userEndpoints.post,
-                serverURL: serverURL,
-                body: {},
-                method: "POST"
-            }, chai);
-        });
-
-        it("Create User without username", async function()
-        {
-            await HTTPTestsBuilder.runRestExecution(
-            {
-                expectedStatusCode: 400,
-                endpoint: UnitTestEndpoints.userEndpoints.post,
-                serverURL: serverURL,
-                body: { password: '123' },
-                method: "POST"
-            }, chai);
-        });
-
-        it("Create User without password", async function()
-        {
-            await HTTPTestsBuilder.runRestExecution(
-            {
-                expectedStatusCode: 400,
-                endpoint: UnitTestEndpoints.userEndpoints.post,
-                serverURL: serverURL,
-                body: { username: 'Username here' },
-                method: "POST"
-            }, chai);
-        });
-
         const correctUsername = "User 1";
         const correctPassword = "password123";
+
+        for (const { obj, fieldMissed } of BodyGenerator.enumerateMissingField( { username: correctUsername, password: correctPassword } ))
+        {
+            it(`Create User without ${fieldMissed}`, async function()
+            {
+                await HTTPTestsBuilder.runRestExecution(
+                {
+                    expectedStatusCode: 400, body: obj, method: "POST",
+                    endpoint: UnitTestEndpoints.userEndpoints.post,
+                    serverURL: serverURL
+                }, chai);
+            });
+        }
 
         it("POST User with valid body", async function()
         {
@@ -66,14 +44,9 @@ export default async function(parameters)
                 method: "POST",
                 responseValidator: async function(res)
                 {
-                    class expectedBodyType
-                    {
-                        // @ts-ignore
-                        @IsNumber() userid: string;
-                    }
-
-                    const validationResult = await validateBodyAgainstModel(expectedBodyType, res.body);
-                    if (validationResult[0]) throw validationResult[0];
+                    // @ts-ignore
+                    class expectedBodyType { @IsString() userid: string; }
+                    await ensureBodyConfirmToModel(expectedBodyType, res.body);
                 }
             }, chai);
         });
@@ -145,7 +118,7 @@ export default async function(parameters)
                         @IsString() token: string;
         
                         // @ts-ignore
-                        @IsString() owner: string;
+                        @IsObject() owner: object;
         
                         // @ts-ignore
                         @IsDateString() creationDate: string;
@@ -154,9 +127,8 @@ export default async function(parameters)
                         @IsDateString() expiryDate: string;
                     }
 
-                    const validationResult = await validateBodyAgainstModel(expectedBodyType, res.body);
-                    if (validationResult[0]) throw validationResult[0];
-                    loginToken = validationResult.transformedObject.token;
+                    const validationResult = await ensureBodyConfirmToModel(expectedBodyType, res.body);
+                    loginToken = validationResult.token;
                 }
             }, chai);
         });

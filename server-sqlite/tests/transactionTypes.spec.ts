@@ -2,7 +2,7 @@ import { before } from 'mocha';
 import { use, expect, AssertionError } from 'chai';
 import chaiHttp from 'chai-http';
 import { IsDateString, IsDefined, IsNumber, IsString } from 'class-validator';
-import { HTTPMethod, HTTPTestsBuilder, UnitTestEndpoints, validateBodyAgainstModel } from './.index.spec.js';
+import { ensureBodyConfirmToModel, HTTPMethod, HTTPTestsBuilder, TestUserDict, UnitTestEndpoints } from './.index.spec.js';
 import { randomUUID } from 'crypto';
 const chai = use(chaiHttp);
 
@@ -19,10 +19,7 @@ export default async function(parameters)
 
     describe("Transaction Types", function()
     {
-        const testUsersCreds: 
-        {
-            [key: string]: { username: string, password: string, token?: string | undefined, baseCurrencyId?: string | undefined }
-        } = 
+        const testUsersCreds: TestUserDict = 
         {
             "user1" : { username: "user1", password: "user1password" },
             "user2" : { username: "user2", password: "user2password" },
@@ -55,9 +52,8 @@ export default async function(parameters)
                     {
                         // @ts-ignore
                         class expectedBodyType { @IsString() token: string; }
-                        const validationResult = await validateBodyAgainstModel(expectedBodyType, res.body);
-                        if (validationResult.errors[0]) throw validationResult.errors[0];
-                        testUsersCreds[user[0]].token = validationResult.transformedObject.token;
+                        const transformedObject = await ensureBodyConfirmToModel(expectedBodyType, res.body);
+                        testUsersCreds[user[0]].token = transformedObject.token;
                     }
                 }, chai);
             }

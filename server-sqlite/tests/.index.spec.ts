@@ -16,6 +16,17 @@ import Response from 'superagent/lib/node/response.js';
 
 export type HTTPMethod = "GET" | "PATCH" | "POST" | "DELETE";
 
+export type TestUserDict = 
+{
+    [key: string]: 
+    {
+        username: string,
+        password: string,
+        token?: string | undefined,
+        baseCurrencyId?: string | undefined
+    }
+};
+
 export type HTTPTestShortcutConfig = 
 {
     expectedStatusCode?: number,
@@ -109,6 +120,13 @@ export async function validateBodyAgainstModel<T extends object>(modelClass: Cla
     const transformedObject = plainToInstance(modelClass, bodyObject);
     const validationErrors = await validate(transformedObject);
     return { errors: validationErrors.map(x => new ChaiValidationError(x)), transformedObject: transformedObject };
+} 
+
+export async function ensureBodyConfirmToModel<T extends object>(modelClass: ClassConstructor<T>, bodyObject: object)
+{
+    const results = await validateBodyAgainstModel(modelClass, bodyObject);
+    if (results.errors[0]) throw results.errors[0];
+    return results.transformedObject;
 } 
 
 export class UnitTestEndpoints
