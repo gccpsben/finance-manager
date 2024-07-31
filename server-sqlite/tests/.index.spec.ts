@@ -10,6 +10,7 @@ import { ClassConstructor, plainToInstance } from 'class-transformer';
 import authTest from './auth.spec.js';
 import containersTest from './container.spec.js';
 import currenciesTest from './currencies.spec.js';
+import transactionTypesTest from './transactionTypes.spec.js';
 import request from 'superagent';
 import Response from 'superagent/lib/node/response.js';
 
@@ -146,5 +147,6 @@ await (async () =>
     authTest(testSuitParameters);
     containersTest(testSuitParameters);
     currenciesTest(testSuitParameters);
+    transactionTypesTest(testSuitParameters);
 
 })();
