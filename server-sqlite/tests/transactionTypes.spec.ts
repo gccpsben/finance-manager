@@ -87,9 +87,9 @@ export default async function(parameters)
             // Register users for each user in matrix
             HookShortcuts.registerMockUsersArray(chai, serverURL, testUsersCreds, resetDatabase);
 
-            for (const testCase of relationshipMatrix.matrix)
+            it(`OwnerID and Name relationship`, async function()
             {
-                it(`POST Types with repeated name - ${testCase.primaryValueIndex}-${testCase.subValueIndex}`, async function()
+                for (const testCase of relationshipMatrix.matrix)
                 {
                     await HTTPTestsBuilder.runRestExecution(
                     {
@@ -100,8 +100,8 @@ export default async function(parameters)
                         body: createTransactionTypeBody(testCase.subPrimaryValue),
                         method: "POST"
                     }, chai);
-                });
-            }
+                }
+            });
         });
     })
 }
