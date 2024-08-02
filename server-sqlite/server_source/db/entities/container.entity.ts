@@ -5,12 +5,13 @@ import { User } from "./user.entity.js";
 import { EnsureNotPlainForeignKey } from "../validators.js";
 
 @Entity()
+@Unique("UniqueContainerNameWithinUser",["name", "owner"]) // For each user, no containers with the same name is allowed
 export class Container extends EntityClass
 {
     @PrimaryGeneratedColumn('uuid')
     id: string;
 
-    @Column({ nullable: false })
+    @Column({ nullable: false, unique: false })
     @MaxLength(256)
     @IsNotEmpty()
     @IsString()

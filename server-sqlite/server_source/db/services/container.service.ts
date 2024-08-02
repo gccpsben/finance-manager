@@ -4,18 +4,26 @@ import { UserRepository } from "../repositories/user.repository.js";
 
 export class ContainerService
 {
-    public static async tryGetContainerByName(name: string)
+    public static async tryGetContainerByName(ownerId: string, name: string)
     {
-        const container = await ContainerRepository.getInstance().findOne({where: {name: name}});
+        const container = await ContainerRepository.getInstance().findOne(
+        {
+            where: {name: name, owner: { id: ownerId } },
+            relations: { owner: true }
+        });
         return {
             containerFound: container !== null,
             container: container
         }
     }
 
-    public static async tryGetContainerById(id: string)
+    public static async tryGetContainerById(ownerId: string, id: string)
     {
-        const container = await ContainerRepository.getInstance().findOne({where: {id: id}});
+    const container = await ContainerRepository.getInstance().findOne(
+        {
+            where: {id: id, owner: { id: ownerId } },
+            relations: { owner: true }
+        });
         return {
             containerFound: container !== null,
             container: container
@@ -24,7 +32,7 @@ export class ContainerService
 
     public static async createContainer(ownerId: string, name: string, creationDate: Date = new Date())
     {
-        const containerWithSameName = await ContainerService.tryGetContainerByName(name);
+        const containerWithSameName = await ContainerService.tryGetContainerByName(ownerId, name);
         if (containerWithSameName.containerFound)
             throw createHttpError(400, `Container with name '${name}' already exists.`);
         const newContainer = ContainerRepository.getInstance().create();
