@@ -2,7 +2,7 @@ import { randomUUID } from "crypto";
 import { HTTPMethod, resetDatabase, serverPort, serverURL, TestUserEntry, UnitTestEndpoints } from "./index.test.js";
 import { HTTPAssert } from "./lib/assert.js";
 import { Context } from "./lib/context.js";
-import { BodyGenerator } from "../tests/lib/bodyGenerator.js";
+import { BodyGenerator } from "./lib/bodyGenerator.js";
 import { HookShortcuts } from "./lib/hookShortcuts.js";
 
 const createPostContainerBody = (name: string) => ({name: name});

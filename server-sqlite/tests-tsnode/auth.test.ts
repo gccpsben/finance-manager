@@ -1,5 +1,5 @@
 import { IsNumber, IsString } from "class-validator";
-import { BodyGenerator } from "../tests/lib/bodyGenerator.js";
+import { BodyGenerator } from "./lib/bodyGenerator.js";
 import { serverPort, serverURL, UnitTestEndpoints } from "./index.test.js";
 import { assert, assertBodyConfirmToModel, HTTPAssert, validateBodyAgainstModel } from './lib/assert.js';
 import { Context } from "./lib/context.js";

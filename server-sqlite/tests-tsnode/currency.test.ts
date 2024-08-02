@@ -4,7 +4,7 @@ import { Context } from "./lib/context.js";
 import { resetDatabase, serverURL, TestUserDict, TestUserEntry, UnitTestEndpoints } from "./index.test.js";
 import { HookShortcuts } from "./lib/hookShortcuts.js";
 import { assertBodyConfirmToModel, assertEqual, AssertFetchConfig, assertStrictEqual, HTTPAssert } from "./lib/assert.js";
-import { BodyGenerator } from "../tests/lib/bodyGenerator.js";
+import { BodyGenerator } from "./lib/bodyGenerator.js";
 import { simpleFaker } from '@faker-js/faker';
 import { randomUUID } from "crypto";
 import { Decimal } from "decimal.js";
