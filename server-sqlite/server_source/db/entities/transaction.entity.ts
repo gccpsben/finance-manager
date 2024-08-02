@@ -9,23 +9,29 @@ import { User } from "./user.entity.js";
 import { TransactionType } from "./transactionType.entity.js";
 
 @Entity() 
-@Check // [fromAmount, fromCurrencyId, fromContainerId] must either be all defined, or not defined
+@Check 
 (
+    "[fromAmount, fromCurrencyId, fromContainerId] must either be all defined, or not defined",
     /*sql*/`
     CASE WHEN fromAmount IS NOT NULL 
         THEN (fromCurrencyId IS NOT NULL) AND (fromContainerId IS NOT NULL)
         ELSE (fromCurrencyId IS NULL) AND (fromContainerId IS NULL)
     END`
 )
-@Check // [toAmount, toCurrencyId, toContainerId] must either be all defined, or not defined
+@Check
 (
+    "[toAmount, toCurrencyId, toContainerId] must either be all defined, or not defined",
     /*sql*/`
     CASE WHEN toAmount IS NOT NULL 
         THEN toCurrencyId IS NOT NULL AND toContainerId IS NOT NULL
         ELSE toCurrencyId IS NULL AND toContainerId IS NULL
     END`
 )
-@Check(/*sql*/`toAmount IS NOT NULL OR fromAmount IS NOT NULL`) // Either one of (or both) [toAmount, fromAmount] should be defined.
+@Check
+(
+    "Either one of (or both) [toAmount, fromAmount] should be defined.",
+    /*sql*/`toAmount IS NOT NULL OR fromAmount IS NOT NULL`
+)
 export class Transaction extends EntityClass
 {
     @PrimaryGeneratedColumn("uuid")
@@ -53,9 +59,9 @@ export class Transaction extends EntityClass
     creationDate: Date;
 
     @JoinColumn({ name: "typeId" })
-    @OneToOne(type => TransactionType)
+    @ManyToOne(type => TransactionType, { nullable: false })
     @EnsureNotPlainForeignKey()
-    type: TransactionType;
+    txnType: TransactionType;
 
     // #region From
     @Column( { nullable: true } )
@@ -92,4 +98,11 @@ export class Transaction extends EntityClass
     @ManyToOne(type => Container, { nullable: true })
     toContainer: Container | undefined;
     // #endregion
+
+    @BeforeInsert()
+    @BeforeUpdate()
+    public async validate()
+    {
+        await super.validate();
+    }
 }

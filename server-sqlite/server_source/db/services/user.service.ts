@@ -21,7 +21,9 @@ export class UserService
     {
         return await UserRepository
         .getInstance()
-        .findOne( { where: { id: userId } });
+        .createQueryBuilder('user')
+        .where(`user.id = :id`, { id: userId })
+        .getOne();
     }
 
     public static async findAllUsers()

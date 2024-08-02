@@ -2,11 +2,12 @@ import { randomUUID } from "crypto";
 
 export class BodyGenerator
 {
-    public static enumerateMissingField<T extends object>(completeObj: T)
+    public static enumerateMissingField<T extends object>(completeObj: T, excepts: string[] = [])
     {
         const output: {obj: Partial<T>, fieldMissed: string}[] = [];
         for (let key of Object.keys(completeObj))
         {
+            if (excepts.includes(key)) continue;
             const item = { ...completeObj };
             delete item[key];
             output.push({ fieldMissed: key, obj: item });

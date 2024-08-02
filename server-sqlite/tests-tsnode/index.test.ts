@@ -10,6 +10,7 @@ import authTests from './auth.test.js';
 import containerTests from './container.test.js';
 import currencyTests from './currency.test.js';
 import txnTypeTests from './txnType.test.js';
+import transactionTests from './transaction.test.js';
 export type HTTPMethod = "GET" | "PATCH" | "POST" | "DELETE";
 
 export type TestUserEntry = 
@@ -43,6 +44,11 @@ export class UnitTestEndpoints
         "post": `/api/v1/transactionTypes`,
         "get": `/api/v1/transactionTypes`,
     };
+    public static transactionsEndpoints = 
+    {
+        "post": `/api/v1/transactions`,
+        "get": `/api/v1/transactions`,
+    };
 }
 
 export async function resetDatabase()
@@ -69,6 +75,7 @@ await (async () =>
         await containerTests.bind(this)();
         await currencyTests.bind(this)();
         await txnTypeTests.bind(this)();
+        await transactionTests.bind(this)();
     });
     
     console.log(chalk.green(`\nPassing: ${topContext.successfulCount}`));

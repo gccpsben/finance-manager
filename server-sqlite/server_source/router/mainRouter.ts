@@ -6,6 +6,7 @@ import authRouter from './routes/auth.router.js';
 import currenciesRouter from './routes/currencies.router.js';
 import containerRouter from './routes/container.router.js';
 import transactionTypesRouter from './routes/transactionType.router.js';
+import transactionsRouter from './routes/transaction.router.js';
 
 export default function getMainRouter()
 {
@@ -20,6 +21,7 @@ export default function getMainRouter()
     router.use("/", authRouter);
     router.use("/", containerRouter);
     router.use("/", transactionTypesRouter);
+    router.use("/", transactionsRouter);
     router.use(express.static(EnvManager.distFolderLocation));
 
     return router;
