@@ -6,13 +6,21 @@ class CurrencyRepositoryExtension
 {
     public async isCurrencyByIdExists(this: Repository<Currency>, currencyId: string, userId: string): Promise<boolean>
     {
-        const currency = await this.findOne({where: { id: currencyId, owner: { id: userId } }});
+        const currency = await this.findOne(
+        {
+            where: { id: currencyId, owner: { id: userId } },
+            relations: { owner: true } 
+        });
         return !!currency;
     }
 
     public async isCurrencyByNameExists(this: Repository<Currency>, name: string, userId: string): Promise<boolean>
     {
-        const currency = await this.findOne({where: { currencyName: name, owner: { id: userId } }});
+        const currency = await this.findOne(
+        {
+            where: { currencyName: name, owner: { id: userId } },
+            relations: { owner: true } 
+        });
         return !!currency;
     }
 

@@ -13,12 +13,12 @@ import { EnsureNotPlainForeignKey, IsDecimalJSString } from "../validators.js";
 @Check(/*sql*/`CASE WHEN amount IS NOT NULL THEN NOT isBase ELSE isBase END`) // If isBase then amount must be null.
 @Check(/*sql*/`CASE WHEN NOT isBase THEN amount IS NOT NULL ELSE amount IS NULL END`) // If not isBase then amount must also not be null.
 @Check(/*sql*/`CASE WHEN NOT isBase THEN refCurrencyId IS NOT NULL ELSE refCurrencyId IS NULL END`) // If not isBase then refCurrency must also not be null
-export class Currency extends EntityClass 
+export class Currency extends EntityClass
 {
     @PrimaryGeneratedColumn('uuid')
     id: string;
 
-    @Column({nullable: false}) 
+    @Column({nullable: false})
     @IsNotEmpty()
     @IsString() 
     @MaxLength(128)
@@ -28,12 +28,12 @@ export class Currency extends EntityClass
     @IsOptional()
     @IsString()
     @IsDecimalJSString()
-    amount: string;
+    amount: string | null;
 
     @ManyToOne(type => Currency, currency => currency.refCurrency, { nullable: true })
     @JoinColumn()
     @EnsureNotPlainForeignKey() 
-    refCurrency: Currency;
+    refCurrency: Omit<Omit<Currency, 'owner'>, 'refCurrency'> | null;
 
     @ManyToOne(type => User, user => user.currencies, { nullable: false })
     @JoinColumn()
