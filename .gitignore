@@ -13,6 +13,7 @@
 /server-sqlite/logs
 /server-sqlite/dev
 /server-sqlite/*.db
+/server-sqlite/server_ut-build
 /dist
 /dist/*
 .vscode
