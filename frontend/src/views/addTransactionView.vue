@@ -420,11 +420,6 @@ div.grayText { opacity: 0.2; }
         width:90vw !important;
         overflow-x: hidden;
     }
-
-    #spendingFieldContainer
-    {
-        grid-template-columns: 100px 180px auto !important;
-    }
 }
 
 </style>
