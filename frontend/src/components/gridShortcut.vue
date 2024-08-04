@@ -1,6 +1,6 @@
 <template>
     <div :style="{'grid-template-areas': areas, 'grid-template-columns': columns, 'grid-template-rows': rows}" class="main">
-        <slot></slot>
+		<slot></slot>
     </div>
 </template>
 
@@ -8,16 +8,16 @@
     
 export default 
 {
-  data() 
-  {
-    return { currentPath: window.location, navHidden:false, documentObject:document }
-  },
-  props: 
-  {
-    rows: { type: String }, 
-    areas: { type: String },
-    columns: { type: String }
-  }
+	data() 
+	{
+		return { currentPath: window.location, navHidden:false, documentObject:document }
+	},
+	props: 
+	{
+		rows: { type: String }, 
+		areas: { type: String },
+		columns: { type: String }
+	}
 };
 
 </script>
