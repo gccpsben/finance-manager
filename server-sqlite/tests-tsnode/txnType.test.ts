@@ -1,9 +1,17 @@
-import { IsNumber, IsString } from "class-validator";
+import { IsString } from "class-validator";
 import { BodyGenerator } from "./lib/bodyGenerator.js";
 import { resetDatabase, serverURL, UnitTestEndpoints } from "./index.test.js";
-import { assertBodyConfirmToModel, assertStrictEqual, HTTPAssert, UnitTestAssertion } from "./lib/assert.js";
+import { HTTPAssert } from "./lib/assert.js";
 import { Context } from "./lib/context.js";
 import { HookShortcuts } from "./lib/hookShortcuts.js";
+import { ResponsePostTransactionTypesDTO } from "../../api-types/txnType.js";
+
+class ResponsePostTransactionTypesDTOBody implements ResponsePostTransactionTypesDTO // This class is to add validation decorators to the api-types defined
+{
+    @IsString() id: string;
+    @IsString() owner: string;
+    @IsString() name: string;
+}
 
 const createPostTxnTypeBody = (name: string) => ({ "name": name });
 
@@ -47,7 +55,8 @@ export default async function(this: Context)
                 {
                     baseURL: serverURL, expectedStatus: 200, method: "POST",
                     headers: { "authorization": firstUserToken },
-                    body: baseValidObj
+                    body: baseValidObj,
+                    expectedBodyType: ResponsePostTransactionTypesDTOBody
                 });
             });
         });
