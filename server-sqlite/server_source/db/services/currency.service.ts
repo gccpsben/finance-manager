@@ -24,7 +24,7 @@ export class CurrencyCalculator
             // This will only happens when the currency definition is later changed.
             if (i >= 100) { throw new Error(`Max retry. Possibly infinite loop in currency definition.`); }
             if (!currentCurrency.refCurrency) break;
-            currentCurrency = await CurrencyService.getCurrency(ownerId, { currencyName: currentCurrency.refCurrency.currencyName })!;
+            currentCurrency = await CurrencyService.getCurrency(ownerId, { name: currentCurrency.refCurrency.name })!;
             rate = rate.mul(currentCurrency.amount ? new Decimal(currentCurrency.amount) : new Decimal("1"));
         }
         return rate;
@@ -47,6 +47,19 @@ export class CurrencyService
             },
             relations: { owner: true, refCurrency: true } 
         });
+    }
+
+    public static async getUserCurrencies(userId: string)
+    {
+        const user = await UserRepository.getInstance().findOne({where: { id: userId }});
+        if (!user) throw createHttpError(404, `Cannot find user with id '${userId}'`);
+
+        const results = await CurrencyRepository.getInstance()
+        .createQueryBuilder(`currency`)
+        .where(`currency.ownerId = :ownerId`, { ownerId: userId })
+        .getMany();
+
+        return results;
     }
 
     public static async getCurrency(userId: string, where: Omit<FindOptionsWhere<Currency>, 'owner'>)
@@ -84,7 +97,7 @@ export class CurrencyService
             throw createHttpError(400, `Currency with ticker '${ticker}' already exists.`);
 
         const newCurrency = CurrencyRepository.getInstance().create();
-        newCurrency.currencyName = name;
+        newCurrency.name = name;
         newCurrency.owner = await UserRepository.getInstance().findOne({where:{id: userId}});
         newCurrency.ticker = ticker;
         if (refCurrencyId)

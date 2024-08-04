@@ -9,30 +9,34 @@ import { simpleFaker } from '@faker-js/faker';
 import { randomUUID } from "crypto";
 import { Decimal } from "decimal.js";
 import { fillArray } from "./lib/utils.js";
+import { PostCurrencyDTO, ResponseGetCurrencyDTO, ResponsePostCurrencyDTO } from "../../api-types/currencies.js";
 
-export class MinimalExpectedCurrencyBody
+type ArrayElement<A> = A extends readonly (infer T)[] ? T : never
+export class ResponseGetCurrencyDTOClass implements ArrayElement<ResponseGetCurrencyDTO>
 {
-    @IsString() public currencyName: string;
-    @IsString() public ticker: string;
-    @IsBoolean() public isBase: boolean;
-    @IsString() public id: string;
-    @IsOptional() @IsDecimalJSString() public amount: string;
-    @IsOptional() @IsObject() public owner: Object;
+    @IsString() id: string;
+    @IsString() name: string;
+    @IsOptional() @IsString() amount: string;
+    @IsOptional() @IsString() refCurrency: string;
+    @IsString() owner: string;
+    @IsBoolean() isBase: boolean;
+    @IsString() ticker: string;
+    @IsDecimalJSString() rateToBase: string;
 }
 
-export class RateToBaseHydratedCurrencyBody extends MinimalExpectedCurrencyBody
+export class ResponsePostCurrencyDTOClass implements ResponsePostCurrencyDTO
 {
-    @IsDefined() @IsString() public rateToBase: string;
+    @IsString() id: string;
 }
 
 function createBaseCurrencyPostBody(name: string, ticker: string)
 {
-    return { name: name, ticker: ticker };
+    return { name: name, ticker: ticker, refCurrencyId: undefined, amount: undefined } satisfies PostCurrencyDTO;
 }
 
 function createCurrencyPostBody(name: string, ticker: string, refCurrencyId: string, amount: string)
 {
-    return { name: name, ticker: ticker, refCurrencyId: refCurrencyId, amount: amount };
+    return { name: name, ticker: ticker, refCurrencyId: refCurrencyId, amount: amount } satisfies PostCurrencyDTO;
 }
 
 /** This does not perform assertion */
@@ -125,7 +129,7 @@ async function baseCurrenciesCheck(this: Context)
         {
             const response = await postBaseCurrency(user.token, `User-Currency`, `USER-TICKER`);
             HTTPAssert.assertStatus(200, response.res);
-            await assertBodyConfirmToModel(MinimalExpectedCurrencyBody, response.rawBody);
+            await assertBodyConfirmToModel(ResponsePostCurrencyDTOClass, response.rawBody);
         });
 
         await this.test(`Forbid repeated base currencies`, async function()
@@ -158,7 +162,7 @@ async function baseCurrenciesCheck(this: Context)
                     baseURL: serverURL, expectedStatus: 200, method: "POST",
                     body: createBaseCurrencyPostBody(`User-Currency`, `USER-TICKER`),
                     headers: { "authorization": user.token },
-                    expectedBodyType: MinimalExpectedCurrencyBody
+                    expectedBodyType: ResponsePostCurrencyDTOClass
                 });
                 user.baseCurrencyId = response.parsedBody.id;
             }
@@ -200,7 +204,7 @@ async function regularCurrenciesCheck(this: Context)
                     baseURL: serverURL, expectedStatus: 200, method: "POST",
                     body: createBaseCurrencyPostBody(`User-Currency`, `USER-TICKER`),
                     headers: { "authorization": firstUser.token },
-                    expectedBodyType: MinimalExpectedCurrencyBody
+                    expectedBodyType: ResponsePostCurrencyDTOClass
                 });
                 firstUser.baseCurrencyId = response.parsedBody.id;
             }).bind(this)();
@@ -260,7 +264,7 @@ async function regularCurrenciesCheck(this: Context)
                     baseURL: serverURL, method: "POST", expectedStatus: 200,
                     body: createCurrencyPostBody(randomUUID(), randomUUID(), firstUser.baseCurrencyId, str),
                     headers: { "authorization": firstUser.token },
-                    expectedBodyType: MinimalExpectedCurrencyBody
+                    expectedBodyType: ResponsePostCurrencyDTOClass
                 });
                 addedCurrenciesIDs.push(response.parsedBody.id);
             }
@@ -276,7 +280,7 @@ async function regularCurrenciesCheck(this: Context)
                     {
                         baseURL: serverURL, method: "GET", expectedStatus: 200,
                         headers: { "authorization": firstUser.token },
-                        expectedBodyType: RateToBaseHydratedCurrencyBody
+                        expectedBodyType: Array<ResponseGetCurrencyDTOClass>
                     }
                 );
             }
@@ -298,8 +302,8 @@ async function ratesCorrectnessCheck(this:Context)
         {
             const response = await getCurrencyById(firstUserToken, baseCurrencyID);
             HTTPAssert.assertStatus(200, response.res);
-            const parsedBody = await assertBodyConfirmToModel(RateToBaseHydratedCurrencyBody, response.rawBody);
-            assertStrictEqual(parsedBody.rateToBase, "1");
+            const parsedBody = await assertBodyConfirmToModel(Array<ResponseGetCurrencyDTOClass>, response.rawBody);
+            assertStrictEqual(parsedBody[0].rateToBase, "1");
         });
 
         await this.describe(`Regular Rates Test`, async function()
@@ -319,12 +323,12 @@ async function ratesCorrectnessCheck(this:Context)
             {
                 const secondaryRes = await postCurrency(firstUserToken, randomUUID(), randomUUID(), baseCurrencyID, config.secondaryCurrencyAmount.toString());
                 HTTPAssert.assertStatus(200, secondaryRes.res);
-                await assertBodyConfirmToModel(MinimalExpectedCurrencyBody, secondaryRes.rawBody);
+                await assertBodyConfirmToModel(ResponsePostCurrencyDTOClass, secondaryRes.rawBody);
                 config.secondaryCurrencyID = secondaryRes.rawBody["id"];
 
                 const ternaryRes = await postCurrency(firstUserToken, randomUUID(), randomUUID(), config.secondaryCurrencyID, config.ternaryCurrencyAmount.toString());
                 HTTPAssert.assertStatus(200, ternaryRes.res);
-                await assertBodyConfirmToModel(MinimalExpectedCurrencyBody, ternaryRes.rawBody);
+                await assertBodyConfirmToModel(ResponsePostCurrencyDTOClass, ternaryRes.rawBody);
                 config.ternaryCurrencyID = ternaryRes.rawBody["id"];
             }).bind(this)();
 
@@ -332,16 +336,16 @@ async function ratesCorrectnessCheck(this:Context)
             {
                 const target = await getCurrencyById(firstUserToken, config.secondaryCurrencyID);
                 HTTPAssert.assertStatus(200, target.res);
-                const parsedBody = await assertBodyConfirmToModel(RateToBaseHydratedCurrencyBody, target.rawBody);
-                assertStrictEqual(parsedBody.rateToBase, config.expectedSecondaryCurrencyAmount.toString());
+                const parsedBody = await assertBodyConfirmToModel(Array<ResponseGetCurrencyDTOClass>, target.rawBody);
+                assertStrictEqual(parsedBody[0].rateToBase, config.expectedSecondaryCurrencyAmount.toString());
             });
 
             await this.test(`Check if ternary currency rate is ${config.expectedTernaryCurrencyAmount.toString()}`, async function()
             {
                 const target = await getCurrencyById(firstUserToken, config.ternaryCurrencyID);
                 HTTPAssert.assertStatus(200, target.res);
-                const parsedBody = await assertBodyConfirmToModel(RateToBaseHydratedCurrencyBody, target.rawBody);
-                assertStrictEqual(parsedBody.rateToBase, config.expectedTernaryCurrencyAmount.toString());
+                const parsedBody = await assertBodyConfirmToModel(Array<ResponseGetCurrencyDTOClass>, target.rawBody);
+                assertStrictEqual(parsedBody[0].rateToBase, config.expectedTernaryCurrencyAmount.toString());
             });
         });
     });

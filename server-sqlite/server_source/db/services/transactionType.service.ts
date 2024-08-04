@@ -31,6 +31,19 @@ export class TransactionTypeService
         return result;
     }
 
+    public static async getUserTransactionTypes(ownerId: string)
+    {
+        const user = await UserRepository.getInstance().findOne({where: { id: ownerId }});
+        if (!user) throw createHttpError(404, `Cannot find user with id '${ownerId}'`);
+
+        const results = await TransactionTypeRepository.getInstance()
+        .createQueryBuilder(`type`)
+        .where(`type.ownerId = :ownerId`, {ownerId: ownerId })
+        .getMany();
+
+        return results;
+    }
+
     public static async getTransactionTypeByName(ownerId: string, name: string)
     {
         const result = await this.tryGetTransactionTypeByName(ownerId, name);

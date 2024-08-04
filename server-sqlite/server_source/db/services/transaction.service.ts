@@ -73,4 +73,57 @@ export class TransactionService
 
         return await TransactionRepository.getInstance().save(newTxn);
     }
+
+    // public static async getAllTransactions(userId: string)
+    // {
+    //     return await TransactionRepository.getInstance()
+    //     .createQueryBuilder(`txn`)
+    //     .where("ownerId = :ownerId", { ownerId: userId })
+    //     .getMany();
+    // }
+
+    // public static async countAllTransactions(userId: string)
+    // {
+    //     return await TransactionRepository.getInstance()
+    //     .createQueryBuilder(`txn`)
+    //     .where("ownerId = :ownerId", { ownerId: userId })
+    //     .getCount();
+    // }
+
+    public static async getTransactions
+    (
+        userId: string, config: 
+        {
+            startIndex?: number | undefined, endIndex?: number | undefined,
+            title?: string,
+            id?: string,
+            description?: string
+        }
+    )
+    {
+        let query = TransactionRepository.getInstance()
+        .createQueryBuilder(`txn`)
+        .orderBy('txn.creationDate')
+        .loadAllRelationIds()
+        .where("ownerId = :ownerId", { ownerId: userId });
+
+        if (config.startIndex !== undefined)
+            query = query.skip(config.startIndex);
+
+        if (config.endIndex !== undefined)
+            query = query.take(config.endIndex);
+
+        if (config.title !== undefined)
+            query = query.where('txn.title LIKE :title', { title: `%${config.title}%` })
+
+        if (config.description !== undefined)
+            query = query.where('txn.description LIKE :description', { description: `%${config.description}%` })
+
+        const queryResult = await query.getManyAndCount();
+
+        return {
+            totalCount: queryResult[1],
+            rangeItems: queryResult[0],
+        }
+    }
 }

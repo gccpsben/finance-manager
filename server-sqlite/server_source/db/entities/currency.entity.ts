@@ -8,7 +8,7 @@ import { CurrencyRepository } from "../repositories/currency.repository.js";
 import { EnsureNotPlainForeignKey, IsDecimalJSString } from "../validators.js";
 
 @Entity() 
-@Unique("UniqueCurrencyNameWithinUser",["currencyName", "owner"]) // For each user, no currencies with the same name is allowed
+@Unique("UniqueCurrencyNameWithinUser",["name", "owner"]) // For each user, no currencies with the same name is allowed
 @Unique("UniqueCurrencyTickerWithinUser",["ticker", "owner"]) // For each user, no currencies with the same ticker is allowed
 @Check(/*sql*/`CASE WHEN amount IS NOT NULL THEN NOT isBase ELSE isBase END`) // If isBase then amount must be null.
 @Check(/*sql*/`CASE WHEN NOT isBase THEN amount IS NOT NULL ELSE amount IS NULL END`) // If not isBase then amount must also not be null.
@@ -22,7 +22,7 @@ export class Currency extends EntityClass
     @IsNotEmpty()
     @IsString() 
     @MaxLength(128)
-    currencyName: string;
+    name: string;
 
     @Column({nullable: true}) 
     @IsOptional()

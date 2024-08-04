@@ -31,8 +31,8 @@ export class UnitTestEndpoints
     public static loginEndpoints = { "post": `/api/v1/auth/login` };
     public static containersEndpoints = 
     {
-        "post": `/api/v1/container`,
-        "get": `/api/v1/container`
+        "post": `/api/v1/containers`,
+        "get": `/api/v1/containers`
     };
     public static currenciesEndpoints = 
     {

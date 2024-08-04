@@ -1,4 +1,4 @@
-import { Entity, PrimaryGeneratedColumn, Column, BeforeInsert, BeforeUpdate, OneToOne, ManyToOne, JoinColumn, Check } from "typeorm";
+import { Entity, PrimaryGeneratedColumn, Column, BeforeInsert, BeforeUpdate, OneToOne, ManyToOne, JoinColumn, Check, Index } from "typeorm";
 import "reflect-metadata"
 import { IsDate, IsNotEmpty, IsOptional, IsString, MaxLength, validate } from "class-validator";
 import { EntityClass } from "../dbEntityBase.js";
@@ -41,12 +41,14 @@ export class Transaction extends EntityClass
     @IsString()
     @IsNotEmpty()
     @MaxLength(256)
+    @Index({fulltext: true})
     title: string;
 
     @Column({ nullable: true })
     @IsOptional()
     @IsString() 
     @MaxLength(5128)
+    @Index({fulltext: true})
     description: string | undefined;
 
     @ManyToOne(type => User, user => user.transactions, { nullable: false })

@@ -18,7 +18,7 @@ class CurrencyRepositoryExtension
     {
         const currency = await this.findOne(
         {
-            where: { currencyName: name, owner: { id: userId } },
+            where: { name: name, owner: { id: userId } },
             relations: { owner: true } 
         });
         return !!currency;

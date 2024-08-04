@@ -1,4 +1,4 @@
-import express from 'express';
+import express, { NextFunction, Router } from 'express';
 import { EnvManager } from '../env.js';
 import devOnlyRouter from './routes/dev.router.js';
 import userRouter from './routes/users.router.js';
@@ -8,7 +8,7 @@ import containerRouter from './routes/container.router.js';
 import transactionTypesRouter from './routes/transactionType.router.js';
 import transactionsRouter from './routes/transaction.router.js';
 
-export default function getMainRouter()
+export function getMainRouter()
 {
     const router = express.Router();
 

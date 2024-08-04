@@ -1,16 +1,21 @@
-import { IsDateString, IsNotEmpty, IsOptional, IsString } from 'class-validator';
+import { IsDateString, IsNotEmpty, IsNumber, IsOptional, IsString } from 'class-validator';
 import express, { NextFunction } from 'express';
 import { AccessTokenService } from '../../db/services/accessToken.service.js';
 import { TransactionService } from '../../db/services/transaction.service.js';
 import { ExpressValidations } from '../validation.js';
 import { IsDecimalJSString } from '../../db/validators.js';
-const router = express.Router();
+import { Transaction } from '../../db/entities/transaction.entity.js';
+import { OptionalPaginationAPIQueryRequest, PaginationAPIQueryRequest, PaginationAPIResponse } from '../logics/pagination.js';
+import type { PostTransactionDTO, ResponseGetTransactionsDTO, ResponsePostTransactionDTO } from '../../../../api-types/txn.js';
+import { TypesafeRouter } from '../typescriptRouter.js';
 
-router.post("/api/v1/transactions", async (req: express.Request, res: express.Response, next: NextFunction) => 
+const router = new TypesafeRouter(express.Router());
+
+router.post<ResponsePostTransactionDTO>("/api/v1/transactions", 
 {
-    try
+    handler: async (req: express.Request, res: express.Express) => 
     {
-        class body
+        class body implements PostTransactionDTO
         { 
             @IsString() @IsNotEmpty() title: string; 
             @IsOptional() @IsDateString() creationDate?: string | undefined;
@@ -23,7 +28,7 @@ router.post("/api/v1/transactions", async (req: express.Request, res: express.Re
             @IsOptional() @IsString() toContainerId: string | undefined;
             @IsOptional() @IsString() toCurrencyId: string | undefined;
         }
-
+    
         const authResult = await AccessTokenService.ensureRequestTokenValidated(req);
         const parsedBody = await ExpressValidations.validateBodyAgainstModel<body>(body, req.body);
         const transactionCreated = await TransactionService.createTransaction(authResult.ownerUserId, 
@@ -39,9 +44,70 @@ router.post("/api/v1/transactions", async (req: express.Request, res: express.Re
             toContainerId: parsedBody.toContainerId,
             toCurrencyId: parsedBody.toCurrencyId
         });
-        res.json(transactionCreated);
-    }
-    catch(e) { next(e); }
+        
+        return { id: transactionCreated.id };
+    }   
 });
 
-export default router;
+router.get<ResponseGetTransactionsDTO>(`/api/v1/transactions`, 
+{
+    handler: async (req: express.Request, res: express.Response) => 
+    {
+        class query extends OptionalPaginationAPIQueryRequest 
+        {
+            @IsOptional() @IsString() title: string;
+            @IsOptional() @IsString() id: string;
+        }
+
+        const authResult = await AccessTokenService.ensureRequestTokenValidated(req);
+        const parsedQuery = await ExpressValidations.validateBodyAgainstModel<query>(query, req.query);
+        const userQuery = 
+        {
+            start: parsedQuery.start ? parseInt(parsedQuery.start) : undefined,
+            end: parsedQuery.end ? parseInt(parsedQuery.end) : undefined,
+            title: parsedQuery.title,
+            id: parsedQuery.id
+        };
+
+        const response: PaginationAPIResponse<Transaction> = await (async () => 
+        {
+            const allTxns = await TransactionService.getTransactions(authResult.ownerUserId, 
+            {
+                startIndex: userQuery.start,
+                endIndex: userQuery.end,
+                id: userQuery.id,
+                title: userQuery.title
+            });
+
+            const output = new PaginationAPIResponse<Transaction>();
+            output.startingIndex = userQuery.start;
+            output.endingIndex = userQuery.start + allTxns.rangeItems.length;
+            output.rangeItems = allTxns.rangeItems;
+            output.totalItems = allTxns.totalCount;
+            return output;
+        })();
+
+        return {
+            totalItems: response.totalItems,
+            endingIndex: response.endingIndex,
+            startingIndex: response.startingIndex,
+            rangeItems: response.rangeItems.map(item => (
+            {
+                id: item.id,
+                title: item.title,
+                description: item.description,
+                owner: item.owner.id,
+                creationDate: item.creationDate.toISOString(),
+                txnType: item.txnType.id,
+                fromAmount: item.fromAmount,
+                fromCurrency: item.fromCurrency.id,
+                fromContainer: item.fromContainer.id,
+                toAmount: item.toAmount,
+                toCurrency: item.toCurrency.id,
+                toContainer: item.toContainer.id
+            }))
+        };
+    }
+});
+
+export default router.getRouter();

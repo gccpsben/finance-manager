@@ -3,13 +3,15 @@ import { AccessTokenService } from '../../db/services/accessToken.service.js';
 import { IsOptional, IsString } from 'class-validator';
 import { ExpressValidations } from '../validation.js';
 import { ContainerService } from '../../db/services/container.service.js';
+import { TypesafeRouter } from '../typescriptRouter.js';
+import type { PostContainerDTO, ResponseGetContainerDTO, ResponsePostContainerDTO } from '../../../../api-types/container.js';
 
-const router = express.Router();
+const router = new TypesafeRouter(express.Router());
 
-router.get("/api/v1/container", async (req: express.Request, res: express.Response, next: NextFunction) => 
+router.get<ResponseGetContainerDTO>(`/api/v1/containers`, 
 {
-   try
-   {
+    handler: async (req: express.Request, res: express.Response) => 
+    {
         const authResult = await AccessTokenService.ensureRequestTokenValidated(req);
         class query
         {
@@ -17,24 +19,28 @@ router.get("/api/v1/container", async (req: express.Request, res: express.Respon
             @IsOptional() @IsString() name: string;
         }
         const parsedBody = await ExpressValidations.validateBodyAgainstModel<query>(query, req.query);
-        res.json(await ContainerService.getManyContainers(authResult.ownerUserId, parsedBody))
-   }
-   catch(e) { next(e); } 
-});
+        const containers = await ContainerService.getManyContainers(authResult.ownerUserId, parsedBody);
 
-router.post("/api/v1/container", async (req: express.Request, res: express.Response, next: NextFunction) => 
-{
-    try
-    {
-        const authResult = await AccessTokenService.ensureRequestTokenValidated(req);
-        class body
+        return containers.map(con => (
         {
-            @IsString() name: string; 
-        }
-        const parsedBody = await ExpressValidations.validateBodyAgainstModel<body>(body, req.body);
-        res.json(await ContainerService.createContainer(authResult.ownerUserId, parsedBody.name)); 
+            creationDate: con.creationDate.toISOString(),
+            id: con.id,
+            name: con.name,
+            owner: con.owner.id
+        }));
     }
-    catch(e) { next(e); }
 });
 
-export default router;
+router.post<ResponsePostContainerDTO>(`/api/v1/containers`, 
+{
+    handler: async (req: express.Request, res: express.Response) => 
+    {
+        class body implements PostContainerDTO { @IsString() name: string; }
+        const authResult = await AccessTokenService.ensureRequestTokenValidated(req);
+        const parsedBody = await ExpressValidations.validateBodyAgainstModel<body>(body, req.body);
+        const containerCreated = await ContainerService.createContainer(authResult.ownerUserId, parsedBody.name);
+        return { id: containerCreated.id }
+    }
+})
+
+export default router.getRouter();

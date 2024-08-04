@@ -1,16 +1,18 @@
-import { isNotEmpty, IsNotEmpty, IsOptional, IsString, validate } from 'class-validator';
+import { IsNotEmpty, IsString } from 'class-validator';
 import { UserService } from '../../db/services/user.service.js';
 import express, { NextFunction } from 'express';
 import { ExpressValidations } from '../validation.js';
 import createHttpError from 'http-errors';
+import type { PostUserDTO, ResponseDeleteUserDTO, ResponsePostUserDTO } from '../../../../api-types/user.js';
+import { TypesafeRouter } from '../typescriptRouter.js';
 
-const router = express.Router();
+const router = new TypesafeRouter(express.Router());
 
-router.post("/api/v1/users", async (req:express.Request, res:express.Response, next: NextFunction) => 
-{ 
-    try
-    {
-        class body
+router.post<ResponsePostUserDTO>(`/api/v1/users`, 
+{
+    handler: async (req:express.Request, res:express.Response) => 
+    {   
+        class body implements PostUserDTO
         {
             @IsString() @IsNotEmpty() username: string;
             @IsString() @IsNotEmpty() password: string;
@@ -18,28 +20,23 @@ router.post("/api/v1/users", async (req:express.Request, res:express.Response, n
         
         await ExpressValidations.validateBodyAgainstModel<body>(body, req.body);
         const newUser = await UserService.registerUser(req.body.username, req.body.password);
-        res.json({
-            userid: newUser.id
-        });
+
+        return { userid: newUser.id };
     }
-    catch(e) { next(e); }
 });
 
-router.delete("/api/v1/users", async (req: express.Request, res:express.Response, next: NextFunction) => 
+router.delete<ResponseDeleteUserDTO>("/api/v1/users", 
 {
-    try
+    handler: async (req: express.Request, res:express.Response) => 
     {
-        class body
-        {
-            @IsNotEmpty() @IsString() userId: string;
-        }
+        class body { @IsNotEmpty() @IsString() userId: string; }
 
         const parsedBody = await ExpressValidations.validateBodyAgainstModel<body>(body, req.body);
         const deletionResult = await UserService.tryDeleteUser(parsedBody.userId);
+
         if (!deletionResult.userFound) throw createHttpError(404, "Unable to find the user provided.");
-        else return res.json({});
-    }   
-    catch(e) { next(e) }
+        else return {};
+    }
 });
 
-export default router;
+export default router.getRouter();
