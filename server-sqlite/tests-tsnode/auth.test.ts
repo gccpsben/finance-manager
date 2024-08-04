@@ -1,8 +1,14 @@
-import { IsNumber, IsString } from "class-validator";
+import { IsString } from "class-validator";
 import { BodyGenerator } from "./lib/bodyGenerator.js";
-import { serverPort, serverURL, UnitTestEndpoints } from "./index.test.js";
-import { assert, assertBodyConfirmToModel, HTTPAssert, validateBodyAgainstModel } from './lib/assert.js';
+import { serverURL, UnitTestEndpoints } from "./index.test.js";
+import { HTTPAssert } from './lib/assert.js';
 import { Context } from "./lib/context.js";
+import { ResponsePostUserDTO } from "../../api-types/user.js";
+
+export class ResponsePostUserDTOBody implements ResponsePostUserDTO
+{ 
+    @IsString() userid: string; 
+}
 
 export default async function(this: Context)
 {
@@ -32,7 +38,6 @@ export default async function(this: Context)
 
         await this.test(`Allow creating users with valid body`, async function()
         {            
-            class expectedBodyType { @IsString() userid: string; }
             const response = await HTTPAssert.assertFetch
             (
                 `${UnitTestEndpoints.userEndpoints.post}`, 
@@ -41,7 +46,7 @@ export default async function(this: Context)
                     body: { username: correctUsername, password: correctPassword },
                     baseURL: serverURL,
                     expectedStatus: 200,
-                    expectedBodyType: expectedBodyType
+                    expectedBodyType: ResponsePostUserDTOBody
                 }
             );
             firstUserID = response.parsedBody.userid;

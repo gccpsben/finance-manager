@@ -1,5 +1,4 @@
-import { randomUUID } from "crypto";
-import { HTTPMethod, resetDatabase, serverPort, serverURL, TestUserEntry, UnitTestEndpoints } from "./index.test.js";
+import { resetDatabase, serverURL, UnitTestEndpoints } from "./index.test.js";
 import { HTTPAssert } from "./lib/assert.js";
 import { Context } from "./lib/context.js";
 import { BodyGenerator } from "./lib/bodyGenerator.js";
@@ -7,8 +6,12 @@ import { HookShortcuts } from "./lib/hookShortcuts.js";
 import { IsString, IsNotEmpty, IsOptional, IsDateString } from "class-validator";
 import { IsDecimalJSString } from "../server_source/db/validators.js";
 import { simpleFaker } from "@faker-js/faker";
+import { PostTransactionDTO, ResponsePostTransactionDTO } from "../../api-types/txn.js";
+import { ResponsePostTransactionTypesDTOBody } from "./txnType.test.js";
+import { ResponsePostCurrencyDTOClass } from "./currency.test.js";
+import { ResponsePostContainerDTOBody } from "./container.test.js";
 
-class PostTransactionBody
+export class PostTransactionDTOBody implements PostTransactionDTO
 { 
     @IsString() @IsNotEmpty() title: string; 
     @IsOptional() @IsDateString() creationDate?: string | undefined;
@@ -20,6 +23,11 @@ class PostTransactionBody
     @IsOptional() @IsDecimalJSString() toAmount?: string | undefined;
     @IsOptional() @IsString() toContainerId?: string | undefined;
     @IsOptional() @IsString() toCurrencyId?: string | undefined;
+}
+
+export class ResponsePostTransactionDTOBody implements ResponsePostTransactionDTO
+{
+    @IsString() id: string;
 }
 
 const createPostTxnTypeBody = (name: string) => ({ "name": name });
@@ -70,7 +78,7 @@ async function testFromTransactions(this: Context)
                 baseURL: serverURL, expectedStatus: 200, method: "POST",
                 body: createBaseCurrencyPostBody(`User-Currency`, `USER-TICKER`),
                 headers: { "authorization": firstUser.token },
-                expectedBodyType: expectedType
+                expectedBodyType: ResponsePostCurrencyDTOClass
             });
             testContext.baseCurrId = response.parsedBody.id;
         }).bind(this)();
@@ -78,13 +86,12 @@ async function testFromTransactions(this: Context)
         // Register secondary currency for first user
         await (async function()
         {
-            class expectedType { @IsString() id: string; }
             const response = await HTTPAssert.assertFetch(UnitTestEndpoints.currenciesEndpoints['post'], 
             {
                 baseURL: serverURL, expectedStatus: 200, method: "POST",
                 body: createCurrencyPostBody(`User-Currency2`, `USER-TICKER2`, testContext.baseCurrId, testContext.secCurrAmountToBase),
                 headers: { "authorization": firstUser.token },
-                expectedBodyType: expectedType
+                expectedBodyType: ResponsePostCurrencyDTOClass
             });
             testContext.secCurrId = response.parsedBody.id;
         }).bind(this)();
@@ -92,13 +99,12 @@ async function testFromTransactions(this: Context)
         // Register container for first user
         await (async function()
         {
-            class expectedType { @IsString() id: string; }
             const response = await HTTPAssert.assertFetch(UnitTestEndpoints.containersEndpoints['post'], 
             {
                 baseURL: serverURL, expectedStatus: 200, method: "POST",
                 body: createPostContainerBody(`Container1`),
                 headers: { "authorization": firstUser.token },
-                expectedBodyType: expectedType
+                expectedBodyType: ResponsePostContainerDTOBody
             });
             testContext.containerId = response.parsedBody.id;
         }).bind(this)();
@@ -106,13 +112,12 @@ async function testFromTransactions(this: Context)
         // Register txn type for first user
         await (async function()
         {
-            class expectedType { @IsString() id: string; }
             const response = await HTTPAssert.assertFetch(UnitTestEndpoints.transactionTypesEndpoints['post'], 
             {
                 baseURL: serverURL, expectedStatus: 200, method: "POST",
                 body: createPostTxnTypeBody(`TxnTyp1`),
                 headers: { "authorization": firstUser.token },
-                expectedBodyType: expectedType
+                expectedBodyType: ResponsePostTransactionTypesDTOBody
             });
             testContext.txnTypeId = response.parsedBody.id;
         }).bind(this)();
@@ -124,13 +129,13 @@ async function testFromTransactions(this: Context)
             fromContainerId: testContext.containerId,
             fromCurrencyId: testContext.baseCurrId,
             typeId: testContext.txnTypeId
-        } satisfies PostTransactionBody;
+        } satisfies PostTransactionDTOBody;
 
         for (const testCase of BodyGenerator.enumerateMissingField(baseObj, ["description", "creationDate"]))
         {
             await this.test(`Forbid creating transactions without ${testCase.fieldMissed} but all other fields`, async function()
             {
-                const r = await HTTPAssert.assertFetch(UnitTestEndpoints.transactionsEndpoints['post'], 
+                await HTTPAssert.assertFetch(UnitTestEndpoints.transactionsEndpoints['post'], 
                 {
                     baseURL: serverURL, expectedStatus: 400, method: "POST",
                     body: testCase.obj,
@@ -144,8 +149,9 @@ async function testFromTransactions(this: Context)
             await HTTPAssert.assertFetch(UnitTestEndpoints.transactionsEndpoints['post'], 
             {
                 baseURL: serverURL, expectedStatus: 200, method: "POST",
-                body: { ...baseObj, description: undefined } satisfies PostTransactionBody,
-                headers: { "authorization": firstUser.token }
+                body: { ...baseObj, description: undefined } satisfies PostTransactionDTOBody,
+                headers: { "authorization": firstUser.token },
+                expectedBodyType: ResponsePostTransactionDTOBody
             });
         });
 
@@ -154,8 +160,9 @@ async function testFromTransactions(this: Context)
             await HTTPAssert.assertFetch(UnitTestEndpoints.transactionsEndpoints['post'], 
             {
                 baseURL: serverURL, expectedStatus: 200, method: "POST",
-                body: { ...baseObj, creationDate: undefined } satisfies PostTransactionBody,
-                headers: { "authorization": firstUser.token }
+                body: { ...baseObj, creationDate: undefined } satisfies PostTransactionDTOBody,
+                headers: { "authorization": firstUser.token },
+                expectedBodyType: ResponsePostTransactionDTOBody
             });
         });
 
@@ -164,8 +171,9 @@ async function testFromTransactions(this: Context)
             await HTTPAssert.assertFetch(UnitTestEndpoints.transactionsEndpoints['post'], 
             {
                 baseURL: serverURL, expectedStatus: 200, method: "POST",
-                body: { ...baseObj } satisfies PostTransactionBody,
-                headers: { "authorization": firstUser.token }
+                body: { ...baseObj } satisfies PostTransactionDTOBody,
+                headers: { "authorization": firstUser.token },
+                expectedBodyType: ResponsePostTransactionDTOBody
             });
         });
     });

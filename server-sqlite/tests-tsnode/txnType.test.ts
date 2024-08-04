@@ -6,7 +6,7 @@ import { Context } from "./lib/context.js";
 import { HookShortcuts } from "./lib/hookShortcuts.js";
 import { ResponsePostTransactionTypesDTO } from "../../api-types/txnType.js";
 
-class ResponsePostTransactionTypesDTOBody implements ResponsePostTransactionTypesDTO // This class is to add validation decorators to the api-types defined
+export class ResponsePostTransactionTypesDTOBody implements ResponsePostTransactionTypesDTO // This class is to add validation decorators to the api-types defined
 {
     @IsString() id: string;
     @IsString() owner: string;
