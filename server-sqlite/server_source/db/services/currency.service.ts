@@ -2,7 +2,7 @@ import { Decimal } from "decimal.js";
 import { CurrencyRepository } from "../repositories/currency.repository.js";
 import { UserRepository } from "../repositories/user.repository.js";
 import createHttpError from "http-errors";
-import { Currency } from "../entities/currency.entity.js";
+import { Currency, RateHydratedCurrency } from "../entities/currency.entity.js";
 import { FindOptionsWhere } from "typeorm";
 
 export class CurrencyCalculator
@@ -108,5 +108,11 @@ export class CurrencyService
         return newCurrency;
     }
 
-    // public static async 
+    public static async rateHydrateCurrency(userId:string, currency: Currency): Promise<RateHydratedCurrency>
+    {
+        return {
+            currency: currency,
+            rateToBase: (await CurrencyCalculator.currencyToBaseRate(userId, currency)).toString()
+        }
+    }
 }

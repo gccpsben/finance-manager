@@ -6,7 +6,7 @@ import { IsOptional, IsString } from 'class-validator';
 import { ExpressValidations } from '../validation.js';
 import { IsDecimalJSString } from '../../db/validators.js';
 import createHttpError from 'http-errors';
-import { Currency } from '../../db/entities/currency.entity.js';
+import { Currency, RateHydratedCurrency } from '../../db/entities/currency.entity.js';
 import type { GetCurrencyDTO, PostCurrencyDTO, ResponseGetCurrencyDTO, ResponsePostCurrencyDTO } from "../../../../api-types/currencies.js";
 import { TypesafeRouter } from '../typescriptRouter.js';
 
@@ -48,16 +48,16 @@ router.get<ResponseGetCurrencyDTO>(`/api/v1/currencies`,
             @IsOptional() @IsString() id: string;
         }
 
-        const domainToDTO = (curr: Currency & { rateToBase?: string }) => (
+        const domainToDTO = (curr: RateHydratedCurrency) => (
         {
-            amount: curr.amount,
-            id: curr.id,
-            isBase: curr.isBase,
-            name: curr.name,
-            owner: curr.owner.id,
+            amount: curr.currency.amount,
+            id: curr.currency.id,
+            isBase: curr.currency.isBase,
+            name: curr.currency.name,
+            owner: curr.currency.owner.id,
             rateToBase: curr.rateToBase,
-            refCurrency: curr.refCurrency?.id,
-            ticker: curr.ticker
+            refCurrency: curr.currency.refCurrency?.id,
+            ticker: curr.currency.ticker
         });
         const authResult = await AccessTokenService.ensureRequestTokenValidated(req);
         const parsedBody = await ExpressValidations.validateBodyAgainstModel<query>(query, req.query);
@@ -68,9 +68,10 @@ router.get<ResponseGetCurrencyDTO>(`/api/v1/currencies`,
         // Return all currencies if no query is given
         if (!parsedBody.id && !parsedBody.name)
         {
-            let output: (Currency & { rateToBase?: string })[] = await CurrencyService.getUserCurrencies(authResult.ownerUserId);
-            for (const currency of output)
-                currency.rateToBase = (await CurrencyCalculator.currencyToBaseRate(authResult.ownerUserId, currency)).toString();
+            let userCurrencies = await CurrencyService.getUserCurrencies(authResult.ownerUserId);
+            let output: Partial<RateHydratedCurrency>[] = [];
+            for (const currency of userCurrencies)
+                output.push(await CurrencyService.rateHydrateCurrency(authResult.ownerUserId, currency));
             return output.map(domainToDTO);
         }
         else
@@ -79,8 +80,7 @@ router.get<ResponseGetCurrencyDTO>(`/api/v1/currencies`,
                 name: parsedBody.name,
                 id: parsedBody.id
             });
-            const hydratedCurrency: Currency & { rateToBase?: string } = currencyFound;
-            hydratedCurrency.rateToBase = (await CurrencyCalculator.currencyToBaseRate(authResult.ownerUserId, currencyFound)).toString();
+            const hydratedCurrency: RateHydratedCurrency = await CurrencyService.rateHydrateCurrency(authResult.ownerUserId, currencyFound);
             return [domainToDTO(hydratedCurrency)];
         }
     }

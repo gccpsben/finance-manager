@@ -83,3 +83,9 @@ export class Currency extends EntityClass
         }
     }
 }
+
+export type RateHydratedCurrency = 
+{
+    currency: Currency,
+    rateToBase: string
+};
