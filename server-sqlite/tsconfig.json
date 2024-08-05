@@ -14,6 +14,9 @@
     "server_source/**/*.ts",
   ],
   "exclude": [
-    "node_modules"
+    "node_modules",
+    "logs",
+    "dev",
+    "server_ut-build"
   ]
 }
