@@ -3,7 +3,7 @@ import { BodyGenerator } from "./lib/bodyGenerator.js";
 import { resetDatabase, serverURL, UnitTestEndpoints } from "./index.test.js";
 import { HTTPAssert } from "./lib/assert.js";
 import { Context } from "./lib/context.js";
-import { HookShortcuts } from "./lib/hookShortcuts.js";
+import { HookShortcuts } from "./shortcuts/hookShortcuts.js";
 import { ResponsePostTransactionTypesDTO } from "../../api-types/txnType.js";
 
 export class ResponsePostTransactionTypesDTOBody implements ResponsePostTransactionTypesDTO // This class is to add validation decorators to the api-types defined

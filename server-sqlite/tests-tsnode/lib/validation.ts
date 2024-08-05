@@ -13,6 +13,7 @@ export async function validateBodyAgainstModel<T extends object>
     const validationErrors = await validate(transformedObject, 
     {
         forbidNonWhitelisted: true,
+        whitelist: true,
         ...options
     });
     return { errors: validationErrors.map(x => new UnitTestValidationError(x)), transformedObject: transformedObject };

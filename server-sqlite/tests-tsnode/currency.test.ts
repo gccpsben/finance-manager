@@ -2,7 +2,7 @@ import { IsString, IsBoolean, IsOptional, IsObject, IsDefined } from "class-vali
 import { IsDecimalJSString } from "../server_source/db/validators.js";
 import { Context } from "./lib/context.js";
 import { resetDatabase, serverURL, TestUserDict, TestUserEntry, UnitTestEndpoints } from "./index.test.js";
-import { HookShortcuts } from "./lib/hookShortcuts.js";
+import { HookShortcuts } from "./shortcuts/hookShortcuts.js";
 import { assertArrayAgainstModel, assertBodyConfirmToModel, assertEqual, AssertFetchConfig, assertStrictEqual, HTTPAssert } from "./lib/assert.js";
 import { BodyGenerator } from "./lib/bodyGenerator.js";
 import { simpleFaker } from '@faker-js/faker';

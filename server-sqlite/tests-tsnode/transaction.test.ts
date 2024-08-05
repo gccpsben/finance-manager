@@ -2,7 +2,7 @@ import { resetDatabase, serverURL, UnitTestEndpoints } from "./index.test.js";
 import { HTTPAssert } from "./lib/assert.js";
 import { Context } from "./lib/context.js";
 import { BodyGenerator } from "./lib/bodyGenerator.js";
-import { HookShortcuts } from "./lib/hookShortcuts.js";
+import { HookShortcuts } from "./shortcuts/hookShortcuts.js";
 import { IsString, IsNotEmpty, IsOptional, IsDateString } from "class-validator";
 import { IsDecimalJSString } from "../server_source/db/validators.js";
 import { simpleFaker } from "@faker-js/faker";

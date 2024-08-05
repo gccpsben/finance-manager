@@ -3,7 +3,7 @@ import { HTTPMethod, resetDatabase, serverURL, TestUserEntry, UnitTestEndpoints 
 import { HTTPAssert } from "./lib/assert.js";
 import { Context } from "./lib/context.js";
 import { BodyGenerator } from "./lib/bodyGenerator.js";
-import { HookShortcuts } from "./lib/hookShortcuts.js";
+import { HookShortcuts } from "./shortcuts/hookShortcuts.js";
 import { ResponsePostContainerDTO } from "../../api-types/container.js";
 import { IsString } from "class-validator";
 

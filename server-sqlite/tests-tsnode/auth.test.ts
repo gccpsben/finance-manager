@@ -1,13 +1,22 @@
-import { IsString } from "class-validator";
+import { IsDateString, IsString } from "class-validator";
 import { BodyGenerator } from "./lib/bodyGenerator.js";
 import { serverURL, UnitTestEndpoints } from "./index.test.js";
 import { HTTPAssert } from './lib/assert.js';
 import { Context } from "./lib/context.js";
 import { ResponsePostUserDTO } from "../../api-types/user.js";
+import { ResponsePostLoginDTO } from "../../api-types/auth.js";
 
 export class ResponsePostUserDTOBody implements ResponsePostUserDTO
 { 
     @IsString() userid: string; 
+}
+
+export class ResponsePostLoginDTOBody implements ResponsePostLoginDTO
+{
+    @IsString() token: string;
+    @IsDateString() creationDate: string;
+    @IsDateString() expiryDate: string;
+    @IsString() owner: string;
 }
 
 export default async function(this: Context)

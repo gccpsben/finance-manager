@@ -1,9 +1,10 @@
 
 import { IsString } from 'class-validator';
 import { TestUserDict, UnitTestEndpoints, TestUserEntry } from '../index.test.js';
-import { HTTPAssert } from './assert.js';
-import { Context } from './context.js';
+import { HTTPAssert } from '../lib/assert.js';
+import { Context } from '../lib/context.js';
 import { randomUUID } from 'crypto';
+import { ResponsePostLoginDTOBody } from '../auth.test.js';
 
 export class HookShortcuts
 {
@@ -34,7 +35,6 @@ export class HookShortcuts
                 }
             );
 
-            class expectedLoginBodyType { @IsString() token: string; }
             const loginResponse = await HTTPAssert.assertFetch
             (
                 UnitTestEndpoints.loginEndpoints['post'],
@@ -43,7 +43,7 @@ export class HookShortcuts
                     baseURL: serverURL,
                     body: { username: value.username, password: value.password },
                     method: "POST",
-                    expectedBodyType: expectedLoginBodyType
+                    expectedBodyType: ResponsePostLoginDTOBody
                 }
             );
             usersCreds[key].token = loginResponse.parsedBody.token;
@@ -67,7 +67,6 @@ export class HookShortcuts
                 }
             );
 
-            class expectedLoginBodyType { @IsString() token: string; }
             const loginResponse = await HTTPAssert.assertFetch
             (
                 UnitTestEndpoints.loginEndpoints['post'],
@@ -76,7 +75,7 @@ export class HookShortcuts
                     baseURL: serverURL,
                     body: { username: user.username, password: user.password },
                     method: "POST",
-                    expectedBodyType: expectedLoginBodyType
+                    expectedBodyType: ResponsePostLoginDTOBody
                 }
             );
             user.token = loginResponse.parsedBody.token;
