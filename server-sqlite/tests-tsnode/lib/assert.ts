@@ -1,6 +1,7 @@
 import { ClassConstructor, plainToInstance } from "class-transformer";
-import { validate, ValidationError } from "class-validator";
+import { validate, ValidationError, ValidationOptions } from "class-validator";
 import path from "path";
+import { validateArrayAgainstModel, validateBodyAgainstModel } from "./validation.js";
 
 export class UnitTestAssertion extends Error
 {
@@ -49,16 +50,26 @@ export function assertStrictEqual(actualValue: any, expectedValue: any)
     throw new UnitTestAssertion(`Expected strictly ${expectedValue} but got ${actualValue}`);
 }
 
-export async function validateBodyAgainstModel<T extends object>(modelClass: ClassConstructor<T>, bodyObject: object)
+export async function assertArrayAgainstModel<T extends object>
+(
+    modelClass: ClassConstructor<T>,
+    array: T[],
+    options?: ValidationOptions
+)
 {
-    const transformedObject = plainToInstance(modelClass, bodyObject);
-    const validationErrors = await validate(transformedObject);
-    return { errors: validationErrors.map(x => new UnitTestValidationError(x)), transformedObject: transformedObject };
-} 
+    const results = await validateArrayAgainstModel(modelClass, array, options);
+    if (results.errors[0]) throw results.errors[0];
+    return results.transformedObjects;
+}
 
-export async function assertBodyConfirmToModel<T extends object>(modelClass: ClassConstructor<T>, bodyObject: object)
+export async function assertBodyConfirmToModel<T extends object>
+(
+    modelClass: ClassConstructor<T>, 
+    bodyObject: object,
+    options?: ValidationOptions
+)
 {
-    const results = await validateBodyAgainstModel(modelClass, bodyObject);
+    const results = await validateBodyAgainstModel(modelClass, bodyObject, options);
     if (results.errors[0]) throw results.errors[0];
     return results.transformedObject;
 } 

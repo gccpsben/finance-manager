@@ -3,7 +3,7 @@ import { IsDecimalJSString } from "../server_source/db/validators.js";
 import { Context } from "./lib/context.js";
 import { resetDatabase, serverURL, TestUserDict, TestUserEntry, UnitTestEndpoints } from "./index.test.js";
 import { HookShortcuts } from "./lib/hookShortcuts.js";
-import { assertBodyConfirmToModel, assertEqual, AssertFetchConfig, assertStrictEqual, HTTPAssert } from "./lib/assert.js";
+import { assertArrayAgainstModel, assertBodyConfirmToModel, assertEqual, AssertFetchConfig, assertStrictEqual, HTTPAssert } from "./lib/assert.js";
 import { BodyGenerator } from "./lib/bodyGenerator.js";
 import { simpleFaker } from '@faker-js/faker';
 import { randomUUID } from "crypto";
@@ -274,15 +274,15 @@ async function regularCurrenciesCheck(this: Context)
         {
             for (const cID of addedCurrenciesIDs)
             {
-                await HTTPAssert.assertFetch
+                const response = await HTTPAssert.assertFetch
                 (
                     `${UnitTestEndpoints.currenciesEndpoints['get']}?id=${cID}`, 
                     {
                         baseURL: serverURL, method: "GET", expectedStatus: 200,
-                        headers: { "authorization": firstUser.token },
-                        expectedBodyType: Array<ResponseGetCurrencyDTOClass>
+                        headers: { "authorization": firstUser.token }
                     }
                 );
+                await assertArrayAgainstModel(ResponseGetCurrencyDTOClass, response.rawBody);
             }
         });
     });
@@ -302,7 +302,7 @@ async function ratesCorrectnessCheck(this:Context)
         {
             const response = await getCurrencyById(firstUserToken, baseCurrencyID);
             HTTPAssert.assertStatus(200, response.res);
-            const parsedBody = await assertBodyConfirmToModel(Array<ResponseGetCurrencyDTOClass>, response.rawBody);
+            const parsedBody = await assertArrayAgainstModel(ResponseGetCurrencyDTOClass, response.rawBody);
             assertStrictEqual(parsedBody[0].rateToBase, "1");
         });
 
@@ -336,7 +336,7 @@ async function ratesCorrectnessCheck(this:Context)
             {
                 const target = await getCurrencyById(firstUserToken, config.secondaryCurrencyID);
                 HTTPAssert.assertStatus(200, target.res);
-                const parsedBody = await assertBodyConfirmToModel(Array<ResponseGetCurrencyDTOClass>, target.rawBody);
+                const parsedBody = await assertArrayAgainstModel(ResponseGetCurrencyDTOClass, target.rawBody);
                 assertStrictEqual(parsedBody[0].rateToBase, config.expectedSecondaryCurrencyAmount.toString());
             });
 
@@ -344,7 +344,7 @@ async function ratesCorrectnessCheck(this:Context)
             {
                 const target = await getCurrencyById(firstUserToken, config.ternaryCurrencyID);
                 HTTPAssert.assertStatus(200, target.res);
-                const parsedBody = await assertBodyConfirmToModel(Array<ResponseGetCurrencyDTOClass>, target.rawBody);
+                const parsedBody = await assertArrayAgainstModel(ResponseGetCurrencyDTOClass, target.rawBody);
                 assertStrictEqual(parsedBody[0].rateToBase, config.expectedTernaryCurrencyAmount.toString());
             });
         });
