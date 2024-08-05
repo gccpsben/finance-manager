@@ -60,6 +60,9 @@ export class Transaction extends EntityClass
     @IsDate()
     creationDate: Date;
 
+    @Column( { nullable: true } )
+    txnTypeId: string;
+
     @JoinColumn({ name: "typeId" })
     @ManyToOne(type => TransactionType, { nullable: false })
     @EnsureNotPlainForeignKey()
@@ -72,10 +75,16 @@ export class Transaction extends EntityClass
     @IsDecimalJSString()
     fromAmount: string | undefined;
 
+    @Column({nullable: true})
+    fromCurrencyId: string;
+
     @JoinColumn({ name: "fromCurrencyId" })
     @EnsureNotPlainForeignKey()
     @ManyToOne(type => Currency, { nullable: true })
     fromCurrency: Currency | undefined;
+
+    @Column({nullable: true})
+    fromContainerId: string;
 
     @JoinColumn({ name: "fromContainerId" })
     @EnsureNotPlainForeignKey()
@@ -90,10 +99,16 @@ export class Transaction extends EntityClass
     @IsDecimalJSString()
     toAmount: string | undefined;
 
+    @Column({nullable: true})
+    toCurrencyId: string;
+
     @JoinColumn({ name: "toCurrencyId" })
     @EnsureNotPlainForeignKey()
     @ManyToOne(type => Currency, { nullable: true })
     toCurrency: Currency | undefined;
+
+    @Column({nullable: true})
+    toContainerId: string;
 
     @JoinColumn({ name: "toContainerId" })
     @EnsureNotPlainForeignKey()
