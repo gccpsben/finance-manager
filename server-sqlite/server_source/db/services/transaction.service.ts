@@ -46,7 +46,7 @@ export class TransactionService
             newTxn.fromCurrency = currency;
         }
 
-        if (obj.fromAmount) newTxn.toAmount = obj.toAmount;
+        if (obj.toAmount) newTxn.toAmount = obj.toAmount;
         if (obj.toContainerId)
         {
             const container = await ContainerService.tryGetContainerById(userId, obj.toContainerId);
