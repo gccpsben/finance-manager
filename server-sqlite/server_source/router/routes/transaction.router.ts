@@ -8,6 +8,7 @@ import { Transaction } from '../../db/entities/transaction.entity.js';
 import { OptionalPaginationAPIQueryRequest, PaginationAPIQueryRequest, PaginationAPIResponse } from '../logics/pagination.js';
 import type { PostTransactionDTO, ResponseGetTransactionsDTO, ResponsePostTransactionDTO } from '../../../../api-types/txn.js';
 import { TypesafeRouter } from '../typescriptRouter.js';
+import type { SQLitePrimitiveOnly } from '../../index.d.js';
 
 const router = new TypesafeRouter(express.Router());
 
@@ -69,7 +70,7 @@ router.get<ResponseGetTransactionsDTO>(`/api/v1/transactions`,
             id: parsedQuery.id
         };
 
-        const response: PaginationAPIResponse<Transaction> = await (async () => 
+        const response: PaginationAPIResponse<SQLitePrimitiveOnly<Transaction>> = await (async () => 
         {
             const allTxns = await TransactionService.getTransactions(authResult.ownerUserId, 
             {
@@ -79,7 +80,7 @@ router.get<ResponseGetTransactionsDTO>(`/api/v1/transactions`,
                 title: userQuery.title
             });
 
-            const output = new PaginationAPIResponse<Transaction>();
+            const output = new PaginationAPIResponse<SQLitePrimitiveOnly<Transaction>>();
             output.startingIndex = userQuery.start;
             output.endingIndex = userQuery.start + allTxns.rangeItems.length;
             output.rangeItems = allTxns.rangeItems;
@@ -96,15 +97,15 @@ router.get<ResponseGetTransactionsDTO>(`/api/v1/transactions`,
                 id: item.id,
                 title: item.title,
                 description: item.description,
-                owner: item.owner.id,
+                owner: item.ownerId,
                 creationDate: item.creationDate.toISOString(),
-                txnType: item.txnType.id,
+                txnType: item.txnTypeId,
                 fromAmount: item.fromAmount,
-                fromCurrency: item.fromCurrency.id,
-                fromContainer: item.fromContainer.id,
+                fromCurrency: item.fromCurrencyId,
+                fromContainer: item.fromContainerId,
                 toAmount: item.toAmount,
-                toCurrency: item.toCurrency.id,
-                toContainer: item.toContainer.id
+                toCurrency: item.toCurrencyId,
+                toContainer: item.toContainerId
             }))
         };
     }
