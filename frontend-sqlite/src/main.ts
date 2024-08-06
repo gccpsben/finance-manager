@@ -11,6 +11,7 @@ import router from './router/router.js'
 import type { Router } from 'vue-router';
 import gridShortcut from './components/gridShortcut.vue';
 import faIcon from "./components/faIcon.vue";
+import faIconButton from "./components/faIconButton.vue";
 import gridArea from "./components/gridArea.vue";
 import cell from "@/components/controls/cell.vue";
 import numberCell from "@/components/controls/numberCell.vue";
@@ -34,6 +35,7 @@ app.directive('basic', vBasic);
 app.directive('int-only', vIntegerOnly);
 app.component('grid-shortcut',gridShortcut);
 app.component('fa-icon', faIcon);
+app.component('fa-icon-btn', faIconButton);
 app.component('grid-area', gridArea);
 app.component('cell', cell);
 app.component('number-cell', numberCell);

@@ -1,131 +1,81 @@
-import { toValue } from "@vueuse/core";
-import { ref, watch, computed, type Ref, watchEffect  } from "vue";
-import { defineComponent } from 'vue'
+import { ref, watch, computed, type Ref, watchEffect, toValue, type MaybeRef, toRef  } from "vue";
 
-export type updatorReturnType<T> = 
+export type UpdatorReturnType<T> = 
 {
     totalItems: number,
     startingIndex: number,
     endingIndex: number,
     rangeItems: T[]
 };
-export type updator<T> = (start:number, count:number)=> Promise<updatorReturnType<T>>
+export type Updator<T> = (start:number, count:number) => Promise<UpdatorReturnType<T>>
 
-// interface Args
-// {
-//     updator: updator, 
-//     totalItems: number, 
-//     itemsInPage: number, 
-//     initialPageIndex: number
-// }
+export type PaginationOverflowResolutionMethod = "TO_ZERO" | "TO_LAST";
 
 export default function useNetworkPagination<T>
 (
-    updator: updator<T>, 
-    totalItems: Ref<number>, 
-    itemsInPage: Ref<number>, 
-    initialPageIndex: Ref<number>,
-    initialItems?: Ref<number>
+    args: 
+    {
+        updator: Updator<T>, 
+        pageSize: MaybeRef<number>, 
+        pageIndex: MaybeRef<number>,
+        updateOnMount?: boolean,
+        /** Overflow occurs when the external collection of items changes. For example the collections length decreases to max page 2 and this composable is still on page 5. */
+        overflowResolutionMethod?: MaybeRef<PaginationOverflowResolutionMethod>
+    }
 )
 {
-    // let prefill = (amount:number) => 
-    // {
-    //     let output = new Array(amount);
-    //     for (let i = 0; i < amount; i++) output[i] = null; 
-    //     return output;
-    // };
+    const overflowResolutionMethod = toRef(args.overflowResolutionMethod ?? "TO_LAST");
+    const updateOnMount = toRef(args.updateOnMount ?? true);
+    const pageSize = toRef(args.pageSize);
+    const pageIndex = toRef(args.pageIndex);
+    const pageItems = ref<T[]>([]) as Ref<T[]>;
+    const totalItems = ref<number>(0);
+    const isLoading = ref<boolean>(false);
+    const viewportLowerBoundIndex = computed(() => { return pageIndex.value * pageSize.value });
+    const viewportUpperBoundIndex = computed(() => { return (pageIndex.value + 1) * pageSize.value - 1});
+    const hasPreviousPage = computed(() => pageIndex.value > 0);
+    const hasNextPage = computed(() => pageIndex.value < getMaxPageIndex());
+    const getMaxPageIndex = () => Math.floor((totalItems.value - 1) / pageSize.value);
+    const latestFetchDateTime = ref<Date|undefined>(undefined);
 
-    let isLoading = ref(false);
-    let pageIndex = ref(initialPageIndex);
-    let totalPages = computed(() => { return Math.ceil(allItems.value.length / toValue(itemsInPage)) });
-    let currentPageItems = ref([] as any[]);
-    let allItems = ref(new Array(toValue(totalItems) ?? 0));
-    let next = function () { if (pageIndex.value < totalPages.value - 1) pageIndex.value++; };
-    let previous = function () { if (pageIndex.value > 0) pageIndex.value--; };
-    let viewportLowerBoundIndex = computed(() => { return pageIndex.value * toValue(itemsInPage) });
-    let viewportUpperBoundIndex = computed(() => { return (pageIndex.value + 1) * toValue(itemsInPage) - 1});
-    let updateView = function (start?:number, end?:number)
-    { 
-        let lower = start ?? viewportLowerBoundIndex.value;
-        let upper = end ?? viewportUpperBoundIndex.value;
-        if (lower == upper) currentPageItems.value = [];
-        else currentPageItems.value = allItems.value.slice(lower, upper + 1).filter(x => x !== undefined); 
-    }
-    let fetchAndReplace = async function (start:number, end:number) 
+    const fetchItems = async () => 
     {
         isLoading.value = true;
-        let updatorResponse = await updator(start, end - start) as updatorReturnType<T>;
-        let rangeItems = updatorResponse.rangeItems;
-
-        for (let i = updatorResponse.startingIndex; i < updatorResponse.endingIndex; i++)
-        {
-            allItems.value[i] = rangeItems[i - start]
-        }
+        const fetchTime = new Date();
+        latestFetchDateTime.value = new Date();
+        const fetchResult = await args.updator(pageIndex.value * pageSize.value, pageSize.value);
+        if (fetchTime.getTime() < latestFetchDateTime.value.getTime()) // another fetch has finished before this one finishes
+            return;
+        pageItems.value = fetchResult.rangeItems;
+        totalItems.value = fetchResult.totalItems;
         isLoading.value = false;
 
-        if (totalItems.value != updatorResponse.totalItems)
+        if (pageIndex.value !== 0 && fetchResult.rangeItems.length === 0)
         {
-            resetCache();
-            totalItems.value = updatorResponse.totalItems;
+            if (overflowResolutionMethod.value === 'TO_LAST') pageIndex.value = getMaxPageIndex();
+            else if (overflowResolutionMethod.value === 'TO_ZERO') pageIndex.value = 0;
+            await fetchItems();
         }
     };
-    let resetCache = function () 
-    { 
-        updateView();
-        fetchAndReplace(0, itemsInPage.value);
-        pageIndex.value = 0;
-    };
 
+    if (updateOnMount.value) fetchItems();
 
-    watchEffect(() => 
+    watch(pageIndex, (newVal, oldVal) => 
     {
-        // watch(totalItems, () => { alert(); });
-        let initialItemsToFetch = toValue(initialItems) ?? toValue(itemsInPage);
-
-        let isFetchingNeeded = function (start:number, end:number) 
-        {
-            for (let i = start; i < end; i++) if (allItems.value[i] == null) return true;
-            return false;
-        };
-
-        watch(totalItems, async () => 
-        {
-            allItems.value = new Array(toValue(totalItems) ?? 0); 
-            if (isFetchingNeeded(viewportLowerBoundIndex.value, viewportUpperBoundIndex.value))
-            {
-                await fetchAndReplace(viewportLowerBoundIndex.value, viewportUpperBoundIndex.value + 1);
-            }
-            updateView();
-        });
-        
-        watch(pageIndex, async () => 
-        {
-            if (isFetchingNeeded(viewportLowerBoundIndex.value, viewportUpperBoundIndex.value))
-            {
-                await fetchAndReplace(viewportLowerBoundIndex.value, viewportUpperBoundIndex.value + 1);
-            }
-            updateView();
-        });
-
-        setTimeout(async () => 
-        { 
-            await fetchAndReplace(0, Math.max(toValue(totalItems) ?? 0, toValue(initialItemsToFetch)));
-            // updateView(0, Math.min(toValue(totalItems) ?? 0, toValue(initialItemsToFetch)) - 1);
-        }); 
+        if (newVal === oldVal) return;
+        fetchItems();
     });
 
-    let returnData = 
-    {
-        allItems: allItems,
-        isLoading: isLoading,
-        pageIndex: pageIndex,
-        totalPages: totalPages,
-        currentPageItems: currentPageItems,
-        next: next, previous: previous,
-        lowerBoundIndex: viewportLowerBoundIndex,
-        upperBoundIndex: viewportUpperBoundIndex,
-        resetCache: resetCache,
-        totalItems: totalItems
-    };
-    return returnData;
+    return {
+        pageItems,
+        totalItems,
+        isLoading,
+        pageIndex,
+        pageSize,
+        viewportLowerBoundIndex,
+        viewportUpperBoundIndex,
+        hasNextPage,
+        hasPreviousPage,
+        refetch: fetchItems
+    }
 }

@@ -23,16 +23,15 @@
                                     {{ uiRangeText }}
                                 </h2>
                             </div>
-                            <fa-icon @click="mainPagination.previous()" id="previousArrow" class="optionIcon" :disabled="mainPagination.pageIndex.value == 0"
-                            icon="fa-solid fa-chevron-left"></fa-icon>
+                            <fa-icon-btn @click="mainPagination.pageIndex.value--" id="previousArrow" class="optionIcon" :disabled="!mainPagination.hasPreviousPage.value" icon="fa-solid fa-chevron-left"></fa-icon-btn>
                             <input type="number" size="1" v-int-only v-model.lazy="pageReadable" min="1"> 
-                            <fa-icon @click="mainPagination.next()" id="nextArrow" class="optionIcon" icon="fa-solid fa-chevron-right"></fa-icon>
+                            <fa-icon-btn @click="mainPagination.pageIndex.value++" id="nextArrow" class="optionIcon" icon="fa-solid fa-chevron-right" :disabled="!mainPagination.hasNextPage.value"></fa-icon-btn>
                         </div>
                     </div>
                     <div class="rel">
                         <div class="fullSize abs" :class="{'darkened': mainPagination.isLoading.value}"
                         style="display:grid; grid-template-rows: repeat(15,1fr);">
-                            <div class="row tight" @click="viewTransaction(item?.id)" style="font-size:14px;" v-for="item in mainPagination.currentPageItems.value">
+                            <div class="row tight" @click="viewTransaction(item?.id)" style="font-size:14px;" v-for="item in mainPagination.pageItems.value">
                                 <div v-area.class="'checkbox'" class="tight center">
                                     <div class="checkbox">
                                         <input type="checkbox"/>
@@ -45,24 +44,24 @@
                                     <div>{{ store.getDateAge(item?.creationDate) }} ago</div>
                                 </div>
                                 <div v-area.class="'txnType'" class="tight yCenter ellipsisContainer">
-                                    <div>{{ getTxnTypeName(item?.typeID) }}</div>
+                                    <div>{{ getTxnTypeName(item?.txnType) }}</div>
                                 </div>
-                                <div v-area.class="'txnValueChange'" class="tight yCenter consoleFont ellipsisContainer" 
+                                <!-- <div v-area.class="'txnValueChange'" class="tight yCenter consoleFont ellipsisContainer" 
                                 :class="{'disabled': item?.changeInValue == 0}">
                                     <div>{{ formatChangeInValue(item?.changeInValue) }}</div>
-                                </div>
-                                <div v-area.class="'txnFrom'" class="tight yCenter xRight ellipsisContainer">
+                                </div> -->
+                                <!-- <div v-area.class="'txnFrom'" class="tight yCenter xRight ellipsisContainer">
                                     <div v-if="item?.from">{{ getContainerName(item?.from.containerID) }}</div>
-                                </div>
+                                </div> -->
                                 <div v-area.class="'arrowIcon'" class="center">
                                     <fa-icon icon="fa-solid fa-arrow-right"></fa-icon>
                                 </div>
-                                <div v-area.class="'txnTo'" class="tight yCenter xLeft ellipsisContainer">
+                                <!-- <div v-area.class="'txnTo'" class="tight yCenter xLeft ellipsisContainer">
                                     <div v-if="item?.to">{{ getContainerName(item?.to.containerID) }}</div>
-                                </div>
-                                <div v-area.class="'chips'" class="tight yCenter">
+                                </div> -->
+                                <!-- <div v-area.class="'chips'" class="tight yCenter">
                                     <div :class="{'botChip': item?.isFromBot}">{{ item?.isFromBot ? 'Bot' : '' }}</div>
-                                </div>
+                                </div> -->
                             </div>
                         </div>
                     </div>
@@ -429,7 +428,7 @@ import vIntOnly from "snippets/vite-vue-ts/directives/vIntegerOnly";
 import vArea from "snippets/vite-vue-ts/directives/vArea";
 import { ref, onMounted, withDirectives, type Ref, computed, watch, nextTick, type UnwrapRef, unref } from 'vue';
 import router from "@/router/router";
-import useNetworkPagination, { type updatorReturnType } from "@/networkedPagination";
+import useNetworkPagination, { type UpdatorReturnType } from "@/networkedPagination";
 import { ResettableObject } from "@/resettableObject";
 import { API_TRANSACTIONS_PATH } from "@/apiPaths";
 import type { HydratedTransaction, Transaction } from "@/types/dtos/transactionsDTO";
@@ -464,13 +463,12 @@ function formatChangeInValue(value:number)
 // #region All transactions view:
 const currentPage = ref(0);
 const searchText = ref("");
-const totalItems = ref(0);
-const mainPagination = useNetworkPagination(updator, totalItems, ref(itemsInPage), ref(0), ref(100));
+const mainPagination = useNetworkPagination<Transaction>({ updator: updator, pageIndex: 0, pageSize: ref(itemsInPage) });
 const uiRangeText = computed(() => 
 { 
-    let upperBound = Math.min(mainPagination.upperBoundIndex.value + 1, mainPagination.totalItems.value);
+    let upperBound = Math.min(mainPagination.viewportUpperBoundIndex.value + 1, mainPagination.totalItems.value);
 
-    return `Showing ${mainPagination.lowerBoundIndex.value + 1}` + ` - ` +
+    return `Showing ${mainPagination.viewportLowerBoundIndex.value + 1}` + ` - ` +
     `${upperBound}` + ` of ` +
     `${mainPagination.totalItems.value}`;
 });
@@ -488,11 +486,12 @@ const pageReadable = computed(
 
 function onSearchTextChange()
 {
-    mainPagination.resetCache();
+    mainPagination.pageIndex.value = 0;
+    mainPagination.refetch();
     moveToPageZero();
 }
 
-async function updator(start:number, count:number): Promise<updatorReturnType<Transaction>>
+async function updator(start:number, count:number): Promise<UpdatorReturnType<Transaction>>
 {
     let sendQuery = async (url:string) => await store.authGet(url);
     let responseJSON = {} as any;
