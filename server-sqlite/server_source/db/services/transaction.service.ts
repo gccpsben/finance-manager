@@ -6,6 +6,9 @@ import { CurrencyService } from "./currency.service.js";
 import { TransactionTypeRepository } from "../repositories/transactionType.repository.js";
 import { TransactionTypeService } from "./transactionType.service.js";
 import { UserService } from "./user.service.js";
+import { Transaction } from "../entities/transaction.entity.js";
+import { Decimal } from "decimal.js";
+import type { SQLitePrimitiveOnly } from "../../index.d.js";
 
 export class TransactionService
 {
@@ -74,6 +77,54 @@ export class TransactionService
         return await TransactionRepository.getInstance().save(newTxn);
     }
 
+    /**
+     * Get the change in value of a transaction in base currency value.
+     */
+    public static async getTxnIncreaseInValue
+    (
+        userId: string, 
+        transaction: { fromAmount: string, toAmount:string, fromCurrencyId: string, toCurrencyId: string }, 
+        /** A mapping mapping each currency ID to its rate to base value. Will fetch from database if not given, or the currency is not found */
+        currencyToBaseValueMappingCache: {[key:string]: Decimal} | undefined = undefined
+    ): Promise<{ increaseInValue: Decimal, currencyBaseValMapping: {[key:string]: Decimal} }>
+    {
+        let mapping = !currencyToBaseValueMappingCache ? { } : { ...currencyToBaseValueMappingCache };
+
+        const amountToBaseValue = async (amount: string, currencyId: string) => 
+        { 
+            let currencyRate = mapping[currencyId];
+            if (!currencyRate) 
+            {
+                const currencyRefetched = await CurrencyService.getCurrency(userId, { id: currencyId });
+                const rate = (await CurrencyService.rateHydrateCurrency(userId, currencyRefetched)).rateToBase;
+                currencyRate = new Decimal(rate);
+                mapping[currencyId] = currencyRate;
+            }
+            return new Decimal(amount).mul(currencyRate);
+        };
+
+        if (transaction.fromAmount !== null && transaction.toAmount === null)
+        {
+            return {
+                increaseInValue:  (await amountToBaseValue(transaction.fromAmount, transaction.fromCurrencyId)).neg(),
+                currencyBaseValMapping: mapping
+            }
+        }
+
+        if (transaction.fromAmount === null && transaction.toAmount !== null)
+        {
+            return {
+                increaseInValue: await amountToBaseValue(transaction.toAmount, transaction.toCurrencyId),
+                currencyBaseValMapping: mapping    
+            }
+        }
+
+        return {
+            increaseInValue: (await amountToBaseValue(transaction.toAmount, transaction.toCurrencyId)).sub(await amountToBaseValue(transaction.fromAmount, transaction.fromCurrencyId)),
+            currencyBaseValMapping: mapping
+        };
+    }
+
     // public static async getAllTransactions(userId: string)
     // {
     //     return await TransactionRepository.getInstance()
@@ -99,12 +150,11 @@ export class TransactionService
             id?: string,
             description?: string
         }
-    )
+    ): Promise<{ totalCount: number, rangeItems: SQLitePrimitiveOnly<Transaction>[] }>
     {
         let query = TransactionRepository.getInstance()
         .createQueryBuilder(`txn`)
         .orderBy('txn.creationDate')
-        .loadAllRelationIds()
         .where("ownerId = :ownerId", { ownerId: userId });
 
         if (config.startIndex !== undefined)
@@ -124,6 +174,6 @@ export class TransactionService
         return {
             totalCount: queryResult[1],
             rangeItems: queryResult[0],
-        }
+        };
     }
 }

@@ -108,11 +108,31 @@ export class CurrencyService
         return newCurrency;
     }
 
+    public static async rateHydrateCurrency(userId:string, currency: Currency[]): Promise<RateHydratedCurrency[]>
     public static async rateHydrateCurrency(userId:string, currency: Currency): Promise<RateHydratedCurrency>
+    public static async rateHydrateCurrency(userId:string, currencies: Currency[] | Currency): Promise<RateHydratedCurrency | RateHydratedCurrency[]>
     {
-        return {
-            currency: currency,
-            rateToBase: (await CurrencyCalculator.currencyToBaseRate(userId, currency)).toString()
+        type outputType = { currency: Currency, rateToBase: string };
+        const getRateToBase = async (c: Currency) => (await CurrencyCalculator.currencyToBaseRate(userId, c)).toString();
+
+        if (Array.isArray(currencies))
+        {
+            const output: outputType[] = [];
+            for (const currency of currencies)
+            {
+                output.push({
+                    currency: currency,
+                    rateToBase: await getRateToBase(currency)
+                });
+            }
+            return output;
+        }
+        else
+        {
+            return {
+                currency: currencies,
+                rateToBase: await getRateToBase(currencies)
+            }
         }
     }
 }
