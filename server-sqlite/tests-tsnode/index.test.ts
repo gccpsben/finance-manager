@@ -11,6 +11,7 @@ import containerTests from './container.test.js';
 import currencyTests from './currency.test.js';
 import txnTypeTests from './txnType.test.js';
 import transactionTests from './transaction.test.js';
+import calculationsTest from './calculations.test.js';
 export type HTTPMethod = "GET" | "PATCH" | "POST" | "DELETE";
 
 export type TestUserEntry = 
@@ -33,6 +34,10 @@ export class UnitTestEndpoints
     {
         "post": `/api/v1/containers`,
         "get": `/api/v1/containers`
+    };
+    public static calculationsEndpoints = 
+    {
+        "expensesAndIncomes": `/api/v1/calculations/expensesAndIncomes`
     };
     public static currenciesEndpoints = 
     {
@@ -76,6 +81,7 @@ await (async () =>
         await currencyTests.bind(this)();
         await txnTypeTests.bind(this)();
         await transactionTests.bind(this)();
+        await calculationsTest.bind(this)();
     });
     
     console.log(chalk.green(`\nPassing: ${topContext.successfulCount}`));

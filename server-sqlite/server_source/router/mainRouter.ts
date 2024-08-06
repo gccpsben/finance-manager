@@ -7,6 +7,7 @@ import currenciesRouter from './routes/currencies.router.js';
 import containerRouter from './routes/container.router.js';
 import transactionTypesRouter from './routes/transactionType.router.js';
 import transactionsRouter from './routes/transaction.router.js';
+import calculationsRouter from './routes/calculations.router.js';
 
 export function getMainRouter()
 {
@@ -22,6 +23,7 @@ export function getMainRouter()
     router.use("/", containerRouter);
     router.use("/", transactionTypesRouter);
     router.use("/", transactionsRouter);
+    router.use("/", calculationsRouter);
     router.use(express.static(EnvManager.distFolderLocation));
 
     return router;
