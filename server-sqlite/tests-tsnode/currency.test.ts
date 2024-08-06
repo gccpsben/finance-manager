@@ -127,18 +127,25 @@ async function baseCurrenciesCheck(this: Context)
 
         await this.test(`Allow base currencies with valid token and body`, async function()
         {
-            const response = await postBaseCurrency(user.token, `User-Currency`, `USER-TICKER`);
-            HTTPAssert.assertStatus(200, response.res);
-            await assertBodyConfirmToModel(ResponsePostCurrencyDTOClass, response.rawBody);
+            await HookShortcuts.postCreateCurrency(
+            {
+               serverURL: serverURL,
+               body: { name: `User-Currency`, ticker: "USER-TICKER" },
+               token: user.token,
+               assertBody: true,
+               expectedCode: 200
+            });
         });
 
         await this.test(`Forbid repeated base currencies`, async function()
         {
-            await HTTPAssert.assertFetch(UnitTestEndpoints.currenciesEndpoints['post'], 
+            await HookShortcuts.postCreateCurrency(
             {
-                baseURL: serverURL, expectedStatus: 400, method: "POST",
-                body: createBaseCurrencyPostBody(`User-Currency`, `USER-TICKER`),
-                headers: { "authorization": user.token }
+                serverURL: serverURL,
+                body: { name: `User-Currency`, ticker: "USER-TICKER" },
+                token: user.token,
+                assertBody: false,
+                expectedCode: 400
             });
         });  
         
@@ -157,14 +164,15 @@ async function baseCurrenciesCheck(this: Context)
             // Create a base currency for each user first
             for (const user of testUsersCreds)
             {
-                const response = await HTTPAssert.assertFetch(UnitTestEndpoints.currenciesEndpoints['post'], 
+                const response = await HookShortcuts.postCreateCurrency(
                 {
-                    baseURL: serverURL, expectedStatus: 200, method: "POST",
-                    body: createBaseCurrencyPostBody(`User-Currency`, `USER-TICKER`),
-                    headers: { "authorization": user.token },
-                    expectedBodyType: ResponsePostCurrencyDTOClass
+                    serverURL: serverURL,
+                    body: { name: `User-Currency`, ticker: "USER-TICKER" },
+                    token: user.token,
+                    assertBody: true,
+                    expectedCode: 200
                 });
-                user.baseCurrencyId = response.parsedBody.id;
+                user.baseCurrencyId = response.currencyId;
             }
 
             for (const testCase of relationshipMatrix.matrix)
@@ -172,13 +180,13 @@ async function baseCurrenciesCheck(this: Context)
                 const userObj = testUsersCreds.find(x => x.username === testCase.primaryValue)!;
                 const userToken = userObj.token;
 
-                await HTTPAssert.assertFetch(UnitTestEndpoints.currenciesEndpoints['post'], 
+                await HookShortcuts.postCreateCurrency(
                 {
-                    baseURL: serverURL,
-                    expectedStatus: testCase.expectedPass ? 200 : 400,
-                    method: "POST",
-                    body: createCurrencyPostBody(testCase.subPrimaryValue, testCase.subPrimaryValue, userObj.baseCurrencyId, "1"),
-                    headers: { "authorization": userToken }
+                    serverURL: serverURL,
+                    body: { name: testCase.subPrimaryValue, ticker: testCase.subPrimaryValue, amount: "1", refCurrencyId: userObj.baseCurrencyId },
+                    token: userToken,
+                    assertBody: false,
+                    expectedCode: testCase.expectedPass ? 200 : 400
                 });
             }
         });
@@ -199,12 +207,13 @@ async function regularCurrenciesCheck(this: Context)
             // Register base currency for first user
             (async function()
             {
-                const response = await HTTPAssert.assertFetch(UnitTestEndpoints.currenciesEndpoints['post'], 
+                const response = await HookShortcuts.postCreateCurrency(
                 {
-                    baseURL: serverURL, expectedStatus: 200, method: "POST",
-                    body: createBaseCurrencyPostBody(`User-Currency`, `USER-TICKER`),
-                    headers: { "authorization": firstUser.token },
-                    expectedBodyType: ResponsePostCurrencyDTOClass
+                    serverURL: serverURL,
+                    body: { name: `User-Currency`, ticker: `USER-TICKER` },
+                    token: firstUser.token,
+                    assertBody: true,
+                    expectedCode: 200
                 });
                 firstUser.baseCurrencyId = response.parsedBody.id;
             }).bind(this)();
@@ -216,11 +225,7 @@ async function regularCurrenciesCheck(this: Context)
                 firstUser.baseCurrencyId!, 
                 "100"
             );
-            const basePostReq: AssertFetchConfig<Object> = 
-            {
-                baseURL: serverURL,
-                method: "POST"
-            };
+
             // Generate missing field requests 
             for (const testCase of BodyGenerator.enumerateMissingField(getBaseObj()))
             {
@@ -229,11 +234,13 @@ async function regularCurrenciesCheck(this: Context)
 
                 await this.test(`Forbid creating regular currencies without ${missedField} but all other fields`, async function () 
                 {
-                    await HTTPAssert.assertFetch(UnitTestEndpoints.currenciesEndpoints['post'], 
+                    await HookShortcuts.postCreateCurrency(
                     {
-                        ...basePostReq, expectedStatus: 400,
+                        serverURL: serverURL,
                         body: { ...obj },
-                        headers: { "authorization": firstUser.token }
+                        token: firstUser.token,
+                        assertBody: false,
+                        expectedCode: 400
                     });
                 });
             }
@@ -244,11 +251,13 @@ async function regularCurrenciesCheck(this: Context)
             const testStrs = ["100a", "", "2e+3", "0x123", "***", ".../"];
             for (const str of testStrs)
             {
-                await HTTPAssert.assertFetch(UnitTestEndpoints.currenciesEndpoints['post'], 
+                await HookShortcuts.postCreateCurrency(
                 {
-                    baseURL: serverURL, method: "POST", expectedStatus: 400,
+                    serverURL: serverURL,
                     body: createCurrencyPostBody(`User-Currency`, `USER-TICKER`, firstUser.baseCurrencyId, str),
-                    headers: { "authorization": firstUser.token }
+                    token: firstUser.token,
+                    assertBody: false,
+                    expectedCode: 400
                 });
             }
         });
@@ -259,12 +268,13 @@ async function regularCurrenciesCheck(this: Context)
             const testStrs = fillArray(50, () => `${simpleFaker.number.float()}`);
             for (const str of testStrs)
             {
-                const response = await HTTPAssert.assertFetch(UnitTestEndpoints.currenciesEndpoints['post'], 
+                const response = await HookShortcuts.postCreateCurrency(
                 {
-                    baseURL: serverURL, method: "POST", expectedStatus: 200,
+                    serverURL: serverURL,
                     body: createCurrencyPostBody(randomUUID(), randomUUID(), firstUser.baseCurrencyId, str),
-                    headers: { "authorization": firstUser.token },
-                    expectedBodyType: ResponsePostCurrencyDTOClass
+                    token: firstUser.token,
+                    assertBody: true,
+                    expectedCode: 200
                 });
                 addedCurrenciesIDs.push(response.parsedBody.id);
             }

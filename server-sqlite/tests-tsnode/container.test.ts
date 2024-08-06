@@ -7,8 +7,6 @@ import { HookShortcuts } from "./shortcuts/hookShortcuts.js";
 import { ResponsePostContainerDTO } from "../../api-types/container.js";
 import { IsString } from "class-validator";
 
-const createPostContainerBody = (name: string) => ({name: name});
-
 export class ResponsePostContainerDTOBody implements ResponsePostContainerDTO
 {
     @IsString() id: string;
@@ -61,14 +59,13 @@ export default async function(this: Context)
                 for (const testCase of relationshipMatrix.matrix)
                 {
                     const userToken = testUsersCreds.find(x => x.username === testCase.primaryValue)!.token;
-                    await HTTPAssert.assertFetch(UnitTestEndpoints.containersEndpoints['post'], 
+                    await HookShortcuts.postCreateContainer(
                     {
-                        baseURL: serverURL,
-                        expectedStatus: testCase.expectedPass ? 200 : 400,
-                        method: "POST",
-                        body: createPostContainerBody(testCase.subPrimaryValue),
-                        headers: { "authorization": userToken },
-                        expectedBodyType: testCase.expectedPass ? ResponsePostContainerDTOBody : undefined
+                        serverURL: serverURL,
+                        body: { name: testCase.subPrimaryValue },
+                        token: userToken,
+                        assertBody: testCase.expectedPass,
+                        expectedCode: testCase.expectedPass ? 200 : 400
                     });
                 }
             });

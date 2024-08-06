@@ -112,12 +112,12 @@ async function testFromTransactions(this: Context)
         // Register txn type for first user
         await (async function()
         {
-            const response = await HTTPAssert.assertFetch(UnitTestEndpoints.transactionTypesEndpoints['post'], 
+            const response = await HookShortcuts.postCreateTxnType(
             {
-                baseURL: serverURL, expectedStatus: 200, method: "POST",
-                body: createPostTxnTypeBody(`TxnTyp1`),
-                headers: { "authorization": firstUser.token },
-                expectedBodyType: ResponsePostTransactionTypesDTOBody
+                serverURL: serverURL,
+                body: { name: `TxnType1` },
+                token: firstUser.token,
+                assertBody: true
             });
             testContext.txnTypeId = response.parsedBody.id;
         }).bind(this)();
@@ -135,45 +135,50 @@ async function testFromTransactions(this: Context)
         {
             await this.test(`Forbid creating transactions without ${testCase.fieldMissed} but all other fields`, async function()
             {
-                await HTTPAssert.assertFetch(UnitTestEndpoints.transactionsEndpoints['post'], 
+                await HookShortcuts.postCreateTransaction(
                 {
-                    baseURL: serverURL, expectedStatus: 400, method: "POST",
-                    body: testCase.obj,
-                    headers: { "authorization": firstUser.token }
+                    serverURL: serverURL,
+                    body: { ...testCase.obj },
+                    token: firstUser.token,
+                    assertBody: false,
+                    expectedCode: 400
                 });
             });
         }
 
         await this.test(`Allow creating transactions without description`, async function()
         {
-            await HTTPAssert.assertFetch(UnitTestEndpoints.transactionsEndpoints['post'], 
+            await HookShortcuts.postCreateTransaction(
             {
-                baseURL: serverURL, expectedStatus: 200, method: "POST",
-                body: { ...baseObj, description: undefined } satisfies PostTransactionDTOBody,
-                headers: { "authorization": firstUser.token },
-                expectedBodyType: ResponsePostTransactionDTOBody
+               serverURL: serverURL,
+               body: { ...baseObj, description: undefined },
+               token: firstUser.token,
+               assertBody: true,
+               expectedCode: 200
             });
         });
 
         await this.test(`Allow creating transactions without creationDate`, async function()
         {
-            await HTTPAssert.assertFetch(UnitTestEndpoints.transactionsEndpoints['post'], 
+            await HookShortcuts.postCreateTransaction(
             {
-                baseURL: serverURL, expectedStatus: 200, method: "POST",
-                body: { ...baseObj, creationDate: undefined } satisfies PostTransactionDTOBody,
-                headers: { "authorization": firstUser.token },
-                expectedBodyType: ResponsePostTransactionDTOBody
+                serverURL: serverURL,
+                body: { ...baseObj, creationDate: undefined },
+                token: firstUser.token,
+                assertBody: true,
+                expectedCode: 200
             });
         });
 
         await this.test(`Allow creating transactions with valid body and token`, async function()
         {
-            await HTTPAssert.assertFetch(UnitTestEndpoints.transactionsEndpoints['post'], 
+            await HookShortcuts.postCreateTransaction(
             {
-                baseURL: serverURL, expectedStatus: 200, method: "POST",
-                body: { ...baseObj } satisfies PostTransactionDTOBody,
-                headers: { "authorization": firstUser.token },
-                expectedBodyType: ResponsePostTransactionDTOBody
+                serverURL: serverURL,
+                body: baseObj,
+                token: firstUser.token,
+                assertBody: true,
+                expectedCode: 200
             });
         });
     });
