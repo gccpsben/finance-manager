@@ -51,6 +51,9 @@ export class Transaction extends EntityClass
     @Index({fulltext: true})
     description: string | undefined;
 
+    @Column( { nullable: false })
+    ownerId: string;
+
     @ManyToOne(type => User, user => user.transactions, { nullable: false })
     @JoinColumn({ name: "ownerId" })
     @EnsureNotPlainForeignKey()  
@@ -60,13 +63,13 @@ export class Transaction extends EntityClass
     @IsDate()
     creationDate: Date;
 
-    @Column( { nullable: true } )
+    @Column( { nullable: false } )
     txnTypeId: string;
 
-    @JoinColumn({ name: "typeId" })
     @ManyToOne(type => TransactionType, { nullable: false })
+    @JoinColumn({ name: "txnTypeId" })
     @EnsureNotPlainForeignKey()
-    txnType: TransactionType;
+    txnType: TransactionType | undefined;
 
     // #region From
     @Column( { nullable: true } )
