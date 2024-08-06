@@ -5,6 +5,7 @@ import { ExpressValidations } from '../validation.js';
 import { TransactionTypeService } from '../../db/services/transactionType.service.js';
 import { TypesafeRouter } from '../typescriptRouter.js';
 import type { ResponseGetTransactionTypesDTO, PostTransactionTypesDTO, ResponsePostTransactionTypesDTO } from '../../../../api-types/txnType.js';
+import { OptionalPaginationAPIQueryRequest, PaginationAPIResponseClass } from '../logics/pagination.js';
 
 const router = new TypesafeRouter(express.Router());
 
@@ -13,13 +14,43 @@ router.get<ResponseGetTransactionTypesDTO>(`/api/v1/transactionTypes`,
     handler: async (req: express.Request, res: express.Response) => 
     {
         const authResult = await AccessTokenService.ensureRequestTokenValidated(req);
-        const txnType = await TransactionTypeService.getUserTransactionTypes(authResult.ownerUserId);
-        return txnType.map(t => (
+        class query extends OptionalPaginationAPIQueryRequest
         {
-            id: t.id,
-            name: t.name,
-            owner: t.owner.id
-        }));
+            @IsOptional() @IsString() id: string;
+            @IsOptional() @IsString() name: string;
+        }
+        
+        const parsedQuery = await ExpressValidations.validateBodyAgainstModel<query>(query, req.query);
+        const userQuery = 
+        {
+            start: parsedQuery.start ? parseInt(parsedQuery.start) : undefined,
+            end: parsedQuery.end ? parseInt(parsedQuery.end) : undefined,
+            name: parsedQuery.name,
+            id: parsedQuery.id
+        };
+
+        const response = await PaginationAPIResponseClass.prepareFromQueryItems
+        (
+            await TransactionTypeService.getUserTransactionTypes(authResult.ownerUserId, 
+            {
+                startIndex: userQuery.start,
+                endIndex: userQuery.end,
+                id: userQuery.id,
+                name: userQuery.name
+            }),
+            userQuery.start
+        );
+
+        return {
+            endingIndex: response.endingIndex,
+            startingIndex: response.startingIndex,
+            totalItems: response.totalItems,
+            rangeItems: response.rangeItems.map(type => ({
+                id: type.id,
+                name: type.name,
+                owner: type.ownerId
+            })),
+        };
     }
 });
 

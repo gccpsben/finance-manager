@@ -17,6 +17,9 @@ export class TransactionType extends EntityClass
     @MaxLength(256)
     name: string;
 
+    @Column( { nullable: false })
+    ownerId: string;
+
     @ManyToOne(type => User, user => user.transactionTypes)
     @EnsureNotPlainForeignKey() 
     owner: User;

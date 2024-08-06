@@ -2,6 +2,8 @@ import createHttpError from "http-errors";
 import { TransactionTypeRepository } from "../repositories/transactionType.repository.js";
 import { UserRepository } from "../repositories/user.repository.js";
 import { TransactionType } from "../entities/transactionType.entity.js";
+import { ServiceUtils } from "../servicesUtils.js";
+import { SQLitePrimitiveOnly } from "../../index.d.js";
 
 export class TransactionTypeService
 {
@@ -31,17 +33,32 @@ export class TransactionTypeService
         return result;
     }
 
-    public static async getUserTransactionTypes(ownerId: string)
+    public static async getUserTransactionTypes
+    (
+        ownerId: string,
+        config: 
+        {
+            startIndex?: number | undefined, endIndex?: number | undefined,
+            name?: string,
+            id?: string,
+        }
+    ): Promise<{ totalCount: number, rangeItems: SQLitePrimitiveOnly<TransactionType>[] }>
     {
         const user = await UserRepository.getInstance().findOne({where: { id: ownerId }});
         if (!user) throw createHttpError(404, `Cannot find user with id '${ownerId}'`);
-
-        const results = await TransactionTypeRepository.getInstance()
+        let query = TransactionTypeRepository.getInstance()
         .createQueryBuilder(`type`)
-        .where(`type.ownerId = :ownerId`, {ownerId: ownerId })
-        .getMany();
+        .where(`type.ownerId = :ownerId`, {ownerId: ownerId });
 
-        return results;
+        if (config.name !== undefined) query = query.andWhere('type.name LIKE :name', { title: `%${config.name}%` })
+
+        query = ServiceUtils.paginateQuery(query, config);
+        const queryResult = await query.getManyAndCount();
+
+        return {
+            totalCount: queryResult[1],
+            rangeItems: queryResult[0],
+        };
     }
 
     public static async getTransactionTypeByName(ownerId: string, name: string)
