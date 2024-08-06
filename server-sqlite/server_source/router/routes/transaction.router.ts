@@ -70,23 +70,17 @@ router.get<ResponseGetTransactionsDTO>(`/api/v1/transactions`,
             id: parsedQuery.id
         };
 
-        const response: PaginationAPIResponseClass<SQLitePrimitiveOnly<Transaction>> = await (async () => 
-        {
-            const allTxns = await TransactionService.getTransactions(authResult.ownerUserId, 
+        const response = await PaginationAPIResponseClass.prepareFromQueryItems
+        (
+            await TransactionService.getTransactions(authResult.ownerUserId, 
             {
                 startIndex: userQuery.start,
                 endIndex: userQuery.end,
                 id: userQuery.id,
                 title: userQuery.title
-            });
-
-            const output = new PaginationAPIResponseClass<SQLitePrimitiveOnly<Transaction>>();
-            output.startingIndex = userQuery.start;
-            output.endingIndex = userQuery.start + allTxns.rangeItems.length;
-            output.rangeItems = allTxns.rangeItems;
-            output.totalItems = allTxns.totalCount;
-            return output;
-        })();
+            }),
+            userQuery.start
+        );
 
         return {
             totalItems: response.totalItems,

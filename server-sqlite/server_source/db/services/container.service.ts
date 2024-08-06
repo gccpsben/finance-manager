@@ -77,12 +77,8 @@ export class ContainerService
         .where("ownerId = :ownerId", { ownerId: ownerId });
 
         dbQuery = ServiceUtils.paginateQuery(dbQuery, query);
-
-        if (query.name)
-            dbQuery = dbQuery.andWhere("name = :name", { name: query.name })
-
-        if (query.id)
-            dbQuery = dbQuery.andWhere("id = :id", { id: query.id })
+        if (query.name) dbQuery = dbQuery.andWhere("name = :name", { name: query.name })
+        if (query.id) dbQuery = dbQuery.andWhere("id = :id", { id: query.id })
 
         const queryResult = await dbQuery.getManyAndCount();
         return {

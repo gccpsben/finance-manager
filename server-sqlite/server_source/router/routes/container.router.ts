@@ -21,6 +21,7 @@ router.get<ResponseGetContainerDTO>(`/api/v1/containers`,
             @IsOptional() @IsString() id: string;
             @IsOptional() @IsString() name: string;
         }
+
         const parsedQuery = await ExpressValidations.validateBodyAgainstModel<query>(query, req.query);
         const userQuery = 
         {
@@ -29,24 +30,18 @@ router.get<ResponseGetContainerDTO>(`/api/v1/containers`,
             name: parsedQuery.name,
             id: parsedQuery.id
         };
-
-        const response: PaginationAPIResponseClass<SQLitePrimitiveOnly<Container>> = await (async () => 
-        {
-            const containers = await ContainerService.getManyContainers(authResult.ownerUserId, 
+        
+        const response = await PaginationAPIResponseClass.prepareFromQueryItems
+        (
+            await ContainerService.getManyContainers(authResult.ownerUserId, 
             {
                 startIndex: userQuery.start,
                 endIndex: userQuery.end,
                 id: userQuery.id,
                 name: userQuery.name
-            });
-
-            const output = new PaginationAPIResponseClass<SQLitePrimitiveOnly<Container>>();
-            output.startingIndex = userQuery.start;
-            output.endingIndex = userQuery.start + containers.rangeItems.length;
-            output.rangeItems = containers.rangeItems;
-            output.totalItems = containers.totalCount;
-            return output;
-        })();
+            }),
+            userQuery.start
+        );
 
         return {
             totalItems: response.totalItems,
