@@ -1,6 +1,9 @@
 import createHttpError from "http-errors";
 import { ContainerRepository } from "../repositories/container.repository.js";
 import { UserRepository } from "../repositories/user.repository.js";
+import { SQLitePrimitiveOnly } from "../../index.d.js";
+import { Container } from "../entities/container.entity.js";
+import { ServiceUtils } from "../servicesUtils.js";
 
 export class ContainerService
 {
@@ -58,18 +61,33 @@ export class ContainerService
         });
     }
 
-    public static async getManyContainers(ownerId: string, query: {
-        name?: string | undefined,
-        id?: string | undefined
-    })
-    {
-        return await ContainerRepository.getInstance().find(
+    public static async getManyContainers
+    (
+        ownerId: string, 
+        query: 
         {
-            where:
-            {
-                ...query,
-                owner: {id: ownerId}
-            }
-        });
+            startIndex?: number | undefined, endIndex?: number | undefined,
+            name?: string | undefined,
+            id?: string | undefined
+        }
+    ): Promise<{ totalCount: number, rangeItems: SQLitePrimitiveOnly<Container>[] }>
+    {
+        let dbQuery = ContainerRepository.getInstance()
+        .createQueryBuilder(`con`)
+        .where("ownerId = :ownerId", { ownerId: ownerId });
+
+        dbQuery = ServiceUtils.paginateQuery(dbQuery, query);
+
+        if (query.name)
+            dbQuery = dbQuery.andWhere("name = :name", { name: query.name })
+
+        if (query.id)
+            dbQuery = dbQuery.andWhere("id = :id", { id: query.id })
+
+        const queryResult = await dbQuery.getManyAndCount();
+        return {
+            totalCount: queryResult[1],
+            rangeItems: queryResult[0]
+        }
     }
 }

@@ -9,6 +9,7 @@ import { UserService } from "./user.service.js";
 import { Transaction } from "../entities/transaction.entity.js";
 import { Decimal } from "decimal.js";
 import type { SQLitePrimitiveOnly } from "../../index.d.js";
+import { ServiceUtils } from "../servicesUtils.js";
 
 export class TransactionService
 {
@@ -125,22 +126,6 @@ export class TransactionService
         };
     }
 
-    // public static async getAllTransactions(userId: string)
-    // {
-    //     return await TransactionRepository.getInstance()
-    //     .createQueryBuilder(`txn`)
-    //     .where("ownerId = :ownerId", { ownerId: userId })
-    //     .getMany();
-    // }
-
-    // public static async countAllTransactions(userId: string)
-    // {
-    //     return await TransactionRepository.getInstance()
-    //     .createQueryBuilder(`txn`)
-    //     .where("ownerId = :ownerId", { ownerId: userId })
-    //     .getCount();
-    // }
-
     public static async getTransactions
     (
         userId: string, 
@@ -158,23 +143,7 @@ export class TransactionService
         .orderBy('txn.creationDate', "DESC")
         .where("ownerId = :ownerId", { ownerId: userId });
 
-        if (config.startIndex !== undefined && config.endIndex !== undefined)
-        {
-            query = query
-            .limit(config.endIndex - config.startIndex)
-            .offset(config.startIndex);
-        }
-        else if (config.startIndex !== undefined && config.endIndex === undefined)
-        {
-            query = query.skip(config.startIndex);  
-        }
-        else if (config.startIndex === undefined && config.endIndex !== undefined)
-        {
-            query = query.limit(config.startIndex);  
-        }
-
-        if (config.endIndex !== undefined)
-            query = query.take(config.endIndex);
+        query = ServiceUtils.paginateQuery(query, config);
 
         if (config.title !== undefined)
             query = query.andWhere('txn.title LIKE :title', { title: `%${config.title}%` })

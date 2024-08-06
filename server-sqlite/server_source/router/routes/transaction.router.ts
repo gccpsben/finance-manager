@@ -5,7 +5,7 @@ import { TransactionService } from '../../db/services/transaction.service.js';
 import { ExpressValidations } from '../validation.js';
 import { IsDecimalJSString } from '../../db/validators.js';
 import { Transaction } from '../../db/entities/transaction.entity.js';
-import { OptionalPaginationAPIQueryRequest, PaginationAPIQueryRequest, PaginationAPIResponse } from '../logics/pagination.js';
+import { OptionalPaginationAPIQueryRequest, PaginationAPIResponseClass } from '../logics/pagination.js';
 import type { PostTransactionDTO, ResponseGetTransactionsDTO, ResponsePostTransactionDTO } from '../../../../api-types/txn.js';
 import { TypesafeRouter } from '../typescriptRouter.js';
 import type { SQLitePrimitiveOnly } from '../../index.d.js';
@@ -70,7 +70,7 @@ router.get<ResponseGetTransactionsDTO>(`/api/v1/transactions`,
             id: parsedQuery.id
         };
 
-        const response: PaginationAPIResponse<SQLitePrimitiveOnly<Transaction>> = await (async () => 
+        const response: PaginationAPIResponseClass<SQLitePrimitiveOnly<Transaction>> = await (async () => 
         {
             const allTxns = await TransactionService.getTransactions(authResult.ownerUserId, 
             {
@@ -80,7 +80,7 @@ router.get<ResponseGetTransactionsDTO>(`/api/v1/transactions`,
                 title: userQuery.title
             });
 
-            const output = new PaginationAPIResponse<SQLitePrimitiveOnly<Transaction>>();
+            const output = new PaginationAPIResponseClass<SQLitePrimitiveOnly<Transaction>>();
             output.startingIndex = userQuery.start;
             output.endingIndex = userQuery.start + allTxns.rangeItems.length;
             output.rangeItems = allTxns.rangeItems;

@@ -1,6 +1,7 @@
 import { IsNumber, IsArray, IsOptional, IsNumberString } from "class-validator";
+import type { PaginationAPIResponse } from "../../../../api-types/lib.js";
 
-export class PaginationAPIResponse<T>
+export class PaginationAPIResponseClass<T> implements PaginationAPIResponse<T>
 {
     @IsNumber() totalItems: number;
     @IsNumber() startingIndex: number;
