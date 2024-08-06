@@ -143,15 +143,16 @@ export class TransactionService
         .orderBy('txn.creationDate', "DESC")
         .where("ownerId = :ownerId", { ownerId: userId });
 
-        query = ServiceUtils.paginateQuery(query, config);
-
         if (config.title !== undefined)
             query = query.andWhere('txn.title LIKE :title', { title: `%${config.title}%` })
 
         if (config.description !== undefined)
             query = query.andWhere('txn.description LIKE :description', { description: `%${config.description}%` })
 
+        query = ServiceUtils.paginateQuery(query, config);
+
         const queryResult = await query.getManyAndCount();
+        
 
         return {
             totalCount: queryResult[1],
