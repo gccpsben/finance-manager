@@ -1,3 +1,5 @@
+import { PaginationAPIResponse } from "./lib"
+
 export type ContainerDTO =
 {
     id: string;
@@ -7,7 +9,7 @@ export type ContainerDTO =
 }
 
 export type GetContainerDTO = { };
-export type ResponseGetContainerDTO = ContainerDTO[];
+export type ResponseGetContainerDTO = PaginationAPIResponse<ContainerDTO>;
 
 export type PostContainerDTO = { name: string; };
 export type ResponsePostContainerDTO = { id: string; };
