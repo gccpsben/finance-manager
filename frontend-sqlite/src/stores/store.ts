@@ -1,4 +1,4 @@
-import { API_BAL_VAL_PATH, API_CONTAINERS_PATH, API_CURRENCIES_PATH, API_DASHBOARD_BATCH_PATH, API_GRAPHS_PATH, API_NET_WORTH_GRAPH_PATH, API_SUMMARY_PATH, API_TXN_TYPES_PATH } from '@/apiPaths';
+import { API_BAL_VAL_PATH, API_CONTAINERS_PATH, API_CURRENCIES_PATH, API_DASHBOARD_BATCH_PATH, API_GRAPHS_PATH, API_NET_WORTH_GRAPH_PATH, API_SUMMARY_PATH, API_TXN_TYPES_PATH, API_USER_INCOMES_EXPENSES_PATH } from '@/apiPaths';
 import { useNetworkRequest } from '@/composables/useNetworkRequest';
 import type { ValueHydratedContainer } from '@/types/dtos/containersDTO';
 import type { RateDefinedCurrency } from '@/types/dtos/currenciesDTO';
@@ -8,6 +8,7 @@ import axios, { AxiosError } from 'axios';
 import { defineStore } from 'pinia';
 import type { GraphsSummary } from '../types/dtos/graphsSummaryDTO';
 import type { DashboardBatchDTO } from '@/types/dtos/dashboardBatchDTO';
+import type { ResponseGetExpensesAndIncomesDTO } from "../../../api-types/calculations";
 
 export type Subpage = { name: string; }
 
@@ -69,6 +70,7 @@ export const useMainStore = defineStore(
                     iconClass: "fa fa-inbox"
                 }
             ] as PageDefinition[],
+            userExpensesIncomes: useNetworkRequest<ResponseGetExpensesAndIncomesDTO>(API_USER_INCOMES_EXPENSES_PATH, { includeAuthHeaders: true, updateOnMount: false }),
             dashboardSummary: useNetworkRequest<DashboardSummary>(API_SUMMARY_PATH, { includeAuthHeaders: true, updateOnMount: false }),
             graphsSummary: useNetworkRequest<GraphsSummary>(API_GRAPHS_PATH, { includeAuthHeaders: true, updateOnMount: false }),
             currencies: useNetworkRequest<RateDefinedCurrency[]>(API_CURRENCIES_PATH, { includeAuthHeaders: true }),

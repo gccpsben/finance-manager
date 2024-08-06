@@ -6,17 +6,18 @@
         <grid-shortcut id="mainGrid">
 
             <number-cell title="Expenses" :noItemsText="'No Expenses'" v-area="'expensesPanel'"
-            :value7d="store.dashboardSummary.lastSuccessfulData?.totalExpenses7d"
-            :value30d="store.dashboardSummary.lastSuccessfulData?.totalExpenses30d"
-            :valueAll="store.dashboardSummary.lastSuccessfulData?.totalExpenses"
-            :isLoading="store.dashboardSummary.isLoading" :networkError="store.dashboardSummary.error"></number-cell>
+            :value7d="userExpensesIncomes ? parseFloat(userExpensesIncomes.expenses7d) : 0"
+            :value30d="userExpensesIncomes ? parseFloat(userExpensesIncomes.expenses30d) : 0"
+            :valueAll="userExpensesIncomes ? parseFloat(userExpensesIncomes.expensesTotal) : 0"
+            :isLoading="store.userExpensesIncomes.isLoading" :networkError="store.userExpensesIncomes.error"></number-cell>
         
-            <!-- <number-cell title="Incomes" :noItemsText="'No Incomes'" v-area="'incomesPanel'"
-            :value7d="store.dashboardSummary.lastSuccessfulData?.totalIncomes7d"
-            :value30d="store.dashboardSummary.lastSuccessfulData?.totalIncomes30d"
-            :valueAll="store.dashboardSummary.lastSuccessfulData?.totalIncomes"
-            :isLoading="store.dashboardSummary.isLoading" :networkError="store.dashboardSummary.error"></number-cell>
+            <number-cell title="Incomes" :noItemsText="'No Incomes'" v-area="'incomesPanel'"
+            :value7d="userExpensesIncomes ? parseFloat(userExpensesIncomes.incomes7d) : 0"
+            :value30d="userExpensesIncomes ? parseFloat(userExpensesIncomes.incomes30d) : 0"
+            :valueAll="userExpensesIncomes ? parseFloat(userExpensesIncomes.incomesTotal) : 0"
+            :isLoading="store.userExpensesIncomes.isLoading" :networkError="store.userExpensesIncomes.error"></number-cell>
         
+            <!-- 
             <number-cell title="Total Value" v-area="'totalValuePanel'"
             :valueAll="store.dashboardSummary.lastSuccessfulData?.totalValue"
             :isLoading="store.dashboardSummary.isLoading" :networkError="store.dashboardSummary.error"></number-cell>
@@ -135,6 +136,7 @@ export default
         this.store.updateDashboardBatch();     
         this.store.balanceValueHistory.updateData();
         this.store.txnTypes.updateData();
+        this.store.userExpensesIncomes.updateData();
     },
     computed:
     {
@@ -147,6 +149,10 @@ export default
         {
             if (!this.store.dashboardSummary?.lastSuccessfulData) return;
             return this.store.dashboardSummary.lastSuccessfulData.totalIncomes30d - this.store.dashboardSummary.lastSuccessfulData.totalExpenses30d;
+        },
+        userExpensesIncomes()
+        {
+            return this.store.userExpensesIncomes.lastSuccessfulData;
         }
     },
     methods:

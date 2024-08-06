@@ -8,3 +8,4 @@ export const API_TXN_TYPES_PATH = "/api/v1/transactionTypes";
 export const API_GRAPHS_PATH = "/api/v1/graphs";
 export const API_BAL_VAL_PATH = "/api/v1/balanceHistory";
 export const API_DASHBOARD_BATCH_PATH = `/api/v1/batch/dashboard`;
+export const API_USER_INCOMES_EXPENSES_PATH = `/api/v1/calculations/expensesAndIncomes`;
