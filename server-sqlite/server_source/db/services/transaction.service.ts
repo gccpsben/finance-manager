@@ -143,7 +143,8 @@ export class TransactionService
 
     public static async getTransactions
     (
-        userId: string, config: 
+        userId: string, 
+        config: 
         {
             startIndex?: number | undefined, endIndex?: number | undefined,
             title?: string,
@@ -154,20 +155,32 @@ export class TransactionService
     {
         let query = TransactionRepository.getInstance()
         .createQueryBuilder(`txn`)
-        .orderBy('txn.creationDate')
+        .orderBy('txn.creationDate', "DESC")
         .where("ownerId = :ownerId", { ownerId: userId });
 
-        if (config.startIndex !== undefined)
-            query = query.skip(config.startIndex);
+        if (config.startIndex !== undefined && config.endIndex !== undefined)
+        {
+            query = query
+            .limit(config.endIndex - config.startIndex)
+            .offset(config.startIndex);
+        }
+        else if (config.startIndex !== undefined && config.endIndex === undefined)
+        {
+            query = query.skip(config.startIndex);  
+        }
+        else if (config.startIndex === undefined && config.endIndex !== undefined)
+        {
+            query = query.limit(config.startIndex);  
+        }
 
         if (config.endIndex !== undefined)
             query = query.take(config.endIndex);
 
         if (config.title !== undefined)
-            query = query.where('txn.title LIKE :title', { title: `%${config.title}%` })
+            query = query.andWhere('txn.title LIKE :title', { title: `%${config.title}%` })
 
         if (config.description !== undefined)
-            query = query.where('txn.description LIKE :description', { description: `%${config.description}%` })
+            query = query.andWhere('txn.description LIKE :description', { description: `%${config.description}%` })
 
         const queryResult = await query.getManyAndCount();
 
