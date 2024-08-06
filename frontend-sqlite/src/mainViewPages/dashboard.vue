@@ -168,8 +168,8 @@ export default
             let output = "";
             for (let [key, value] of Object.entries(container.balance))
             {
-                let currency = (this.store.currencies.lastSuccessfulData ?? []).find(curr => curr.pubID == key);
-                output += `${currency?.symbol}: ${(value as any).toFixed(3)}\n`;
+                let currency = (this.store.currencies.lastSuccessfulData ?? []).find(curr => curr.id == key);
+                output += `${currency?.ticker}: ${(value as any).toFixed(3)}\n`;
             }
             return output;
         },

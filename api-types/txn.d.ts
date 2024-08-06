@@ -1,5 +1,21 @@
 import { PaginationAPIResponse } from "./lib"
 
+export type TransactionDTO = 
+{
+    id: string;
+    title: string;
+    description: string | undefined;
+    owner: string;
+    creationDate: string;
+    txnType: string;
+    fromAmount: string | undefined;
+    fromCurrency: string | undefined;
+    fromContainer: string | undefined;
+    toAmount: string | undefined;
+    toCurrency: string | undefined;
+    toContainer: string | undefined;
+}
+
 export type PostTransactionDTO = 
 {
     title: string;
@@ -16,17 +32,4 @@ export type PostTransactionDTO =
 export type ResponsePostTransactionDTO = { id: string; };
 
 export type GetTransactionsDTO = {};
-export type ResponseGetTransactionsDTO = PaginationAPIResponse<{
-    id: string;
-    title: string;
-    description: string | undefined;
-    owner: string;
-    creationDate: string;
-    txnType: string;
-    fromAmount: string | undefined;
-    fromCurrency: string | undefined;
-    fromContainer: string | undefined;
-    toAmount: string | undefined;
-    toCurrency: string | undefined;
-    toContainer: string | undefined;
-}>;
+export type ResponseGetTransactionsDTO = PaginationAPIResponse<TransactionDTO>;

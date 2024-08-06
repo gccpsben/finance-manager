@@ -432,6 +432,7 @@ import useNetworkPagination, { type UpdatorReturnType } from "@/networkedPaginat
 import { ResettableObject } from "@/resettableObject";
 import { API_TRANSACTIONS_PATH } from "@/apiPaths";
 import type { HydratedTransaction, Transaction } from "@/types/dtos/transactionsDTO";
+import type { ResponseGetTransactionsDTO, TransactionDTO } from '../../../api-types/txn';
 import CustomDropdown from '@/components/custom-dropdown.vue';
 
 // #region CONSTANTS:
@@ -447,7 +448,7 @@ const getTxnType = (txn:Transaction) =>
 };
 const getTxnTypeName = (typeId: string) => 
 {
-    return store.txnTypes.lastSuccessfulData?.find(x => x.id == typeId)?.name ?? "<undefined>";
+    return store.txnTypes.lastSuccessfulData?.rangeItems.find(x => x.id == typeId)?.name ?? "<undefined>";
 };
 const moveToPageZero = () => { mainPagination.pageIndex.value = 0; };
 const getContainerName = (id: string) => (store?.containers?.lastSuccessfulData ?? []).find((x: any) => x.id == id)?.name ?? undefined;
@@ -463,7 +464,7 @@ function formatChangeInValue(value:number)
 // #region All transactions view:
 const currentPage = ref(0);
 const searchText = ref("");
-const mainPagination = useNetworkPagination<Transaction>({ updator: updator, pageIndex: 0, pageSize: ref(itemsInPage) });
+const mainPagination = useNetworkPagination<TransactionDTO>({ updator: updator, pageIndex: 0, pageSize: ref(itemsInPage) });
 const uiRangeText = computed(() => 
 { 
     let upperBound = Math.min(mainPagination.viewportUpperBoundIndex.value + 1, mainPagination.totalItems.value);
@@ -491,16 +492,15 @@ function onSearchTextChange()
     moveToPageZero();
 }
 
-async function updator(start:number, count:number): Promise<UpdatorReturnType<Transaction>>
+async function updator(start:number, count:number): Promise<UpdatorReturnType<TransactionDTO>>
 {
     let sendQuery = async (url:string) => await store.authGet(url);
-    let responseJSON = {} as any;
     let queryURL = API_TRANSACTIONS_PATH;
 
     let fullQuery = `${queryURL}?start=${start}&end=${start+count}`;
     if (searchText.value !== "") fullQuery = `${queryURL}?start=${start}&end=${start+count}&title=${searchText.value}`;
     
-    responseJSON = (await sendQuery(fullQuery)).data;
+    let responseJSON = (await sendQuery(fullQuery)).data as ResponseGetTransactionsDTO;
 
     return {
         totalItems: responseJSON.totalItems,
