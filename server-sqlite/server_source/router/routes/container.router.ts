@@ -5,6 +5,9 @@ import { ExpressValidations } from '../validation.js';
 import { ContainerService } from '../../db/services/container.service.js';
 import { TypesafeRouter } from '../typescriptRouter.js';
 import type { PostContainerDTO, ResponseGetContainerDTO, ResponsePostContainerDTO } from '../../../../api-types/container.js';
+import { OptionalPaginationAPIQueryRequest, PaginationAPIResponseClass } from '../logics/pagination.js';
+import { SQLitePrimitiveOnly } from '../../index.d.js';
+import { Container } from '../../db/entities/container.entity.js';
 
 const router = new TypesafeRouter(express.Router());
 
@@ -13,21 +16,50 @@ router.get<ResponseGetContainerDTO>(`/api/v1/containers`,
     handler: async (req: express.Request, res: express.Response) => 
     {
         const authResult = await AccessTokenService.ensureRequestTokenValidated(req);
-        class query
+        class query extends OptionalPaginationAPIQueryRequest
         {
             @IsOptional() @IsString() id: string;
             @IsOptional() @IsString() name: string;
         }
-        const parsedBody = await ExpressValidations.validateBodyAgainstModel<query>(query, req.query);
-        const containers = await ContainerService.getManyContainers(authResult.ownerUserId, parsedBody);
-
-        return containers.map(con => (
+        const parsedQuery = await ExpressValidations.validateBodyAgainstModel<query>(query, req.query);
+        const userQuery = 
         {
-            creationDate: con.creationDate.toISOString(),
-            id: con.id,
-            name: con.name,
-            owner: con.owner.id
-        }));
+            start: parsedQuery.start ? parseInt(parsedQuery.start) : undefined,
+            end: parsedQuery.end ? parseInt(parsedQuery.end) : undefined,
+            name: parsedQuery.name,
+            id: parsedQuery.id
+        };
+
+        const response: PaginationAPIResponseClass<SQLitePrimitiveOnly<Container>> = await (async () => 
+        {
+            const containers = await ContainerService.getManyContainers(authResult.ownerUserId, 
+            {
+                startIndex: userQuery.start,
+                endIndex: userQuery.end,
+                id: userQuery.id,
+                name: userQuery.name
+            });
+
+            const output = new PaginationAPIResponseClass<SQLitePrimitiveOnly<Container>>();
+            output.startingIndex = userQuery.start;
+            output.endingIndex = userQuery.start + containers.rangeItems.length;
+            output.rangeItems = containers.rangeItems;
+            output.totalItems = containers.totalCount;
+            return output;
+        })();
+
+        return {
+            totalItems: response.totalItems,
+            endingIndex: response.endingIndex,
+            startingIndex: response.startingIndex,
+            rangeItems: response.rangeItems.map(item => (
+            {
+                creationDate: item.creationDate.toISOString(),
+                id: item.id,
+                name: item.name,
+                owner: item.ownerId
+            }))
+        };
     }
 });
 

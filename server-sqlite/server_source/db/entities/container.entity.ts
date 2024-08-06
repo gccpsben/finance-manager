@@ -21,6 +21,9 @@ export class Container extends EntityClass
     @IsDate()
     creationDate: Date;
 
+    @Column( { nullable: false })
+    ownerId: string;
+
     @ManyToOne(type => User, user => user.containers, { nullable: false })
     @JoinColumn()
     @EnsureNotPlainForeignKey() 
