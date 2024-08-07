@@ -1,17 +1,13 @@
-import { IsString } from "class-validator";
-import { BodyGenerator } from "./lib/bodyGenerator.js";
+import { LinearInterpolator } from '../server_source/calculations/linearInterpolator.js';
 import { resetDatabase, serverURL, UnitTestEndpoints } from "./index.test.js";
 import { assertStrictEqual, HTTPAssert } from "./lib/assert.js";
 import { Context } from "./lib/context.js";
 import { HookShortcuts } from "./shortcuts/hookShortcuts.js";
-import { ResponsePostTransactionTypesDTO } from "../../api-types/txnType.js";
 import { Decimal } from "decimal.js";
 import { randomUUID } from "crypto";
 import { simpleFaker } from "@faker-js/faker";
 import { ResponseGetExpensesAndIncomesDTO } from "../../api-types/calculations.js";
 import { IsDecimalJSString } from "../server_source/db/validators.js";
-import { server } from "typescript";
-import { token } from "morgan";
 
 export class ResponseGetExpensesAndIncomesDTOClass implements ResponseGetExpensesAndIncomesDTO
 {
@@ -129,5 +125,67 @@ export default async function(this: Context)
             }
 
         }, { timeout: 60000 });
+
+        await this.test(`Linear Interpolator Correctness `, async function()
+        {
+            await (async function()
+            {
+                const definedPoints =
+                [ 
+                    { key: new Decimal(`0`), value: new Decimal(`0`) }, 
+                    { key: new Decimal(`1`), value: new Decimal(`100`) } 
+                ];
+                const interpolator = LinearInterpolator.fromEntries(definedPoints, e => e.key, e => e.value);
+                const expectedValues = 
+                [
+                    [ new Decimal(`-1`)     , undefined            ],
+                    [ new Decimal(`-0.1`)   , undefined            ],
+                    [ new Decimal(`0`)      , new Decimal(`0`)     ],
+                    [ new Decimal(`-0`)     , new Decimal(`0`)     ],
+                    [ new Decimal(`0.4111`) , new Decimal(`41.11`) ],
+                    [ new Decimal(`0.5`)    , new Decimal(`50`)    ],
+                    [ new Decimal(`1`)      , new Decimal(`100`)   ],
+                    [ new Decimal(`1.1`)    , undefined            ],
+                    [ new Decimal(`2`)      , undefined            ],
+                ];
+
+                for (const [ input, output ] of expectedValues)
+                {
+                    let actualOutput = interpolator.getValue(input);
+                    assertStrictEqual(actualOutput ? actualOutput.toString() : undefined, output ? output.toString() : undefined)
+                }
+
+            }).bind(this)();
+
+            await (async function()
+            {
+                const definedPoints =
+                [ 
+                    { key: new Decimal(`-0.725`), value: new Decimal(`21.7`) }, 
+                    { key: new Decimal(`-0.08`) , value: new Decimal(`69.1`) },
+                    { key: new Decimal(`1.427`) , value: new Decimal(`89.4`) } 
+                ];
+                const interpolator = LinearInterpolator.fromEntries(definedPoints, e => e.key, e => e.value);
+                const expectedValues = 
+                [
+                    [ `-1`     , undefined                           ],
+                    [ `-0.3`   , `52.932558139534883720930232558139` ],
+                    [ `0.1`    , `71.524684804246848042468480424685` ],
+                    [ `0.2`    , `72.871731917717319177173191771732` ],
+                    [ `0.3`    , `74.218779031187790311877903118779` ],
+                    [ `0.4`    , `75.565826144658261446582614465826` ],
+                    [ `1`      , `83.648108825481088254810882548109` ],
+                    [ `1.5`    , undefined                           ],
+                    [ `-0.725` , `21.7`                              ],
+                    [ `-0.08`  , `69.1`                              ],
+                    [ `1.427`  , `89.4`                              ]
+                ];
+                for (const [ input, output ] of expectedValues)
+                {
+                    let actualOutput = interpolator.getValue(new Decimal(input));
+                    assertStrictEqual(actualOutput ? actualOutput.toString() : undefined, output ? new Decimal(output).toString() : undefined)
+                }
+            }).bind(this)();
+        });
     });
 }
