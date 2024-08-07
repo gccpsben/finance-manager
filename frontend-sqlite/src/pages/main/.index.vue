@@ -72,7 +72,7 @@ export default
 </template>
 
 <style lang="less" scoped>
-@import "../stylesheets/globalStyle.less";
+@import "@/stylesheets/globalStyle.less";
 
 #mobileBar { display:none; }
 

@@ -1,5 +1,4 @@
 import { createRouter, createWebHistory } from 'vue-router'
-import MainView from '../views/main.vue'
 
 const router = createRouter(
 {
@@ -9,42 +8,42 @@ const router = createRouter(
 		{
 			path: '/main',
 			name: 'main',
-			component: MainView,
+			component: () => import("@/pages/main/.index.vue"),
             children:
             [
                 {
                     path: 'dashboard',
                     name: 'dashboard',
-                    component: () => import('../mainViewPages/dashboard.vue')
+                    component: () => import('@/pages/main/dashboard.vue')
                 },
                 {
                     path: 'currencies/:pubID?',
                     name: "currencies",
-                    component: () => import('../mainViewPages/currencies.vue'),
+                    component: () => import('@/pages/main/currencies.vue'),
                     props: true
                 },
                 {
                     path: 'transactions/:pubID?',
                     name: 'transactions',
-                    component: () => import('../mainViewPages/transactions.vue'),
+                    component: () => import('@/pages/main/transactions.vue'),
                     props: true
                 },
                 {
                     path: 'charts',
                     name: 'charts',
-                    component: () => import('../mainViewPages/charts.vue'),
+                    component: () => import('@/pages/main/charts.vue'),
                 },
                 {
                     path: 'containers',
                     name: 'containers',
-                    component: () => import('../mainViewPages/containers.vue'),
+                    component: () => import('@/pages/main/containers.vue'),
                 }
             ]
 		},
         {
             path: '/login',
             name: 'login',
-            component: () => import("../views/loginView.vue")
+            component: () => import("../pages/loginView.vue")
         },
         {
             path: '/',
@@ -53,27 +52,27 @@ const router = createRouter(
         {
             path: '/transactions/add',
             name: 'addTransaction',
-            component: () => import("../views/addTransactionView.vue")
+            component: () => import("../pages/addTransactionView.vue")
         },
         {
             path: '/containers/add',
             name: 'addContainer',
-            component: () => import('../views/addContainerView.vue')
+            component: () => import('../pages/addContainerView.vue')
         },
         {
             path: '/types/add',
             name: 'addType',
-            component: () => import('../views/addTypeView.vue')
+            component: () => import('../pages/addTypeView.vue')
         },
         {
             path: '/currencies/add',
             name: 'addCurrency',
-            component: () => import('../views/addCurrencyView.vue')
+            component: () => import('../pages/addCurrencyView.vue')
         },
         {
             path: '/transactions/resolve',
             name: 'resolveTransaction',
-            component: () => import('../views/resolveTransactionView.vue')
+            component: () => import('../pages/resolveTransactionView.vue')
         },
 	]
 })

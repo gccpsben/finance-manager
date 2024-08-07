@@ -432,7 +432,7 @@ import useNetworkPagination, { type UpdatorReturnType } from "@/networkedPaginat
 import { ResettableObject } from "@/resettableObject";
 import { API_TRANSACTIONS_PATH } from "@/apiPaths";
 import type { HydratedTransaction, Transaction } from "@/types/dtos/transactionsDTO";
-import type { ResponseGetTransactionsDTO, TransactionDTO } from '../../../api-types/txn';
+import type { ResponseGetTransactionsDTO, TransactionDTO } from '@/../../api-types/txn';
 import CustomDropdown from '@/components/custom-dropdown.vue';
 import { getTxnTypeNameById } from '@/utils/transactionTypes';
 import { getContainerNameById } from '@/utils/containers';
