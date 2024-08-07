@@ -7,16 +7,16 @@ import { createMetaManager } from 'vue-meta'
 import { createVuetify } from 'vuetify';
 
 import App from './App.vue'
-import router from './router/router.js'
+import router from './router.js'
 import type { Router } from 'vue-router';
-import gridShortcut from './components/gridShortcut.vue';
-import faIcon from "./components/faIcon.vue";
-import faIconButton from "./components/faIconButton.vue";
-import gridArea from "./components/gridArea.vue";
-import cell from "@/components/controls/cell.vue";
-import numberCell from "@/components/controls/numberCell.vue";
-import customTable from "@/components/custom-table.vue";
-import viewTitle from "@/components/controls/viewTitle.vue";
+import gridShortcut from '@/modules/core/components/gridShortcut.vue';
+import faIcon from "@/modules/core/components/faIcon.vue";
+import faIconButton from "@/modules/core/components/faIconButton.vue";
+import gridArea from "@/modules/core/components/gridArea.vue";
+import cell from "@/modules/core/components/cell.vue";
+import numberCell from "@/modules/core/components/numberCell.vue";
+import customTable from "@/modules/core/components/custom-table.vue";
+import viewTitle from "@/modules/core/components/viewTitle.vue";
 import vBasic from 'snippets/vite-vue-ts/directives/vBasic';
 import vArea from 'snippets/vite-vue-ts/directives/vArea';
 import vIntegerOnly from 'snippets/vite-vue-ts/directives/vIntegerOnly'
@@ -40,10 +40,10 @@ app.component('grid-area', gridArea);
 app.component('cell', cell);
 app.component('number-cell', numberCell);
 app.component('custom-table', customTable);
-app.component('list-cell', defineAsyncComponent(() => import("@/components/controls/listCell.vue")));
-app.component('net-worth-graph-cell', defineAsyncComponent(() => import("@/components/controls/netWorthGraphCell.vue")));
-app.component('custom-dropdown', defineAsyncComponent(() => import("@/components/custom-dropdown.vue")));
-app.component('container-values-graph-cell', defineAsyncComponent(() => import("./components/controls/containerValuesGraphCell.vue")));
+app.component('list-cell', defineAsyncComponent(() => import("@/modules/core/components/listCell.vue")));
+app.component('net-worth-graph-cell', defineAsyncComponent(() => import("@/modules/charts/components/netWorthGraphCell.vue")));
+app.component('custom-dropdown', defineAsyncComponent(() => import("@/modules/core/components/custom-dropdown.vue")));
+app.component('container-values-graph-cell', defineAsyncComponent(() => import("@/modules/containers/components/containerValuesGraphCell.vue")));
 app.component('view-title', viewTitle);
 
 // Since router isn't defined in the pinia type, add them manually.

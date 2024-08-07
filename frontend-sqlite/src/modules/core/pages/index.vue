@@ -4,7 +4,7 @@ import vBasic from 'snippets/vite-vue-ts/directives/vBasic';
 </script>
 
 <script lang="ts">
-import { useMainStore, type PageDefinition } from "@/stores/store";
+import { useMainStore, type PageDefinition } from "../stores/store";
 export default 
 {
     directives: {vArea},
@@ -72,7 +72,7 @@ export default
 </template>
 
 <style lang="less" scoped>
-@import "@/stylesheets/globalStyle.less";
+@import "../stylesheets/globalStyle.less";
 
 #mobileBar { display:none; }
 
