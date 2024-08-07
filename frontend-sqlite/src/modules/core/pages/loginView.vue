@@ -84,7 +84,7 @@
 
 <script lang="ts">
 import { API_LOGIN_PATH } from '@/apiPaths';
-import { useMainStore } from '@/stores/store';
+import { useMainStore } from '@/modules/core/stores/store';
 import { useMeta } from 'vue-meta';
 
 export default

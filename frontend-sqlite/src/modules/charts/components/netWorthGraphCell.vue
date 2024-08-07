@@ -148,7 +148,7 @@ export default defineComponent(
 
 
 
-// import { useMainStore } from '@/stores/store'
+// import { useMainStore } from '@/modules/core/stores/store'
 // import { DoughnutChart } from 'vue-chart-3';
 // import { Chart, registerables } from "chart.js";
 // Chart.register(...registerables);

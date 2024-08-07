@@ -143,7 +143,7 @@
 </style>
 
 <script lang="ts">
-import { useMainStore } from '@/stores/store';
+import { useMainStore } from '@/modules/core/stores/store';
 import type { RateDefinedCurrency } from '@/types/dtos/currenciesDTO';
 import paginationVue from 'snippets/vite-vue-ts/components/pagination.vue';
 

@@ -1,4 +1,4 @@
-import type { NetWorthAPIResponse } from "@/stores/store";
+import type { NetWorthAPIResponse } from "@/modules/core/stores/store";
 import type { NamedObject, IDObject } from "../interfaces";
 import type { DashboardSummary } from "./dashboardSummaryDTO";
 import type { ValueHydratedContainer } from "./containersDTO";

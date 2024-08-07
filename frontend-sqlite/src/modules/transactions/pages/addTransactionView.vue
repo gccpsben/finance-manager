@@ -130,7 +130,7 @@
 </template>
 
 <script lang="ts">
-import { useMainStore } from "@/stores/store";
+import { useMainStore } from "@/modules/core/stores/store";
 import type { Container } from "@/types/dtos/containersDTO";
 import type { RateDefinedCurrency } from "@/types/dtos/currenciesDTO";
 import type { TxnType } from "@/types/dtos/txnTypesDTO";

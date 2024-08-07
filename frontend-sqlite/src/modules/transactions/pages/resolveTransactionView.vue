@@ -31,7 +31,7 @@
 </template>
 
 <script lang="ts">
-import { useMainStore } from "@/stores/store";
+import { useMainStore } from "@/modules/core/stores/store";
 import type { HydratedTransaction, Transaction } from "@/types/dtos/transactionsDTO";
 import type { TxnType } from "@/types/dtos/txnTypesDTO";
 import { useMeta } from 'vue-meta';

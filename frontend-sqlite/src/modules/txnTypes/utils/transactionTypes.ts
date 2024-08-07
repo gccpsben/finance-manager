@@ -1,4 +1,4 @@
-import type { TransactionTypesDTO } from "../../../api-types/txnType";
+import type { TransactionTypesDTO } from "@/../../api-types/txnType";
 
 export function getTxnTypeNameById(id: string, types: TransactionTypesDTO[])
 {

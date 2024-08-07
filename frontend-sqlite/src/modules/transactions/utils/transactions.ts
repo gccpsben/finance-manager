@@ -1,4 +1,4 @@
-import type { TransactionDTO } from '../../../api-types/txn';
+import type { TransactionDTO } from "@/../../api-types/txn";
 
 export function getTxnClassification(txn:TransactionDTO)
 { 
