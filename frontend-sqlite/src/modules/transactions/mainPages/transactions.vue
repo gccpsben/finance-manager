@@ -23,9 +23,7 @@
                                     {{ uiRangeText }}
                                 </h2>
                             </div>
-                            <fa-icon-btn @click="mainPagination.pageIndex.value--" id="previousArrow" class="optionIcon" :disabled="!mainPagination.hasPreviousPage.value" icon="fa-solid fa-chevron-left"></fa-icon-btn>
-                            <input type="number" size="1" v-int-only v-model.lazy="pageReadable" min="1"> 
-                            <fa-icon-btn @click="mainPagination.pageIndex.value++" id="nextArrow" class="optionIcon" icon="fa-solid fa-chevron-right" :disabled="!mainPagination.hasNextPage.value"></fa-icon-btn>
+                            <numberPagination v-model="mainPagination.pageIndex.value" :min-page-readable="1" :max-page-readable="mainPagination.maxPageIndex.value + 1"></numberPagination>
                         </div>
                     </div>
                     <div class="rel">
@@ -437,6 +435,7 @@ import CustomDropdown from '@/modules/core/components/custom-dropdown.vue';
 import { getTxnTypeNameById } from '@/modules/txnTypes/utils/transactionTypes';
 import { getContainerNameById } from '@/modules/containers/utils/containers';
 import { formatDate } from '@/modules/core/utils/date';
+import numberPagination from '@/modules/core/components/numberPagination.vue';
 
 // #region CONSTANTS:
 const itemsInPage = 15;

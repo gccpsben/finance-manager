@@ -33,6 +33,7 @@ export default function useNetworkPagination<T>
     const isLoading = ref<boolean>(false);
     const viewportLowerBoundIndex = computed(() => { return pageIndex.value * pageSize.value });
     const viewportUpperBoundIndex = computed(() => { return (pageIndex.value + 1) * pageSize.value - 1});
+    const maxPageIndex = computed(() => getMaxPageIndex());
     const hasPreviousPage = computed(() => pageIndex.value > 0);
     const hasNextPage = computed(() => pageIndex.value < getMaxPageIndex());
     const getMaxPageIndex = () => Math.floor((totalItems.value - 1) / pageSize.value);
@@ -76,6 +77,7 @@ export default function useNetworkPagination<T>
         viewportUpperBoundIndex,
         hasNextPage,
         hasPreviousPage,
-        refetch: fetchItems
+        refetch: fetchItems,
+        maxPageIndex
     }
 }
