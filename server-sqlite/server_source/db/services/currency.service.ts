@@ -14,8 +14,14 @@ export class CurrencyCalculator
         return fromRate.dividedBy(toRate);
     }
 
-    public static async currencyToBaseRate(ownerId: string, from: Currency)
+    /** 
+     * Get the rate of `<target_currency>` to `<base_currency>` at the given date using the rates of the currency stored in database. 
+     * #### *if the rates at the given datetime are not available in the database, will use the fallback rate (`Currency.rateToBase`) instead.
+    */
+    public static async currencyToBaseRate(ownerId: string, from: Currency, date: Date = new Date())
     { 
+        if (from.isCurrencyBase()) return new Decimal(`1`);
+
         const fromCurrency = from;
         let currentCurrency = fromCurrency;
         let rate = fromCurrency.amount ? new Decimal(fromCurrency.amount) : new Decimal("1");
@@ -60,6 +66,11 @@ export class CurrencyService
         .getMany();
 
         return results;
+    }
+
+    public static async getCurrencyById(userId:string, currencyId: string)
+    {
+        return await this.getCurrency(userId, { id: currencyId ?? null });
     }
 
     public static async getCurrency(userId: string, where: Omit<FindOptionsWhere<Currency>, 'owner'>)

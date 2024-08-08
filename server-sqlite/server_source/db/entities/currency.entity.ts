@@ -82,6 +82,11 @@ export class Currency extends EntityClass
             throw error;
         }
     }
+
+    public isCurrencyBase()
+    {
+        return this.amount === null || this.amount === undefined;
+    }
 }
 
 export type RateHydratedCurrency = 
