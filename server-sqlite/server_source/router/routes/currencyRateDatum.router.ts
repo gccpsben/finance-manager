@@ -17,6 +17,7 @@ router.post<ResponsePostCurrencyRateDatumDTO>(`/api/v1/currencyRateDatums`,
         {
             @IsDecimalJSString() amount: string;
             @IsString() refCurrencyId: string;
+            @IsString() refAmountCurrencyId: string;
             @IsUTCDateInt() date: number;
         }
 
@@ -28,6 +29,8 @@ router.post<ResponsePostCurrencyRateDatumDTO>(`/api/v1/currencyRateDatums`,
             authResult.ownerUserId,
             parsedBody.amount,
             parsedBody.date,
+            parsedBody.refCurrencyId,
+            parsedBody.refAmountCurrencyId
         );
         return { id: newRateDatum.id };
     }

@@ -9,6 +9,8 @@ export class CurrencyRateDatumService
         userId: string,
         amount: string,
         date: number,
+        currencyId: string,
+        amountCurrencyId: string
     )
     {
         const newRate = CurrencyRateDatumRepository.getInstance().create();
@@ -16,6 +18,7 @@ export class CurrencyRateDatumService
         newRate.date = date;
         newRate.owner = await UserService.getUserById(userId);
         newRate.refCurrency = await CurrencyService.getCurrency(userId, { id: currencyId });
+        newRate.refAmountCurrency = await CurrencyService.getCurrency(userId, { id: amountCurrencyId })
         return CurrencyRateDatumRepository.getInstance().save(newRate);
     }
 

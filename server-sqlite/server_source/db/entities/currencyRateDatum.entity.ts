@@ -1,4 +1,4 @@
-import { Entity, PrimaryGeneratedColumn, Column, JoinColumn, Unique } from "typeorm";
+import { Entity, PrimaryGeneratedColumn, Column, JoinColumn, Unique, Check } from "typeorm";
 import "reflect-metadata"
 import { ManyToOne } from "typeorm";
 import { User } from "./user.entity.js";
@@ -7,7 +7,8 @@ import { EnsureNotPlainForeignKey, IsDecimalJSString, IsUTCDateInt } from "../va
 import { Currency } from "./currency.entity.js";
 
 @Entity() 
-@Unique("UniqueRateDateWithinUser",["date", "owner"])
+@Unique("UniqueRateDateWithinUser", ["date", "owner"])
+@Check(/*sql*/`refCurrencyId is NOT refAmountCurrencyId`) // This datum may not use itself as the unit of rate.
 export class CurrencyRateDatum extends EntityClass
 {
     @PrimaryGeneratedColumn('uuid')
