@@ -2,13 +2,12 @@ import { DataSource } from "typeorm";
 import { User } from "./entities/user.entity.js";
 import { AccessToken } from "./entities/accessToken.entity.js";
 import { EnvManager } from "../env.js";
-import { UserRepository } from "./repositories/user.repository.js";
-import { AccessTokenRepository } from "./repositories/accessToken.repository.js";
 import { ExtendedLog } from "../logging/extendedLog.js";
 import { Currency } from "./entities/currency.entity.js";
 import { Container } from "./entities/container.entity.js";
 import { Transaction } from "./entities/transaction.entity.js";
 import { TransactionType } from "./entities/transactionType.entity.js";
+import { CurrencyRateDatum } from "./entities/currencyRateDatum.entity.js";
 
 export class Database
 {
@@ -23,7 +22,7 @@ export class Database
         Database.AppDataSource = new DataSource(
         {
             type: "sqlite",
-            entities: [User, AccessToken, Currency, Container, Transaction, TransactionType],
+            entities: [User, AccessToken, Currency, Container, Transaction, TransactionType, CurrencyRateDatum],
             database: EnvManager.sqliteInMemory ? ":memory:" : EnvManager.sqliteFilePath, 
             synchronize: true
         }); 

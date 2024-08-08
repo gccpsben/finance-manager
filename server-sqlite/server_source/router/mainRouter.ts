@@ -8,6 +8,7 @@ import containerRouter from './routes/container.router.js';
 import transactionTypesRouter from './routes/transactionType.router.js';
 import transactionsRouter from './routes/transaction.router.js';
 import calculationsRouter from './routes/calculations.router.js';
+import currencyRateDatumRouter from './routes/currencyRateDatum.router.js';
 
 export function getMainRouter()
 {
@@ -24,6 +25,7 @@ export function getMainRouter()
     router.use("/", transactionTypesRouter);
     router.use("/", transactionsRouter);
     router.use("/", calculationsRouter);
+    router.use("/", currencyRateDatumRouter);
     router.use(express.static(EnvManager.distFolderLocation));
 
     return router;
