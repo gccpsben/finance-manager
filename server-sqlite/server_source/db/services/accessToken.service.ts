@@ -5,6 +5,7 @@ import { AccessToken } from '../entities/accessToken.entity.js';
 import * as express from 'express';
 import createHttpError from "http-errors";
 import { UserRepository } from "../repositories/user.repository.js";
+import { SQLitePrimitiveOnly } from "../../index.d.js";
 
 export class AccessTokenService
 {
@@ -52,10 +53,11 @@ export class AccessTokenService
                 expiryDate: incompleteRow.expiryDate,
                 creationDate: incompleteRow.creationDate,
                 token: incompleteRow.token
-            } satisfies Partial<AccessToken>
+            } satisfies SQLitePrimitiveOnly<AccessToken>
         });
     }
 
+    /** Ensure an express request object has proper token in its header. If not, throw and return unauthorized error. */
     public static async ensureRequestTokenValidated(request: express.Request)
     {
         const authorizationHeader = request.headers["authorization"];
@@ -66,10 +68,8 @@ export class AccessTokenService
 
     public static async deleteTokensOfUser(userId: string)
     {
-        const result = await AccessTokenRepository.getInstance().delete(
-        { 
-            owner: <any>userId 
-        });
+        const result = await AccessTokenRepository.getInstance()
+        .delete({ owner: { id: userId ?? null } });
         return result;
     }
 }
