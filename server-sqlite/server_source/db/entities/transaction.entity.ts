@@ -1,10 +1,10 @@
-import { Entity, PrimaryGeneratedColumn, Column, BeforeInsert, BeforeUpdate, OneToOne, ManyToOne, JoinColumn, Check, Index } from "typeorm";
+import { Entity, PrimaryGeneratedColumn, Column, BeforeInsert, BeforeUpdate, ManyToOne, JoinColumn, Check, Index } from "typeorm";
 import "reflect-metadata"
-import { IsDate, IsNotEmpty, IsOptional, IsString, MaxLength, validate } from "class-validator";
+import { IsNotEmpty, IsOptional, IsString, MaxLength } from "class-validator";
 import { EntityClass } from "../dbEntityBase.js";
 import { Currency } from "./currency.entity.js";
 import { Container } from "./container.entity.js";
-import { EnsureNotPlainForeignKey, IsDecimalJSString } from "../validators.js";
+import { EnsureNotPlainForeignKey, IsDecimalJSString, IsUTCDateInt } from "../validators.js";
 import { User } from "./user.entity.js";
 import { TransactionType } from "./transactionType.entity.js";
 
@@ -59,9 +59,9 @@ export class Transaction extends EntityClass
     @EnsureNotPlainForeignKey()  
     owner: User;
 
-    @Column({ nullable: false })
-    @IsDate()
-    creationDate: Date;
+    @Column({ type: "int", nullable: false })
+    @IsUTCDateInt()
+    creationDate: number;
 
     @Column( { nullable: false } )
     txnTypeId: string;

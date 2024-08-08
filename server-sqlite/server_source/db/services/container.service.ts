@@ -33,7 +33,7 @@ export class ContainerService
         }
     }
 
-    public static async createContainer(ownerId: string, name: string, creationDate: Date = new Date())
+    public static async createContainer(ownerId: string, name: string, creationDate: number = Date.now())
     {
         const containerWithSameName = await ContainerService.tryGetContainerByName(ownerId, name);
         if (containerWithSameName.containerFound)

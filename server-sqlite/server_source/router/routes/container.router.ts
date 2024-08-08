@@ -49,7 +49,7 @@ router.get<ResponseGetContainerDTO>(`/api/v1/containers`,
             startingIndex: response.startingIndex,
             rangeItems: response.rangeItems.map(item => (
             {
-                creationDate: item.creationDate.toISOString(),
+                creationDate: item.creationDate,
                 id: item.id,
                 name: item.name,
                 owner: item.ownerId

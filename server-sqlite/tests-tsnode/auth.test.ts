@@ -5,6 +5,7 @@ import { HTTPAssert } from './lib/assert.js';
 import { Context } from "./lib/context.js";
 import { ResponsePostUserDTO } from "../../api-types/user.js";
 import { ResponsePostLoginDTO } from "../../api-types/auth.js";
+import { IsUTCDateInt } from "../server_source/db/validators.js";
 
 export class ResponsePostUserDTOBody implements ResponsePostUserDTO
 { 
@@ -14,8 +15,8 @@ export class ResponsePostUserDTOBody implements ResponsePostUserDTO
 export class ResponsePostLoginDTOBody implements ResponsePostLoginDTO
 {
     @IsString() token: string;
-    @IsDateString() creationDate: string;
-    @IsDateString() expiryDate: string;
+    @IsUTCDateInt() creationDate: number;
+    @IsUTCDateInt() expiryDate: number;
     @IsString() owner: string;
 }
 

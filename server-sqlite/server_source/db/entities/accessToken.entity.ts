@@ -4,7 +4,7 @@ import { ManyToOne } from "typeorm";
 import { User } from "./user.entity.js";
 import { IsDate, validate } from "class-validator";
 import { EntityClass } from "../dbEntityBase.js";
-import { EnsureNotPlainForeignKey } from "../validators.js";
+import { EnsureNotPlainForeignKey, IsUTCDateInt } from "../validators.js";
 
 @Entity()
 export class AccessToken extends EntityClass
@@ -12,13 +12,13 @@ export class AccessToken extends EntityClass
     @PrimaryColumn({nullable: false})
     token: string;
 
-    @Column({nullable:false})
-    @IsDate()
-    creationDate: Date;
+    @Column({type: "int", nullable:false})
+    @IsUTCDateInt()
+    creationDate: number;
 
-    @Column({nullable:false})
-    @IsDate()
-    expiryDate: Date;
+    @Column({type: "int", nullable:false})
+    @IsUTCDateInt()
+    expiryDate: number;
 
     @ManyToOne(type => User, user => user.accessTokens, { nullable: false })
     @EnsureNotPlainForeignKey() 

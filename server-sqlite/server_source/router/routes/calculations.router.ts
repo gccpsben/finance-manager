@@ -1,4 +1,4 @@
-import express, { NextFunction } from 'express';
+import express from 'express';
 import { AccessTokenService } from '../../db/services/accessToken.service.js';
 import { Decimal } from 'decimal.js';
 import { CurrencyCalculator, CurrencyService } from '../../db/services/currency.service.js';

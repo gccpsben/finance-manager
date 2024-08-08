@@ -1,11 +1,9 @@
-import { Entity, PrimaryGeneratedColumn, Column, BeforeInsert, BeforeUpdate, PrimaryColumn, OneToOne, JoinColumn, Check, Unique, Index, AfterLoad, EntitySubscriberInterface, EventSubscriber, InsertEvent } from "typeorm";
+import { Entity, PrimaryGeneratedColumn, Column, JoinColumn, Unique } from "typeorm";
 import "reflect-metadata"
 import { ManyToOne } from "typeorm";
 import { User } from "./user.entity.js";
-import { IsBoolean, IsDate, IsNotEmpty, isNumber, IsObject, IsOptional, IsString, MaxLength, validate, ValidationError } from "class-validator";
 import { EntityClass } from "../dbEntityBase.js";
-import { CurrencyRepository } from "../repositories/currency.repository.js";
-import { EnsureNotPlainForeignKey, IsDecimalJSString } from "../validators.js";
+import { EnsureNotPlainForeignKey, IsDecimalJSString, IsUTCDateInt } from "../validators.js";
 import { Currency } from "./currency.entity.js";
 
 @Entity() 
@@ -19,10 +17,21 @@ export class CurrencyRateDatum extends EntityClass
     @IsDecimalJSString()
     amount: string;
 
+    @Column( { nullable: false })
+    refCurrencyId: string;
+
     @ManyToOne(type => Currency, currency => currency.refCurrency, { nullable: false })
     @JoinColumn()
     @EnsureNotPlainForeignKey() 
     refCurrency: Currency;
+
+    @Column( { nullable: false })
+    refAmountCurrencyId: string;
+
+    @ManyToOne(type => Currency, currency => currency.refCurrency, { nullable: false })
+    @JoinColumn()
+    @EnsureNotPlainForeignKey() 
+    refAmountCurrency: Currency;
 
     @Column( { nullable: false })
     ownerId: string;
@@ -32,7 +41,7 @@ export class CurrencyRateDatum extends EntityClass
     @EnsureNotPlainForeignKey() 
     owner: User;
 
-    @Column({ nullable: false })
-    @IsDate()
-    date: Date;
+    @Column({ type: "int", nullable: false })
+    @IsUTCDateInt()
+    date: number;
 }

@@ -2,7 +2,7 @@ import { Check, Column, Entity, JoinColumn, ManyToOne, PrimaryGeneratedColumn, U
 import { EntityClass } from "../dbEntityBase.js";
 import { IsDate, IsNotEmpty, IsNumber, IsString, MaxLength } from "class-validator";
 import { User } from "./user.entity.js";
-import { EnsureNotPlainForeignKey } from "../validators.js";
+import { EnsureNotPlainForeignKey, IsUTCDateInt } from "../validators.js";
 
 @Entity()
 @Unique("UniqueContainerNameWithinUser",["name", "owner"]) // For each user, no containers with the same name is allowed
@@ -17,9 +17,9 @@ export class Container extends EntityClass
     @IsString()
     name: string;
 
-    @Column({ nullable: false })
-    @IsDate()
-    creationDate: Date;
+    @Column({ type: "int", nullable: false })
+    @IsUTCDateInt()
+    creationDate: number;
 
     @Column( { nullable: false })
     ownerId: string;

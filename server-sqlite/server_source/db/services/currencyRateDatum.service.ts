@@ -8,8 +8,7 @@ export class CurrencyRateDatumService
     (
         userId: string,
         amount: string,
-        date: Date,
-        currencyId: string
+        date: number,
     )
     {
         const newRate = CurrencyRateDatumRepository.getInstance().create();

@@ -3,7 +3,7 @@ import express, { NextFunction } from 'express';
 import { AccessTokenService } from '../../db/services/accessToken.service.js';
 import { TransactionService } from '../../db/services/transaction.service.js';
 import { ExpressValidations } from '../validation.js';
-import { IsDecimalJSString } from '../../db/validators.js';
+import { IsDecimalJSString, IsUTCDateInt } from '../../db/validators.js';
 import { Transaction } from '../../db/entities/transaction.entity.js';
 import { OptionalPaginationAPIQueryRequest, PaginationAPIResponseClass } from '../logics/pagination.js';
 import type { PostTransactionDTO, ResponseGetTransactionsDTO, ResponsePostTransactionDTO } from '../../../../api-types/txn.js';
@@ -19,7 +19,7 @@ router.post<ResponsePostTransactionDTO>("/api/v1/transactions",
         class body implements PostTransactionDTO
         { 
             @IsString() @IsNotEmpty() title: string; 
-            @IsOptional() @IsDateString() creationDate?: string | undefined;
+            @IsOptional() @IsUTCDateInt() creationDate?: number | undefined;
             @IsOptional() @IsString() description?: string | undefined;
             @IsString() @IsNotEmpty() typeId: string;
             @IsOptional() @IsDecimalJSString() fromAmount: string | undefined;
@@ -34,7 +34,7 @@ router.post<ResponsePostTransactionDTO>("/api/v1/transactions",
         const parsedBody = await ExpressValidations.validateBodyAgainstModel<body>(body, req.body);
         const transactionCreated = await TransactionService.createTransaction(authResult.ownerUserId, 
         {
-            creationDate: parsedBody.creationDate ? new Date(parsedBody.creationDate) : new Date(),
+            creationDate: parsedBody.creationDate ? parsedBody.creationDate : Date.now(),
             title: parsedBody.title,
             description: parsedBody.description,
             typeId: parsedBody.typeId,
@@ -92,7 +92,7 @@ router.get<ResponseGetTransactionsDTO>(`/api/v1/transactions`,
                 title: item.title,
                 description: item.description,
                 owner: item.ownerId,
-                creationDate: item.creationDate.toISOString(),
+                creationDate: item.creationDate,
                 txnType: item.txnTypeId,
                 fromAmount: item.fromAmount,
                 fromCurrency: item.fromCurrencyId,

@@ -25,8 +25,8 @@ router.post<ResponsePostLoginDTO>("/api/v1/auth/login",
         const newToken = await AccessTokenService.generateTokenForUser(authResult.userId);
         return {
             token: newToken.token,
-            creationDate: newToken.creationDate.toISOString(),
-            expiryDate: newToken.expiryDate.toISOString(),
+            creationDate: newToken.creationDate,
+            expiryDate: newToken.expiryDate,
             owner: newToken.owner.id
         }
     }   

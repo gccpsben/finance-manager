@@ -91,7 +91,7 @@ export default async function(this: Context)
                         body: 
                         { 
                             title: randomUUID(),
-                            creationDate: new Date(Date.now() - txnToPost.txnAgeDays * 8.64e+7).toISOString(),
+                            creationDate: Date.now() - txnToPost.txnAgeDays * 8.64e+7,
                             description: simpleFaker.string.sample(100),
                             fromAmount: isFrom ? txnToPost.fromAmount.toString() : undefined, 
                             fromContainerId: isFrom ? choice(containers).containerId : undefined,

@@ -15,8 +15,8 @@ export class AccessTokenService
         const newToken = AccessTokenRepository.getInstance().create();
         newToken.token = randomUUID();
         newToken.owner = await UserRepository.getInstance().findOne({where: {id: userId}});
-        newToken.creationDate = new Date();
-        newToken.expiryDate = new Date(newToken.creationDate.getTime() + EnvManager.tokenExpiryMs);
+        newToken.creationDate = Date.now();
+        newToken.expiryDate = newToken.creationDate + EnvManager.tokenExpiryMs;
         await AccessTokenRepository.getInstance().save(newToken);
         return newToken;
     }
@@ -26,7 +26,7 @@ export class AccessTokenService
     {
         const tokenInDatabase = await AccessTokenRepository.getInstance().findOne({ where: { token: tokenRaw }, relations: { owner: true } });
         if (!tokenRaw || tokenInDatabase === null) return { isTokenValid: false, tokenFound: false, ownerUserId: undefined };
-        if (new Date().getTime() >= tokenInDatabase.expiryDate.getTime())
+        if (Date.now() >= tokenInDatabase.expiryDate)
         {
             await AccessTokenRepository.getInstance().delete({ token: tokenInDatabase.token });
             return {

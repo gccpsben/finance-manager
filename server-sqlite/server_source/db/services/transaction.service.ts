@@ -19,7 +19,7 @@ export class TransactionService
         obj: 
         {
             title: string,
-            creationDate: Date,
+            creationDate: number,
             description: string,
             fromAmount?: string,
             fromContainerId?: string,

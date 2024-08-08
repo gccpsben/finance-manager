@@ -4,7 +4,7 @@ import { Context } from "./lib/context.js";
 import { BodyGenerator } from "./lib/bodyGenerator.js";
 import { HookShortcuts } from "./shortcuts/hookShortcuts.js";
 import { IsString, IsNotEmpty, IsOptional, IsDateString } from "class-validator";
-import { IsDecimalJSString } from "../server_source/db/validators.js";
+import { IsDecimalJSString, IsUTCDateInt } from "../server_source/db/validators.js";
 import { simpleFaker } from "@faker-js/faker";
 import { PostTransactionDTO, ResponsePostTransactionDTO } from "../../api-types/txn.js";
 import { ResponsePostTransactionTypesDTOBody } from "./txnType.test.js";
@@ -14,7 +14,7 @@ import { ResponsePostContainerDTOBody } from "./container.test.js";
 export class PostTransactionDTOBody implements PostTransactionDTO
 { 
     @IsString() @IsNotEmpty() title: string; 
-    @IsOptional() @IsDateString() creationDate?: string | undefined;
+    @IsOptional() @IsUTCDateInt() creationDate?: number | undefined;
     @IsOptional() @IsString() description?: string | undefined;
     @IsString() typeId: string;
     @IsOptional() @IsDecimalJSString() fromAmount?: string | undefined;
@@ -39,7 +39,7 @@ function getRandTxnBaseBody()
 {
     return {
         title: simpleFaker.string.sample(),
-        creationDate: simpleFaker.date.anytime().toISOString(),
+        creationDate: simpleFaker.date.anytime().getTime(),
         description: simpleFaker.string.sample(),
     };
 }

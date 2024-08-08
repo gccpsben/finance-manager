@@ -17,7 +17,7 @@ router.post<ResponsePostCurrencyRateDatumDTO>(`/api/v1/currencyRateDatums`,
         {
             @IsDecimalJSString() amount: string;
             @IsString() refCurrencyId: string;
-            @IsDateString() date: string;
+            @IsUTCDateInt() date: number;
         }
 
         const authResult = await AccessTokenService.ensureRequestTokenValidated(req);
@@ -27,8 +27,7 @@ router.post<ResponsePostCurrencyRateDatumDTO>(`/api/v1/currencyRateDatums`,
         (
             authResult.ownerUserId,
             parsedBody.amount,
-            new Date(parsedBody.date),
-            parsedBody.refCurrencyId
+            parsedBody.date,
         );
         return { id: newRateDatum.id };
     }

@@ -38,7 +38,7 @@ export class CalculationsService
     
             currencyBaseValueMapping = newCurrencyBaseValueMapping;
             const isValueDecreased = increaseInValue.lessThanOrEqualTo(new Decimal('0'));
-            const txnAgeMs = now - txn.creationDate.getTime();
+            const txnAgeMs = now - txn.creationDate;
             const txnIs30d = txnAgeMs <= 2.592e+9;
             const txnIs7d = txnAgeMs <= 6.048e+8;
     
