@@ -2,12 +2,13 @@ import { Decimal } from "decimal.js";
 import { CurrencyRepository } from "../repositories/currency.repository.js";
 import { UserRepository } from "../repositories/user.repository.js";
 import createHttpError from "http-errors";
-import { Currency, RateHydratedCurrency } from "../entities/currency.entity.js";
+import { Currency, RateHydratedPrimitiveCurrency } from "../entities/currency.entity.js";
 import { FindOptionsWhere } from "typeorm";
 import { CurrencyRateDatumRepository } from "../repositories/currencyRateDatum.repository.js";
 import { LinearInterpolator } from "../../calculations/linearInterpolator.js";
 import { SQLitePrimitiveOnly } from "../../index.d.js";
 import { MutableDataCache } from "../dataCache.js";
+import { ServiceUtils } from "../servicesUtils.js";
 
 export class CurrencyCalculator
 {
@@ -172,7 +173,7 @@ export class CurrencyService
         });
     }
 
-    public static async getUserCurrencies(userId: string)
+    public static async getUserAllCurrencies(userId: string)
     {
         const user = await UserRepository.getInstance().findOne({where: { id: userId ?? null }});
         if (!user) throw createHttpError(404, `Cannot find user with id '${userId}'`);
@@ -183,6 +184,31 @@ export class CurrencyService
         .getMany();
 
         return results;
+    }
+
+    public static async getManyCurrencies
+    ( 
+        ownerId: string, 
+        query: 
+        {
+            startIndex?: number | undefined, endIndex?: number | undefined,
+            name?: string | undefined, id?: string | undefined
+        }
+    ): Promise<{ totalCount: number, rangeItems: SQLitePrimitiveOnly<Currency>[] }>
+    {
+        let dbQuery = CurrencyRepository.getInstance()
+        .createQueryBuilder(`curr`)
+        .where("ownerId = :ownerId", { ownerId: ownerId ?? null });
+
+        if (query.name) dbQuery = dbQuery.andWhere("name = :name", { name: query.name ?? null })
+        if (query.id) dbQuery = dbQuery.andWhere("id = :id", { id: query.id ?? null })
+        dbQuery = ServiceUtils.paginateQuery(dbQuery, query);
+
+        const queryResult = await dbQuery.getManyAndCount();
+        return {
+            totalCount: queryResult[1],
+            rangeItems: queryResult[0]
+        }
     }
 
     public static async getCurrencyById(userId:string, currencyId: string)
@@ -236,12 +262,13 @@ export class CurrencyService
         return newCurrency;
     }
 
-    public static async rateHydrateCurrency(userId:string, currency: Currency[], date: number | undefined): Promise<RateHydratedCurrency[]>
-    public static async rateHydrateCurrency(userId:string, currency: Currency, date: number | undefined): Promise<RateHydratedCurrency>
-    public static async rateHydrateCurrency(userId:string, currencies: Currency[] | Currency, date: number | undefined = undefined): Promise<RateHydratedCurrency | RateHydratedCurrency[]>
+    public static async rateHydrateCurrency(userId:string, currency: SQLitePrimitiveOnly<Currency>[], date: number | undefined): Promise<RateHydratedPrimitiveCurrency[]>
+    public static async rateHydrateCurrency(userId:string, currency: SQLitePrimitiveOnly<Currency>, date: number | undefined): Promise<RateHydratedPrimitiveCurrency>
+    public static async rateHydrateCurrency(userId:string, currencies: SQLitePrimitiveOnly<Currency>[] | SQLitePrimitiveOnly<Currency>, date: number | undefined = undefined)
+        : Promise<RateHydratedPrimitiveCurrency | RateHydratedPrimitiveCurrency[]>
     {
-        type outputType = { currency: Currency, rateToBase: string };
-        const getRateToBase = async (c: Currency) => (await CurrencyCalculator.currencyToBaseRate(userId, c, new Date(date))).toString();
+        type outputType = { currency: SQLitePrimitiveOnly<Currency>, rateToBase: string };
+        const getRateToBase = async (c: SQLitePrimitiveOnly<Currency>) => (await CurrencyCalculator.currencyToBaseRate(userId, c, new Date(date))).toString();
 
         if (Array.isArray(currencies))
         {

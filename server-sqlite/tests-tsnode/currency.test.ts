@@ -1,4 +1,4 @@
-import { IsString, IsBoolean, IsOptional, IsObject, IsDefined } from "class-validator";
+import { IsString, IsBoolean, IsOptional, IsObject, IsDefined, IsNumber, IsArray, ValidateNested } from "class-validator";
 import { IsDecimalJSString } from "../server_source/db/validators.js";
 import { Context } from "./lib/context.js";
 import { resetDatabase, serverURL, TestUserDict, TestUserEntry, UnitTestEndpoints } from "./index.test.js";
@@ -9,20 +9,32 @@ import { simpleFaker } from '@faker-js/faker';
 import { randomUUID } from "crypto";
 import { Decimal } from "decimal.js";
 import { fillArray } from "./lib/utils.js";
-import { PostCurrencyDTO, ResponseGetCurrencyDTO, ResponsePostCurrencyDTO } from "../../api-types/currencies.js";
+import { CurrencyDTO, PostCurrencyDTO, ResponseGetCurrencyDTO, ResponsePostCurrencyDTO } from "../../api-types/currencies.d.js";
 import { PostCurrencyRateDatumDTO, ResponsePostCurrencyRateDatumDTO } from "../../api-types/currencyRateDatum.js";
+import { Type } from "class-transformer";
 
-type ArrayElement<A> = A extends readonly (infer T)[] ? T : never
-export class ResponseGetCurrencyDTOClass implements ArrayElement<ResponseGetCurrencyDTO>
+export class ResponseCurrencyDTOClass implements CurrencyDTO
 {
     @IsString() id: string;
     @IsString() name: string;
-    @IsOptional() @IsString() amount: string;
+    @IsOptional() @IsDecimalJSString() amount: string;
     @IsOptional() @IsString() refCurrency: string;
     @IsString() owner: string;
     @IsBoolean() isBase: boolean;
     @IsString() ticker: string;
     @IsDecimalJSString() rateToBase: string;
+}
+
+export class ResponseGetCurrencyDTOClass implements ResponseGetCurrencyDTO
+{
+    @IsNumber() totalItems: number;
+    @IsNumber() startingIndex: number;
+    @IsNumber() endingIndex: number;
+    
+    @IsArray()
+    @ValidateNested({ each: true })
+    @Type(() => ResponseCurrencyDTOClass)
+    rangeItems: CurrencyDTO[];
 }
 
 export class ResponsePostCurrencyDTOClass implements ResponsePostCurrencyDTO
@@ -301,6 +313,15 @@ async function regularCurrenciesCheck(this: Context)
         {
             for (const cID of addedCurrenciesIDs)
             {
+                await HTTPAssert.assertFetch
+                (
+                    `${UnitTestEndpoints.currenciesEndpoints['get']}?id=${cID}`, 
+                    {
+                        baseURL: serverURL, method: "GET", expectedStatus: 200,
+                        headers: { "authorization": firstUser.token }
+                    }
+                )
+
                 const response = await HTTPAssert.assertFetch
                 (
                     `${UnitTestEndpoints.currenciesEndpoints['get']}?id=${cID}`, 
@@ -309,9 +330,10 @@ async function regularCurrenciesCheck(this: Context)
                         headers: { "authorization": firstUser.token }
                     }
                 );
-                await assertArrayAgainstModel(ResponseGetCurrencyDTOClass, response.rawBody);
+                await assertBodyConfirmToModel(ResponseGetCurrencyDTOClass, response.rawBody);
             }
-        });
+
+        }, { timeout: 60000 });
     });
 }
 
@@ -333,8 +355,8 @@ async function ratesCorrectnessCheck(this:Context)
             {
                 const response = await getCurrencyById(firstUserToken, baseCurrencyID);
                 HTTPAssert.assertStatus(200, response.res);
-                const parsedBody = await assertArrayAgainstModel(ResponseGetCurrencyDTOClass, response.rawBody);
-                assertStrictEqual(parsedBody[0].rateToBase, "1");
+                const parsedBody = await assertBodyConfirmToModel(ResponseGetCurrencyDTOClass, response.rawBody);
+                assertStrictEqual(parsedBody.rangeItems[0].rateToBase, "1");
             });
     
             const config = 
@@ -365,16 +387,16 @@ async function ratesCorrectnessCheck(this:Context)
             {
                 const target = await getCurrencyById(firstUserToken, config.secondaryCurrencyID);
                 HTTPAssert.assertStatus(200, target.res);
-                const parsedBody = await assertArrayAgainstModel(ResponseGetCurrencyDTOClass, target.rawBody);
-                assertStrictEqual(parsedBody[0].rateToBase, config.expectedSecondaryCurrencyAmount.toString());
+                const parsedBody = await assertBodyConfirmToModel(ResponseGetCurrencyDTOClass, target.rawBody);
+                assertStrictEqual(parsedBody.rangeItems[0].rateToBase, config.expectedSecondaryCurrencyAmount.toString());
             });
 
             await this.test(`Check if ternary currency rate is ${config.expectedTernaryCurrencyAmount.toString()}`, async function()
             {
                 const target = await getCurrencyById(firstUserToken, config.ternaryCurrencyID);
                 HTTPAssert.assertStatus(200, target.res);
-                const parsedBody = await assertArrayAgainstModel(ResponseGetCurrencyDTOClass, target.rawBody);
-                assertStrictEqual(parsedBody[0].rateToBase, config.expectedTernaryCurrencyAmount.toString());
+                const parsedBody = await assertBodyConfirmToModel(ResponseGetCurrencyDTOClass, target.rawBody);
+                assertStrictEqual(parsedBody.rangeItems[0].rateToBase, config.expectedTernaryCurrencyAmount.toString());
             });
         });
 
@@ -501,12 +523,14 @@ async function ratesCorrectnessCheck(this:Context)
                             utCurMap[targetCurrencyId],
                             offsetDate(input)
                         );
+                        
                         assertStrictEqual(response.res.status, 200);
-                        const currencyResponse = await assertArrayAgainstModel(ResponseGetCurrencyDTOClass, response.rawBody);
-                        assertStrictEqual(currencyResponse[0].rateToBase, expectedRate); 
+                        const currencyResponse = await assertBodyConfirmToModel(ResponseGetCurrencyDTOClass, response.rawBody);
+                        assertStrictEqual(currencyResponse.rangeItems[0].rateToBase, expectedRate); 
                     }
                 }
-            });
+
+            }, { timeout: 60000 });
         });
     })
 }

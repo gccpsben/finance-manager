@@ -33,7 +33,7 @@ export class MutableDataCache
     public async ensureCurrenciesList() 
     {  
         if (this._currenciesList !== undefined) return;
-        this.setCurrenciesList(await CurrencyService.getUserCurrencies(this._getOwnerId())); 
+        this.setCurrenciesList(await CurrencyService.getUserAllCurrencies(this._getOwnerId())); 
     }
     public setCurrenciesList(list: SQLitePrimitiveOnly<Currency>[]) 
     { 

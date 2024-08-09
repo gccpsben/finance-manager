@@ -6,6 +6,7 @@ import { IsBoolean, IsDate, IsNotEmpty, isNumber, IsObject, IsOptional, IsString
 import { EntityClass } from "../dbEntityBase.js";
 import { CurrencyRepository } from "../repositories/currency.repository.js";
 import { EnsureNotPlainForeignKey, IsDecimalJSString } from "../validators.js";
+import { SQLitePrimitiveOnly } from "../../index.d.js";
 
 @Entity() 
 @Unique("UniqueCurrencyNameWithinUser",["name", "owner"]) // For each user, no currencies with the same name is allowed
@@ -98,5 +99,11 @@ export class Currency extends EntityClass
 export type RateHydratedCurrency = 
 {
     currency: Currency,
+    rateToBase: string
+};
+
+export type RateHydratedPrimitiveCurrency = 
+{
+    currency: SQLitePrimitiveOnly<Currency>,
     rateToBase: string
 };

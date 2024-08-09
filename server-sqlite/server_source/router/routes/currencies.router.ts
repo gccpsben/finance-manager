@@ -9,6 +9,7 @@ import createHttpError from 'http-errors';
 import { RateHydratedCurrency } from '../../db/entities/currency.entity.js';
 import type { PostCurrencyDTO, ResponseGetCurrencyDTO, ResponsePostCurrencyDTO } from "../../../../api-types/currencies.js";
 import { TypesafeRouter } from '../typescriptRouter.js';
+import { OptionalPaginationAPIQueryRequest, PaginationAPIResponseClass } from '../logics/pagination.js';
 
 const router = new TypesafeRouter(express.Router());
 
@@ -42,7 +43,7 @@ router.get<ResponseGetCurrencyDTO>(`/api/v1/currencies`,
 {
     handler: async (req: express.Request, res: express.Response) => 
     {
-        class query
+        class query extends OptionalPaginationAPIQueryRequest
         {
             @IsOptional() @IsString() name: string; 
             @IsOptional() @IsString() id: string;
@@ -61,30 +62,57 @@ router.get<ResponseGetCurrencyDTO>(`/api/v1/currencies`,
             refCurrency: curr.currency.refCurrency?.id,
             ticker: curr.currency.ticker
         });
+
         const authResult = await AccessTokenService.ensureRequestTokenValidated(req);
-        const parsedBody = await ExpressValidations.validateBodyAgainstModel<query>(query, req.query);
-        const requestedRateDate = parsedBody.date === undefined ? Date.now() : parseInt(parsedBody.date);
-        
-        if (parsedBody.id && parsedBody.name) 
+
+        const parsedQuery = await ExpressValidations.validateBodyAgainstModel<query>(query, req.query);
+
+        if (parsedQuery.id && parsedQuery.name) 
             throw createHttpError(400, `Name and ID cannot be both provided at the same time.`);
+
+        const userQuery = 
+        {
+            start: parsedQuery.start ? parseInt(parsedQuery.start) : undefined,
+            end: parsedQuery.end ? parseInt(parsedQuery.end) : undefined,
+            name: parsedQuery.name,
+            id: parsedQuery.id,
+            requestedRateDate: parsedQuery.date === undefined ? Date.now() : parseInt(parsedQuery.date)
+        };
     
-        // Return all currencies if no query is given
-        if (!parsedBody.id && !parsedBody.name)
-        {
-            let userCurrencies = await CurrencyService.getUserCurrencies(authResult.ownerUserId);
-            let output: Partial<RateHydratedCurrency>[] = [];
-            for (const currency of userCurrencies)
-                output.push(await CurrencyService.rateHydrateCurrency(authResult.ownerUserId, currency, requestedRateDate));
-            return output.map(domainToDTO);
-        }
-        else
-        {
-            const currencyFound = await CurrencyService.getCurrency(authResult.ownerUserId, {
-                name: parsedBody.name,
-                id: parsedBody.id
-            });
-            const hydratedCurrency: RateHydratedCurrency = await CurrencyService.rateHydrateCurrency(authResult.ownerUserId, currencyFound, requestedRateDate);
-            return [domainToDTO(hydratedCurrency)];
+        const sqlPrimitiveCurrencies = await PaginationAPIResponseClass.prepareFromQueryItems
+        (
+            await CurrencyService.getManyCurrencies(authResult.ownerUserId, 
+            {
+                startIndex: userQuery.start,
+                endIndex: userQuery.end,
+                id: userQuery.id,
+                name: userQuery.name
+            }),
+            userQuery.start
+        );
+
+        return {
+            ...sqlPrimitiveCurrencies,
+            rangeItems: await (async () => 
+            {
+                const rateHydratedCurrencies = await CurrencyService.rateHydrateCurrency
+                (
+                    authResult.ownerUserId, 
+                    sqlPrimitiveCurrencies.rangeItems,
+                    userQuery.requestedRateDate
+                );
+                return rateHydratedCurrencies.map(c => (
+                {
+                    amount: c.currency.amount,
+                    id: c.currency.id,
+                    isBase: c.currency.isBase,
+                    name: c.currency.name,
+                    owner: c.currency.ownerId,
+                    rateToBase: c.rateToBase,
+                    refCurrency: c.currency.refCurrencyId,
+                    ticker: c.currency.ticker
+                }));
+            })()
         }
     }
 });
