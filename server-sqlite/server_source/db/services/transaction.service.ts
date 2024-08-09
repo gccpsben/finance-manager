@@ -159,4 +159,16 @@ export class TransactionService
             rangeItems: queryResult[0],
         };
     }
+
+    public static async getUserEarliestTransaction(userId: string): Promise<SQLitePrimitiveOnly<Transaction> | undefined>
+    {
+        let query = await TransactionRepository.getInstance()
+        .createQueryBuilder(`txn`)
+        .where("ownerId = :ownerId", { ownerId: userId ?? null })
+        .orderBy('txn.creationDate', "ASC")
+        .limit(1)
+        .getOne();
+
+        return query;
+    }
 }

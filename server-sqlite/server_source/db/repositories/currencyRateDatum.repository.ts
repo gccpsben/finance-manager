@@ -3,6 +3,7 @@ import { CurrencyRateDatum } from "../entities/currencyRateDatum.entity.js";
 import { Database } from "../db.js";
 import { SQLitePrimitiveOnly } from "../../index.d.js";
 import { isDate } from "class-validator";
+import { MutableDataCache } from "../dataCache.js";
 
 export type DifferenceHydratedCurrencyRateDatum = SQLitePrimitiveOnly<CurrencyRateDatum> &
 {
@@ -18,24 +19,50 @@ class CurrencyRateDatumRepositoryExtension
      */
     public async findNearestTwoDatum
     (
-        this: Repository<CurrencyRateDatum>, 
-        userId: string, 
-        currencyId: string,
-        date: Date
+        this: Repository<CurrencyRateDatum>, userId: string,  currencyId: string, date: Date,
+        cache: MutableDataCache = undefined
     ): Promise<DifferenceHydratedCurrencyRateDatum[]>
     {
         if (!date || !isDate(date)) throw new Error(`findNearestTwoDatum: The provided date is not a date object.`);
 
+        if (cache?.getCurrenciesRateDatumsList(currencyId))
+        {
+            const results = cache.getCurrenciesRateDatumsList(currencyId)
+            .filter(d => d.ownerId === userId && d.refCurrencyId === currencyId)
+            .map(d => ({ ...d, difference: Math.abs(d.date - date.getTime()) }))
+            .sort((a,b) => a.difference - b.difference)
+            .slice(0,2);
+            return results;
+        }
+
+        let query = this.createQueryBuilder(`datum`);
+        query = query.where(`ownerId = :ownerId`, { ownerId: userId ?? null });
+        query = query.andWhere(`refCurrencyId = :refCurrencyId`, { refCurrencyId: currencyId ?? null });
+        query = query.setParameter("_target_date_", date.getTime());
+        query = query.select(`abs(datum.date - :_target_date_)`, `difference`);
+        query = query.orderBy("difference", 'ASC');
+        if (!cache) query = query.limit(2); // if there's no cache object provided, no need to fetch all of the datums
+        query = query.addSelect("*");
+
+        const results = await query.getRawMany() as (SQLitePrimitiveOnly<CurrencyRateDatum> & { difference: number })[];
+        if (cache) cache.setCurrenciesRateDatumsList(currencyId, results); // set to cache if it's defined.
+
+        return results.slice(0,2);
+    }
+
+    public async getCurrencyDatums
+    (
+        this: Repository<CurrencyRateDatum>,
+        userId:string, 
+        currencyId: string
+    )
+    {
         const results = await this
         .createQueryBuilder(`datum`)
-        .where(`ownerId = :ownerId`, { ownerId: userId })
-        .andWhere(`refCurrencyId = :refCurrencyId`, { refCurrencyId: currencyId })
-        .setParameter("_target_date_", date.getTime())
-        .select(`abs(datum.date - :_target_date_)`, `difference`)
-        .orderBy("difference", 'ASC')
-        .limit(2)
+        .where(`ownerId = :ownerId`, { ownerId: userId ?? null })
+        .andWhere(`refCurrencyId = :refCurrencyId`, { refCurrencyId: currencyId ?? null })
         .addSelect("*")
-        .getRawMany() as (SQLitePrimitiveOnly<CurrencyRateDatum> & { difference: number })[];
+        .getRawMany() as (SQLitePrimitiveOnly<CurrencyRateDatum>)[];
 
         return results;
     }

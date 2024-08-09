@@ -6,6 +6,8 @@ import { Currency, RateHydratedCurrency } from "../entities/currency.entity.js";
 import { FindOptionsWhere } from "typeorm";
 import { CurrencyRateDatumRepository } from "../repositories/currencyRateDatum.repository.js";
 import { LinearInterpolator } from "../../calculations/linearInterpolator.js";
+import { SQLitePrimitiveOnly } from "../../index.d.js";
+import { MutableDataCache } from "../dataCache.js";
 
 export class CurrencyCalculator
 {
@@ -20,28 +22,66 @@ export class CurrencyCalculator
      * Get the rate of `<target_currency>` to `<base_currency>` at the given date using the rates of the currency stored in database. 
      * #### *if the rates at the given datetime are not available in the database, will use the fallback rate (`Currency.rateToBase`) instead.
     */
-    public static async currencyToBaseRate(ownerId: string, from: Currency, date: Date = new Date()): Promise<Decimal>
+    public static async currencyToBaseRate
+    (
+        ownerId: string, 
+        from: SQLitePrimitiveOnly<Currency>, 
+        date: Date = new Date(),
+        cache: MutableDataCache = undefined
+    ): Promise<Decimal>
     { 
-        if (from.isCurrencyBase()) return new Decimal(`1`);
+        if (cache === undefined) cache = new MutableDataCache(ownerId);
+        if (from.isBase) return new Decimal(`1`);
     
-        const getCurrById = async (id: string) => await CurrencyService.getCurrencyById(ownerId, id);
-        const nearestTwoDatums = await CurrencyRateDatumRepository.getInstance().findNearestTwoDatum(ownerId, from.id, date);
+        const getCurrById = async (id: string) => 
+        {
+            // Find the requested currency in `knownCurrencies` first.
+            const potentialCacheHit = cache?.getCurrenciesList()?.find(c => c.ownerId === ownerId && c.id === id);
+            if (potentialCacheHit) return potentialCacheHit;
+
+            if (cache) // if cache object exists but still cannot find the currency, we want to fetch all currencies and cache it
+            {
+                await cache.ensureCurrenciesList();
+                return cache.getCurrenciesList().find(c => c.id === id);
+            }
+            else // if cache object doesnt exist, we just want to fetch the bare min
+            {
+                return CurrencyService.getCurrencyById(ownerId, id);
+            }
+        };
+
+        const nearestTwoDatums = await CurrencyRateDatumRepository.getInstance().findNearestTwoDatum
+        (
+            ownerId, 
+            from.id, 
+            date,
+            cache
+        );
         const d1 = nearestTwoDatums[0]; const d2 = nearestTwoDatums[1];
 
         if (nearestTwoDatums.length === 0) 
         {
-            // console.log(`1 from: ${JSON.stringify(from)}`);
             const currenyBaseAmount = new Decimal(from.amount);
-            const currenyBaseAmountUnitToBaseRate = await CurrencyCalculator.currencyToBaseRate(ownerId, await getCurrById(from.refCurrencyId), date)!;
+            const currenyBaseAmountUnitToBaseRate = await CurrencyCalculator.currencyToBaseRate
+            (
+                ownerId, 
+                await getCurrById(from.refCurrencyId), 
+                date,
+                cache
+            )!;
             return currenyBaseAmount.mul(currenyBaseAmountUnitToBaseRate);
         }
 
         if (nearestTwoDatums.length === 1) 
         {
-            console.log(`2 from: ${JSON.stringify(from)}`);
-            console.log(`2: ${d1.amount}`);
             const datumAmount = new Decimal(d1.amount);
-            const datumUnitToBaseRate = await CurrencyCalculator.currencyToBaseRate(ownerId, await getCurrById(d1.refAmountCurrencyId), new Date(d1.date))!;
+            const datumUnitToBaseRate = await CurrencyCalculator.currencyToBaseRate
+            (
+                ownerId, 
+                await getCurrById(d1.refAmountCurrencyId), 
+                new Date(d1.date),
+                cache
+            )!;
             return datumAmount.mul(datumUnitToBaseRate);
         }
 
@@ -49,11 +89,25 @@ export class CurrencyCalculator
         {
             const isDateBeforeD1D2 = date.getTime() < d1.date && date.getTime() < d2.date; // ....^..|....|........
             const isDateAfterD1D2 = date.getTime() > d1.date && date.getTime() > d2.date;  // .......|....|...^....
+            const D1Currency = await getCurrById(d1.refAmountCurrencyId);
+            const D2Currency = d1.refAmountCurrencyId === d2.refAmountCurrencyId ? D1Currency : await getCurrById(d2.refAmountCurrencyId);
+            const D1CurrBaseRate = await CurrencyCalculator.currencyToBaseRate
+            (
+                ownerId,
+                D1Currency, 
+                new Date(d1.date),
+                cache
+            )!;
+            const D2CurrBaseRate = await CurrencyCalculator.currencyToBaseRate
+            (
+                ownerId, 
+                D2Currency, 
+                new Date(d2.date),
+                cache
+            )!;
     
-            let valLeft: Decimal = new Decimal("0");
-            let valRight: Decimal = new Decimal("0");
-            valLeft = new Decimal(d1.amount).mul(await CurrencyCalculator.currencyToBaseRate(ownerId, await getCurrById(d1.refAmountCurrencyId), new Date(d1.date))!);
-            valRight = new Decimal(d2.amount).mul(await CurrencyCalculator.currencyToBaseRate(ownerId, await getCurrById(d2.refAmountCurrencyId), new Date(d2.date))!);    
+            let valLeft = new Decimal(d1.amount).mul(D1CurrBaseRate);
+            let valRight = new Decimal(d2.amount).mul(D2CurrBaseRate);
             if (isDateBeforeD1D2 || isDateAfterD1D2) return valLeft;
             if (valLeft === valRight) return valLeft;
     
@@ -69,13 +123,42 @@ export class CurrencyCalculator
             return midPt;
         }
     }
+
+    public static async getCurrencyToBaseRateInterpolator
+    (
+        userId:string, 
+        currencyId: string, 
+        cache: MutableDataCache = undefined
+    ): Promise<LinearInterpolator>
+    {   
+        if (cache === undefined) cache = new MutableDataCache(userId);
+
+        await cache.ensureCurrenciesList();
+
+        const datums = await CurrencyRateDatumRepository.getInstance().getCurrencyDatums(userId, currencyId);
+        const entries: { key:Decimal, value: Decimal }[] = await (async () => 
+        {
+            const output: { key:Decimal, value: Decimal }[] = [];
+            for (const datum of datums) 
+            {
+                const datumUnitCurrency = cache.getCurrenciesList().find(c => c.id === datum.refAmountCurrencyId);
+                output.push(
+                {
+                    key: new Decimal(datum.date),
+                    value: new Decimal(datum.amount).mul(await CurrencyCalculator.currencyToBaseRate(userId, datumUnitCurrency, undefined, cache))
+                });   
+            }
+            return output;
+        })();
+        return LinearInterpolator.fromEntries(entries);
+    }
 };
 
 export class CurrencyService
 {
     public static async tryGetUserBaseCurrency(userId: string)
     {
-        const user = await UserRepository.getInstance().findOne({where: { id: userId }});
+        const user = await UserRepository.getInstance().findOne({where: { id: userId ?? null }});
         if (!user) throw createHttpError(404, `Cannot find user with id '${userId}'`);
         
         return await CurrencyRepository.getInstance().findOne( 
@@ -91,7 +174,7 @@ export class CurrencyService
 
     public static async getUserCurrencies(userId: string)
     {
-        const user = await UserRepository.getInstance().findOne({where: { id: userId }});
+        const user = await UserRepository.getInstance().findOne({where: { id: userId ?? null }});
         if (!user) throw createHttpError(404, `Cannot find user with id '${userId}'`);
 
         const results = await CurrencyRepository.getInstance()
@@ -109,7 +192,7 @@ export class CurrencyService
 
     public static async getCurrency(userId: string, where: Omit<FindOptionsWhere<Currency>, 'owner'>)
     {
-        const user = await UserRepository.getInstance().findOne({where: { id: userId }});
+        const user = await UserRepository.getInstance().findOne({where: { id: userId ?? null }});
         if (!user) throw createHttpError(404, `Cannot find user with id '${userId}'`);
 
         const result = await CurrencyRepository.getInstance().findOne(

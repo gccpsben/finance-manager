@@ -1,4 +1,4 @@
-import { Entity, PrimaryGeneratedColumn, Column, JoinColumn, Unique, Check } from "typeorm";
+import { Entity, PrimaryGeneratedColumn, Column, JoinColumn, Unique, Check, Index } from "typeorm";
 import "reflect-metadata"
 import { ManyToOne } from "typeorm";
 import { User } from "./user.entity.js";
@@ -27,6 +27,7 @@ export class CurrencyRateDatum extends EntityClass
     refCurrency: Currency;
 
     @Column( { nullable: false })
+    @Index()
     refAmountCurrencyId: string;
 
     @ManyToOne(type => Currency, currency => currency.refCurrency, { nullable: false })
@@ -35,6 +36,7 @@ export class CurrencyRateDatum extends EntityClass
     refAmountCurrency: Currency;
 
     @Column( { nullable: false })
+    @Index()
     ownerId: string;
 
     @ManyToOne(type => User, user => user.currencies, { nullable: false })
@@ -44,5 +46,6 @@ export class CurrencyRateDatum extends EntityClass
 
     @Column({ type: "int", nullable: false })
     @IsUTCDateInt()
+    @Index()
     date: number;
 }
