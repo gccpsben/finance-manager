@@ -6,7 +6,7 @@
     "src/**/*.vue",
     "cypress/support/component.*",
     "cypress/support/commands.ts"
-  ],
+, "src/modules/.core", "src/modules/.core/composables/useNetworkRequest.ts", "src/modules/.core/utils/date.ts"  ],
   "exclude": [],
   "compilerOptions": {
     "composite": true,

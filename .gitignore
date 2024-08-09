@@ -22,3 +22,5 @@
 
 # used for unit test
 !server/test.env
+
+*.code-workspace
