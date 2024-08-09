@@ -30,10 +30,16 @@ export class Currency extends EntityClass
     @IsDecimalJSString()
     amount: string | null;
 
+    @Column( { nullable: true })
+    refCurrencyId: string;
+
     @ManyToOne(type => Currency, currency => currency.refCurrency, { nullable: true })
     @JoinColumn()
     @EnsureNotPlainForeignKey() 
     refCurrency: Omit<Omit<Currency, 'owner'>, 'refCurrency'> | null;
+
+    @Column( { nullable: false })
+    ownerId: string;
 
     @ManyToOne(type => User, user => user.currencies, { nullable: false })
     @JoinColumn()
