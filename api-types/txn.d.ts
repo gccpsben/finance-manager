@@ -6,7 +6,7 @@ export type TransactionDTO =
     title: string;
     description: string | undefined;
     owner: string;
-    creationDate: string;
+    creationDate: number;
     txnType: string;
     fromAmount: string | undefined;
     fromCurrency: string | undefined;
@@ -19,7 +19,7 @@ export type TransactionDTO =
 export type PostTransactionDTO = 
 {
     title: string;
-    creationDate?: string | undefined;
+    creationDate?: number | undefined;
     description?: string | undefined;
     typeId: string;
     fromAmount?: string | undefined;

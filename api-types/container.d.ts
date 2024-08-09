@@ -4,7 +4,7 @@ export type ContainerDTO =
 {
     id: string;
     name: string;
-    creationDate: string;
+    creationDate: number;
     owner: string;
 }
 

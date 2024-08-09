@@ -6,7 +6,7 @@ export type PostLoginDTO =
 export type ResponsePostLoginDTO =
 {
     token: string;
-    creationDate: string;
-    expiryDate: string;
+    creationDate: number;
+    expiryDate: number;
     owner: string;
 };
