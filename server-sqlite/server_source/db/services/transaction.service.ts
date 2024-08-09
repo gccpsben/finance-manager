@@ -84,7 +84,7 @@ export class TransactionService
     public static async getTxnIncreaseInValue
     (
         userId: string, 
-        transaction: { fromAmount: string, toAmount:string, fromCurrencyId: string, toCurrencyId: string }, 
+        transaction: { fromAmount: string, toAmount:string, fromCurrencyId: string, toCurrencyId: string, creationDate: number }, 
         /** A mapping mapping each currency ID to its rate to base value. Will fetch from database if not given, or the currency is not found */
         currencyToBaseValueMappingCache: {[key:string]: Decimal} | undefined = undefined
     ): Promise<{ increaseInValue: Decimal, currencyBaseValMapping: {[key:string]: Decimal} }>
@@ -97,7 +97,7 @@ export class TransactionService
             if (!currencyRate) 
             {
                 const currencyRefetched = await CurrencyService.getCurrency(userId, { id: currencyId });
-                const rate = (await CurrencyService.rateHydrateCurrency(userId, currencyRefetched)).rateToBase;
+                const rate = (await CurrencyService.rateHydrateCurrency(userId, currencyRefetched, transaction.creationDate)).rateToBase;
                 currencyRate = new Decimal(rate);
                 mapping[currencyId] = currencyRate;
             }

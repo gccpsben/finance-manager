@@ -4,6 +4,8 @@ import { UserRepository } from "../repositories/user.repository.js";
 import createHttpError from "http-errors";
 import { Currency, RateHydratedCurrency } from "../entities/currency.entity.js";
 import { FindOptionsWhere } from "typeorm";
+import { CurrencyRateDatumRepository } from "../repositories/currencyRateDatum.repository.js";
+import { LinearInterpolator } from "../../calculations/linearInterpolator.js";
 
 export class CurrencyCalculator
 {
@@ -18,22 +20,54 @@ export class CurrencyCalculator
      * Get the rate of `<target_currency>` to `<base_currency>` at the given date using the rates of the currency stored in database. 
      * #### *if the rates at the given datetime are not available in the database, will use the fallback rate (`Currency.rateToBase`) instead.
     */
-    public static async currencyToBaseRate(ownerId: string, from: Currency, date: Date = new Date())
+    public static async currencyToBaseRate(ownerId: string, from: Currency, date: Date = new Date()): Promise<Decimal>
     { 
         if (from.isCurrencyBase()) return new Decimal(`1`);
+    
+        const getCurrById = async (id: string) => await CurrencyService.getCurrencyById(ownerId, id);
+        const nearestTwoDatums = await CurrencyRateDatumRepository.getInstance().findNearestTwoDatum(ownerId, from.id, date);
+        const d1 = nearestTwoDatums[0]; const d2 = nearestTwoDatums[1];
 
-        const fromCurrency = from;
-        let currentCurrency = fromCurrency;
-        let rate = fromCurrency.amount ? new Decimal(fromCurrency.amount) : new Decimal("1");
-        for (let i = 0; i < 999; i++)
-        { 
-            // This will only happens when the currency definition is later changed.
-            if (i >= 100) { throw new Error(`Max retry. Possibly infinite loop in currency definition.`); }
-            if (!currentCurrency.refCurrency) break;
-            currentCurrency = await CurrencyService.getCurrency(ownerId, { name: currentCurrency.refCurrency.name })!;
-            rate = rate.mul(currentCurrency.amount ? new Decimal(currentCurrency.amount) : new Decimal("1"));
+        if (nearestTwoDatums.length === 0) 
+        {
+            // console.log(`1 from: ${JSON.stringify(from)}`);
+            const currenyBaseAmount = new Decimal(from.amount);
+            const currenyBaseAmountUnitToBaseRate = await CurrencyCalculator.currencyToBaseRate(ownerId, await getCurrById(from.refCurrencyId), date)!;
+            return currenyBaseAmount.mul(currenyBaseAmountUnitToBaseRate);
         }
-        return rate;
+
+        if (nearestTwoDatums.length === 1) 
+        {
+            console.log(`2 from: ${JSON.stringify(from)}`);
+            console.log(`2: ${d1.amount}`);
+            const datumAmount = new Decimal(d1.amount);
+            const datumUnitToBaseRate = await CurrencyCalculator.currencyToBaseRate(ownerId, await getCurrById(d1.refAmountCurrencyId), new Date(d1.date))!;
+            return datumAmount.mul(datumUnitToBaseRate);
+        }
+
+        else // if (nearestTwoDatums.length === 2)
+        {
+            const isDateBeforeD1D2 = date.getTime() < d1.date && date.getTime() < d2.date; // ....^..|....|........
+            const isDateAfterD1D2 = date.getTime() > d1.date && date.getTime() > d2.date;  // .......|....|...^....
+    
+            let valLeft: Decimal = new Decimal("0");
+            let valRight: Decimal = new Decimal("0");
+            valLeft = new Decimal(d1.amount).mul(await CurrencyCalculator.currencyToBaseRate(ownerId, await getCurrById(d1.refAmountCurrencyId), new Date(d1.date))!);
+            valRight = new Decimal(d2.amount).mul(await CurrencyCalculator.currencyToBaseRate(ownerId, await getCurrById(d2.refAmountCurrencyId), new Date(d2.date))!);    
+            if (isDateBeforeD1D2 || isDateAfterD1D2) return valLeft;
+            if (valLeft === valRight) return valLeft;
+    
+            const midPt = LinearInterpolator.fromEntries
+            (
+                [
+                    { key: d1.date, value: valLeft },
+                    { key: d2.date, value: valRight },
+                ],
+                item => new Decimal(item.key),
+                item => item.value
+            ).getValue(new Decimal(date.getTime()));
+            return midPt;
+        }
     }
 };
 
@@ -119,12 +153,12 @@ export class CurrencyService
         return newCurrency;
     }
 
-    public static async rateHydrateCurrency(userId:string, currency: Currency[]): Promise<RateHydratedCurrency[]>
-    public static async rateHydrateCurrency(userId:string, currency: Currency): Promise<RateHydratedCurrency>
-    public static async rateHydrateCurrency(userId:string, currencies: Currency[] | Currency): Promise<RateHydratedCurrency | RateHydratedCurrency[]>
+    public static async rateHydrateCurrency(userId:string, currency: Currency[], date: number | undefined): Promise<RateHydratedCurrency[]>
+    public static async rateHydrateCurrency(userId:string, currency: Currency, date: number | undefined): Promise<RateHydratedCurrency>
+    public static async rateHydrateCurrency(userId:string, currencies: Currency[] | Currency, date: number | undefined = undefined): Promise<RateHydratedCurrency | RateHydratedCurrency[]>
     {
         type outputType = { currency: Currency, rateToBase: string };
-        const getRateToBase = async (c: Currency) => (await CurrencyCalculator.currencyToBaseRate(userId, c)).toString();
+        const getRateToBase = async (c: Currency) => (await CurrencyCalculator.currencyToBaseRate(userId, c, new Date(date))).toString();
 
         if (Array.isArray(currencies))
         {

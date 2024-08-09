@@ -2,7 +2,7 @@ import express from 'express';
 import { AccessTokenService } from '../../db/services/accessToken.service.js';
 import { IsDateString, IsString } from 'class-validator';
 import { ExpressValidations } from '../validation.js';
-import { IsDecimalJSString } from '../../db/validators.js';
+import { IsDecimalJSString, IsUTCDateInt } from '../../db/validators.js';
 import type { PostCurrencyRateDatumDTO, ResponsePostCurrencyRateDatumDTO } from "../../../../api-types/currencyRateDatum.js";
 import { TypesafeRouter } from '../typescriptRouter.js';
 import { CurrencyRateDatumService } from '../../db/services/currencyRateDatum.service.js';

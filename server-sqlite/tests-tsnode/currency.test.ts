@@ -10,6 +10,7 @@ import { randomUUID } from "crypto";
 import { Decimal } from "decimal.js";
 import { fillArray } from "./lib/utils.js";
 import { PostCurrencyDTO, ResponseGetCurrencyDTO, ResponsePostCurrencyDTO } from "../../api-types/currencies.js";
+import { PostCurrencyRateDatumDTO, ResponsePostCurrencyRateDatumDTO } from "../../api-types/currencyRateDatum.js";
 
 type ArrayElement<A> = A extends readonly (infer T)[] ? T : never
 export class ResponseGetCurrencyDTOClass implements ArrayElement<ResponseGetCurrencyDTO>
@@ -25,6 +26,11 @@ export class ResponseGetCurrencyDTOClass implements ArrayElement<ResponseGetCurr
 }
 
 export class ResponsePostCurrencyDTOClass implements ResponsePostCurrencyDTO
+{
+    @IsString() id: string;
+}
+
+export class ResponsePostCurrencyRateDTOClass implements ResponsePostCurrencyRateDatumDTO
 {
     @IsString() id: string;
 }
@@ -63,12 +69,23 @@ async function postCurrency(token:string, name: string, ticker: string, refCurre
     return response;
 }
 
+async function postCurrencyRateDatum(token:string, amount: string, refCurrencyId: string, refAmountCurrencyId: string, date: number)
+{
+    const response = await HTTPAssert.assertFetch(UnitTestEndpoints.currencyRateDatumsEndpoints['post'], 
+    {
+        baseURL: serverURL, expectedStatus: undefined, method: "POST",
+        body: { amount, refCurrencyId, refAmountCurrencyId, date } as PostCurrencyRateDatumDTO,
+        headers: { "authorization": token }
+    });
+    return response;
+}
+
 /** This does not perform assertion */
-async function getCurrencyById(token:string, id: string)
+async function getCurrencyById(token:string, id: string, date?: number|undefined)
 {
     const response = await HTTPAssert.assertFetch
     (
-        `${UnitTestEndpoints.currenciesEndpoints['get']}?id=${id}`, 
+        `${UnitTestEndpoints.currenciesEndpoints['get']}?id=${id}${date ? "&date=" + date : ""}`, 
         {
             baseURL: serverURL, expectedStatus: undefined, method: "GET",
             headers: { "authorization": token }
@@ -300,24 +317,26 @@ async function regularCurrenciesCheck(this: Context)
 
 async function ratesCorrectnessCheck(this:Context)
 {
+    const testDateTimestamp = Date.now();
+
     await this.describe(`Rates Correctness`, async function()
     {
-        await resetDatabase();
-        const testUsersCreds = await HookShortcuts.registerRandMockUsers(serverURL, 1);
-        const { username:firstUserName, token:firstUserToken } = Object.values(testUsersCreds)[0];
-        const baseCurrencyResponse = await postBaseCurrency(firstUserToken, `${firstUserName}curr`, `${firstUserName}ticker`);
-        const baseCurrencyID = baseCurrencyResponse.rawBody["id"] as string;
-
-        await this.test(`Base Currency Rate should be 1`, async function()
+        await this.describe(`Without Rates Datum`, async function()
         {
-            const response = await getCurrencyById(firstUserToken, baseCurrencyID);
-            HTTPAssert.assertStatus(200, response.res);
-            const parsedBody = await assertArrayAgainstModel(ResponseGetCurrencyDTOClass, response.rawBody);
-            assertStrictEqual(parsedBody[0].rateToBase, "1");
-        });
-
-        await this.describe(`Regular Rates Test`, async function()
-        {
+            await resetDatabase();
+            const testUsersCreds = await HookShortcuts.registerRandMockUsers(serverURL, 1);
+            const { username:firstUserName, token:firstUserToken } = Object.values(testUsersCreds)[0];
+            const baseCurrencyResponse = await postBaseCurrency(firstUserToken, `${firstUserName}curr`, `${firstUserName}ticker`);
+            const baseCurrencyID = baseCurrencyResponse.rawBody["id"] as string;
+    
+            await this.test(`Base Currency Rate should be 1`, async function()
+            {
+                const response = await getCurrencyById(firstUserToken, baseCurrencyID);
+                HTTPAssert.assertStatus(200, response.res);
+                const parsedBody = await assertArrayAgainstModel(ResponseGetCurrencyDTOClass, response.rawBody);
+                assertStrictEqual(parsedBody[0].rateToBase, "1");
+            });
+    
             const config = 
             {
                 secondaryCurrencyID: undefined as undefined | string,
@@ -358,5 +377,136 @@ async function ratesCorrectnessCheck(this:Context)
                 assertStrictEqual(parsedBody[0].rateToBase, config.expectedTernaryCurrencyAmount.toString());
             });
         });
-    });
+
+        await this.describe(`With Rates Datum`, async function()
+        {
+            await resetDatabase();
+            const testUsersCreds = await HookShortcuts.registerRandMockUsers(serverURL, 1);
+            const { username:firstUserName, token:firstUserToken } = Object.values(testUsersCreds)[0];
+
+            const offsetDate = (d: number) => testDateTimestamp + d * 100 * 1000; // convert the mock date in test case to real date
+    
+            const utCurMap = // mapping between ID generated on the server, and the name defined in the test case.
+            {
+                "HKD": undefined as undefined | string,
+                "USD": undefined as undefined | string,
+                "BTC": undefined as undefined | string,
+                "JPY": undefined as undefined | string,
+            };
+    
+            const testCase = 
+            {
+                currencies: 
+                [
+                    { amount: undefined, id: "HKD", name: "HKD", refCurrencyId: undefined },
+                    { amount: "7.8"      , id: "USD", name: "USD", refCurrencyId: "HKD" },
+                    { amount: "20000"    , id: "BTC", name: "BTC", refCurrencyId: "USD" },
+                    { amount: "0.7"      , id: "JPY", name: "JPY", refCurrencyId: "HKD" },
+                ],
+                datums: 
+                [
+                    { date: 0, amount: "50000"  , refAmountCurrencyId: "USD", refCurrencyId: "BTC" },
+                    { date: 1, amount: "60000"  , refAmountCurrencyId: "USD", refCurrencyId: "BTC" },
+                    { date: 2, amount: "390000" , refAmountCurrencyId: "HKD", refCurrencyId: "BTC" },
+                    { date: 3, amount: "600000" , refAmountCurrencyId: "JPY", refCurrencyId: "BTC" },
+        
+                    { date: 0, amount: "7.8"    , refAmountCurrencyId: "HKD", refCurrencyId: "USD" },
+                    { date: 1, amount: "7.7"    , refAmountCurrencyId: "HKD", refCurrencyId: "USD" },
+                    { date: 2, amount: "147.22" , refAmountCurrencyId: "JPY", refCurrencyId: "USD" },
+                    { date: 3, amount: "7.7"    , refAmountCurrencyId: "HKD", refCurrencyId: "USD" },
+        
+                    { date: 0, amount: "0.06"   , refAmountCurrencyId: "HKD", refCurrencyId: "JPY" },
+                    { date: 1, amount: "0.05"   , refAmountCurrencyId: "HKD", refCurrencyId: "JPY" },
+                    { date: 2, amount: "0.04"   , refAmountCurrencyId: "HKD", refCurrencyId: "JPY" },
+                    { date: 3, amount: "0.1"    , refAmountCurrencyId: "HKD", refCurrencyId: "JPY" },
+                ],
+                expected: 
+                {
+                    "BTC": 
+                    [
+                        {v: -0.5 , e:"390000"  },
+                        {v: 0    , e:"390000"  },
+                        {v: 0.5  , e:"426000"  },
+                        {v: 1    , e:"462000"  },
+                        {v: 1.5  , e:"426000"  },
+                        {v: 2    , e:"390000"  },
+                        {v: 2.5  , e:"225000"  },
+                        {v: 3    , e:"60000"   },
+                        {v: 3.5  , e:"60000"   },
+                    ],
+                    "USD": 
+                    [
+                        {v: -0.5 , e:"7.8"                       },
+                        {v: 0    , e:"7.8"                       },
+                        {v: 0.5  , e:"7.75"                      },
+                        {v: 1    , e:"7.7"                       },
+                        {v: 1.5  , e:"6.7944"                    },
+                        {v: 2    , e:"5.8888"                    },
+                        {v: 2.5  , e:"6.7944"                    },
+                        {v: 3    , e:"7.7"                       },
+                        {v: 3.5  , e:"7.7"                       },
+                    ],
+                    "JPY": 
+                    [
+                        {v: -0.5 , e: "0.06"   },
+                        {v: 0    , e: "0.06"   },
+                        {v: 0.5  , e: "0.055"  },
+                        {v: 1    , e: "0.05"   },
+                        {v: 1.5  , e: "0.045"  },
+                        {v: 2    , e: "0.04"   },
+                        {v: 2.5  , e: "0.07"   },
+                        {v: 3    , e: "0.1"    },
+                        {v: 3.5  , e: "0.1"    },
+                    ]
+                }
+            };
+    
+            await this.test(`Registering Currencies for test`, async function()
+            {
+                // Register currencies
+                for (let curr of testCase.currencies)
+                {
+                    const currencyResponse = await postCurrency(firstUserToken, curr.name, curr.name, utCurMap[curr.refCurrencyId], curr.amount);
+                    const parsedBody = await assertBodyConfirmToModel(ResponsePostCurrencyDTOClass, currencyResponse.rawBody);
+                    utCurMap[curr.name] = parsedBody.id;
+                }
+            });
+
+            await this.test(`Posting Currency Rate Datums`, async function()
+            {
+                for (const datum of testCase.datums)
+                {
+                    const response = await postCurrencyRateDatum
+                    (
+                        firstUserToken, 
+                        datum.amount,
+                        utCurMap[datum.refCurrencyId], 
+                        utCurMap[datum.refAmountCurrencyId], 
+                        offsetDate(datum.date)
+                    );
+                    assertStrictEqual(response.res.status, 200);
+                    await assertBodyConfirmToModel(ResponsePostCurrencyRateDTOClass, response.rawBody);
+                }
+            });
+
+            await this.test(`Test for correct currency rate at given dates`, async function()
+            {
+                for (const [targetCurrencyId, testValues] of Object.entries(testCase.expected))
+                {
+                    for (const {v: input, e: expectedRate} of testValues)
+                    {
+                        const response = await getCurrencyById
+                        (
+                            firstUserToken, 
+                            utCurMap[targetCurrencyId],
+                            offsetDate(input)
+                        );
+                        assertStrictEqual(response.res.status, 200);
+                        const currencyResponse = await assertArrayAgainstModel(ResponseGetCurrencyDTOClass, response.rawBody);
+                        assertStrictEqual(currencyResponse[0].rateToBase, expectedRate); 
+                    }
+                }
+            });
+        });
+    })
 }

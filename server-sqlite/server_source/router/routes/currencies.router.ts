@@ -1,13 +1,13 @@
-import express, { NextFunction } from 'express';
+import express from 'express';
 import { AccessTokenService } from '../../db/services/accessToken.service.js';
-import { CurrencyCalculator, CurrencyService } from '../../db/services/currency.service.js';
+import { CurrencyService } from '../../db/services/currency.service.js';
 import { Decimal } from 'decimal.js';
-import { IsOptional, IsString } from 'class-validator';
+import { IsNumberString, IsOptional, IsString } from 'class-validator';
 import { ExpressValidations } from '../validation.js';
 import { IsDecimalJSString } from '../../db/validators.js';
 import createHttpError from 'http-errors';
-import { Currency, RateHydratedCurrency } from '../../db/entities/currency.entity.js';
-import type { GetCurrencyDTO, PostCurrencyDTO, ResponseGetCurrencyDTO, ResponsePostCurrencyDTO } from "../../../../api-types/currencies.js";
+import { RateHydratedCurrency } from '../../db/entities/currency.entity.js';
+import type { PostCurrencyDTO, ResponseGetCurrencyDTO, ResponsePostCurrencyDTO } from "../../../../api-types/currencies.js";
 import { TypesafeRouter } from '../typescriptRouter.js';
 
 const router = new TypesafeRouter(express.Router());
@@ -46,6 +46,8 @@ router.get<ResponseGetCurrencyDTO>(`/api/v1/currencies`,
         {
             @IsOptional() @IsString() name: string; 
             @IsOptional() @IsString() id: string;
+            /** Which date should the rate of this currency be calculated against */
+            @IsOptional() @IsNumberString() date: string;
         }
 
         const domainToDTO = (curr: RateHydratedCurrency) => (
@@ -61,6 +63,7 @@ router.get<ResponseGetCurrencyDTO>(`/api/v1/currencies`,
         });
         const authResult = await AccessTokenService.ensureRequestTokenValidated(req);
         const parsedBody = await ExpressValidations.validateBodyAgainstModel<query>(query, req.query);
+        const requestedRateDate = parsedBody.date === undefined ? Date.now() : parseInt(parsedBody.date);
         
         if (parsedBody.id && parsedBody.name) 
             throw createHttpError(400, `Name and ID cannot be both provided at the same time.`);
@@ -71,7 +74,7 @@ router.get<ResponseGetCurrencyDTO>(`/api/v1/currencies`,
             let userCurrencies = await CurrencyService.getUserCurrencies(authResult.ownerUserId);
             let output: Partial<RateHydratedCurrency>[] = [];
             for (const currency of userCurrencies)
-                output.push(await CurrencyService.rateHydrateCurrency(authResult.ownerUserId, currency));
+                output.push(await CurrencyService.rateHydrateCurrency(authResult.ownerUserId, currency, requestedRateDate));
             return output.map(domainToDTO);
         }
         else
@@ -80,7 +83,7 @@ router.get<ResponseGetCurrencyDTO>(`/api/v1/currencies`,
                 name: parsedBody.name,
                 id: parsedBody.id
             });
-            const hydratedCurrency: RateHydratedCurrency = await CurrencyService.rateHydrateCurrency(authResult.ownerUserId, currencyFound);
+            const hydratedCurrency: RateHydratedCurrency = await CurrencyService.rateHydrateCurrency(authResult.ownerUserId, currencyFound, requestedRateDate);
             return [domainToDTO(hydratedCurrency)];
         }
     }

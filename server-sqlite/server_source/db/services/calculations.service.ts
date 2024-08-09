@@ -21,6 +21,7 @@ export class CalculationsService
             "txn.fromAmount", 
             "txn.fromContainerId", 
             "txn.fromCurrencyId",
+            "txn.creationDate"
         ])
         .where(`txn.ownerId = :ownerId`, { ownerId: userId })
         .getMany() as SQLitePrimitiveOnly<Transaction>[];
