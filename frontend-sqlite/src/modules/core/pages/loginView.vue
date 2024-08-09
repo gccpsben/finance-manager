@@ -33,7 +33,7 @@
 </template>
 
 <style lang="less" scoped>
-@import "@/stylesheets/globalStyle.less";
+@import "@/modules/core/stylesheets/globalStyle.less";
 
 #topDiv
 {
