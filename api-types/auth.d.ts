@@ -1,12 +1,16 @@
-export type PostLoginDTO = 
+export namespace PostLoginAPI
 {
-    username: string;
-    password: string;
-};
-export type ResponsePostLoginDTO =
-{
-    token: string;
-    creationDate: number;
-    expiryDate: number;
-    owner: string;
-};
+    export type RequestDTO =
+    {
+        username: string;
+        password: string;
+    }
+
+    export type ResponseDTO = 
+    {
+        token: string;
+        creationDate: number;
+        expiryDate: number;
+        owner: string;
+    }
+}

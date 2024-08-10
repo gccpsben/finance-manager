@@ -5,7 +5,7 @@ import { Decimal } from 'decimal.js';
 import { PostContainerAPI } from '../../../api-types/container.js';
 import { PostCurrencyAPI } from '../../../api-types/currencies.js';
 import { PostTxnTypesAPI } from '../../../api-types/txnType.js';
-import { ResponsePostLoginDTOBody } from '../auth.test.js';
+import { PostLoginAPIClass } from '../auth.test.js';
 import { ResponseGetExpensesAndIncomesDTOClass } from '../calculations.test.js';
 import { PostContainerAPIClass } from '../container.test.js';
 import { PostCurrencyAPIClass } from '../currency.test.js';
@@ -51,7 +51,7 @@ export class HookShortcuts
                     baseURL: serverURL,
                     body: { username: value.username, password: value.password },
                     method: "POST",
-                    expectedBodyType: ResponsePostLoginDTOBody
+                    expectedBodyType: PostLoginAPIClass.ResponseDTO
                 }
             );
             usersCreds[key].token = loginResponse.parsedBody.token;
@@ -83,7 +83,7 @@ export class HookShortcuts
                     baseURL: serverURL,
                     body: { username: user.username, password: user.password },
                     method: "POST",
-                    expectedBodyType: ResponsePostLoginDTOBody
+                    expectedBodyType: PostLoginAPIClass.ResponseDTO
                 }
             );
             user.token = loginResponse.parsedBody.token;

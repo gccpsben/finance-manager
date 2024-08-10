@@ -4,16 +4,16 @@ import express, { NextFunction } from 'express';
 import { ExpressValidations } from '../validation.js';
 import { AccessTokenService } from '../../db/services/accessToken.service.js';
 import createHttpError from 'http-errors';
-import type { PostLoginDTO, ResponsePostLoginDTO } from '../../../../api-types/auth.js';
+import type { PostLoginAPI } from '../../../../api-types/auth.js';
 import { TypesafeRouter } from '../typescriptRouter.js';
 
 const router = new TypesafeRouter(express.Router());
 
-router.post<ResponsePostLoginDTO>("/api/v1/auth/login", 
+router.post<PostLoginAPI.ResponseDTO>("/api/v1/auth/login", 
 {
     handler: async (req:express.Request, res:express.Response) => 
     { 
-        class body implements PostLoginDTO
+        class body implements PostLoginAPI.RequestDTO
         {
             @IsString() @IsNotEmpty() username: string;
             @IsString() @IsNotEmpty() password: string;

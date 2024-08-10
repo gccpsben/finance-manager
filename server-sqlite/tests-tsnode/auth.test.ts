@@ -4,7 +4,7 @@ import { serverURL, UnitTestEndpoints } from "./index.test.js";
 import { HTTPAssert } from './lib/assert.js';
 import { Context } from "./lib/context.js";
 import { ResponsePostUserDTO } from "../../api-types/user.js";
-import { ResponsePostLoginDTO } from "../../api-types/auth.js";
+import { PostLoginAPI } from "../../api-types/auth.js";
 import { IsUTCDateInt } from "../server_source/db/validators.js";
 
 export class ResponsePostUserDTOBody implements ResponsePostUserDTO
@@ -12,12 +12,22 @@ export class ResponsePostUserDTOBody implements ResponsePostUserDTO
     @IsString() userid: string; 
 }
 
-export class ResponsePostLoginDTOBody implements ResponsePostLoginDTO
+
+export namespace PostLoginAPIClass
 {
-    @IsString() token: string;
-    @IsUTCDateInt() creationDate: number;
-    @IsUTCDateInt() expiryDate: number;
-    @IsString() owner: string;
+    export class RequestDTO implements PostLoginAPI.RequestDTO
+    {
+        @IsString() username: string;
+        @IsString() password: string;
+    }
+
+    export class ResponseDTO implements PostLoginAPI.ResponseDTO
+    {
+        @IsString() token: string;
+        @IsUTCDateInt() creationDate: number;
+        @IsUTCDateInt() expiryDate: number;
+        @IsString() owner: string;
+    }
 }
 
 export default async function(this: Context)
