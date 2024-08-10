@@ -3,7 +3,7 @@
 
         <view-title :title="title"></view-title>
 
-        <pagination v-model:currentPage="currentPage" v-if="!selectedCurrencyID" :itemsInPage="15" :items="store.currencies.lastSuccessfulData ?? []" 
+        <pagination v-model:currentPage="currentPage" v-if="!selectedCurrencyID && !store.currencies.isLoading" :itemsInPage="15" :items="store.currencies.lastSuccessfulData!.rangeItems" 
                     v-slot="props" class="fullSize" style="height:calc(100svh - 170px);"> 
             <div id="panel">
                 <grid-shortcut rows="1fr" columns="1fr auto">
@@ -16,20 +16,20 @@
                 </grid-shortcut> 
                 <grid-shortcut class="fullSize" rows="repeat(20, 1fr)" columns="1fr" style="padding-top:15px;">
 
-                    <div class="row tight" style="font-size:14px;" @click="selectCurrency(currency.pubID)"
+                    <div class="row tight" style="font-size:14px;" @click="selectCurrency(currency.id)"
                     v-for="currency in props.pageItems">
                         <div v-area="'name'" class="tight yCenter ellipsisContainer">
                             <div>{{ currency.name }}</div>
                         </div>
                         <div v-area="'symbol'" class="tight yCenter ellipsisContainer">
-                            <div>{{ currency.symbol }}</div>
+                            <div>{{ currency.ticker }}</div>
                         </div>
                         <div v-area="'rate'" class="tight yCenter ellipsisContainer">
-                            <div>{{ currency.rate }}</div>
+                            <div>{{ currency.rateToBase }}</div>
                         </div>
-                        <div v-area="'dataSource'" class="tight yCenter ellipsisContainer">
+                        <!-- <div v-area="'dataSource'" class="tight yCenter ellipsisContainer">
                             <div>{{ currency.dataSource?.jsonURLHost ?? '~' }}</div>
-                        </div>
+                        </div> -->
                         <div v-area="'arrow'" class="tight yCenter xRight ellipsisContainer">
                             <fa-icon icon="fa-solid fa-arrow-right"></fa-icon>
                         </div>
@@ -50,7 +50,7 @@
                             <h2 class="fsNumbers">{{ selectedCurrency?.name }}</h2>
                         </div>
                         <div class="center">
-                            <h2 class="fsSecondary tight">{{ selectedCurrency?.rate }} HKD</h2>
+                            <h2 class="fsSecondary tight">{{ selectedCurrency?.rateToBase }} HKD</h2>
                         </div>
                     </grid-shortcut> 
                 </div>
@@ -144,7 +144,7 @@
 
 <script lang="ts">
 import { useMainStore } from '@/modules/core/stores/store';
-import type { RateDefinedCurrency } from '@/types/dtos/currenciesDTO';
+import type { CurrencyDTO } from '@/../../api-types/currencies';
 import paginationVue from 'snippets/vite-vue-ts/components/pagination.vue';
 
 export default
@@ -170,8 +170,10 @@ export default
         selectedCurrency()
         {
             if (this.selectedCurrencyID == undefined) return undefined;
-            let currency = (this.store.currencies.lastSuccessfulData ?? []).find(x => x.pubID == this.selectedCurrencyID);
-            return currency as RateDefinedCurrency|undefined;
+            let currency = (this.store.currencies.lastSuccessfulData?.rangeItems ?? [])
+                .find(x => x.id == this.selectedCurrencyID);
+
+            return currency as CurrencyDTO|undefined;
         },
         title()
         {

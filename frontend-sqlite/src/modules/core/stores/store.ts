@@ -1,6 +1,6 @@
 import { API_BAL_VAL_PATH, API_CONTAINERS_PATH, API_CURRENCIES_PATH, API_DASHBOARD_BATCH_PATH, API_GRAPHS_PATH, API_NET_WORTH_GRAPH_PATH, API_SUMMARY_PATH, API_TXN_TYPES_PATH, API_USER_INCOMES_EXPENSES_PATH } from '@/apiPaths';
 import { useNetworkRequest } from '../composables/useNetworkRequest';
-import type { RateDefinedCurrency } from '@/types/dtos/currenciesDTO';
+import type { ResponseGetCurrencyDTO } from '@/../../api-types/currencies';
 import type { DashboardSummary } from '@/types/dtos/dashboardSummaryDTO';
 import axios, { AxiosError } from 'axios';
 import { defineStore } from 'pinia';
@@ -72,7 +72,7 @@ export const useMainStore = defineStore(
             userExpensesIncomes: useNetworkRequest<ResponseGetExpensesAndIncomesDTO>(API_USER_INCOMES_EXPENSES_PATH, { includeAuthHeaders: true, updateOnMount: false }),
             dashboardSummary: useNetworkRequest<DashboardSummary>(API_SUMMARY_PATH, { includeAuthHeaders: true, updateOnMount: false }),
             graphsSummary: useNetworkRequest<GraphsSummary>(API_GRAPHS_PATH, { includeAuthHeaders: true, updateOnMount: false }),
-            currencies: useNetworkRequest<RateDefinedCurrency[]>(API_CURRENCIES_PATH, { includeAuthHeaders: true }),
+            currencies: useNetworkRequest<ResponseGetCurrencyDTO>(API_CURRENCIES_PATH, { includeAuthHeaders: true }),
             containers: useNetworkRequest<ResponseGetContainerDTO>(API_CONTAINERS_PATH, { includeAuthHeaders: true }),
             txnTypes: useNetworkRequest<ResponseGetTransactionTypesDTO>(API_TXN_TYPES_PATH, { includeAuthHeaders: true }),
             netWorthHistory: useNetworkRequest<NetWorthAPIResponse>(API_NET_WORTH_GRAPH_PATH, { includeAuthHeaders: true, updateOnMount: false }),
@@ -188,8 +188,8 @@ export const useMainStore = defineStore(
         {
             if (transactionRecord == undefined) return "";
             if (!this.currencies.lastSuccessfulData) return "";
-            if (this.currencies.lastSuccessfulData.length == 0 || transactionRecord[side] == undefined) return "";
-            let symbol = this.currencies.lastSuccessfulData.find(c => c.id == transactionRecord[side]["amount"]["currencyID"]);
+            if (this.currencies.lastSuccessfulData.rangeItems.length == 0 || transactionRecord[side] == undefined) return "";
+            let symbol = this.currencies.lastSuccessfulData.rangeItems.find(c => c.id == transactionRecord[side]["amount"]["currencyID"]);
             return `${transactionRecord[side]["amount"]["value"].toFixed(2)} ${symbol?.ticker}`
         },
 
@@ -208,13 +208,13 @@ export const useMainStore = defineStore(
         getCurrencyName(currencyPubID: string)
         {
             if (!this.currencies.lastSuccessfulData) return "";
-            return this.currencies.lastSuccessfulData.find(x => x.id == currencyPubID)?.name;
+            return this.currencies.lastSuccessfulData.rangeItems.find(x => x.id == currencyPubID)?.name;
         },
         
         getCurrencySymbol(currencyPubID: string)
         {
             if (!this.currencies.lastSuccessfulData) return "";
-            return this.currencies.lastSuccessfulData.find(x => x.id == currencyPubID)?.ticker;
+            return this.currencies.lastSuccessfulData.rangeItems.find(x => x.id == currencyPubID)?.ticker;
         },
 
         toSorted<T>(array:Array<T>, func:(a:T, b:T) => number)
@@ -232,8 +232,8 @@ export const useMainStore = defineStore(
         getValue(currencyID: string, amount: number) 
         {
             if (!this.currencies.lastSuccessfulData) return "";
-            if (this.currencies.lastSuccessfulData.find(x => x.id == currencyID) == undefined) console.log(`Unknown currency ${currencyID} found.`);
-            const rateToBase = this.currencies.lastSuccessfulData.find(x => x.id == currencyID)?.rateToBase ?? "0";
+            if (this.currencies.lastSuccessfulData.rangeItems.find(x => x.id == currencyID) == undefined) console.log(`Unknown currency ${currencyID} found.`);
+            const rateToBase = this.currencies.lastSuccessfulData.rangeItems.find(x => x.id == currencyID)?.rateToBase ?? "0";
             return amount * parseFloat(rateToBase);
         },
 
@@ -249,7 +249,7 @@ export const useMainStore = defineStore(
         findCurrencyByPubID(id:string) 
         {
             if (!this.currencies.lastSuccessfulData) return undefined;
-            return this.currencies.lastSuccessfulData.find(x => x.id == id); 
+            return this.currencies.lastSuccessfulData.rangeItems.find(x => x.id == id); 
         }
     }
 })
