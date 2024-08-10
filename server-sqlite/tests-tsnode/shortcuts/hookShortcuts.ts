@@ -1,18 +1,18 @@
 
-import { TestUserDict, UnitTestEndpoints, TestUserEntry } from '../index.test.js';
-import { AssertFetchReturns, HTTPAssert } from '../lib/assert.js';
-import { randomUUID } from 'crypto';
-import { ResponsePostLoginDTOBody } from '../auth.test.js';
-import { PostTransactionDTOBody, ResponsePostTransactionDTOBody } from '../transaction.test.js';
-import { PostTxnTypesAPI } from '../../../api-types/txnType.js';
-import { ResponsePostTransactionTypesDTOBody } from '../txnType.test.js';
-import { PostContainerDTO } from '../../../api-types/container.js';
-import { ResponsePostContainerDTOBody } from '../container.test.js';
 import { simpleFaker } from '@faker-js/faker';
+import { randomUUID } from 'crypto';
 import { Decimal } from 'decimal.js';
-import { ResponseGetExpensesAndIncomesDTOClass } from '../calculations.test.js';
+import { PostContainerDTO } from '../../../api-types/container.js';
 import { PostCurrencyAPI } from '../../../api-types/currencies.js';
+import { PostTxnTypesAPI } from '../../../api-types/txnType.js';
+import { ResponsePostLoginDTOBody } from '../auth.test.js';
+import { ResponseGetExpensesAndIncomesDTOClass } from '../calculations.test.js';
+import { ResponsePostContainerDTOBody } from '../container.test.js';
 import { PostCurrencyAPIClass } from '../currency.test.js';
+import { TestUserDict, TestUserEntry, UnitTestEndpoints } from '../index.test.js';
+import { AssertFetchReturns, HTTPAssert } from '../lib/assert.js';
+import { PostTxnAPIClass } from '../transaction.test.js';
+import { ResponsePostTransactionTypesDTOBody } from '../txnType.test.js';
 
 export class HookShortcuts
 {
@@ -94,7 +94,7 @@ export class HookShortcuts
     {
         serverURL: string, 
         token:string, 
-        body: Partial<PostTransactionDTOBody>, 
+        body: Partial<PostTxnAPIClass.RequestDTOClass>, 
         assertBody?: boolean,
         expectedCode?: number
     })
@@ -105,14 +105,14 @@ export class HookShortcuts
             baseURL: config.serverURL, expectedStatus: config.expectedCode, method: "POST",
             body: config.body,
             headers: { "authorization": config.token },
-            expectedBodyType: assertBody ? ResponsePostTransactionDTOBody : undefined
+            expectedBodyType: assertBody ? PostTxnAPIClass.ResponseDTOClass : undefined
         });
         const output = 
         {
             ...response,
             txnId: response.parsedBody?.id as string | undefined
         };
-        return output as AssertFetchReturns<ResponsePostTransactionDTOBody> & { txnId?: string | undefined };
+        return output as AssertFetchReturns<PostTxnAPIClass.ResponseDTOClass> & { txnId?: string | undefined };
     }
 
     public static async postCreateTxnType(config:
@@ -325,21 +325,6 @@ export class HookShortcuts
             parsedBody: response.parsedBody
         };
     }
-
-    // public static async postRandomTransaction(config:
-    // {
-    //     serverURL:string,
-    //     token:string,
-    //     assertBody?: boolean,
-    //     expectedCode?: number,
-    //     txnCount: number,
-    //     containerIdsPool: string[],
-    //     txnTypeIdsPool: string[],
-    //     currencues
-    // })
-    // {
-
-    // }
 }
 
 export class Generator

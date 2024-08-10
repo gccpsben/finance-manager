@@ -6,27 +6,30 @@ import { HookShortcuts } from "./shortcuts/hookShortcuts.js";
 import { IsString, IsNotEmpty, IsOptional, IsDateString } from "class-validator";
 import { IsDecimalJSString, IsUTCDateInt } from "../server_source/db/validators.js";
 import { simpleFaker } from "@faker-js/faker";
-import { PostTransactionDTO, ResponsePostTransactionDTO } from "../../api-types/txn.js";
+import { PostTxnAPI } from "../../api-types/txn.js";
 import { ResponsePostContainerDTOBody } from "./container.test.js";
 import { PostCurrencyAPIClass } from "./currency.test.js";
 
-export class PostTransactionDTOBody implements PostTransactionDTO
-{ 
-    @IsString() @IsNotEmpty() title: string; 
-    @IsOptional() @IsUTCDateInt() creationDate?: number | undefined;
-    @IsOptional() @IsString() description?: string | undefined;
-    @IsString() typeId: string;
-    @IsOptional() @IsDecimalJSString() fromAmount?: string | undefined;
-    @IsOptional() @IsString() fromContainerId?: string | undefined;
-    @IsOptional() @IsString() fromCurrencyId?: string | undefined;
-    @IsOptional() @IsDecimalJSString() toAmount?: string | undefined;
-    @IsOptional() @IsString() toContainerId?: string | undefined;
-    @IsOptional() @IsString() toCurrencyId?: string | undefined;
-}
-
-export class ResponsePostTransactionDTOBody implements ResponsePostTransactionDTO
+export namespace PostTxnAPIClass
 {
-    @IsString() id: string;
+    export class RequestDTOClass implements PostTxnAPI.RequestDTO
+    { 
+        @IsString() @IsNotEmpty() title: string; 
+        @IsOptional() @IsUTCDateInt() creationDate?: number | undefined;
+        @IsOptional() @IsString() description?: string | undefined;
+        @IsString() typeId: string;
+        @IsOptional() @IsDecimalJSString() fromAmount?: string | undefined;
+        @IsOptional() @IsString() fromContainerId?: string | undefined;
+        @IsOptional() @IsString() fromCurrencyId?: string | undefined;
+        @IsOptional() @IsDecimalJSString() toAmount?: string | undefined;
+        @IsOptional() @IsString() toContainerId?: string | undefined;
+        @IsOptional() @IsString() toCurrencyId?: string | undefined;
+    }
+
+    export class ResponseDTOClass implements PostTxnAPI.ResponseDTO
+    {
+        @IsString() id: string;
+    }
 }
 
 const createPostTxnTypeBody = (name: string) => ({ "name": name });
@@ -135,7 +138,7 @@ async function testFromTransactions(this: Context)
             fromContainerId: testContext.containerId,
             fromCurrencyId: testContext.baseCurrId,
             typeId: testContext.txnTypeId
-        } satisfies PostTransactionDTOBody;
+        } satisfies PostTxnAPIClass.RequestDTOClass;
 
         for (const testCase of BodyGenerator.enumerateMissingField(baseObj, ["description", "creationDate"]))
         {

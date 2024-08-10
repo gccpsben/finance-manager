@@ -1,6 +1,6 @@
 import { PaginationAPIResponse } from "./lib"
 
-export type TransactionDTO = 
+export type TxnDTO = 
 {
     id: string;
     title: string;
@@ -15,21 +15,27 @@ export type TransactionDTO =
     toCurrency: string | undefined;
     toContainer: string | undefined;
 }
-
-export type PostTransactionDTO = 
+export namespace PostTxnAPI
 {
-    title: string;
-    creationDate?: number | undefined;
-    description?: string | undefined;
-    typeId: string;
-    fromAmount?: string | undefined;
-    fromContainerId?: string | undefined;
-    fromCurrencyId?: string | undefined;
-    toAmount?: string | undefined;
-    toContainerId?: string | undefined;
-    toCurrencyId?: string | undefined;
-};
-export type ResponsePostTransactionDTO = { id: string; };
+    export type RequestDTO =  
+    {
+        title: string;
+        creationDate?: number | undefined;
+        description?: string | undefined;
+        typeId: string;
+        fromAmount?: string | undefined;
+        fromContainerId?: string | undefined;
+        fromCurrencyId?: string | undefined;
+        toAmount?: string | undefined;
+        toContainerId?: string | undefined;
+        toCurrencyId?: string | undefined;
+    };
 
-export type GetTransactionsDTO = {};
-export type ResponseGetTransactionsDTO = PaginationAPIResponse<TransactionDTO>;
+    export type ResponseDTO = { id: string; };
+}
+
+export namespace GetTxnAPI
+{
+    export type RequestDTO = {};
+    export type ResponseDTO = PaginationAPIResponse<TxnDTO>;
+}

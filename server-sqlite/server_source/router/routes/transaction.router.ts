@@ -1,22 +1,20 @@
-import { IsDateString, IsNotEmpty, IsNumber, IsOptional, IsString } from 'class-validator';
-import express, { NextFunction } from 'express';
+import { IsNotEmpty, IsOptional, IsString } from 'class-validator';
+import express from 'express';
+import type { GetTxnAPI, PostTxnAPI } from '../../../../api-types/txn.js';
 import { AccessTokenService } from '../../db/services/accessToken.service.js';
 import { TransactionService } from '../../db/services/transaction.service.js';
-import { ExpressValidations } from '../validation.js';
 import { IsDecimalJSString, IsUTCDateInt } from '../../db/validators.js';
-import { Transaction } from '../../db/entities/transaction.entity.js';
 import { OptionalPaginationAPIQueryRequest, PaginationAPIResponseClass } from '../logics/pagination.js';
-import type { PostTransactionDTO, ResponseGetTransactionsDTO, ResponsePostTransactionDTO } from '../../../../api-types/txn.js';
 import { TypesafeRouter } from '../typescriptRouter.js';
-import type { SQLitePrimitiveOnly } from '../../index.d.js';
+import { ExpressValidations } from '../validation.js';
 
 const router = new TypesafeRouter(express.Router());
 
-router.post<ResponsePostTransactionDTO>("/api/v1/transactions", 
+router.post<PostTxnAPI.ResponseDTO>("/api/v1/transactions", 
 {
     handler: async (req: express.Request, res: express.Express) => 
     {
-        class body implements PostTransactionDTO
+        class body implements PostTxnAPI.RequestDTO
         { 
             @IsString() @IsNotEmpty() title: string; 
             @IsOptional() @IsUTCDateInt() creationDate?: number | undefined;
@@ -50,7 +48,7 @@ router.post<ResponsePostTransactionDTO>("/api/v1/transactions",
     }   
 });
 
-router.get<ResponseGetTransactionsDTO>(`/api/v1/transactions`, 
+router.get<GetTxnAPI.ResponseDTO>(`/api/v1/transactions`, 
 {
     handler: async (req: express.Request, res: express.Response) => 
     {
