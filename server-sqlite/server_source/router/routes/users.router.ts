@@ -3,16 +3,16 @@ import { UserService } from '../../db/services/user.service.js';
 import express, { NextFunction } from 'express';
 import { ExpressValidations } from '../validation.js';
 import createHttpError from 'http-errors';
-import type { PostUserDTO, ResponseDeleteUserDTO, ResponsePostUserDTO } from '../../../../api-types/user.js';
+import type { DeleteUserAPI, PostUserAPI } from '../../../../api-types/user.js';
 import { TypesafeRouter } from '../typescriptRouter.js';
 
 const router = new TypesafeRouter(express.Router());
 
-router.post<ResponsePostUserDTO>(`/api/v1/users`, 
+router.post<PostUserAPI.ResponseDTO>(`/api/v1/users`, 
 {
     handler: async (req:express.Request, res:express.Response) => 
     {   
-        class body implements PostUserDTO
+        class body implements PostUserAPI.RequestDTO
         {
             @IsString() @IsNotEmpty() username: string;
             @IsString() @IsNotEmpty() password: string;
@@ -25,11 +25,14 @@ router.post<ResponsePostUserDTO>(`/api/v1/users`,
     }
 });
 
-router.delete<ResponseDeleteUserDTO>("/api/v1/users", 
+router.delete<DeleteUserAPI.ResponseDTO>("/api/v1/users", 
 {
     handler: async (req: express.Request, res:express.Response) => 
     {
-        class body { @IsNotEmpty() @IsString() userId: string; }
+        class body implements DeleteUserAPI.RequestDTO
+        { 
+            @IsNotEmpty() @IsString() userId: string; 
+        }
 
         const parsedBody = await ExpressValidations.validateBodyAgainstModel<body>(body, req.body);
         const deletionResult = await UserService.tryDeleteUser(parsedBody.userId);

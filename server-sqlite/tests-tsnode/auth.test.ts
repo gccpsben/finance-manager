@@ -3,13 +3,22 @@ import { BodyGenerator } from "./lib/bodyGenerator.js";
 import { serverURL, UnitTestEndpoints } from "./index.test.js";
 import { HTTPAssert } from './lib/assert.js';
 import { Context } from "./lib/context.js";
-import { ResponsePostUserDTO } from "../../api-types/user.js";
+import { PostUserAPI } from "../../api-types/user.js";
 import { PostLoginAPI } from "../../api-types/auth.js";
 import { IsUTCDateInt } from "../server_source/db/validators.js";
 
-export class ResponsePostUserDTOBody implements ResponsePostUserDTO
-{ 
-    @IsString() userid: string; 
+export namespace PostUserAPIClass
+{
+    export class RequestDTO implements PostUserAPI.RequestDTO
+    {
+        @IsString() username: string;
+        @IsString() password: string; 
+    }
+
+    export class ResponseDTO implements PostUserAPI.ResponseDTO
+    {
+        @IsString() userid: string;
+    }
 }
 
 
@@ -66,7 +75,7 @@ export default async function(this: Context)
                     body: { username: correctUsername, password: correctPassword },
                     baseURL: serverURL,
                     expectedStatus: 200,
-                    expectedBodyType: ResponsePostUserDTOBody
+                    expectedBodyType: PostUserAPIClass.ResponseDTO
                 }
             );
             firstUserID = response.parsedBody.userid;
