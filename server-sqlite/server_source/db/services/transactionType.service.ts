@@ -2,8 +2,10 @@ import createHttpError from "http-errors";
 import { TransactionTypeRepository } from "../repositories/transactionType.repository.js";
 import { UserRepository } from "../repositories/user.repository.js";
 import { TransactionType } from "../entities/transactionType.entity.js";
-import { ServiceUtils } from "../servicesUtils.js";
+import { nameof, ServiceUtils } from "../servicesUtils.js";
 import { SQLitePrimitiveOnly } from "../../index.d.js";
+
+const nameofT = (x: keyof TransactionType) => x;
 
 export class TransactionTypeService
 {
@@ -26,7 +28,7 @@ export class TransactionTypeService
 
         const result = await TransactionTypeRepository.getInstance()
         .createQueryBuilder(`type`)
-        .where(`type.id = :id AND type.ownerId = :ownerId`, { id: id, ownerId: ownerId })
+        .where(`type.${nameofT('id')} = :id AND type.${nameofT('ownerId')} = :ownerId`, { id: id, ownerId: ownerId })
         .getOne();
 
         if (!result || !id) throw createHttpError(404, `Cannot find transaction type with id "${id}"`);
@@ -48,9 +50,9 @@ export class TransactionTypeService
         if (!user) throw createHttpError(404, `Cannot find user with id '${ownerId}'`);
         let query = TransactionTypeRepository.getInstance()
         .createQueryBuilder(`type`)
-        .where(`type.ownerId = :ownerId`, {ownerId: ownerId });
+        .where(`type.${nameofT('id')} = :ownerId`, {ownerId: ownerId });
 
-        if (config.name !== undefined) query = query.andWhere('type.name LIKE :name', { title: `%${config.name}%` })
+        if (config.name !== undefined) query = query.andWhere(`type.${nameofT('name')} LIKE :name`, { title: `%${config.name}%` })
 
         query = ServiceUtils.paginateQuery(query, config);
         const queryResult = await query.getManyAndCount();
@@ -75,7 +77,7 @@ export class TransactionTypeService
 
         const result = await TransactionTypeRepository.getInstance()
         .createQueryBuilder(`type`)
-        .where(`type.name = :name AND type.ownerId = :ownerId`, { name: name, ownerId: ownerId })
+        .where(`type.${nameofT('name')} = :name AND type.${nameofT('ownerId')} = :ownerId`, { name: name, ownerId: ownerId })
         .getOne();
 
         return {

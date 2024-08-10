@@ -1,5 +1,6 @@
 import { SelectQueryBuilder } from "typeorm";
 
+export const nameof = <T>(name: Extract<keyof T, string>): string => name;
 export class ServiceUtils
 {
     public static paginateQuery<T>

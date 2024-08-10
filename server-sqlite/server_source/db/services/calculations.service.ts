@@ -3,6 +3,7 @@ import { TransactionRepository } from "../repositories/transaction.repository.js
 import { TransactionService } from "./transaction.service.js";
 import { SQLitePrimitiveOnly } from "../../index.d.js";
 import { Transaction } from "../entities/transaction.entity.js";
+import { nameof } from "../servicesUtils.js";
 
 export class CalculationsService
 {
@@ -13,17 +14,17 @@ export class CalculationsService
         const allTxns = await TransactionRepository.getInstance().createQueryBuilder(`txn`)
         .select(
         [
-            "txn.ownerId",
-            "txn.creationDate",
-            "txn.toAmount", 
-            "txn.toContainerId", 
-            "txn.toCurrencyId",
-            "txn.fromAmount", 
-            "txn.fromContainerId", 
-            "txn.fromCurrencyId",
-            "txn.creationDate"
+            `txn.${nameof<Transaction>('ownerId')}`,
+            `txn.${nameof<Transaction>('creationDate')}`,
+            `txn.${nameof<Transaction>('toAmount')}`, 
+            `txn.${nameof<Transaction>('toContainerId')}`, 
+            `txn.${nameof<Transaction>('toCurrencyId')}`,
+            `txn.${nameof<Transaction>('fromAmount')}`, 
+            `txn.${nameof<Transaction>('fromContainerId')}`, 
+            `txn.${nameof<Transaction>('fromCurrencyId')}`,
+            `txn.${nameof<Transaction>('creationDate')}`
         ])
-        .where(`txn.ownerId = :ownerId`, { ownerId: userId })
+        .where(`txn.${nameof<Transaction>('ownerId')} = :ownerId`, { ownerId: userId })
         .getMany() as SQLitePrimitiveOnly<Transaction>[];
         
         const now = new Date().getTime();

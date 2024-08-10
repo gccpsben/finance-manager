@@ -3,7 +3,7 @@ import { ContainerRepository } from "../repositories/container.repository.js";
 import { UserRepository } from "../repositories/user.repository.js";
 import { SQLitePrimitiveOnly } from "../../index.d.js";
 import { Container } from "../entities/container.entity.js";
-import { ServiceUtils } from "../servicesUtils.js";
+import { nameof, ServiceUtils } from "../servicesUtils.js";
 
 export class ContainerService
 {
@@ -74,10 +74,10 @@ export class ContainerService
     {
         let dbQuery = ContainerRepository.getInstance()
         .createQueryBuilder(`con`)
-        .where("ownerId = :ownerId", { ownerId: ownerId });
+        .where(`${nameof<Container>("ownerId")} = :ownerId`, { ownerId: ownerId });
 
-        if (query.name) dbQuery = dbQuery.andWhere("name = :name", { name: query.name })
-        if (query.id) dbQuery = dbQuery.andWhere("id = :id", { id: query.id })
+        if (query.name) dbQuery = dbQuery.andWhere(`${nameof<Container>("name")} = :name`, { name: query.name })
+        if (query.id) dbQuery = dbQuery.andWhere(`${nameof<Container>("id")} = :id`, { id: query.id })
         dbQuery = ServiceUtils.paginateQuery(dbQuery, query);
 
         const queryResult = await dbQuery.getManyAndCount();

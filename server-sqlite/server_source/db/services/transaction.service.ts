@@ -9,7 +9,9 @@ import { UserService } from "./user.service.js";
 import { Transaction } from "../entities/transaction.entity.js";
 import { Decimal } from "decimal.js";
 import type { SQLitePrimitiveOnly } from "../../index.d.js";
-import { ServiceUtils } from "../servicesUtils.js";
+import { nameof, ServiceUtils } from "../servicesUtils.js";
+
+const nameofT = (x: keyof Transaction) => nameof<Transaction>(x);
 
 export class TransactionService
 {
@@ -64,9 +66,12 @@ export class TransactionService
             newTxn.toCurrency = currency;
         }
 
-        if (!obj.fromAmount && !obj.toAmount) throw createHttpError(400, `From amount and toAmount cannot be both undefined.`);
-        if (obj.fromAmount && (!obj.fromContainerId || !obj.fromCurrencyId)) throw createHttpError(400, `If fromAmount is given, fromContainerId and fromCurrencyId must also be defined.`);
-        if (obj.toAmount && (!obj.toContainerId || !obj.toCurrencyId)) throw createHttpError(400, `If toAmount is given, toContainerId and toCurrencyId must also be defined.`);
+        if (!obj.fromAmount && !obj.toAmount) 
+            throw createHttpError(400, `"${nameofT('fromAmount')}" and ${nameofT('toAmount')} cannot be both undefined.`);
+        if (obj.fromAmount && (!obj.fromContainerId || !obj.fromCurrencyId)) 
+            throw createHttpError(400, `If "${nameofT('fromAmount')}" is given, ${nameofT('fromContainerId')} and ${nameofT('fromCurrencyId')} must also be defined.`);
+        if (obj.toAmount && (!obj.toContainerId || !obj.toCurrencyId)) 
+            throw createHttpError(400, `If ${nameofT('toAmount')} is given, ${nameofT('toContainerId')} and ${nameofT('toCurrencyId')} must also be defined.`);
 
         const owner = await UserService.getUserById(userId);
         if (!owner) throw createHttpError(`Cannot find user with id ${userId}`);
@@ -137,17 +142,17 @@ export class TransactionService
             description?: string
         }
     ): Promise<{ totalCount: number, rangeItems: SQLitePrimitiveOnly<Transaction>[] }>
-    {
+    {   
         let query = TransactionRepository.getInstance()
         .createQueryBuilder(`txn`)
-        .orderBy('txn.creationDate', "DESC")
-        .where("ownerId = :ownerId", { ownerId: userId });
+        .orderBy(`txn.${nameofT('creationDate')}`, "DESC")
+        .where(`${nameofT('ownerId')} = :ownerId`, { ownerId: userId });
 
         if (config.title !== undefined)
-            query = query.andWhere('txn.title LIKE :title', { title: `%${config.title}%` })
+            query = query.andWhere(`txn.${nameofT('title')} LIKE :title`, { title: `%${config.title}%` })
 
         if (config.description !== undefined)
-            query = query.andWhere('txn.description LIKE :description', { description: `%${config.description}%` })
+            query = query.andWhere(`txn.${nameofT('description')} LIKE :description`, { description: `%${config.description}%` })
 
         query = ServiceUtils.paginateQuery(query, config);
 
@@ -162,10 +167,12 @@ export class TransactionService
 
     public static async getUserEarliestTransaction(userId: string): Promise<SQLitePrimitiveOnly<Transaction> | undefined>
     {
+        const nameofT = (x: keyof Transaction) => nameof<Transaction>(x);
+
         let query = await TransactionRepository.getInstance()
         .createQueryBuilder(`txn`)
-        .where("ownerId = :ownerId", { ownerId: userId ?? null })
-        .orderBy('txn.creationDate', "ASC")
+        .where(`${nameofT('ownerId')} = :ownerId`, { ownerId: userId ?? null })
+        .orderBy(`txn.${nameofT('creationDate')}`, "ASC")
         .limit(1)
         .getOne();
 

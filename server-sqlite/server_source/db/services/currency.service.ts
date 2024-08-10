@@ -8,7 +8,7 @@ import { CurrencyRateDatumRepository } from "../repositories/currencyRateDatum.r
 import { LinearInterpolator } from "../../calculations/linearInterpolator.js";
 import { SQLitePrimitiveOnly } from "../../index.d.js";
 import { MutableDataCache } from "../dataCache.js";
-import { ServiceUtils } from "../servicesUtils.js";
+import { nameof, ServiceUtils } from "../servicesUtils.js";
 
 export class CurrencyCalculator
 {
@@ -180,7 +180,7 @@ export class CurrencyService
 
         const results = await CurrencyRepository.getInstance()
         .createQueryBuilder(`currency`)
-        .where(`currency.ownerId = :ownerId`, { ownerId: userId })
+        .where(`currency.${nameof<Currency>('ownerId')} = :ownerId`, { ownerId: userId })
         .getMany();
 
         return results;
@@ -198,7 +198,7 @@ export class CurrencyService
     {
         let dbQuery = CurrencyRepository.getInstance()
         .createQueryBuilder(`curr`)
-        .where("ownerId = :ownerId", { ownerId: ownerId ?? null });
+        .where(`${nameof<Currency>('ownerId')} = :ownerId`, { ownerId: ownerId ?? null });
 
         if (query.name) dbQuery = dbQuery.andWhere("name = :name", { name: query.name ?? null })
         if (query.id) dbQuery = dbQuery.andWhere("id = :id", { id: query.id ?? null })

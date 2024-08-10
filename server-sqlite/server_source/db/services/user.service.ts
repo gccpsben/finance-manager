@@ -4,6 +4,8 @@ import { User } from "../entities/user.entity.js";
 import { FindOptionsWhere } from "typeorm";
 import { AccessTokenService } from "./accessToken.service.js";
 
+const nameofU = (x: keyof User) => x;
+
 export class UserNameTakenError extends Error
 {
     public constructor(username: string)
@@ -22,7 +24,7 @@ export class UserService
         return await UserRepository
         .getInstance()
         .createQueryBuilder('user')
-        .where(`user.id = :id`, { id: userId })
+        .where(`user.${nameofU('id')} = :id`, { id: userId })
         .getOne();
     }
 
