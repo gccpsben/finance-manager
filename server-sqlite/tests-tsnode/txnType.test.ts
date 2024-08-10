@@ -4,26 +4,29 @@ import { resetDatabase, serverURL, UnitTestEndpoints } from "./index.test.js";
 import { assertJSONEqual, assertStrictEqual, HTTPAssert } from "./lib/assert.js";
 import { Context } from "./lib/context.js";
 import { HookShortcuts } from "./shortcuts/hookShortcuts.js";
-import { ResponseGetTransactionTypesDTO, ResponsePostTransactionTypesDTO, TransactionTypesDTO } from "../../api-types/txnType.js";
+import { GetTxnTypesAPI, TxnTypesDTO } from "../../api-types/txnType.js";
 import { Type } from "class-transformer";
 
-export class TransactionTypesDTOClass implements TransactionTypesDTO
-{
-    @IsString() id: string;
-    @IsString() owner: string;
-    @IsString() name: string;
-}
+export class TransactionTypesDTOClass implements TxnTypesDTO
+    {
+        @IsString() id: string;
+        @IsString() owner: string;
+        @IsString() name: string;
+    }
 
-export class ResponseGetTransactionTypesDTOBody implements ResponseGetTransactionTypesDTO
+export namespace GetTxnTypesAPIClass
 {
-    @IsNumber() totalItems: number;
-    @IsNumber() startingIndex: number;
-    @IsNumber() endingIndex: number;
-    
-    @IsArray()
-    @ValidateNested({ each: true })
-    @Type(() => TransactionTypesDTOClass)
-    rangeItems: TransactionTypesDTO[];
+    export class ResponseDTOClass implements GetTxnTypesAPI.ResponseDTO
+    {
+        @IsNumber() totalItems: number;
+        @IsNumber() startingIndex: number;
+        @IsNumber() endingIndex: number;
+        
+        @IsArray()
+        @ValidateNested({ each: true })
+        @Type(() => TransactionTypesDTOClass)
+        rangeItems: TransactionTypesDTOClass[];
+    }
 }
 
 // This class is to add validation decorators to the api-types defined
@@ -84,7 +87,7 @@ export default async function(this: Context)
                 {
                     baseURL: serverURL, expectedStatus: 200, method: "GET",
                     headers: { "authorization": firstUserToken },
-                    expectedBodyType: ResponseGetTransactionTypesDTOBody
+                    expectedBodyType: GetTxnTypesAPIClass.ResponseDTOClass
                 });
                 assertStrictEqual(response.parsedBody.rangeItems.length, 1);
                 assertJSONEqual(response.parsedBody.rangeItems[0], postedTxnType);

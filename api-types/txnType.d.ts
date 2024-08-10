@@ -1,6 +1,14 @@
 import { PaginationAPIResponse } from "./lib";
 
-export type TransactionTypesDTO = { id: string; name: string; owner: string; };
-export type ResponseGetTransactionTypesDTO = PaginationAPIResponse<TransactionTypesDTO>;
-export type PostTransactionTypesDTO = { name: string; };
-export type ResponsePostTransactionTypesDTO = TransactionTypesDTO;
+export type TxnTypesDTO = { id: string; name: string; owner: string; };
+
+export namespace GetTxnTypesAPI
+{
+    export type ResponseDTO = PaginationAPIResponse<TxnTypesDTO>;
+}
+
+export namespace PostTxnTypesAPI
+{
+    export type RequestDTO = { name: string };
+    export type ResponseDTO = TxnTypesDTO;
+}

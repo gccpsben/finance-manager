@@ -4,9 +4,9 @@ import { AssertFetchReturns, HTTPAssert } from '../lib/assert.js';
 import { randomUUID } from 'crypto';
 import { ResponsePostLoginDTOBody } from '../auth.test.js';
 import { PostTransactionDTOBody, ResponsePostTransactionDTOBody } from '../transaction.test.js';
-import { PostTransactionTypesDTO } from '../../../api-types/txnType.js';
+import { PostTxnTypesAPI } from '../../../api-types/txnType.js';
 import { ResponsePostTransactionTypesDTOBody } from '../txnType.test.js';
-import { PostContainerDTO, ResponsePostContainerDTO } from '../../../api-types/container.js';
+import { PostContainerDTO } from '../../../api-types/container.js';
 import { ResponsePostContainerDTOBody } from '../container.test.js';
 import { simpleFaker } from '@faker-js/faker';
 import { Decimal } from 'decimal.js';
@@ -119,7 +119,7 @@ export class HookShortcuts
     {
         serverURL:string,
         token:string,
-        body: Partial<PostTransactionTypesDTO>,
+        body: Partial<PostTxnTypesAPI.RequestDTO>,
         assertBody?: boolean,
         expectedCode?: number
     })
