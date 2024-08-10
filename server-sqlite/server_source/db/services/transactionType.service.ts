@@ -50,7 +50,7 @@ export class TransactionTypeService
         if (!user) throw createHttpError(404, `Cannot find user with id '${ownerId}'`);
         let query = TransactionTypeRepository.getInstance()
         .createQueryBuilder(`type`)
-        .where(`type.${nameofT('id')} = :ownerId`, {ownerId: ownerId });
+        .where(`type.${nameofT('ownerId')} = :ownerId`, {ownerId: ownerId });
 
         if (config.name !== undefined) query = query.andWhere(`type.${nameofT('name')} LIKE :name`, { title: `%${config.name}%` })
 
