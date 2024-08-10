@@ -9,11 +9,11 @@ import { simpleFaker } from '@faker-js/faker';
 import { randomUUID } from "crypto";
 import { Decimal } from "decimal.js";
 import { fillArray } from "./lib/utils.js";
-import { CurrencyDTO, PostCurrencyDTO, ResponseGetCurrencyDTO, ResponsePostCurrencyDTO } from "../../api-types/currencies.d.js";
-import { PostCurrencyRateDatumDTO, ResponsePostCurrencyRateDatumDTO } from "../../api-types/currencyRateDatum.js";
+import { CurrencyDTO, PostCurrencyAPI, GetCurrencyAPI, GetCurrencyRateHistoryAPI } from "../../api-types/currencies.d.js";
+import { PostCurrencyRateAPI } from "../../api-types/currencyRateDatum.js";
 import { Type } from "class-transformer";
 
-export class ResponseCurrencyDTOClass implements CurrencyDTO
+export class CurrencyDTOClass implements CurrencyDTO
 {
     @IsString() id: string;
     @IsString() name: string;
@@ -25,36 +25,70 @@ export class ResponseCurrencyDTOClass implements CurrencyDTO
     @IsDecimalJSString() rateToBase: string;
 }
 
-export class ResponseGetCurrencyDTOClass implements ResponseGetCurrencyDTO
+export namespace GetCurrencyAPIClass
 {
-    @IsNumber() totalItems: number;
-    @IsNumber() startingIndex: number;
-    @IsNumber() endingIndex: number;
-    
-    @IsArray()
-    @ValidateNested({ each: true })
-    @Type(() => ResponseCurrencyDTOClass)
-    rangeItems: CurrencyDTO[];
+    export class ResponseDTO implements GetCurrencyAPI.ResponseDTO
+    {
+        @IsNumber() totalItems: number;
+        @IsNumber() startingIndex: number;
+        @IsNumber() endingIndex: number;
+        
+        @IsArray()
+        @ValidateNested({ each: true })
+        @Type(() => CurrencyDTOClass)
+        rangeItems: CurrencyDTO[];
+    }
 }
 
-export class ResponsePostCurrencyDTOClass implements ResponsePostCurrencyDTO
+export namespace PostCurrencyAPIClass
 {
-    @IsString() id: string;
+    export class RequestDTO implements PostCurrencyAPI.RequestDTO
+    {
+        @IsString() name: string;
+        @IsOptional() @IsDecimalJSString() fallbackRateAmount: string;
+        @IsOptional() @IsString() fallbackRateCurrencyId: string;
+        @IsString() ticker: string;
+    }
+
+    export class ResponseDTO implements PostCurrencyAPI.ResponseDTO
+    {
+        @IsString() id: string;
+    }    
 }
 
-export class ResponsePostCurrencyRateDTOClass implements ResponsePostCurrencyRateDatumDTO
+export namespace PostCurrencyRateDatumAPIClass
 {
-    @IsString() id: string;
+    export class RequestDTO implements PostCurrencyRateAPI.RequestDTO
+    {
+        @IsDecimalJSString() amount: string;
+        @IsString() refCurrencyId: string;
+        @IsString() refAmountCurrencyId: string;
+        @IsNumber() date: number;
+    }
+    export class ResponseDTO implements PostCurrencyRateAPI.ResponseDTO
+    {
+        @IsString() id: string;
+    }
 }
 
 function createBaseCurrencyPostBody(name: string, ticker: string)
 {
-    return { name: name, ticker: ticker, fallbackRateCurrencyId: undefined, fallbackRateAmount: undefined } satisfies PostCurrencyDTO;
+    return { 
+        name: name, 
+        ticker: ticker, 
+        fallbackRateCurrencyId: undefined, 
+        fallbackRateAmount: undefined 
+    } satisfies PostCurrencyAPI.RequestDTO;
 }
 
 function createCurrencyPostBody(name: string, ticker: string, refCurrencyId: string, amount: string)
 {
-    return { name: name, ticker: ticker, fallbackRateCurrencyId: refCurrencyId, fallbackRateAmount: amount } satisfies PostCurrencyDTO;
+    return { 
+        name: name, 
+        ticker: ticker, 
+        fallbackRateCurrencyId: refCurrencyId, 
+        fallbackRateAmount: amount 
+    } satisfies PostCurrencyAPI.RequestDTO;
 }
 
 /** This does not perform assertion */
@@ -86,7 +120,7 @@ async function postCurrencyRateDatum(token:string, amount: string, refCurrencyId
     const response = await HTTPAssert.assertFetch(UnitTestEndpoints.currencyRateDatumsEndpoints['post'], 
     {
         baseURL: serverURL, expectedStatus: undefined, method: "POST",
-        body: { amount, refCurrencyId, refAmountCurrencyId, date } as PostCurrencyRateDatumDTO,
+        body: { amount, refCurrencyId, refAmountCurrencyId, date } as PostCurrencyRateDatumAPIClass.RequestDTO,
         headers: { "authorization": token }
     });
     return response;
@@ -330,7 +364,7 @@ async function regularCurrenciesCheck(this: Context)
                         headers: { "authorization": firstUser.token }
                     }
                 );
-                await assertBodyConfirmToModel(ResponseGetCurrencyDTOClass, response.rawBody);
+                await assertBodyConfirmToModel(GetCurrencyAPIClass.ResponseDTO, response.rawBody);
             }
 
         }, { timeout: 60000 });
@@ -355,7 +389,7 @@ async function ratesCorrectnessCheck(this:Context)
             {
                 const response = await getCurrencyById(firstUserToken, baseCurrencyID);
                 HTTPAssert.assertStatus(200, response.res);
-                const parsedBody = await assertBodyConfirmToModel(ResponseGetCurrencyDTOClass, response.rawBody);
+                const parsedBody = await assertBodyConfirmToModel(GetCurrencyAPIClass.ResponseDTO, response.rawBody);
                 assertStrictEqual(parsedBody.rangeItems[0].rateToBase, "1");
             });
     
@@ -374,12 +408,12 @@ async function ratesCorrectnessCheck(this:Context)
             {
                 const secondaryRes = await postCurrency(firstUserToken, randomUUID(), randomUUID(), baseCurrencyID, config.secondaryCurrencyAmount.toString());
                 HTTPAssert.assertStatus(200, secondaryRes.res);
-                await assertBodyConfirmToModel(ResponsePostCurrencyDTOClass, secondaryRes.rawBody);
+                await assertBodyConfirmToModel(PostCurrencyAPIClass.ResponseDTO, secondaryRes.rawBody);
                 config.secondaryCurrencyID = secondaryRes.rawBody["id"];
 
                 const ternaryRes = await postCurrency(firstUserToken, randomUUID(), randomUUID(), config.secondaryCurrencyID, config.ternaryCurrencyAmount.toString());
                 HTTPAssert.assertStatus(200, ternaryRes.res);
-                await assertBodyConfirmToModel(ResponsePostCurrencyDTOClass, ternaryRes.rawBody);
+                await assertBodyConfirmToModel(PostCurrencyAPIClass.ResponseDTO, ternaryRes.rawBody);
                 config.ternaryCurrencyID = ternaryRes.rawBody["id"];
             }).bind(this)();
 
@@ -387,7 +421,7 @@ async function ratesCorrectnessCheck(this:Context)
             {
                 const target = await getCurrencyById(firstUserToken, config.secondaryCurrencyID);
                 HTTPAssert.assertStatus(200, target.res);
-                const parsedBody = await assertBodyConfirmToModel(ResponseGetCurrencyDTOClass, target.rawBody);
+                const parsedBody = await assertBodyConfirmToModel(GetCurrencyAPIClass.ResponseDTO, target.rawBody);
                 assertStrictEqual(parsedBody.rangeItems[0].rateToBase, config.expectedSecondaryCurrencyAmount.toString());
             });
 
@@ -395,7 +429,7 @@ async function ratesCorrectnessCheck(this:Context)
             {
                 const target = await getCurrencyById(firstUserToken, config.ternaryCurrencyID);
                 HTTPAssert.assertStatus(200, target.res);
-                const parsedBody = await assertBodyConfirmToModel(ResponseGetCurrencyDTOClass, target.rawBody);
+                const parsedBody = await assertBodyConfirmToModel(GetCurrencyAPIClass.ResponseDTO, target.rawBody);
                 assertStrictEqual(parsedBody.rangeItems[0].rateToBase, config.expectedTernaryCurrencyAmount.toString());
             });
         });
@@ -489,7 +523,7 @@ async function ratesCorrectnessCheck(this:Context)
                 for (let curr of testCase.currencies)
                 {
                     const currencyResponse = await postCurrency(firstUserToken, curr.name, curr.name, utCurMap[curr.refCurrencyId], curr.amount);
-                    const parsedBody = await assertBodyConfirmToModel(ResponsePostCurrencyDTOClass, currencyResponse.rawBody);
+                    const parsedBody = await assertBodyConfirmToModel(PostCurrencyAPIClass.ResponseDTO, currencyResponse.rawBody);
                     utCurMap[curr.name] = parsedBody.id;
                 }
             });
@@ -507,7 +541,7 @@ async function ratesCorrectnessCheck(this:Context)
                         offsetDate(datum.date)
                     );
                     assertStrictEqual(response.res.status, 200);
-                    await assertBodyConfirmToModel(ResponsePostCurrencyRateDTOClass, response.rawBody);
+                    await assertBodyConfirmToModel(PostCurrencyRateDatumAPIClass.ResponseDTO, response.rawBody);
                 }
             });
 
@@ -525,7 +559,7 @@ async function ratesCorrectnessCheck(this:Context)
                         );
                         
                         assertStrictEqual(response.res.status, 200);
-                        const currencyResponse = await assertBodyConfirmToModel(ResponseGetCurrencyDTOClass, response.rawBody);
+                        const currencyResponse = await assertBodyConfirmToModel(GetCurrencyAPIClass.ResponseDTO, response.rawBody);
                         assertStrictEqual(currencyResponse.rangeItems[0].rateToBase, expectedRate); 
                     }
                 }

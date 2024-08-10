@@ -1,8 +1,6 @@
 
-import { IsString } from 'class-validator';
 import { TestUserDict, UnitTestEndpoints, TestUserEntry } from '../index.test.js';
-import { assertBodyConfirmToModel, AssertFetchReturns, HTTPAssert } from '../lib/assert.js';
-import { Context } from '../lib/context.js';
+import { AssertFetchReturns, HTTPAssert } from '../lib/assert.js';
 import { randomUUID } from 'crypto';
 import { ResponsePostLoginDTOBody } from '../auth.test.js';
 import { PostTransactionDTOBody, ResponsePostTransactionDTOBody } from '../transaction.test.js';
@@ -10,11 +8,11 @@ import { PostTransactionTypesDTO } from '../../../api-types/txnType.js';
 import { ResponsePostTransactionTypesDTOBody } from '../txnType.test.js';
 import { PostContainerDTO, ResponsePostContainerDTO } from '../../../api-types/container.js';
 import { ResponsePostContainerDTOBody } from '../container.test.js';
-import { ResponsePostCurrencyDTOClass } from '../currency.test.js';
-import { PostCurrencyDTO } from '../../../api-types/currencies.js';
 import { simpleFaker } from '@faker-js/faker';
 import { Decimal } from 'decimal.js';
 import { ResponseGetExpensesAndIncomesDTOClass } from '../calculations.test.js';
+import { PostCurrencyAPI } from '../../../api-types/currencies.js';
+import { PostCurrencyAPIClass } from '../currency.test.js';
 
 export class HookShortcuts
 {
@@ -167,7 +165,7 @@ export class HookShortcuts
     {
         serverURL:string,
         token:string,
-        body: Partial<PostCurrencyDTO>,
+        body: Partial<PostCurrencyAPI.RequestDTO>,
         assertBody?: boolean,
         expectedCode?: number
     })
@@ -178,7 +176,7 @@ export class HookShortcuts
             baseURL: config.serverURL, expectedStatus: config.expectedCode, method: "POST",
             body: config.body,
             headers: { "authorization": config.token },
-            expectedBodyType: assertBody ? ResponsePostCurrencyDTOClass : undefined
+            expectedBodyType: assertBody ? PostCurrencyAPIClass.ResponseDTO : undefined
         });
         return {
             ...response,

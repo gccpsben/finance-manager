@@ -3,17 +3,17 @@ import { AccessTokenService } from '../../db/services/accessToken.service.js';
 import { IsDateString, IsString } from 'class-validator';
 import { ExpressValidations } from '../validation.js';
 import { IsDecimalJSString, IsUTCDateInt } from '../../db/validators.js';
-import type { PostCurrencyRateDatumDTO, ResponsePostCurrencyRateDatumDTO } from "../../../../api-types/currencyRateDatum.js";
+import type { PostCurrencyRateAPI } from "../../../../api-types/currencyRateDatum.js";
 import { TypesafeRouter } from '../typescriptRouter.js';
 import { CurrencyRateDatumService } from '../../db/services/currencyRateDatum.service.js';
 
 const router = new TypesafeRouter(express.Router());
 
-router.post<ResponsePostCurrencyRateDatumDTO>(`/api/v1/currencyRateDatums`, 
+router.post<PostCurrencyRateAPI.ResponseDTO>(`/api/v1/currencyRateDatums`, 
 {
     handler: async (req: express.Request, res: express.Response) => 
     {
-        class body implements PostCurrencyRateDatumDTO
+        class body implements PostCurrencyRateAPI.RequestDTO
         {
             @IsDecimalJSString() amount: string;
             @IsString() refCurrencyId: string;

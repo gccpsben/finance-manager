@@ -12,13 +12,25 @@ export type CurrencyDTO =
     rateToBase: string; // a DecimalJS string
 };
 
-export type PostCurrencyDTO = 
+export namespace PostCurrencyAPI 
 {
-    name: string;
-    fallbackRateAmount: string | undefined;
-    fallbackRateCurrencyId: string | undefined;
-    ticker: string;
-};
-export type ResponsePostCurrencyDTO = { id: string; };
-export type GetCurrencyDTO = { };
-export type ResponseGetCurrencyDTO = PaginationAPIResponse<CurrencyDTO>;
+    export type ResponseDTO = { id: string; };
+    export type RequestDTO = 
+    {
+        name: string;
+        fallbackRateAmount: string | undefined;
+        fallbackRateCurrencyId: string | undefined;
+        ticker: string;
+    };
+}
+
+export namespace GetCurrencyAPI
+{
+    export type ResponseDTO = PaginationAPIResponse<CurrencyDTO>;
+    export type RequestDTO = { };
+}
+
+export namespace GetCurrencyRateHistoryAPI
+{
+    export type ResponseDTO = {};
+}

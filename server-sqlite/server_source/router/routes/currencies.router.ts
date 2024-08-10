@@ -7,17 +7,17 @@ import { ExpressValidations } from '../validation.js';
 import { IsDecimalJSString } from '../../db/validators.js';
 import createHttpError from 'http-errors';
 import { RateHydratedCurrency } from '../../db/entities/currency.entity.js';
-import type { PostCurrencyDTO, ResponseGetCurrencyDTO, ResponsePostCurrencyDTO } from "../../../../api-types/currencies.js";
+import type { GetCurrencyAPI, PostCurrencyAPI } from "../../../../api-types/currencies.js";
 import { TypesafeRouter } from '../typescriptRouter.js';
 import { OptionalPaginationAPIQueryRequest, PaginationAPIResponseClass } from '../logics/pagination.js';
 
 const router = new TypesafeRouter(express.Router());
 
-router.post<ResponsePostCurrencyDTO>(`/api/v1/currencies`, 
+router.post<PostCurrencyAPI.ResponseDTO>(`/api/v1/currencies`, 
 {
     handler: async (req: express.Request, res: express.Response) => 
     {
-        class body implements PostCurrencyDTO
+        class body implements PostCurrencyAPI.RequestDTO
         {
             @IsString() name: string; 
             @IsOptional() @IsString() @IsDecimalJSString() fallbackRateAmount: string | undefined;
@@ -39,7 +39,7 @@ router.post<ResponsePostCurrencyDTO>(`/api/v1/currencies`,
     }
 });
 
-router.get<ResponseGetCurrencyDTO>(`/api/v1/currencies`, 
+router.get<GetCurrencyAPI.ResponseDTO>(`/api/v1/currencies`, 
 {
     handler: async (req: express.Request, res: express.Response) => 
     {

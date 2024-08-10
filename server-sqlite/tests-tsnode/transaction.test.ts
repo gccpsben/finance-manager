@@ -7,9 +7,8 @@ import { IsString, IsNotEmpty, IsOptional, IsDateString } from "class-validator"
 import { IsDecimalJSString, IsUTCDateInt } from "../server_source/db/validators.js";
 import { simpleFaker } from "@faker-js/faker";
 import { PostTransactionDTO, ResponsePostTransactionDTO } from "../../api-types/txn.js";
-import { ResponsePostCurrencyDTOClass } from "./currency.test.js";
 import { ResponsePostContainerDTOBody } from "./container.test.js";
-import { PostCurrencyDTO } from "../../api-types/currencies.js";
+import { PostCurrencyAPIClass } from "./currency.test.js";
 
 export class PostTransactionDTOBody implements PostTransactionDTO
 { 
@@ -34,7 +33,14 @@ const createPostTxnTypeBody = (name: string) => ({ "name": name });
 const createPostContainerBody = (name: string) => ({name: name});
 const createBaseCurrencyPostBody = (name: string, ticker: string) => ({ name: name, ticker: ticker });
 const createCurrencyPostBody = (name: string, ticker: string, fallbackRateCurrencyId: string, fallbackRateAmount: string) => 
-    ({ name: name, ticker: ticker, fallbackRateCurrencyId: fallbackRateCurrencyId, fallbackRateAmount: fallbackRateAmount } satisfies PostCurrencyDTO);
+(
+    { 
+        name: name, 
+        ticker: ticker, 
+        fallbackRateCurrencyId: fallbackRateCurrencyId, 
+        fallbackRateAmount: fallbackRateAmount 
+    } satisfies  PostCurrencyAPIClass.RequestDTO
+);
 
 function getRandTxnBaseBody()
 {
@@ -78,7 +84,7 @@ async function testFromTransactions(this: Context)
                 baseURL: serverURL, expectedStatus: 200, method: "POST",
                 body: createBaseCurrencyPostBody(`User-Currency`, `USER-TICKER`),
                 headers: { "authorization": firstUser.token },
-                expectedBodyType: ResponsePostCurrencyDTOClass
+                expectedBodyType: PostCurrencyAPIClass.ResponseDTO
             });
             testContext.baseCurrId = response.parsedBody.id;
         }).bind(this)();
@@ -91,7 +97,7 @@ async function testFromTransactions(this: Context)
                 baseURL: serverURL, expectedStatus: 200, method: "POST",
                 body: createCurrencyPostBody(`User-Currency2`, `USER-TICKER2`, testContext.baseCurrId, testContext.secCurrAmountToBase),
                 headers: { "authorization": firstUser.token },
-                expectedBodyType: ResponsePostCurrencyDTOClass
+                expectedBodyType: PostCurrencyAPIClass.ResponseDTO
             });
             testContext.secCurrId = response.parsedBody.id;
         }).bind(this)();

@@ -1,8 +1,11 @@
-export type PostCurrencyRateDatumDTO = 
+export namespace PostCurrencyRateAPI
 {
-    amount: string;
-    refCurrencyId: string;
-    refAmountCurrencyId: string;
-    date: number;
-};
-export type ResponsePostCurrencyRateDatumDTO = { id: string; };
+    export type RequestDTO = 
+    {
+        amount: string;
+        refCurrencyId: string;
+        refAmountCurrencyId: string;
+        date: number;
+    };
+    export type ResponseDTO = { id: string; };
+}
