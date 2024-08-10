@@ -7,9 +7,9 @@ import { IsString, IsNotEmpty, IsOptional, IsDateString } from "class-validator"
 import { IsDecimalJSString, IsUTCDateInt } from "../server_source/db/validators.js";
 import { simpleFaker } from "@faker-js/faker";
 import { PostTransactionDTO, ResponsePostTransactionDTO } from "../../api-types/txn.js";
-import { ResponsePostTransactionTypesDTOBody } from "./txnType.test.js";
 import { ResponsePostCurrencyDTOClass } from "./currency.test.js";
 import { ResponsePostContainerDTOBody } from "./container.test.js";
+import { PostCurrencyDTO } from "../../api-types/currencies.js";
 
 export class PostTransactionDTOBody implements PostTransactionDTO
 { 
@@ -33,7 +33,8 @@ export class ResponsePostTransactionDTOBody implements ResponsePostTransactionDT
 const createPostTxnTypeBody = (name: string) => ({ "name": name });
 const createPostContainerBody = (name: string) => ({name: name});
 const createBaseCurrencyPostBody = (name: string, ticker: string) => ({ name: name, ticker: ticker });
-const createCurrencyPostBody = (name: string, ticker: string, refCurrencyId: string, amount: string) => ({ name: name, ticker: ticker, refCurrencyId: refCurrencyId, amount: amount });
+const createCurrencyPostBody = (name: string, ticker: string, fallbackRateCurrencyId: string, fallbackRateAmount: string) => 
+    ({ name: name, ticker: ticker, fallbackRateCurrencyId: fallbackRateCurrencyId, fallbackRateAmount: fallbackRateAmount } satisfies PostCurrencyDTO);
 
 function getRandTxnBaseBody()
 {
@@ -72,7 +73,6 @@ async function testFromTransactions(this: Context)
         // Register base currency for first user
         await (async function()
         {
-            class expectedType { @IsString() id: string; }
             const response = await HTTPAssert.assertFetch(UnitTestEndpoints.currenciesEndpoints['post'], 
             {
                 baseURL: serverURL, expectedStatus: 200, method: "POST",

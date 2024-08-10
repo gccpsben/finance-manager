@@ -21,7 +21,7 @@ export class CurrencyRateDatum extends EntityClass
     @Column( { nullable: false })
     refCurrencyId: string;
 
-    @ManyToOne(type => Currency, currency => currency.refCurrency, { nullable: false })
+    @ManyToOne(type => Currency, currency => currency.fallbackRateCurrency, { nullable: false })
     @JoinColumn()
     @EnsureNotPlainForeignKey() 
     refCurrency: Currency;
@@ -30,7 +30,7 @@ export class CurrencyRateDatum extends EntityClass
     @Index()
     refAmountCurrencyId: string;
 
-    @ManyToOne(type => Currency, currency => currency.refCurrency, { nullable: false })
+    @ManyToOne(type => Currency, currency => currency.fallbackRateCurrency, { nullable: false })
     @JoinColumn()
     @EnsureNotPlainForeignKey() 
     refAmountCurrency: Currency;

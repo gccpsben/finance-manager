@@ -17,8 +17,8 @@ export class ResponseCurrencyDTOClass implements CurrencyDTO
 {
     @IsString() id: string;
     @IsString() name: string;
-    @IsOptional() @IsDecimalJSString() amount: string;
-    @IsOptional() @IsString() refCurrency: string;
+    @IsOptional() @IsDecimalJSString() fallbackRateAmount: string;
+    @IsOptional() @IsString() fallbackRateCurrencyId: string;
     @IsString() owner: string;
     @IsBoolean() isBase: boolean;
     @IsString() ticker: string;
@@ -49,12 +49,12 @@ export class ResponsePostCurrencyRateDTOClass implements ResponsePostCurrencyRat
 
 function createBaseCurrencyPostBody(name: string, ticker: string)
 {
-    return { name: name, ticker: ticker, refCurrencyId: undefined, amount: undefined } satisfies PostCurrencyDTO;
+    return { name: name, ticker: ticker, fallbackRateCurrencyId: undefined, fallbackRateAmount: undefined } satisfies PostCurrencyDTO;
 }
 
 function createCurrencyPostBody(name: string, ticker: string, refCurrencyId: string, amount: string)
 {
-    return { name: name, ticker: ticker, refCurrencyId: refCurrencyId, amount: amount } satisfies PostCurrencyDTO;
+    return { name: name, ticker: ticker, fallbackRateCurrencyId: refCurrencyId, fallbackRateAmount: amount } satisfies PostCurrencyDTO;
 }
 
 /** This does not perform assertion */
@@ -212,7 +212,7 @@ async function baseCurrenciesCheck(this: Context)
                 await HookShortcuts.postCreateCurrency(
                 {
                     serverURL: serverURL,
-                    body: { name: testCase.subPrimaryValue, ticker: testCase.subPrimaryValue, amount: "1", refCurrencyId: userObj.baseCurrencyId },
+                    body: { name: testCase.subPrimaryValue, ticker: testCase.subPrimaryValue, fallbackRateAmount: "1", fallbackRateCurrencyId: userObj.baseCurrencyId },
                     token: userToken,
                     assertBody: false,
                     expectedCode: testCase.expectedPass ? 200 : 400

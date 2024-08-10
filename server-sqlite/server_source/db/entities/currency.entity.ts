@@ -11,9 +11,9 @@ import { SQLitePrimitiveOnly } from "../../index.d.js";
 @Entity() 
 @Unique("UniqueCurrencyNameWithinUser",["name", "owner"]) // For each user, no currencies with the same name is allowed
 @Unique("UniqueCurrencyTickerWithinUser",["ticker", "owner"]) // For each user, no currencies with the same ticker is allowed
-@Check(/*sql*/`CASE WHEN amount IS NOT NULL THEN NOT isBase ELSE isBase END`) // If isBase then amount must be null.
-@Check(/*sql*/`CASE WHEN NOT isBase THEN amount IS NOT NULL ELSE amount IS NULL END`) // If not isBase then amount must also not be null.
-@Check(/*sql*/`CASE WHEN NOT isBase THEN refCurrencyId IS NOT NULL ELSE refCurrencyId IS NULL END`) // If not isBase then refCurrency must also not be null
+@Check(/*sql*/`CASE WHEN fallbackRateAmount IS NOT NULL THEN NOT isBase ELSE isBase END`) // If isBase then fallbackRateAmount must be null.
+@Check(/*sql*/`CASE WHEN NOT isBase THEN fallbackRateAmount IS NOT NULL ELSE fallbackRateAmount IS NULL END`) // If not isBase then fallbackRateAmount must also not be null.
+@Check(/*sql*/`CASE WHEN NOT isBase THEN fallbackRateCurrencyId IS NOT NULL ELSE fallbackRateCurrencyId IS NULL END`) // If not isBase then refCurrency must also not be null
 export class Currency extends EntityClass
 {
     @PrimaryGeneratedColumn('uuid')
@@ -29,15 +29,15 @@ export class Currency extends EntityClass
     @IsOptional()
     @IsString()
     @IsDecimalJSString()
-    amount: string | null;
+    fallbackRateAmount: string | null;
 
     @Column( { nullable: true })
-    refCurrencyId: string;
+    fallbackRateCurrencyId: string;
 
-    @ManyToOne(type => Currency, currency => currency.refCurrency, { nullable: true })
+    @ManyToOne(type => Currency, currency => currency.fallbackRateCurrency, { nullable: true })
     @JoinColumn()
     @EnsureNotPlainForeignKey() 
-    refCurrency: Omit<Omit<Currency, 'owner'>, 'refCurrency'> | null;
+    fallbackRateCurrency: Omit<Omit<Currency, 'owner'>, 'refCurrency'> | null;
 
     @Column( { nullable: false })
     ownerId: string;
@@ -62,7 +62,7 @@ export class Currency extends EntityClass
     {
         await super.validate();
 
-        if (!!this.refCurrency !== (!!this.amount)) 
+        if (!!this.fallbackRateCurrency !== (!!this.fallbackRateAmount)) 
         { 
             const error = new ValidationError();
             error.target = this;
@@ -92,7 +92,7 @@ export class Currency extends EntityClass
 
     public isCurrencyBase()
     {
-        return this.amount === null || this.amount === undefined;
+        return this.fallbackRateAmount === null || this.fallbackRateAmount === undefined;
     }
 }
 

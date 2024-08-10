@@ -4,8 +4,8 @@ export type CurrencyDTO =
 {
     id: string;
     name: string;
-    amount: string | undefined;
-    refCurrency: string | undefined;
+    fallbackRateAmount: string | undefined;
+    fallbackRateCurrencyId: string | undefined;
     owner: string;
     isBase: boolean;
     ticker: string;
@@ -15,8 +15,8 @@ export type CurrencyDTO =
 export type PostCurrencyDTO = 
 {
     name: string;
-    amount: string | undefined;
-    refCurrencyId: string | undefined;
+    fallbackRateAmount: string | undefined;
+    fallbackRateCurrencyId: string | undefined;
     ticker: string;
 };
 export type ResponsePostCurrencyDTO = { id: string; };

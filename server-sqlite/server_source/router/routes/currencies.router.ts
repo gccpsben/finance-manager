@@ -20,8 +20,8 @@ router.post<ResponsePostCurrencyDTO>(`/api/v1/currencies`,
         class body implements PostCurrencyDTO
         {
             @IsString() name: string; 
-            @IsOptional() @IsString() @IsDecimalJSString() amount: string | undefined;
-            @IsOptional() @IsString() refCurrencyId: string | undefined;
+            @IsOptional() @IsString() @IsDecimalJSString() fallbackRateAmount: string | undefined;
+            @IsOptional() @IsString() fallbackRateCurrencyId: string | undefined;
             @IsString() ticker: string;
         }
 
@@ -31,8 +31,8 @@ router.post<ResponsePostCurrencyDTO>(`/api/v1/currencies`,
         (
             authResult.ownerUserId, 
             parsedBody.name,
-            parsedBody.amount ? new Decimal(parsedBody.amount) : undefined, 
-            parsedBody.refCurrencyId,
+            parsedBody.fallbackRateAmount ? new Decimal(parsedBody.fallbackRateAmount) : undefined, 
+            parsedBody.fallbackRateCurrencyId,
             parsedBody.ticker
         );
         return { id: newCurrency.id }
@@ -53,13 +53,13 @@ router.get<ResponseGetCurrencyDTO>(`/api/v1/currencies`,
 
         const domainToDTO = (curr: RateHydratedCurrency) => (
         {
-            amount: curr.currency.amount,
+            amount: curr.currency.fallbackRateAmount,
             id: curr.currency.id,
             isBase: curr.currency.isBase,
             name: curr.currency.name,
             owner: curr.currency.owner.id,
             rateToBase: curr.rateToBase,
-            refCurrency: curr.currency.refCurrency?.id,
+            refCurrency: curr.currency.fallbackRateCurrency?.id,
             ticker: curr.currency.ticker
         });
 
@@ -103,13 +103,13 @@ router.get<ResponseGetCurrencyDTO>(`/api/v1/currencies`,
                 );
                 return rateHydratedCurrencies.map(c => (
                 {
-                    amount: c.currency.amount,
+                    fallbackRateAmount: c.currency.fallbackRateAmount,
                     id: c.currency.id,
                     isBase: c.currency.isBase,
                     name: c.currency.name,
                     owner: c.currency.ownerId,
                     rateToBase: c.rateToBase,
-                    refCurrency: c.currency.refCurrencyId,
+                    fallbackRateCurrencyId: c.currency.fallbackRateCurrencyId,
                     ticker: c.currency.ticker
                 }));
             })()

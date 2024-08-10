@@ -62,11 +62,11 @@ export class CurrencyCalculator
 
         if (nearestTwoDatums.length === 0) 
         {
-            const currenyBaseAmount = new Decimal(from.amount);
+            const currenyBaseAmount = new Decimal(from.fallbackRateAmount);
             const currenyBaseAmountUnitToBaseRate = await CurrencyCalculator.currencyToBaseRate
             (
                 ownerId, 
-                await getCurrById(from.refCurrencyId), 
+                await getCurrById(from.fallbackRateCurrencyId), 
                 date,
                 cache
             )!;
@@ -169,7 +169,7 @@ export class CurrencyService
                 owner: { id: userId }, 
                 isBase: true,
             },
-            relations: { owner: true, refCurrency: true } 
+            relations: { owner: true, fallbackRateCurrency: true } 
         });
     }
 
@@ -224,7 +224,7 @@ export class CurrencyService
         const result = await CurrencyRepository.getInstance().findOne(
         {
             where: { ...where, owner: { id: userId } },
-            relations: { owner: true, refCurrency: true }
+            relations: { owner: true, fallbackRateCurrency: true }
         });
 
         if (!result) throw createHttpError(404, `Cannot find currency with query \"${JSON.stringify(where)}\"'`);
@@ -255,9 +255,9 @@ export class CurrencyService
         newCurrency.owner = await UserRepository.getInstance().findOne({where:{id: userId}});
         newCurrency.ticker = ticker;
         if (refCurrencyId)
-            newCurrency.refCurrency = await CurrencyRepository.getInstance().findOne({where:{id: refCurrencyId}});
+            newCurrency.fallbackRateCurrency = await CurrencyRepository.getInstance().findOne({where:{id: refCurrencyId}});
         newCurrency.isBase = (amount === undefined && refCurrencyId === undefined);
-        newCurrency.amount = amount == undefined ? undefined : amount.toFixed();
+        newCurrency.fallbackRateAmount = amount == undefined ? undefined : amount.toFixed();
         await CurrencyRepository.getInstance().save(newCurrency);
         return newCurrency;
     }

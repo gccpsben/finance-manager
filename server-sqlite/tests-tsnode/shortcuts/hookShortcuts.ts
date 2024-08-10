@@ -287,8 +287,8 @@ export class HookShortcuts
                     body: 
                     { 
                         name: randomName,
-                        amount: amount.toString(),
-                        refCurrencyId: refCurrencyId,
+                        fallbackRateAmount: amount.toString(),
+                        fallbackRateCurrencyId: refCurrencyId,
                         ticker: randomName
                     },
                     serverURL: config.serverURL,
