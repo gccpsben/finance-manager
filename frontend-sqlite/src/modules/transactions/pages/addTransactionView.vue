@@ -40,7 +40,7 @@
 
             <grid-shortcut columns="100px 1fr" class="fullWidth field">
                 <div class="middleLeft">Type:</div>
-                <custom-dropdown :items="store.txnTypes.lastSuccessfulData ?? []" v-model:currentItem="selectedTxnType">
+                <custom-dropdown :items="store.txnTypes.lastSuccessfulData?.rangeItems ?? []" v-model:currentItem="selectedTxnType">
                     <template #itemToText="props">
                         <div class="middleLeft" :class="{'grayText': !props.item?.name }">{{ props.item?.name ?? 'No Type Selected' }}</div>
                     </template>
@@ -49,11 +49,11 @@
             
             <grid-shortcut v-if="selectedMode == 'transfer' || selectedMode == 'spending'" columns="100px 1fr" class="fullWidth field">
                 <div class="middleLeft">From:</div>
-                <custom-dropdown :items="store.containers.lastSuccessfulData ?? []" v-model:currentItem="selectedFromContainer">
+                <custom-dropdown :items="store.containers.lastSuccessfulData?.rangeItems ?? []" v-model:currentItem="selectedFromContainer">
                     <template #itemToText="props">
                         <grid-shortcut :style="{'padding-left': props.isSelector ? '0px' : '5px', 'padding-right': props.isSelector ? '5px' : '0px'}" columns="1fr auto" class="fullWidth">
                             <div class="middleLeft" :class="{'grayText': !props.item?.name }">{{ props.item?.name ?? '/' }}</div>
-                            <div class="middleRight containerValueText">{{ props.item?.value.toFixed(1) }} {{ props.item ? 'HKD' : '' }}</div>
+                            <!-- <div class="middleRight containerValueText">{{ props.item?.toFixed(1) }} {{ props.item ? 'HKD' : '' }}</div> -->
                         </grid-shortcut>
                     </template>
                 </custom-dropdown>
@@ -61,11 +61,11 @@
 
             <grid-shortcut v-if="selectedMode == 'transfer' || selectedMode == 'earning'" columns="100px 1fr" class="fullWidth field">
                 <div class="middleLeft">To:</div>
-                <custom-dropdown :items="store.containers.lastSuccessfulData ?? []" v-model:currentItem="selectedToContainer">
+                <custom-dropdown :items="store.containers.lastSuccessfulData?.rangeItems ?? []" v-model:currentItem="selectedToContainer">
                     <template #itemToText="props">
                         <grid-shortcut :style="{'padding-left': props.isSelector ? '0px' : '5px', 'padding-right': props.isSelector ? '5px' : '0px' }" columns="1fr 1fr" class="fullWidth">
                             <div class="middleLeft" :class="{'grayText': !props.item?.name }">{{ props.item?.name ?? '/' }}</div>
-                            <div class="middleRight containerValueText">{{ props.item?.value.toFixed(1) }} {{ props.item ? 'HKD' : '' }}</div>
+                            <!-- <div class="middleRight containerValueText">{{ props.item?.value.toFixed(1) }} {{ props.item ? 'HKD' : '' }}</div> -->
                         </grid-shortcut>
                     </template>
                 </custom-dropdown>
@@ -74,9 +74,9 @@
             <grid-shortcut id="spendingFieldContainer" v-if="selectedFromContainer" class="fullWidth field">
                 <div class="middleLeft">Spending:</div>
                 <input class="noSpin" inputmode="decimal" type="number" v-model="fromAmount" v-number-only/>
-                <custom-dropdown :items="store.currencies.lastSuccessfulData" v-model:currentItem="selectedSpendingCurrency">
+                <custom-dropdown :items="store.currencies.lastSuccessfulData?.rangeItems" v-model:currentItem="selectedSpendingCurrency">
                     <template #itemToText="props">
-                        {{ props.item?.symbol ?? '-' }}
+                        {{ props.item?.ticker ?? '-' }}
                     </template>
                 </custom-dropdown>
             </grid-shortcut>
@@ -84,9 +84,9 @@
             <grid-shortcut v-if="selectedToContainer" columns="100px 1fr 100px" class="fullWidth field">
                 <div class="middleLeft">Receiving:</div>
                 <input class="noSpin" inputmode="decimal" type="number" v-model="toAmount" v-number-only/>
-                <custom-dropdown :items="store.currencies.lastSuccessfulData" v-model:currentItem="selectedReceivingCurrency">
+                <custom-dropdown :items="store.currencies.lastSuccessfulData?.rangeItems" v-model:currentItem="selectedReceivingCurrency">
                     <template #itemToText="props">
-                        {{ props.item?.symbol ?? '-' }}
+                        {{ props.item?.ticker ?? '-' }}
                     </template>
                 </custom-dropdown>
             </grid-shortcut>
@@ -95,8 +95,8 @@
                 <div class="middleLeft fullWidth">
                     <div v-if="fromAmount != undefined && selectedSpendingCurrency && selectedFromContainer">
                         <div class="containerValueText" style="text-align: start;">{{ selectedFromContainer.name }}</div>
-                        <div style="text-align: start;">{{ fromAmount }} {{ selectedSpendingCurrency.symbol }}</div>
-                        <div class="containerValueText" style="text-align: start; margin-top:5px;">{{ fromAmount * (selectedSpendingCurrency!.rate as number) }} HKD</div>
+                        <div style="text-align: start;">{{ fromAmount }} {{ selectedSpendingCurrency.ticker }}</div>
+                        <div class="containerValueText" style="text-align: start; margin-top:5px;">{{ fromAmount * decimalJSToNumber(selectedSpendingCurrency.rateToBase) }} HKD</div>
                     </div>
                 </div>
                 <div class="center">
@@ -105,8 +105,8 @@
                 <div class="middleRight fullWidth">
                     <div v-if="toAmount != undefined && selectedReceivingCurrency && selectedToContainer" >
                         <div class="containerValueText" style="text-align: end;">{{ selectedToContainer.name }}</div>
-                        <div style="text-align: end;">{{ toAmount }} {{ selectedReceivingCurrency.symbol }}</div>
-                        <div class="containerValueText" style="text-align: end; margin-top:5px;">{{ toAmount * (selectedReceivingCurrency!.rate as number) }} HKD</div>
+                        <div style="text-align: end;">{{ toAmount }} {{ selectedReceivingCurrency.ticker }}</div>
+                        <div class="containerValueText" style="text-align: end; margin-top:5px;">{{ toAmount * decimalJSToNumber(selectedReceivingCurrency.rateToBase) }} HKD</div>
                     </div>
                 </div>
             </grid-shortcut>
@@ -131,9 +131,10 @@
 
 <script lang="ts">
 import { useMainStore } from "@/modules/core/stores/store";
-import type { Container } from "@/types/dtos/containersDTO";
-import type { RateDefinedCurrency } from "@/types/dtos/currenciesDTO";
-import type { TxnType } from "@/types/dtos/txnTypesDTO";
+import type { ContainerDTO, ResponseGetContainerDTO } from "@/../../api-types/container";
+import type { CurrencyDTO, ResponseGetCurrencyDTO } from "@/../../api-types/currencies"
+import type { TransactionTypesDTO, ResponseGetTransactionTypesDTO } from "@/../../api-types/txnType";
+import type { PostTransactionDTO } from "@/../../api-types/txn";
 import { useMeta } from 'vue-meta';
 
 export default
@@ -171,11 +172,11 @@ export default
         return { 
             isLoading: true,
             store: useMainStore(),
-            selectedFromContainer: undefined as undefined | Container,
-            selectedToContainer: undefined as undefined | Container,
-            selectedSpendingCurrency: undefined as undefined | RateDefinedCurrency,
-            selectedReceivingCurrency: undefined as undefined | RateDefinedCurrency,
-            selectedTxnType: undefined as undefined | TxnType,
+            selectedFromContainer: undefined as undefined | ContainerDTO,
+            selectedToContainer: undefined as undefined | ContainerDTO,
+            selectedSpendingCurrency: undefined as undefined | CurrencyDTO,
+            selectedReceivingCurrency: undefined as undefined | CurrencyDTO,
+            selectedTxnType: undefined as undefined | TransactionTypesDTO,
             fromAmount: 0 as number,
             toAmount: 0 as number,
             txnTitle: '' as string,
@@ -202,49 +203,40 @@ export default
             else
             {
                 let self = this;
-                let body = 
+                let body: Partial<PostTransactionDTO> = 
                 {
                     "title": this.txnTitle,
-                    "typeID": this.selectedTxnType?.pubID,
-                    "date": new Date().toISOString(),
-                    "from": undefined as any,
-                    "to": undefined as any,
-                    "isTypePending": this.isPending
+                    "typeId": this.selectedTxnType!.id,
+                    "creationDate": Date.now(),
+                    "description": "testing desc"
                 };
 
-                if (this.enteredDate != undefined) body.date = this.enteredDate.toISOString();
+                if (this.enteredDate != undefined) 
+                    body['creationDate'] = this.enteredDate.getTime();
 
                 if (this.selectedFromContainer)
                 {
-                    body.from = 
-                    {
-                        "containerID": this.selectedFromContainer.pubID,
-                        "amount":
-                        {
-                            "currencyID": this.selectedSpendingCurrency?.pubID,
-                            "value": this.fromAmount
-                        }
-                    };
+                    body.fromAmount = this.fromAmount.toString();
+                    body.fromContainerId = this.selectedFromContainer.id;
+                    body.fromCurrencyId = this.selectedSpendingCurrency!.id;
                 }
                 if (this.selectedToContainer)
                 {
-                    body.to = 
-                    {
-                        "containerID": this.selectedToContainer.pubID,
-                        "amount":
-                        {
-                            "currencyID": this.selectedReceivingCurrency?.pubID,
-                            "value":  this.toAmount
-                        }
-                    };
+                    body.toAmount = this.toAmount.toString();
+                    body.toContainerId = this.selectedToContainer.id;
+                    body.toCurrencyId = this.selectedReceivingCurrency!.id;
                 }
                 
                 this.isFormUploading = true;
-                this.store.authPost(`/api/v1/finance/transactions`, body)
+                this.store.authPost(`/api/v1/transactions`, body)
                 .then(() => { alert("Successfully Added Transaction."); self.reset(); })
                 .catch(error => { alert(`Error trying to upload transaction. ${error}`); })
                 .finally(() => { self.isFormUploading = false; });
             }
+        },
+        decimalJSToNumber(decimalJSStr: string)
+        {
+            return parseFloat(decimalJSStr);
         }
     },
     computed:
