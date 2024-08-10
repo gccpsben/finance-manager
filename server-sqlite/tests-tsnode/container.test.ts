@@ -4,12 +4,20 @@ import { HTTPAssert } from "./lib/assert.js";
 import { Context } from "./lib/context.js";
 import { BodyGenerator } from "./lib/bodyGenerator.js";
 import { HookShortcuts } from "./shortcuts/hookShortcuts.js";
-import { ResponsePostContainerDTO } from "../../api-types/container.js";
+import { ContainerDTO, GetContainerAPI, PostContainerAPI } from "../../api-types/container.js";
 import { IsString } from "class-validator";
 
-export class ResponsePostContainerDTOBody implements ResponsePostContainerDTO
+export namespace PostContainerAPIClass
 {
-    @IsString() id: string;
+    export class RequestDTO implements PostContainerAPI.RequestDTO
+    {
+        @IsString() name: string;
+    }
+
+    export class ResponseDTO implements PostContainerAPI.ResponseDTO
+    {
+        @IsString() id: string;    
+    }
 }
 
 export default async function(this: Context)

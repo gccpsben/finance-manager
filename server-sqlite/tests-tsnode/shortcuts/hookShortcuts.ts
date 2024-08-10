@@ -2,12 +2,12 @@
 import { simpleFaker } from '@faker-js/faker';
 import { randomUUID } from 'crypto';
 import { Decimal } from 'decimal.js';
-import { PostContainerDTO } from '../../../api-types/container.js';
+import { PostContainerAPI } from '../../../api-types/container.js';
 import { PostCurrencyAPI } from '../../../api-types/currencies.js';
 import { PostTxnTypesAPI } from '../../../api-types/txnType.js';
 import { ResponsePostLoginDTOBody } from '../auth.test.js';
 import { ResponseGetExpensesAndIncomesDTOClass } from '../calculations.test.js';
-import { ResponsePostContainerDTOBody } from '../container.test.js';
+import { PostContainerAPIClass } from '../container.test.js';
 import { PostCurrencyAPIClass } from '../currency.test.js';
 import { TestUserDict, TestUserEntry, UnitTestEndpoints } from '../index.test.js';
 import { AssertFetchReturns, HTTPAssert } from '../lib/assert.js';
@@ -142,7 +142,7 @@ export class HookShortcuts
     {
         serverURL:string,
         token:string,
-        body: Partial<PostContainerDTO>,
+        body: Partial<PostContainerAPI.RequestDTO>,
         assertBody?: boolean,
         expectedCode?: number
     })
@@ -153,7 +153,7 @@ export class HookShortcuts
             baseURL: config.serverURL, expectedStatus: config.expectedCode, method: "POST",
             body: config.body,
             headers: { "authorization": config.token },
-            expectedBodyType: assertBody ? ResponsePostContainerDTOBody : undefined
+            expectedBodyType: assertBody ? PostContainerAPIClass.ResponseDTO : undefined
         });
         return {
             ...response,

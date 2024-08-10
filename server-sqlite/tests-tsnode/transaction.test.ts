@@ -7,7 +7,7 @@ import { IsString, IsNotEmpty, IsOptional, IsDateString } from "class-validator"
 import { IsDecimalJSString, IsUTCDateInt } from "../server_source/db/validators.js";
 import { simpleFaker } from "@faker-js/faker";
 import { PostTxnAPI } from "../../api-types/txn.js";
-import { ResponsePostContainerDTOBody } from "./container.test.js";
+import { PostContainerAPIClass } from "./container.test.js";
 import { PostCurrencyAPIClass } from "./currency.test.js";
 
 export namespace PostTxnAPIClass
@@ -113,7 +113,7 @@ async function testFromTransactions(this: Context)
                 baseURL: serverURL, expectedStatus: 200, method: "POST",
                 body: createPostContainerBody(`Container1`),
                 headers: { "authorization": firstUser.token },
-                expectedBodyType: ResponsePostContainerDTOBody
+                expectedBodyType: PostContainerAPIClass.ResponseDTO
             });
             testContext.containerId = response.parsedBody.id;
         }).bind(this)();

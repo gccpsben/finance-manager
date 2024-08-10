@@ -8,8 +8,14 @@ export type ContainerDTO =
     owner: string;
 }
 
-export type GetContainerDTO = { };
-export type ResponseGetContainerDTO = PaginationAPIResponse<ContainerDTO>;
+export namespace GetContainerAPI
+{
+    export type RequestDTO = { };
+    export type ResponseDTO = PaginationAPIResponse<ContainerDTO>;
+}
 
-export type PostContainerDTO = { name: string; };
-export type ResponsePostContainerDTO = { id: string; };
+export namespace PostContainerAPI
+{
+    export type RequestDTO = { name: string; };
+    export type ResponseDTO = { id: string; };
+}
