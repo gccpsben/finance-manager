@@ -6,7 +6,7 @@ const mongoUnit = require('mongo-unit');
     const testData = require('./testData.json');
     const accessToken = require('../server_build/finance/accessToken');
 
-    describe('Database Access', ()=>
+    describe('Database Access', () =>
     {
         let runTests = () => 
         {

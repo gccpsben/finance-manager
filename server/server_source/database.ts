@@ -6,7 +6,6 @@ import { TransactionModel } from "./finance/transaction";
 export let databaseURL:string;
 
 export const databaseTimeoutMS = 60000 as number | undefined;
-export let databaseToUse = undefined as undefined | string;
 
 export async function checkDatabaseIntegrity()
 {
@@ -19,7 +18,7 @@ export async function init(url:string)
     try
     {
         if (url == undefined) throw new Error("FINANCE_DB_FULL_URL is not defined.");
-        logYellow(`Connecting to finance database "${databaseToUse}"...`);
+        logYellow(`Connecting to finance database...`);
         mongoose.set('strictQuery', true);
         await mongoose.connect(url, 
         { 
