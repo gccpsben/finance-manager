@@ -21,7 +21,6 @@ export namespace PostUserAPIClass
     }
 }
 
-
 export namespace PostLoginAPIClass
 {
     export class RequestDTO implements PostLoginAPI.RequestDTO

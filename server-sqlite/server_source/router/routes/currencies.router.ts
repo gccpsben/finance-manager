@@ -143,8 +143,8 @@ router.get<GetCurrencyRateHistoryAPI.ResponseDTO>(`/api/v1/currencies/history`,
 
         return {
             datums: datums.datums.map(x => ({ date: x.date, value: x.rateToBase.toString() })),
-            endDate: datums.latestDatum.date,
-            startDate: datums.earliestDatum.date,
+            endDate: datums.latestDatum?.date,
+            startDate: datums.earliestDatum?.date,
             historyAvailable: datums.datums.length >= 2
         };
     }

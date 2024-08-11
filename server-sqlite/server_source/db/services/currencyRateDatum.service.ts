@@ -62,6 +62,16 @@ export class CurrencyRateDatumService
         const cacheInner = cache !== undefined ? cache : new MutableDataCache(await UserService.getUserById(ownerId));
         const currency = await CurrencyService.getCurrencyById(ownerId, currencyId);
         const datumsWithinRange = await CurrencyRateDatumRepository.getInstance().getCurrencyDatums(ownerId, currencyId, startDate, endDate);
+
+        if (datumsWithinRange.length <= 1)
+        {
+            return {
+                datums: [],
+                earliestDatum: undefined,
+                latestDatum: undefined
+            }   
+        }
+
         const datumsStat = minAndMax(datumsWithinRange, x => x.date);
 
         cacheInner.setCurrenciesRateDatumsList(currency.id, datumsWithinRange);

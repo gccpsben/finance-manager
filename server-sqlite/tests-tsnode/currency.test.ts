@@ -88,8 +88,8 @@ export namespace GetCurrencyRatesHistoryAPIClass
 
     export class ResponseDTO implements GetCurrencyRateHistoryAPI.ResponseDTO
     {
-        @IsDecimalJSString() startDate: number;
-        @IsDecimalJSString() endDate: number;
+        @IsOptional() @IsDecimalJSString() startDate: number;
+        @IsOptional() @IsDecimalJSString() endDate: number;
         @IsBoolean() historyAvailable: boolean;
 
         @IsArray()
@@ -626,6 +626,25 @@ export default async function(this: Context)
                             { amount: "2.6", date: offsetDate(18) }
                         ]
                     };
+
+                    // Check if 500 occurs when no datums are stored on the server, but still try to get history
+                    await this.test(`Check for correctness without posting datums`, async function()
+                    {
+                        const historyResponse = await HTTPAssert.assertFetch
+                        (
+                            `${UnitTestEndpoints.currenciesRateHistoryEndpoints['get']}?id=${secondCurrencyID}&division=${testCase.division}`, 
+                            {
+                                baseURL: serverURL, method: "GET", expectedStatus: 200,
+                                headers: { "authorization": firstUserToken },
+                                expectedBodyType: GetCurrencyRatesHistoryAPIClass.ResponseDTO
+                            }
+                        );
+            
+                        assertStrictEqual(historyResponse.parsedBody.datums.length, 0);
+                        assertStrictEqual(historyResponse.parsedBody.historyAvailable, false);
+                        assertStrictEqual(historyResponse.parsedBody.endDate, undefined);
+                        assertStrictEqual(historyResponse.parsedBody.startDate, undefined);
+                    });
             
                     // Post test rate datums
                     await this.test(`Posting Currency Rate Datums`, async function()
