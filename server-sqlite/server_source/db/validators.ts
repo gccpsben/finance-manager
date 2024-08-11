@@ -1,4 +1,4 @@
-import { registerDecorator, ValidationOptions, ValidationArguments, isInt, isPositive, isNumber } from 'class-validator';
+import { registerDecorator, ValidationOptions, ValidationArguments, isInt, isPositive, isNumber, isNumberString } from 'class-validator';
 import { Decimal } from 'decimal.js';
 
 export function EnsureNotPlainForeignKey(validationOptions?: ValidationOptions) 
@@ -73,6 +73,35 @@ export function IsUTCDateInt(validationOptions?: ValidationOptions)
                         if (!isNumber(value)) return false;
                         if (!isInt(value)) return false;
                         if (!isPositive(value)) return false;
+                        return true;
+                    }
+                    catch(e) { return false; }
+                },
+            },
+        });
+    };
+}
+
+export function IsIntString(validationOptions?: ValidationOptions) 
+{
+    return function (object: Object, propertyName: string) 
+    {
+        registerDecorator(
+        {
+            name: 'isIntString',
+            target: object.constructor,
+            propertyName: propertyName,
+            options: {
+                message: "Expected string with int value."
+            },
+            validator: 
+            {
+                validate(value: any, args: ValidationArguments) 
+                {
+                    try
+                    {
+                        if (!isNumberString(value)) return false;
+                        if (!isInt(parseFloat(value))) return false;
                         return true;
                     }
                     catch(e) { return false; }

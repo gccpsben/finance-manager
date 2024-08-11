@@ -10,6 +10,8 @@ export type DifferenceHydratedCurrencyRateDatum = SQLitePrimitiveOnly<CurrencyRa
     difference: number
 }
 
+const nameofD = (k: keyof CurrencyRateDatum) => k;
+
 class CurrencyRateDatumRepositoryExtension
 {
     /** 
@@ -54,17 +56,21 @@ class CurrencyRateDatumRepositoryExtension
     (
         this: Repository<CurrencyRateDatum>,
         userId:string, 
-        currencyId: string
+        currencyId: string,
+        startDate: Date = undefined,
+        endDate: Date = undefined
     )
     {
-        const results = await this
+        let query = this
         .createQueryBuilder(`datum`)
-        .where(`ownerId = :ownerId`, { ownerId: userId ?? null })
-        .andWhere(`refCurrencyId = :refCurrencyId`, { refCurrencyId: currencyId ?? null })
-        .addSelect("*")
-        .getRawMany() as (SQLitePrimitiveOnly<CurrencyRateDatum>)[];
+        .where(`${nameofD('ownerId')} = :ownerId`, { ownerId: userId ?? null });
+        query = query.andWhere(`${nameofD('refCurrencyId')} = :refCurrencyId`, { refCurrencyId: currencyId ?? null });
+        query = query.addSelect("*");
+        if (startDate) query = query.andWhere(`${nameofD('date')} >= :startDate`, { startDate: startDate });
+        if (endDate) query = query.andWhere(`${nameofD('date')} <= :endDate`, { endDate: endDate });
 
-        return results;
+        const results = await query.getMany();
+        return results as (SQLitePrimitiveOnly<CurrencyRateDatum>)[];
     }
 }
 

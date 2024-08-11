@@ -1,4 +1,4 @@
-import { IsString, IsBoolean, IsOptional, IsObject, IsDefined, IsNumber, IsArray, ValidateNested } from "class-validator";
+import { IsString, IsBoolean, IsOptional, IsNumber, IsArray, ValidateNested, IsNumberString } from "class-validator";
 import { IsDecimalJSString } from "../server_source/db/validators.js";
 import { Context } from "./lib/context.js";
 import { resetDatabase, serverURL, TestUserDict, TestUserEntry, UnitTestEndpoints } from "./index.test.js";
@@ -68,6 +68,34 @@ export namespace PostCurrencyRateDatumAPIClass
     export class ResponseDTO implements PostCurrencyRateAPI.ResponseDTO
     {
         @IsString() id: string;
+    }
+}
+
+export namespace GetCurrencyRatesHistoryAPIClass
+{
+    export class RateDatumDTO implements GetCurrencyRateHistoryAPI.RateDatum
+    {
+        @IsNumber() date: number;
+        @IsDecimalJSString() value: string;
+    }
+
+    export class RequestQueryDTO implements GetCurrencyRateHistoryAPI.RequestQueryDTO
+    {
+        @IsString() id: string;
+        @IsOptional() @IsDecimalJSString() startDate?: string;
+        @IsOptional() @IsDecimalJSString() endDate?: string;
+    }
+
+    export class ResponseDTO implements GetCurrencyRateHistoryAPI.ResponseDTO
+    {
+        @IsDecimalJSString() startDate: number;
+        @IsDecimalJSString() endDate: number;
+        @IsBoolean() historyAvailable: boolean;
+
+        @IsArray()
+        @ValidateNested({ each: true })
+        @Type(() => RateDatumDTO)
+        datums: GetCurrencyRateHistoryAPI.RateDatum[];
     }
 }
 
@@ -567,4 +595,80 @@ async function ratesCorrectnessCheck(this:Context)
             }, { timeout: 60000 });
         });
     })
+
+    await this.describe(`Currencies Rate History Correctness`, async function()
+    {
+        await resetDatabase();
+        const offsetDate = (d: number) => testDateTimestamp + d * 100 * 1000; // convert the mock date in test case to real date
+
+        const testUsersCreds = await HookShortcuts.registerRandMockUsers(serverURL, 1);
+        const { username:firstUserName, token:firstUserToken } = Object.values(testUsersCreds)[0];
+        const baseCurrencyResponse = await postBaseCurrency(firstUserToken, `${firstUserName}curr`, `${firstUserName}ticker`);
+        const baseCurrencyID = baseCurrencyResponse.rawBody["id"] as string;
+        const secondCurrencyResponse = await postCurrency(firstUserToken, `${firstUserName}curr2`, `${firstUserName}ticker2`, baseCurrencyID, "1");
+        const secondCurrencyID = secondCurrencyResponse.rawBody["id"] as string;
+
+        const testCase = 
+        {
+            division: 10,
+            datums: 
+            [
+                { amount: "2"  , date: 0 },
+                { amount: "1.5", date: 5 },
+                { amount: "3"  , date: 10 },
+                { amount: "5"  , date: 15 },
+                { amount: "1"  , date: 20 }
+            ],
+            expectedResults: 
+            [
+                { amount: "2", date: offsetDate(0) },
+                { amount: "1.8", date: offsetDate(2) },
+                { amount: "1.6", date: offsetDate(4) },
+                { amount: "1.8", date: offsetDate(6) },
+                { amount: "2.4", date: offsetDate(8) },
+                { amount: "3", date: offsetDate(10) },
+                { amount: "3.8", date: offsetDate(12) },
+                { amount: "4.6", date: offsetDate(14) },
+                { amount: "4.2", date: offsetDate(16) },
+                { amount: "2.6", date: offsetDate(18) }
+            ]
+        };
+
+        // Post test rate datums
+        await this.test(`Posting Currency Rate Datums`, async function()
+        {
+            for (const datum of testCase.datums)
+            {
+                const response = await postCurrencyRateDatum
+                (
+                    firstUserToken, 
+                    datum.amount,
+                    secondCurrencyID, 
+                    baseCurrencyID, 
+                    offsetDate(datum.date)
+                );
+                assertStrictEqual(response.res.status, 200);
+                await assertBodyConfirmToModel(PostCurrencyRateDatumAPIClass.ResponseDTO, response.rawBody);
+            }
+        });
+
+        await this.test(`Check for correctness`, async function()
+        {
+            const historyResponse = await HTTPAssert.assertFetch
+            (
+                `${UnitTestEndpoints.currenciesRateHistoryEndpoints['get']}?id=${secondCurrencyID}&division=${testCase.division}`, 
+                {
+                    baseURL: serverURL, method: "GET", expectedStatus: 200,
+                    headers: { "authorization": firstUserToken },
+                    expectedBodyType: GetCurrencyRatesHistoryAPIClass.ResponseDTO
+                }
+            );
+
+            for (let i = 0; i < testCase.division; i++)
+            {
+                assertStrictEqual(historyResponse.parsedBody.datums[i].date, testCase.expectedResults[i].date);
+                assertStrictEqual(historyResponse.parsedBody.datums[i].value, testCase.expectedResults[i].amount);
+            }
+        });
+    });
 }

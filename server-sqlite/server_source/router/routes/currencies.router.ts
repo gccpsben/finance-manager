@@ -2,14 +2,15 @@ import express from 'express';
 import { AccessTokenService } from '../../db/services/accessToken.service.js';
 import { CurrencyService } from '../../db/services/currency.service.js';
 import { Decimal } from 'decimal.js';
-import { IsNumberString, IsOptional, IsString } from 'class-validator';
+import { IsNumber, IsNumberString, IsOptional, IsString } from 'class-validator';
 import { ExpressValidations } from '../validation.js';
-import { IsDecimalJSString } from '../../db/validators.js';
+import { IsDecimalJSString, IsIntString } from '../../db/validators.js';
 import createHttpError from 'http-errors';
 import { RateHydratedCurrency } from '../../db/entities/currency.entity.js';
-import type { GetCurrencyAPI, PostCurrencyAPI } from "../../../../api-types/currencies.js";
+import type { GetCurrencyAPI, GetCurrencyRateHistoryAPI, PostCurrencyAPI } from "../../../../api-types/currencies.js";
 import { TypesafeRouter } from '../typescriptRouter.js';
 import { OptionalPaginationAPIQueryRequest, PaginationAPIResponseClass } from '../logics/pagination.js';
+import { CurrencyRateDatumService } from '../../db/services/currencyRateDatum.service.js';
 
 const router = new TypesafeRouter(express.Router());
 
@@ -116,5 +117,37 @@ router.get<GetCurrencyAPI.ResponseDTO>(`/api/v1/currencies`,
         }
     }
 });
+
+router.get<GetCurrencyRateHistoryAPI.ResponseDTO>(`/api/v1/currencies/history`, 
+{
+    handler: async (req: express.Request, res: express.Response) => 
+    {
+        class query implements GetCurrencyRateHistoryAPI.RequestQueryDTO
+        {
+            @IsString() id: string;
+            @IsOptional() @IsIntString() division: string;
+            @IsOptional() @IsIntString() startDate?: string;
+            @IsOptional() @IsIntString() endDate?: string;
+        }
+
+        const authResult = await AccessTokenService.ensureRequestTokenValidated(req);
+        const parsedQuery = await ExpressValidations.validateBodyAgainstModel<query>(query, req.query);
+        const datums = await CurrencyRateDatumService.getCurrencyRateHistory
+        (
+            authResult.ownerUserId, 
+            parsedQuery.id,
+            parsedQuery.startDate ? new Date(parsedQuery.startDate) : undefined, 
+            parsedQuery.endDate ? new Date(parsedQuery.endDate) : undefined,
+            parsedQuery.division ? parseInt(parsedQuery.division) : 128
+        ); 
+
+        return {
+            datums: datums.datums.map(x => ({ date: x.date, value: x.rateToBase.toString() })),
+            endDate: datums.latestDatum.date,
+            startDate: datums.earliestDatum.date,
+            historyAvailable: datums.datums.length >= 2
+        };
+    }
+})
 
 export default router.getRouter();

@@ -32,5 +32,24 @@ export namespace GetCurrencyAPI
 
 export namespace GetCurrencyRateHistoryAPI
 {
-    export type ResponseDTO = {};
+    export type RateDatum =
+    {
+        date: number;
+        value: string;    
+    }
+
+    export type RequestQueryDTO = 
+    {
+        id: string;
+        startDate?: string | undefined;
+        endDate?: string | undefined;
+    };
+
+    export type ResponseDTO = 
+    {
+        startDate: number | undefined;
+        endDate: number | undefined;
+        datums: RateDatum[];
+        historyAvailable: boolean; // If will be false if there's no enough data
+    };
 }

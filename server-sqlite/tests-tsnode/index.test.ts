@@ -44,6 +44,10 @@ export class UnitTestEndpoints
         "post": `/api/v1/currencies`,
         "get": `/api/v1/currencies`
     };
+    public static currenciesRateHistoryEndpoints = 
+    {
+        "get": "/api/v1/currencies/history"
+    };
     public static currencyRateDatumsEndpoints = 
     {
         "post": `/api/v1/currencyRateDatums`
