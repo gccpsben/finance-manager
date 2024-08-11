@@ -27,12 +27,27 @@ import { TransactionType } from "./transactionType.entity.js";
         ELSE toCurrencyId IS NULL AND toContainerId IS NULL
     END`
 )
-@Check
-(
-    "Either one of (or both) [toAmount, fromAmount] should be defined.",
-    /*sql*/`toAmount IS NOT NULL OR fromAmount IS NOT NULL`
+@Check  
+(   
+    // For some reasons, using "(toAmount IS NOT NULL) OR (fromAmount IS NOT NULL)" will cause overflow if the
+    // db is saved too many times. Have to use CASE to tame the TypeORM sync
+    "[fromAmount] must be defined if [toAmount] is not defined.",
+    /*sql*/`
+    CASE WHEN toAmount IS NULL 
+        THEN fromAmount IS NOT NULL
+    END` 
 )
-export class Transaction extends EntityClass
+@Check  
+(
+    // For some reasons, using "(toAmount IS NOT NULL) OR (fromAmount IS NOT NULL)" will cause overflow if the
+    // db is saved too many times. Have to use CASE to tame the TypeORM sync
+    "[toAmount] must be defined if [fromAmount] is not defined.", 
+    /*sql*/` 
+    CASE WHEN fromAmount IS NULL 
+        THEN toAmount IS NOT NULL
+    END` 
+)
+export class Transaction extends EntityClass 
 {
     @PrimaryGeneratedColumn("uuid")
     id: string;
