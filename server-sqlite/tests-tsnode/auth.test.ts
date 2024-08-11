@@ -41,44 +41,50 @@ export namespace PostLoginAPIClass
 
 export default async function(this: Context)
 {
-    await this.describe("Access Tokens and Users", async function()
+    await this.describe("Auth", async function()
     {
-        const correctUsername = "User 1";
-        const correctPassword = "password123";
-
-        for (const { obj, fieldMissed } of BodyGenerator.enumerateMissingField( { username: correctUsername, password: correctPassword } ))
+        await this.describe(UnitTestEndpoints.loginEndpoints['post'], async function()
         {
-            await this.test(`Forbid creating users without ${fieldMissed}`, async function()
+            await this.describe(`post`, async function()
             {
-                await HTTPAssert.assertFetch
-                (
-                    `${UnitTestEndpoints.userEndpoints.post}`, 
-                    {
-                        method: "POST",
-                        body: obj,
-                        baseURL: serverURL,
-                        expectedStatus: 400
-                    }
-                );
-            });
-        }
-
-        let firstUserID = undefined as undefined | string;
-
-        await this.test(`Allow creating users with valid body`, async function()
-        {            
-            const response = await HTTPAssert.assertFetch
-            (
-                `${UnitTestEndpoints.userEndpoints.post}`, 
+                const correctUsername = "User 1";
+                const correctPassword = "password123";
+        
+                for (const { obj, fieldMissed } of BodyGenerator.enumerateMissingField( { username: correctUsername, password: correctPassword } ))
                 {
-                    method: "POST",
-                    body: { username: correctUsername, password: correctPassword },
-                    baseURL: serverURL,
-                    expectedStatus: 200,
-                    expectedBodyType: PostUserAPIClass.ResponseDTO
+                    await this.test(`Forbid creating users without ${fieldMissed}`, async function()
+                    {
+                        await HTTPAssert.assertFetch
+                        (
+                            `${UnitTestEndpoints.userEndpoints.post}`, 
+                            {
+                                method: "POST",
+                                body: obj,
+                                baseURL: serverURL,
+                                expectedStatus: 400
+                            }
+                        );
+                    });
                 }
-            );
-            firstUserID = response.parsedBody.userid;
+        
+                let firstUserID = undefined as undefined | string;
+        
+                await this.test(`Allow creating users with valid body`, async function()
+                {            
+                    const response = await HTTPAssert.assertFetch
+                    (
+                        `${UnitTestEndpoints.userEndpoints.post}`, 
+                        {
+                            method: "POST",
+                            body: { username: correctUsername, password: correctPassword },
+                            baseURL: serverURL,
+                            expectedStatus: 200,
+                            expectedBodyType: PostUserAPIClass.ResponseDTO
+                        }
+                    );
+                    firstUserID = response.parsedBody.userid;
+                });
+            });
         });
     });
 }

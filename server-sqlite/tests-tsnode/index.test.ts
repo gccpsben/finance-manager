@@ -11,7 +11,7 @@ import containerTests from './container.test.js';
 import currencyTests from './currency.test.js';
 import txnTypeTests from './txnType.test.js';
 import transactionTests from './transaction.test.js';
-import calculationsTest from './calculations.test.js';
+import calculationsTest, { testForCalculationsInternals } from './calculations.test.js';
 export type HTTPMethod = "GET" | "PATCH" | "POST" | "DELETE";
 
 export type TestUserEntry = 
@@ -82,7 +82,15 @@ await (async () =>
     console.log("");
 
     const topContext = new Context(``);
-    await topContext.describe(`Unit Test`, async function(this: Context)
+
+    await topContext.describe(`Internals`, async function(this: Context)
+    {
+        await testForCalculationsInternals.bind(this)();
+    });
+
+    console.log("");
+
+    await topContext.describe(`Endpoints`, async function(this: Context)
     {
         await authTests.bind(this)();
         await containerTests.bind(this)();
