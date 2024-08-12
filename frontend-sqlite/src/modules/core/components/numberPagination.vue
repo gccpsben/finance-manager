@@ -65,7 +65,7 @@ const pageReadable = computed(
 <style lang="less">
 @import "@/modules/core/stylesheets/globalStyle.less";
 
-.pageSelector  { color:gray !important; transform: translateY(-3px); }
+.pageSelector  { color:gray !important; transform: translateY(-1px); }
 #currentPage { .horiMargin(4px); .vertMargin(5px); font-size:16px; min-width:15px; display:inline-block; text-align: center; }
 .disabled { pointer-events: none; opacity:0.2; }
 </style>

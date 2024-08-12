@@ -3,40 +3,40 @@
 
         <view-title :title="title"></view-title>
 
-        <pagination v-if="!selectedContainerID" v
-                    -model:currentPage="currentPage" :itemsInPage="15" :items="store.containers.lastSuccessfulData ?? []" 
+        <pagination v-if="!selectedContainerID" 
+                    v-model:currentPage="currentPage" :itemsInPage="15" :items="store.containers.lastSuccessfulData?.rangeItems ?? []" 
                     v-slot="props" class="fullSize" style="height:calc(100svh - 170px);"> 
             <div id="panel">
                 <grid-shortcut rows="1fr" columns="1fr auto">
                     <h2 class="panelTitle">All Containers</h2>
                     <div class="pageSelector">
-                        <fa-icon @click="props.previous()" id="previousArrow" icon="fa-solid fa-chevron-left"></fa-icon>
+                        <fa-icon-btn :disabled="!props.isPreviousArrowAllowed" @click="props.previous()" id="previousArrow" class="optionIcon" icon="fa-solid fa-chevron-left"></fa-icon-btn>
                         <input type="number" size="1" v-int-only v-model.lazy="pageReadable" min="1"> 
-                        <fa-icon @click="props.next()" id="nextArrow" icon="fa-solid fa-chevron-right"></fa-icon>
+                        <fa-icon-btn :disabled="!props.isNextArrowAllowed" @click="props.next()" id="nextArrow" class="optionIcon" icon="fa-solid fa-chevron-right"></fa-icon-btn>
                     </div>
                 </grid-shortcut> 
                 <grid-shortcut class="fullSize" rows="repeat(20, 1fr)" columns="1fr" style="padding-top:15px;">
 
-                    <div class="row tight" style="font-size:14px;" @click="selectContainer(Container.pubID)"
+                    <div class="row tight" style="font-size:14px;" @click="selectContainer(Container.id)"
                     v-for="Container in props.pageItems">
                         <div v-area="'name'" class="tight yCenter ellipsisContainer">
                             <div>{{ Container.name }}</div>
                         </div>
-                        <div v-area="'value'" class="tight yCenter ellipsisContainer">
+                        <!-- <div v-area="'value'" class="tight yCenter ellipsisContainer">
                             <div>{{ Number(Number(Container.value).toPrecision(3)) }}</div>
                         </div>
                         <div v-area="'valueActual'" class="tight yCenter ellipsisContainer">
                             <div>{{ Number(Number(Container.valueActual).toPrecision(3)) }}</div>
-                        </div>
-                        <!-- <div v-area="'arrow'" class="tight yCenter xRight ellipsisContainer">
-                            <fa-icon icon="fa-solid fa-arrow-right"></fa-icon>
                         </div> -->
+                        <div v-area="'arrow'" class="tight yCenter xRight ellipsisContainer">
+                            <fa-icon icon="fa-solid fa-arrow-right"></fa-icon>
+                        </div>
                     </div>
 
                 </grid-shortcut>
             </div>
         </pagination>
-
+<!-- 
         <div id="panel" v-if="selectedContainerID" >
             <grid-shortcut rows="300px 1fr" columns="300px 1fr auto">
                 <div class="panel center">
@@ -53,7 +53,7 @@
                     </grid-shortcut> 
                 </div>
             </grid-shortcut> 
-        </div>
+        </div> -->
 
     </div>
 </template>
@@ -100,7 +100,7 @@
         box-sizing:border-box;
         .panelTitle { text-align:start; color:gray; font-size:14px; .tight; display:inline; }
         .pageSelector  { color:gray !important; transform: translateY(-3px); }
-        #nextArrow, #previousArrow { margin:0px; display:inline; font-size:14px; cursor: pointer; }
+
         #currentPage { .horiMargin(15px); .vertMargin(5px); font-size:16px; min-width:15px; display:inline-block; text-align: center; }
         .disabled { pointer-events: none; opacity:0.2; }
 
@@ -143,7 +143,7 @@
 <script lang="ts">
 import { useMainStore } from '@/modules/core/stores/store';
 import type { Container, ValueHydratedContainer } from '@/types/dtos/containersDTO';
-import paginationVue from 'snippets/vite-vue-ts/components/pagination.vue';
+import paginationVue from '@/modules/core/components/pagination.vue';
 
 export default
 {

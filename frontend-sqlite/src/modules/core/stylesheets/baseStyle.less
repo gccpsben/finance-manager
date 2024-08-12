@@ -1,0 +1,82 @@
+/* Box-Modal and sizing */
+.abs { position: absolute } .rel { position: relative } .fixed { position: fixed; }
+.noBorder { border: 0 }
+.fullSize { .fullHeight; .fullWidth; } .fullHeight { height:100%; } .fullWidth { width:100%; }
+.tight { margin:0px; padding:0px; }
+.size(@width, @height) { width:@width; height:@height; }
+.horiMargin(@amount) { margin-left: @amount; margin-right: @amount; }
+.horiPadding(@amount) { padding-left: @amount; padding-right: @amount; }
+.vertMargin(@amount) { margin-top: @amount; margin-bottom: @amount; }
+.vertPadding(@amount) { padding-top: @amount; padding-bottom: @amount; }
+.squareSize(@size) { width:@size; height:@size; }
+.circle(@size) { .squareSize(@size); border-radius: calc(@size / 2); }
+.roundSquare(@size, @radius) { .squareSize(@size); border-radius: @radius; }
+
+/* Alignment */
+.topLeft { display:flex; justify-content:flex-start; align-items: start; }
+.topCenter { display:flex; justify-content:center; align-items: start; }
+.topRight { display:flex; justify-content:flex-end; align-items: start; }
+.middleRight { display:flex; justify-content:flex-end; align-items: center; }
+.middleLeft { display:flex; justify-content:flex-start; align-items: center; }
+.middleCenter { .center; }
+.bottomLeft { display:flex; justify-content:flex-start; align-items: end; }
+.bottomCenter { display:flex; justify-content:center; align-items: end; }
+.bottomRight { display:flex; justify-content:flex-end; align-items: end; }
+.xLeft { display:flex; justify-content: flex-start; }
+.xCenter { display:flex; justify-content: center; }
+.xRight { display:flex; justify-content: flex-end; }
+.yTop { display:flex; align-items: start; }
+.yCenter { display:flex; align-items: center; }
+.yBottom { display:flex; align-items: flex-end; }
+.center { display:flex; justify-content: center; align-items: center; }
+
+/* Grid Shortcuts */
+.gridBase { display:grid; }
+.leftRightGrid { display:grid; grid-template-columns: 1fr 1fr; }
+.upDownGrid { display:grid; grid-template-rows: 1fr 1fr; }
+.grid2x2 { display:grid; grid-template-rows: 1fr 1fr; grid-template-columns: 1fr 1fr; }
+.grid3x3 { display:grid; grid-template-rows: 1fr 1fr 1fr; grid-template-columns: 1fr 1fr 1fr; }
+.gridColumns_2 { grid-template-columns: 1fr 1fr; }
+.gridColumns_3 { grid-template-columns: repeat(3, 1fr); }
+.gridColumns_4 { grid-template-columns: repeat(4, 1fr); }
+.gridColumns_5 { grid-template-columns: repeat(5, 1fr); }
+.gridColumns_6 { grid-template-columns: repeat(6, 1fr); }
+.gridColumns_7 { grid-template-columns: repeat(7, 1fr); }
+.gridRows_2 { grid-template-rows: 1fr 1fr; }
+.gridRows_3 { grid-template-rows: repeat(3, 1fr); }
+.gridRows_4 { grid-template-rows: repeat(4, 1fr); }
+.gridRows_5 { grid-template-rows: repeat(5, 1fr); }
+.gridRows_6 { grid-template-rows: repeat(6, 1fr); }
+.gridRows_7 { grid-template-rows: repeat(7, 1fr); }
+
+/* Misc */
+.pointer { cursor: pointer; }
+input[type="number"].noSpin::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+input[type="number"].noSpin::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
+input[type="number"] { appearance: textfield !important; }
+
+.iconField
+{
+    display:flex;
+    & > div:nth-child(1) { aspect-ratio: 1/1; height:100%; }
+    & > div:nth-child(2) { width:100%; }
+}
+
+/* Text */
+.ellipsis { text-overflow: ellipsis; white-space: nowrap; display:block; overflow:hidden !important; }
+.noHighlight { user-select: none; -moz-user-select: none; -webkit-user-select: none; }
+.consoleFont { font-family: Consolas; }
+
+/* Debug */
+.debug { background:red; border:1px solid darkred; }
+
+/* Colors */
+.bg(@parameter) { background:@parameter; }
+.fg(@parameter) { color:@parameter; }
+.faded { opacity: 0.4; }
+.clearInput { appearance: none; outline:none; }
+textarea.noResize { resize:none; }
+
+/* To disable webkit engine's autofill style, see https://stackoverflow.com/questions/2781549/removing-input-background-colour-for-chrome-autocomplete */
+input:-webkit-autofill, input:-webkit-autofill:focus { transition: background-color 600000s 0s, color 600000s 0s; }
+input[data-autocompleted] { background-color: transparent !important; }
