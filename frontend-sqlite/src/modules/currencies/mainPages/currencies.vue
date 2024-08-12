@@ -145,7 +145,7 @@
 <script lang="ts">
 import { useMainStore } from '@/modules/core/stores/store';
 import type { CurrencyDTO } from '@/../../api-types/currencies';
-import paginationVue from 'snippets/vite-vue-ts/components/pagination.vue';
+import paginationVue from '@/modules/core/components/pagination.vue';
 
 export default
 {

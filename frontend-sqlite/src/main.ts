@@ -17,9 +17,9 @@ import cell from "@/modules/core/components/cell.vue";
 import numberCell from "@/modules/core/components/numberCell.vue";
 import customTable from "@/modules/core/components/custom-table.vue";
 import viewTitle from "@/modules/core/components/viewTitle.vue";
-import vBasic from 'snippets/vite-vue-ts/directives/vBasic';
-import vArea from 'snippets/vite-vue-ts/directives/vArea';
-import vIntegerOnly from 'snippets/vite-vue-ts/directives/vIntegerOnly'
+import vBasic from '@/modules/core/directives/vBasic';
+import vArea from '@/modules/core/directives/vArea';
+import vIntegerOnly from '@/modules/core/directives/vIntegerOnly'
 
 export const vuetify = createVuetify(
 {

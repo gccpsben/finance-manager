@@ -422,15 +422,13 @@ textarea
 
 <script lang="ts" setup> 
 import { useMainStore } from "@/modules/core/stores/store";
-import vIntOnly from "snippets/vite-vue-ts/directives/vIntegerOnly";
-import vArea from "snippets/vite-vue-ts/directives/vArea";
+import vArea from "@/modules/core/directives/vArea";
 import { ref, onMounted, withDirectives, type Ref, computed, watch, nextTick, type UnwrapRef, unref } from 'vue';
 import router from "@/router";
 import useNetworkPagination, { type UpdatorReturnType } from "@/networkedPagination";
 import { ResettableObject } from "@/resettableObject";
 import { API_TRANSACTIONS_PATH } from "@/apiPaths";
 import type { HydratedTransaction, Transaction } from "@/types/dtos/transactionsDTO";
-import type { ResponseGetTransactionsDTO, TransactionDTO } from '@/../../api-types/txn';
 import CustomDropdown from '@/modules/core/components/custom-dropdown.vue';
 import { getTxnTypeNameById } from '@/modules/txnTypes/utils/transactionTypes';
 import { getContainerNameById } from '@/modules/containers/utils/containers';

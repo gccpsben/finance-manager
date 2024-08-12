@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import vArea from 'snippets/vite-vue-ts/directives/vArea';
-import vBasic from 'snippets/vite-vue-ts/directives/vBasic';
+import vArea from '@/modules/core/directives/vArea';
+import vBasic from '@/modules/core/directives/vBasic';
 </script>
 
 <script lang="ts">

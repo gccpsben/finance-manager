@@ -81,7 +81,7 @@
 </style>
 
 <script lang="ts">
-import paginationVue from 'snippets/vite-vue-ts/components/pagination.vue';
+import paginationVue from '@/modules/core/components/pagination.vue';
 import { defineComponent } from 'vue';
 import { LineChart, type ExtractComponentData } from 'vue-chart-3';
 import { Chart, registerables, type ChartOptions, type ChartData } from "chart.js";

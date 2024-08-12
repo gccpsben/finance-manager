@@ -116,7 +116,7 @@
 import { useMainStore } from "@/modules/core/stores/store";
 import type { Container, ValueHydratedContainer } from "@/types/dtos/containersDTO";
 import type { HydratedTransaction } from "@/types/dtos/transactionsDTO";
-import vArea from "snippets/vite-vue-ts/directives/vArea";
+import vArea from "@/modules/core/directives/vArea";
 
 export default 
 {
