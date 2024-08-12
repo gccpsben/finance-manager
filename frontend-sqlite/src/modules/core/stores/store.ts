@@ -1,13 +1,13 @@
 import { API_BAL_VAL_PATH, API_CONTAINERS_PATH, API_CURRENCIES_PATH, API_DASHBOARD_BATCH_PATH, API_GRAPHS_PATH, API_NET_WORTH_GRAPH_PATH, API_SUMMARY_PATH, API_TXN_TYPES_PATH, API_USER_INCOMES_EXPENSES_PATH } from '@/apiPaths';
 import { useNetworkRequest } from '../composables/useNetworkRequest';
-import type { ResponseGetCurrencyDTO } from '@/../../api-types/currencies';
 import type { DashboardSummary } from '@/types/dtos/dashboardSummaryDTO';
 import axios, { AxiosError } from 'axios';
 import { defineStore } from 'pinia';
 import type { GraphsSummary } from '@/types/dtos/graphsSummaryDTO';
 import type { ResponseGetExpensesAndIncomesDTO } from "@/../../api-types/calculations";
-import type { ResponseGetTransactionTypesDTO } from '@/../../api-types/txnType';
-import type { ResponseGetContainerDTO } from "@/../../api-types/container";
+import type { GetTxnTypesAPI } from '@/../../api-types/txnType';
+import type { GetContainerAPI } from "@/../../api-types/container";
+import type { GetCurrencyAPI } from '@/../../api-types/currencies';
 
 export type Subpage = { name: string; }
 
@@ -72,9 +72,9 @@ export const useMainStore = defineStore(
             userExpensesIncomes: useNetworkRequest<ResponseGetExpensesAndIncomesDTO>(API_USER_INCOMES_EXPENSES_PATH, { includeAuthHeaders: true, updateOnMount: false }),
             dashboardSummary: useNetworkRequest<DashboardSummary>(API_SUMMARY_PATH, { includeAuthHeaders: true, updateOnMount: false }),
             graphsSummary: useNetworkRequest<GraphsSummary>(API_GRAPHS_PATH, { includeAuthHeaders: true, updateOnMount: false }),
-            currencies: useNetworkRequest<ResponseGetCurrencyDTO>(API_CURRENCIES_PATH, { includeAuthHeaders: true }),
-            containers: useNetworkRequest<ResponseGetContainerDTO>(API_CONTAINERS_PATH, { includeAuthHeaders: true }),
-            txnTypes: useNetworkRequest<ResponseGetTransactionTypesDTO>(API_TXN_TYPES_PATH, { includeAuthHeaders: true }),
+            currencies: useNetworkRequest<GetCurrencyAPI.ResponseDTO>(API_CURRENCIES_PATH, { includeAuthHeaders: true }),
+            containers: useNetworkRequest<GetContainerAPI.ResponseDTO>(API_CONTAINERS_PATH, { includeAuthHeaders: true }),
+            txnTypes: useNetworkRequest<GetTxnTypesAPI.ResponseDTO>(API_TXN_TYPES_PATH, { includeAuthHeaders: true }),
             netWorthHistory: useNetworkRequest<NetWorthAPIResponse>(API_NET_WORTH_GRAPH_PATH, { includeAuthHeaders: true, updateOnMount: false }),
             balanceValueHistory: useNetworkRequest<BalanceValueHistoryAPIResponse>(API_BAL_VAL_PATH, { includeAuthHeaders: true, updateOnMount: false }),
             lastUpdateTime: new Date(0) as Date,
