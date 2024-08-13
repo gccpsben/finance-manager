@@ -28,7 +28,7 @@ export default
 </script>
 
 <template>
-    <div id="topDiv">
+    <div id="routerViewTopDiv">
         <grid-shortcut v-basic="'#topGrid.fullSize'" columns="auto 1fr" rows="1fr" areas="'leftBar content'">
 
             <grid-shortcut v-basic="'#leftBar.fullSize'" v-area="'leftBar'" columns="1fr" rows="250px 1fr" class="rel" :class="{'hidden': !store.mainViewSidebarVisible}">
@@ -177,7 +177,7 @@ export default
     }
 }
 
-#topDiv 
+#routerViewTopDiv
 {
     .fullSize;
 	background: @background;
