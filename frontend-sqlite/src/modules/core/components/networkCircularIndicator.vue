@@ -7,7 +7,7 @@
                 </div>
             </template>
         </VTooltip>
-        <v-progress-circular v-else-if="isLoading" indeterminate />
+        <v-progress-circular v-else-if="isLoading" indeterminate style="color:white"/>
     </div>
 </template>
 
