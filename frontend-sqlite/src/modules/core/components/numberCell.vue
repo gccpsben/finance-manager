@@ -1,41 +1,22 @@
 <template>
-    <grid-shortcut id="numbersPanel" style="padding:15px; box-sizing:border-box; height:100%;" columns="1fr" rows="1fr 1fr">
-        <grid-shortcut rows="1fr" columns="1fr auto">
-            <h2 class="numbersPanelTitle">{{ title }}</h2>
-            <div class="variantSelector">
-
-                <h2 :class="{'selected': selectedVarient=='All'}" @click="selectedVarient = 'All'" 
-                class="numbersPanelTitle variantTab" v-if="valueAll != undefined">All</h2>
-
-                <h2 :class="{'selected': selectedVarient=='7d'}" @click="selectedVarient = '7d'" 
-                class="numbersPanelTitle variantTab" v-if="value7d != undefined">7d</h2>
-
-                <h2 :class="{'selected': selectedVarient=='30d'}" @click="selectedVarient = '30d'" 
-                class="numbersPanelTitle variantTab" v-if="value30d != undefined">30d</h2>
-
-            </div>
-        </grid-shortcut>
-        <div class="verticallyBottom fullHeight">
-            <div v-if="!isLoading && !networkError" class="fullHeight">
-                <h2 v-if="selectedVarient=='7d'" class="variantSelectorTab">$ {{ value7d?.toFixed(2) }}</h2>
-                <h2 v-if="selectedVarient=='30d'" class="variantSelectorTab">$ {{ value30d?.toFixed(2) }}</h2>
-                <h2 v-if="selectedVarient=='All'" class="variantSelectorTab">$ {{ valueAll?.toFixed(2) }}</h2>
-            </div>
-            <div v-else class="fullHeight">
-                <NetworkCircularIndicator :error="networkError" :isLoading="isLoading" class="fullHeight"/>
-            </div>
+    <cell :availableOptions="availableOptions" v-model:selectedOption="selectedVarient" :title="title">
+        <div v-if="!isLoading && !networkError" class="fullHeight xLeft">
+            <h2 class="variantSelectorTab">$ {{ currentValue?.toFixed(2) }}</h2>
         </div>
-    </grid-shortcut>
+        <div v-else class="fullHeight">
+            <NetworkCircularIndicator :error="networkError" :isLoading="isLoading" class="fullHeight"/>
+        </div>
+    </cell>
 </template>
 
 <script lang="ts">
 import { VProgressCircular } from 'vuetify/lib/components/index.mjs';
 import NetworkCircularIndicator from '../components/networkCircularIndicator.vue';
+import Cell from '@/modules/core/components/cell.vue';
 
 export default
 {
-    components: { VProgressCircular, NetworkCircularIndicator },
-    // props: []"value7d", "valueAll", "value30d", "title"],
+    components: { VProgressCircular, NetworkCircularIndicator, Cell },
     props:
     {
         "value7d": { default: undefined, type: Number },
@@ -59,6 +40,26 @@ export default
             if (this.value7d == undefined && this.value30d == undefined && this.valueAll != undefined) this.selectedVarient = "All";
         }
     },
+    computed:
+    {
+        availableOptions()
+        {
+            return [
+                this.valueAll === undefined ? undefined : "All",
+                this.value30d === undefined ? undefined : "30d",
+                this.value7d === undefined ? undefined : "7d"
+            ].filter(x => !!x) as string[];
+        },
+
+        /** The value of the currently selected tab */
+        currentValue()
+        {
+            if (this.selectedVarient === 'All' && this.valueAll !== undefined) return this.valueAll;
+            if (this.selectedVarient === '30d' && this.value30d !== undefined) return this.value30d;
+            if (this.selectedVarient === '7d' && this.valueAll !== undefined) return this.value7d;
+            return undefined;
+        }
+    },
     mounted() { this.checkDefault(); },
     watch:
     {
@@ -74,8 +75,6 @@ export default
 #numbersPanel
 {
     .fullSize; .bg(@backgroundDark);
-    // border-bottom: 2px solid v-bind(borderColor);
-    // fade(@success, 20%)
     box-sizing:border-box;
 
     .numbersPanelTitle { text-align:start; color:gray; font-size:14px; .tight; display:inline; }

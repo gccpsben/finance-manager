@@ -1,7 +1,9 @@
 <template>
     <grid-shortcut id="panel" style="padding:15px; box-sizing:border-box; height:100%; gap:15px;" columns="minmax(0,1fr)" rows="auto minmax(0,1fr)">
         <grid-shortcut rows="1fr" columns="1fr auto">
-            <h2 class="panelTitle">{{ title.get() }}</h2>
+            <div class="yCenter xLeft">
+                <h2 class="panelTitle">{{ title.get() }}</h2>
+            </div>
             <div class="variantSelectorsContainer">
                 <div class="variantSelector" v-for="option in availableOptions.get()">
                     <h2
