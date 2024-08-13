@@ -66,8 +66,8 @@ class CurrencyRateDatumRepositoryExtension
         .where(`${nameofD('ownerId')} = :ownerId`, { ownerId: userId ?? null });
         query = query.andWhere(`${nameofD('refCurrencyId')} = :refCurrencyId`, { refCurrencyId: currencyId ?? null });
         query = query.addSelect("*");
-        if (startDate) query = query.andWhere(`${nameofD('date')} >= :startDate`, { startDate: startDate });
-        if (endDate) query = query.andWhere(`${nameofD('date')} <= :endDate`, { endDate: endDate });
+        if (startDate) query = query.andWhere(`${nameofD('date')} >= :startDate`, { startDate: startDate.getTime() });
+        if (endDate) query = query.andWhere(`${nameofD('date')} <= :endDate`, { endDate: endDate.getTime() });
 
         const results = await query.getMany();
         return results as (SQLitePrimitiveOnly<CurrencyRateDatum>)[];
