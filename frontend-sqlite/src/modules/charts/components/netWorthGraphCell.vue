@@ -53,7 +53,7 @@ import { defineComponent, isRef, toRaw, unref } from 'vue';
 import { LineChart, type ExtractComponentData } from 'vue-chart-3';
 import { Chart, registerables, type ChartOptions, type ChartData } from "chart.js";
 import { useMainStore } from '@/modules/core/stores/store';
-import NetworkCircularIndicator from '../networkCircularIndicator.vue';
+import NetworkCircularIndicator from '@/modules/core/components/networkCircularIndicator.vue';
 Chart.register(...registerables);
 
 export default defineComponent(
