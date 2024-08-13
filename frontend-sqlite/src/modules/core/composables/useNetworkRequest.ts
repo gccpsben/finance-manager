@@ -2,6 +2,12 @@ import router from '@/router';
 import axios, { AxiosError, type AxiosResponse, type RawAxiosRequestHeaders } from 'axios';
 import { ref, watchEffect, toValue } from 'vue';
 
+export type NetworkQuery = 
+{
+    url: string,
+    query: Record<string, string>
+};
+
 function setCookie(cname:string, cvalue:string, exdays:number): void
 {
     const d = new Date();
@@ -29,8 +35,9 @@ type UseNetworkRequestInterface = {
     updateOnMount?: boolean;
 };
 
-export function useNetworkRequest<T>(url: string|undefined, config: UseNetworkRequestInterface | undefined)
+export function useNetworkRequest<T>(queryObj: NetworkQuery|string|undefined, config: UseNetworkRequestInterface | undefined)
 {
+    const queryObjInner = ref(queryObj);
     const shouldAutoResetOnUnauthorized = config?.autoResetOnUnauthorized ?? false;
     const shouldIncludeAuthHeaders = config?.includeAuthHeaders ?? false;
     const updateOnMount = config?.updateOnMount ?? true;
@@ -46,8 +53,9 @@ export function useNetworkRequest<T>(url: string|undefined, config: UseNetworkRe
         router.push("/login");
     };
 
-    const authGet = async (url:string, extraHeaders:any={}) =>
+    const authGet = async (queryObj:NetworkQuery|string, extraHeaders:Record<string,string> = {}) =>
     {
+        const url = typeof queryObj === 'string' ? queryObj : `${queryObj.url}?${new URLSearchParams(queryObj.query).toString()}`;
         let headers = { headers: { ...extraHeaders } };
         if (shouldIncludeAuthHeaders) headers.headers["Authorization"] = getCookie("jwt");
         return axios.get(url, headers);
@@ -58,11 +66,11 @@ export function useNetworkRequest<T>(url: string|undefined, config: UseNetworkRe
         isLoading.value = true;
         error.value = null;
 
-        if (!url) return Promise.resolve(undefined);
+        if (!queryObjInner.value) return Promise.resolve(undefined);
 
         try 
         {
-            let response = await authGet(toValue(url), { });
+            let response = await authGet(toValue(queryObjInner.value), { });
             lastAxiosStatusCode.value = response.status;
             lastSuccessfulData.value = response.data;
             Promise.resolve<T>(lastSuccessfulData.value as T);
@@ -91,6 +99,7 @@ export function useNetworkRequest<T>(url: string|undefined, config: UseNetworkRe
         lastAxiosStatusCode,
         error,
         updateData,
-        resetAuth
+        resetAuth,
+        setQueryObj: (query: NetworkQuery|string) => queryObjInner.value = query
     }
 }
