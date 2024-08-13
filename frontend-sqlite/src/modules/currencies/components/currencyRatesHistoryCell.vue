@@ -3,7 +3,7 @@
         <template v-if="datumResponse.isLoading.value || datumResponse.error.value">
             <NetworkCircularIndicator :error="datumResponse.error.value" :is-loading="datumResponse.isLoading.value" class="fullSize center"/>
         </template>
-        <template v-if="parsedDatums?.length == 0">
+        <template v-else-if="parsedDatums?.length == 0">
             <div class="fullSize center">
                 <div>No Data Available</div>
             </div>
