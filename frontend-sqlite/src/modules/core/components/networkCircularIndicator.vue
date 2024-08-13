@@ -14,6 +14,7 @@
 <script lang="ts">
 import { VIcon, VProgressCircular, VTooltip, VBtn } from 'vuetify/lib/components/index.mjs';
 import faIcon from './faIcon.vue';
+import type { PropType, Ref } from 'vue/dist/vue.js';
 
 export default
 {
@@ -21,7 +22,7 @@ export default
     props:
     {
         isLoading: { required: true, type: Boolean, default: true },
-        error: { default: undefined }
+        error: { default: undefined, type: Object as PropType<Ref<any>> }
     },
     data() 
     { 

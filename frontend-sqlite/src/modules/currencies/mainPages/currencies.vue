@@ -27,9 +27,6 @@
                         <div v-area="'rate'" class="tight yCenter ellipsisContainer">
                             <div>{{ currency.rateToBase }}</div>
                         </div>
-                        <!-- <div v-area="'dataSource'" class="tight yCenter ellipsisContainer">
-                            <div>{{ currency.dataSource?.jsonURLHost ?? '~' }}</div>
-                        </div> -->
                         <div v-area="'arrow'" class="tight yCenter xRight ellipsisContainer">
                             <fa-icon icon="fa-solid fa-arrow-right"></fa-icon>
                         </div>
@@ -39,8 +36,8 @@
             </div>
         </pagination>
 
-        <div id="panel" v-if="selectedCurrencyID" >
-            <grid-shortcut rows="300px 1fr" columns="300px 1fr auto">
+        <div id="panel" v-if="selectedCurrencyID">
+            <grid-shortcut style="gap:6px;" rows="300px 1fr" columns="300px 1fr auto">
                 <div class="panel center">
                     <grid-shortcut rows="auto auto auto" columns="1fr">
                         <div class="center">
@@ -54,6 +51,7 @@
                         </div>
                     </grid-shortcut> 
                 </div>
+                <currencyRatesHistoryCell :currency-id="selectedCurrencyID"></currencyRatesHistoryCell>
             </grid-shortcut> 
         </div>
 
@@ -81,10 +79,11 @@
 
 #topDiv
 {
-    padding:50px; box-sizing: border-box;
+    box-sizing: border-box;
     overflow-x:hidden;
     font-family: 'Schibsted Grotesk', sans-serif;
     .gradBackground;
+    padding:50px;
 
     input 
     {
@@ -146,10 +145,13 @@
 import { useMainStore } from '@/modules/core/stores/store';
 import type { CurrencyDTO } from '@/../../api-types/currencies';
 import paginationVue from '@/modules/core/components/pagination.vue';
+import cell from '@/modules/core/components/cell.vue';
+import WrappedLineChart from '@/modules/core/components/wrappedLineChart.vue';
+import currencyRatesHistoryCell from '@/modules/currencies/components/currencyRatesHistoryCell.vue';
 
 export default
 {
-    components: {'pagination':paginationVue},
+    components: { 'pagination': paginationVue, "cell": cell, "wrappedLineChart": WrappedLineChart, 'currencyRatesHistoryCell': currencyRatesHistoryCell },
     data()
     {
         let data = 
@@ -161,7 +163,7 @@ export default
     },
     computed:
     {
-        selectedCurrencyID() { return this.$route.params.pubID },
+        selectedCurrencyID() { return this.$route.params.cid as string },
         pageReadable:
         {
             get() { return this.currentPage + 1; },
@@ -183,12 +185,12 @@ export default
     },
     methods:
     {
-        selectCurrency(pubID: string)
+        selectCurrency(id: string)
         {
             this.$router.push(
             {
                 name: "currencies",
-                params: { pubID: pubID }
+                params: { cid: id }
             });
         }
     }

@@ -21,7 +21,7 @@ const router = createRouter(
                     component: () => import("@/modules/dashboard/mainPages/dashboard.vue")
                 },
                 {
-                    path: 'currencies/:pubID?',
+                    path: 'currencies/:cid?',
                     name: "currencies",
                     component: () => import('@/modules/currencies/mainPages/currencies.vue'),
                     props: true
