@@ -1,5 +1,5 @@
 <template>
-    <LineChart :chartData="chartData" :options="chartOptions" />
+    <LineChart :plugins="[vertLinePlugin]" ref="mainChartRef" :chartData="chartData" :options="chartOptions"/>
 </template>
 
 <style lang="less" scoped>
@@ -29,10 +29,12 @@
 </style>
 
 <script lang="ts" setup>
-import { LineChart, type ExtractComponentData } from 'vue-chart-3';
-import { Chart, registerables, type ChartOptions, type ChartData } from "chart.js";
-import { computed } from 'vue';
+import { LineChart } from 'vue-chart-3';
+import { Chart, registerables, type ChartOptions, type ChartData, type Plugin } from "chart.js";
+import { computed, ref } from 'vue';
 import { extractDatePart, extractTimePart } from '../utils/date';
+
+const defaultLineColor = `rgb(75, 192, 192)`;
 
 Chart.register(...registerables);
 
@@ -43,18 +45,91 @@ const props = defineProps<
     isXAxisEpoch?: boolean
 }>();
 
+let lastMouseLocation = { x:0, y:0 };
+let lastNearestDatumIndex = undefined as undefined | number;
+let lastNearestDatasetIndex = undefined as undefined | number;
+
+const vertLinePlugin: Plugin<'line', {}> = 
+(
+    {
+        id: 'vertLine',
+        beforeDraw: function(chart, args, options)
+        {
+            const context = chart.canvas.getContext('2d')!;
+            const chartBounds = chart.canvas.getBoundingClientRect();
+
+            // Check if mouse is within bound, return if not
+            const isMouseWithinChartArea = (() => 
+            {
+                const relativeX = lastMouseLocation.x - chartBounds.x - chart.chartArea.left;
+                const relativeY = lastMouseLocation.y - chartBounds.y - chart.chartArea.top;
+                const isWithinLeftBorder = relativeX >= 0;
+                const isWithinRightBorder = relativeX <= chart.chartArea.width;
+                const isWithinTopBorder = relativeY >= 0;
+                const isWithinBottomBorder = relativeY <= chart.chartArea.height;
+                return isWithinLeftBorder && isWithinRightBorder && isWithinTopBorder && isWithinBottomBorder;
+            })();
+
+            if (!isMouseWithinChartArea) return;
+
+            let beforeStrokeStyle = context.strokeStyle;
+            context.strokeStyle = props.lineColor ?? defaultLineColor;
+            context.beginPath();
+            context.moveTo(lastMouseLocation.x - chartBounds.x, chart.chartArea.top);
+            context.lineTo(lastMouseLocation.x - chartBounds.x, chart.chartArea.height + chart.chartArea.top);
+
+            if (lastNearestDatumIndex !== undefined && lastNearestDatasetIndex !== undefined)
+            {
+                const activeElements = [ { datasetIndex: lastNearestDatasetIndex, index: lastNearestDatumIndex } ];
+                if (chart.tooltip) chart.tooltip.setActiveElements(activeElements, { x: lastMouseLocation.x, y: lastMouseLocation.y });
+                chart.setActiveElements(activeElements);
+            }
+            else
+            {
+                if (chart.tooltip) chart.tooltip.setActiveElements([], { x: lastMouseLocation.x, y: lastMouseLocation.y });
+                chart.setActiveElements([]);
+            }
+
+            context.stroke();
+            context.closePath();
+            context.strokeStyle = beforeStrokeStyle;
+        },
+        afterInit: function(chart, args, options) 
+        {           
+            chart.canvas.onmouseleave = (e:MouseEvent) => 
+            {
+                lastMouseLocation.x = -1;
+                lastMouseLocation.y = -1;
+            };
+            chart.canvas.onmousemove = (e: MouseEvent) => 
+            {
+                const nearestMouseItems = chart.getElementsAtEventForMode
+                (
+                    e, 
+                    'index', 
+                    { intersect: false }, 
+                    true
+                );
+
+                lastMouseLocation.x = e.clientX;
+                lastMouseLocation.y = e.clientY;
+                lastNearestDatumIndex = nearestMouseItems[0]?.index;
+                lastNearestDatasetIndex = nearestMouseItems[0]?.datasetIndex;
+                chart.update();
+            };
+        }
+    }
+);
+
 const chartOptions = computed(() => 
 {
     return (
         {
-            type: 'line',
+            type: 'derivedBubble',
             responsive: true,
             animation: false,
             maintainAspectRatio: false,
-            plugins: 
-            {
-                legend: { display: false }
-            },
+            plugins: { legend: { display:false } },
             scales:
             {
                 x:
@@ -69,11 +144,20 @@ const chartOptions = computed(() =>
                     border: { display: true, color: '#333', },
                     grid: { display: true, drawOnChartArea: true, drawTicks: true, color: '#222' },
                 }
+            },
+            options: 
+            {
+                interaction: 
+                {
+                    mode: 'index',
+                    intersect: false,
+                },
             }
         } as ChartOptions<'line'>
     )
 });
 
+const mainChartRef = ref();
 const chartData = computed(() => 
 {
     const formatEpoch = (epoch: number) => 
@@ -91,13 +175,13 @@ const chartData = computed(() =>
 
     const data: ChartData<'line'> = 
     {
-        labels: xAxisLabels,
+        labels: xAxisLabels, 
         datasets: 
         [
             {
                 data: yAxisData,
                 fill: false,
-                borderColor: props.lineColor ?? 'rgb(75, 192, 192)',
+                borderColor: props.lineColor ?? defaultLineColor,
                 tension: 0.1,
                 pointRadius: 0,
                 spanGaps: true,
