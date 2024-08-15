@@ -23,7 +23,7 @@
 @import '../stylesheets/globalStyle.less';
 #panel
 {
-    .fullSize; .bg(@backgroundDark);
+    .fullSize; .bg(@cellBackground);
     box-sizing:border-box;
     .panelTitle { text-align:start; color:gray; font-size:14px; .tight; display:inline; }
 
@@ -59,35 +59,35 @@ const emit = defineEmits<
     (e: 'update:selectedOption', v: string): void
 }>();
 
-const props = defineProps<
+const props = withDefaults(defineProps<
 {
     selectedOption: string | null,
     availableOptions: string[],
     title: string
-}>();
+}>(), { title: "No Title" });
 
-const selectedOption = defineProperty("selectedOption", 
+const selectedOption = defineProperty<null | string, "selectedOption", typeof props>("selectedOption", 
 {
-    default: props.availableOptions[0],
     emitFunc: emit,
     props: props,
     withEmits: true
 });
 
-const availableOptions = defineProperty("availableOptions", 
+const availableOptions = defineProperty<string[], "availableOptions", typeof props>("availableOptions", 
 {   
-    default: [] as string[],
     emitFunc: undefined,
     props: props,
     withEmits: false
 });
 
-const title = defineProperty("title", 
+const title = defineProperty<string, "title", typeof props>("title", 
 {   
-    default: [] as string[],
     emitFunc: undefined,
     props: props,
     withEmits: false
 });
+
+if (selectedOption.checkIsControlled() === false)
+    selectedOption.uncontrolledRef.value = availableOptions.get()[0]
 
 </script>

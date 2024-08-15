@@ -1,25 +1,25 @@
 import { ref, type UnwrapRef } from "vue";
 
-export interface propDefinition<T, PropName extends string>
+export interface propDefinition<T, PropName extends string, Props extends { [K in PropName]: T }>
 {
-    default: T | undefined | null,
     withEmits?: boolean,
     emitFunc: ((event: `update:${PropName}`, ...args: any[]) => void) | undefined,
-    props: { readonly [K in PropName]?: T }
+    props: Props
 };
 
+
 /** Use null to tell this function to treat prop as uncontrolled */
-export function defineProperty<T, PropName extends string>
+export function defineProperty<T, PropName extends string, Props extends { [K in PropName]: T }>
 (
     propName: PropName, 
-    config: propDefinition<T, PropName>
+    config: propDefinition<T, PropName, Props>
 )
 {
     // Controlled: State managed by parents
     // Uncontrolled: State managed by component itself
 
     const checkIsControlled = () => config.props[propName] !== null;
-    const uncontrolledRef = ref<T | undefined | null>(config.default);
+    const uncontrolledRef = ref<T>(config.props[propName]);
     const propEmit = (newVal: T) => 
     {
         if (config.withEmits && config.emitFunc) config.emitFunc(`update:${propName}`, newVal);
@@ -34,6 +34,7 @@ export function defineProperty<T, PropName extends string>
         {
             if (checkIsControlled()) propEmit(val);
             else uncontrolledRef.value = val as UnwrapRef<T>;
-        }
+        },
+        uncontrolledRef
     }   
 }
