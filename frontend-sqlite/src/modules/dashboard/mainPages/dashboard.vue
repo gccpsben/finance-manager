@@ -27,22 +27,33 @@
             :isLoading="store.dashboardSummary.isLoading" :networkError="store.dashboardSummary.error"></number-cell> -->
             
             <list-cell v-area="'_30dExpensesList'" title="30d Expenses" :noItemsText="'No Expenses'" 
-            :isLoading="store.dashboardSummary.isLoading"
-            :error="store.dashboardSummary.error"
+            :isLoading="store.txns30d.isLoading"
+            :error="store.txns30d.error"
             :itemsInPage="7"
             :items="expenseTxns30d">
                 <template #row="props">
-                    <grid-shortcut columns="50px 1fr 1fr" :class="
-                    {
-                        'fullSize': true,
-                        // 'pendingTxn': props.currentItem./ && !props.currentItem.isResolved,
-                        // 'resolvedTxn': props.currentItem.isTypePending && props.currentItem.isResolved,
-                    }" @click="viewTxn(props.currentItem.id)" class="fullSize highlightableRow">
+                    <grid-shortcut columns="50px 1fr 1fr" :class="{'fullSize': true}" @click="viewTxn(props.currentItem.id)" class="fullSize highlightableRow">
                         <div class="listItemTitle middleLeft">{{ store.getDateAge(props.currentItem.creationDate) }}</div>
                         <div class="listItemTitle middleLeft">
                             {{ props.currentItem["title"] }}
-                            <!-- <div v-if="props.currentItem.isTypePending && !props.currentItem.isResolved" class="pendingLabel">(Pending)</div>
-                            <div v-if="props.currentItem.isTypePending && props.currentItem.isResolved" class="resolvedLabel">(Resolved)</div> -->
+                        </div>
+                        <div class="listItemTitle middleRight">
+                            {{ store.formatAmount(props.currentItem) }}
+                        </div>
+                    </grid-shortcut>
+                </template>
+            </list-cell>
+
+            <list-cell v-area="'_30dIncomesList'" title="30d Incomes" :noItemsText="'No Incomes'" 
+            :isLoading="store.txns30d.isLoading"
+            :error="store.txns30d.error"
+            :itemsInPage="7"
+            :items="incomeTxns30d">
+                <template #row="props">
+                    <grid-shortcut columns="50px 1fr 1fr" :class="{'fullSize': true}" @click="viewTxn(props.currentItem.id)" class="fullSize highlightableRow">
+                        <div class="listItemTitle middleLeft">{{ store.getDateAge(props.currentItem.creationDate) }}</div>
+                        <div class="listItemTitle middleLeft">
+                            {{ props.currentItem["title"] }}
                         </div>
                         <div class="listItemTitle middleRight">
                             {{ store.formatAmount(props.currentItem) }}
@@ -138,7 +149,7 @@ export default
     { 
         // this.store.updateAll();
         this.store.updateDashboardBatch();     
-        this.store.balanceValueHistory.updateData();
+        // this.store.balanceValueHistory.updateData();
         this.store.txnTypes.updateData();
         this.store.userExpensesIncomes.updateData();
         this.store.txns30d.updateData();
@@ -164,6 +175,11 @@ export default
         {
             if (!this.store.txns30d.lastSuccessfulData) return [];
             return this.store.txns30d.lastSuccessfulData.rangeItems.filter(txn => getTxnClassification(txn) === 'Expense');
+        },
+        incomeTxns30d()
+        {
+            if (!this.store.txns30d.lastSuccessfulData) return [];
+            return this.store.txns30d.lastSuccessfulData.rangeItems.filter(txn => getTxnClassification(txn) === 'Income');
         }
     },
     methods:
@@ -184,9 +200,9 @@ export default
         //     }
         //     return output;
         // },
-        viewTxn(pubID:string)
+        viewTxn(id:string)
         {
-            this.$router.push({name: 'transactions', params: { pubID: pubID }})
+            this.$router.push({name: 'transactions', params: { id: id }})
         }
     }
 }
