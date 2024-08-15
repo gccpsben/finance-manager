@@ -56,7 +56,7 @@ export default
         {
             if (this.selectedVarient === 'All' && this.valueAll !== undefined) return this.valueAll;
             if (this.selectedVarient === '30d' && this.value30d !== undefined) return this.value30d;
-            if (this.selectedVarient === '7d' && this.valueAll !== undefined) return this.value7d;
+            if (this.selectedVarient === '7d' && this.value7d !== undefined) return this.value7d;
             return undefined;
         }
     },
