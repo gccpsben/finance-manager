@@ -27,7 +27,7 @@ const router = createRouter(
                     props: true
                 },
                 {
-                    path: 'transactions/:pubID?',
+                    path: 'transactions/:id?',
                     name: 'transactions',
                     component: () => import('@/modules/transactions/mainPages/transactions.vue'),
                     props: true

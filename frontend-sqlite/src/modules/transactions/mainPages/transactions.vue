@@ -1,8 +1,8 @@
 <template>
 
-    <div id="topDiv">
+    <div class="topDivTxn">
 
-        <view-title :title="pageTitle" v-model:selectedItem="selectedItem"
+        <view-title :title="'Transactions'" v-model:selectedItem="selectedItem"
         :items="!selectedTransactionID ? ['All Transactions', 'Advanced Filter View'] : []">
         </view-title>
 
@@ -239,7 +239,7 @@ textarea
 
 .darkened { opacity: 0.4; }
 
-#topDiv
+.topDivTxn
 {
     padding:50px; box-sizing: border-box;
     overflow-x:hidden; .fullSize;
@@ -434,19 +434,17 @@ import { getTxnTypeNameById } from '@/modules/txnTypes/utils/transactionTypes';
 import { getContainerNameById } from '@/modules/containers/utils/containers';
 import { formatDate } from '@/modules/core/utils/date';
 import numberPagination from '@/modules/core/components/numberPagination.vue';
+import type { TxnDTO } from '../../../../../api-types/txn';
 
 // #region CONSTANTS:
 const itemsInPage = 15;
-
 const store = useMainStore();
-const pageTitle = computed(() => { return "Transactions" });
 const moveToPageZero = () => { mainPagination.pageIndex.value = 0; };
 // #endregion
 
 // #region All transactions view:
-const currentPage = ref(0);
 const searchText = ref("");
-const mainPagination = useNetworkPagination<TransactionDTO>({ updator: updator, pageIndex: 0, pageSize: ref(itemsInPage) });
+const mainPagination = useNetworkPagination<TxnDTO>({ updator: updator, pageIndex: 0, pageSize: ref(itemsInPage) });
 const uiRangeText = computed(() => 
 { 
     let upperBound = Math.min(mainPagination.viewportUpperBoundIndex.value + 1, mainPagination.totalItems.value);
@@ -455,17 +453,7 @@ const uiRangeText = computed(() =>
     `${upperBound}` + ` of ` +
     `${mainPagination.totalItems.value}`;
 });
-const selectedTransactionID = computed(() => { return router.currentRoute.value.params?.pubID });
-const pageReadable = computed(
-{
-    get() { return mainPagination.pageIndex.value + 1; },
-    set(value:any) 
-    {
-        if (value <= 0) { console.warn(`Attempt to set pageReadable to 0. Aborting...`); return; }
-        currentPage.value = value - 1; 
-        mainPagination.pageIndex.value = currentPage.value;
-    } 
-});
+const selectedTransactionID = computed(() => { return router.currentRoute.value.params?.id });
 
 function onSearchTextChange()
 {
@@ -474,7 +462,7 @@ function onSearchTextChange()
     moveToPageZero();
 }
 
-async function updator(start:number, count:number): Promise<UpdatorReturnType<TransactionDTO>>
+async function updator(start:number, count:number): Promise<UpdatorReturnType<TxnDTO>>
 {
     let sendQuery = async (url:string) => await store.authGet(url);
     let queryURL = API_TRANSACTIONS_PATH;
@@ -482,7 +470,7 @@ async function updator(start:number, count:number): Promise<UpdatorReturnType<Tr
     let fullQuery = `${queryURL}?start=${start}&end=${start+count}`;
     if (searchText.value !== "") fullQuery = `${queryURL}?start=${start}&end=${start+count}&title=${searchText.value}`;
     
-    let responseJSON = (await sendQuery(fullQuery)).data as ResponseGetTransactionsDTO;
+    let responseJSON = (await sendQuery(fullQuery)).data;
 
     return {
         totalItems: responseJSON.totalItems,
