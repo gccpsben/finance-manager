@@ -1,4 +1,4 @@
-import { API_BAL_VAL_PATH, API_CONTAINERS_PATH, API_CURRENCIES_PATH, API_DASHBOARD_BATCH_PATH, API_GRAPHS_PATH, API_NET_WORTH_GRAPH_PATH, API_SUMMARY_PATH, API_TXN_TYPES_PATH, API_USER_INCOMES_EXPENSES_PATH } from '@/apiPaths';
+import { API_BAL_VAL_PATH, API_CONTAINERS_PATH, API_CURRENCIES_PATH, API_DASHBOARD_BATCH_PATH, API_GRAPHS_PATH, API_NET_WORTH_GRAPH_PATH, API_SUMMARY_PATH, API_TRANSACTIONS_PATH, API_TXN_TYPES_PATH, API_USER_INCOMES_EXPENSES_PATH } from '@/apiPaths';
 import { useNetworkRequest } from '../composables/useNetworkRequest';
 import type { DashboardSummary } from '@/types/dtos/dashboardSummaryDTO';
 import axios, { AxiosError } from 'axios';
@@ -8,6 +8,8 @@ import type { ResponseGetExpensesAndIncomesDTO } from "@/../../api-types/calcula
 import type { GetTxnTypesAPI } from '@/../../api-types/txnType';
 import type { GetContainerAPI } from "@/../../api-types/container";
 import type { GetCurrencyAPI } from '@/../../api-types/currencies';
+import type { GetTxnAPI, TxnDTO } from '../../../../../api-types/txn';
+import { getTxnClassification } from '@/modules/transactions/utils/transactions';
 
 export type Subpage = { name: string; }
 
@@ -72,11 +74,13 @@ export const useMainStore = defineStore(
             userExpensesIncomes: useNetworkRequest<ResponseGetExpensesAndIncomesDTO>(API_USER_INCOMES_EXPENSES_PATH, { includeAuthHeaders: true, updateOnMount: false }),
             dashboardSummary: useNetworkRequest<DashboardSummary>(API_SUMMARY_PATH, { includeAuthHeaders: true, updateOnMount: false }),
             graphsSummary: useNetworkRequest<GraphsSummary>(API_GRAPHS_PATH, { includeAuthHeaders: true, updateOnMount: false }),
+            balanceValueHistory: useNetworkRequest<BalanceValueHistoryAPIResponse>(API_BAL_VAL_PATH, { includeAuthHeaders: true, updateOnMount: false }),
+
+            txns30d: useNetworkRequest<GetTxnAPI.ResponseDTO>(`${API_TRANSACTIONS_PATH}?startDate=${Date.now() - 2.628e+9}`, { includeAuthHeaders: true, updateOnMount: false }),
             currencies: useNetworkRequest<GetCurrencyAPI.ResponseDTO>(API_CURRENCIES_PATH, { includeAuthHeaders: true }),
             containers: useNetworkRequest<GetContainerAPI.ResponseDTO>(API_CONTAINERS_PATH, { includeAuthHeaders: true }),
             txnTypes: useNetworkRequest<GetTxnTypesAPI.ResponseDTO>(API_TXN_TYPES_PATH, { includeAuthHeaders: true }),
             netWorthHistory: useNetworkRequest<NetWorthAPIResponse>(API_NET_WORTH_GRAPH_PATH, { includeAuthHeaders: true, updateOnMount: false }),
-            balanceValueHistory: useNetworkRequest<BalanceValueHistoryAPIResponse>(API_BAL_VAL_PATH, { includeAuthHeaders: true, updateOnMount: false }),
             lastUpdateTime: new Date(0) as Date,
             mainViewSidebarVisible: true
         }
@@ -184,13 +188,18 @@ export const useMainStore = defineStore(
         {
             this.setCookie(cname, "", -1);
         },
-        formatAmount(transactionRecord:any, side:"to"|"from"="to")
+
+        formatAmount(txn:TxnDTO)
         {
-            if (transactionRecord == undefined) return "";
-            if (!this.currencies.lastSuccessfulData) return "";
-            if (this.currencies.lastSuccessfulData.rangeItems.length == 0 || transactionRecord[side] == undefined) return "";
-            let symbol = this.currencies.lastSuccessfulData.rangeItems.find(c => c.id == transactionRecord[side]["amount"]["currencyID"]);
-            return `${transactionRecord[side]["amount"]["value"].toFixed(2)} ${symbol?.ticker}`
+            if (!this.currencies.lastSuccessfulData) return "Loading...";
+            if (this.currencies.lastSuccessfulData.rangeItems.length == 0) return "Loading...";
+            const txnCategory = getTxnClassification(txn);
+            if (txnCategory === 'Transfer') return "(Mixed)";
+            const currencyId = txnCategory === 'Expense' ? txn.fromCurrency! : txn.toCurrency!;
+            const currency = this.findCurrencyByPubID(currencyId);
+            if (!currency) return "Loading...";
+            const amount = txnCategory === 'Expense' ? txn.fromAmount! : txn.toAmount!;
+            return `${parseFloat(amount).toFixed(2)} ${currency.ticker}`
         },
 
         /**

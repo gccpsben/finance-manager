@@ -1,6 +1,6 @@
-import type { TransactionDTO } from "@/../../api-types/txn";
+import type { TxnDTO } from "@/../../api-types/txn";
 
-export function getTxnClassification(txn:TransactionDTO)
+export function getTxnClassification(txn: TxnDTO)
 { 
     if (txn.fromAmount && txn.toAmount) return "Transfer";
     else if (txn.fromAmount && !txn.toAmount) return "Expense";

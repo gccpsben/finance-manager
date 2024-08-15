@@ -5,3 +5,5 @@ export type PaginationAPIResponse<T> =
     endingIndex: number;
     rangeItems: T[];
 };
+
+export type Exact<Actual, Expected> = Actual extends Expected ? (Expected extends Actual ? Actual : never) : never;

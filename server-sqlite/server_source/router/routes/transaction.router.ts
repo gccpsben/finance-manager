@@ -3,7 +3,7 @@ import express from 'express';
 import type { GetTxnAPI, PostTxnAPI } from '../../../../api-types/txn.js';
 import { AccessTokenService } from '../../db/services/accessToken.service.js';
 import { TransactionService } from '../../db/services/transaction.service.js';
-import { IsDecimalJSString, IsUTCDateInt } from '../../db/validators.js';
+import { IsDecimalJSString, IsIntString, IsUTCDateInt } from '../../db/validators.js';
 import { OptionalPaginationAPIQueryRequest, PaginationAPIResponseClass } from '../logics/pagination.js';
 import { TypesafeRouter } from '../typescriptRouter.js';
 import { ExpressValidations } from '../validation.js';
@@ -56,6 +56,8 @@ router.get<GetTxnAPI.ResponseDTO>(`/api/v1/transactions`,
         {
             @IsOptional() @IsString() title: string;
             @IsOptional() @IsString() id: string;
+            @IsOptional() @IsIntString() startDate?: string | undefined;
+            @IsOptional() @IsIntString() endDate?: string | undefined;
         }
 
         const authResult = await AccessTokenService.ensureRequestTokenValidated(req);
@@ -65,7 +67,9 @@ router.get<GetTxnAPI.ResponseDTO>(`/api/v1/transactions`,
             start: parsedQuery.start ? parseInt(parsedQuery.start) : undefined,
             end: parsedQuery.end ? parseInt(parsedQuery.end) : undefined,
             title: parsedQuery.title,
-            id: parsedQuery.id
+            id: parsedQuery.id,
+            startEpoch: parsedQuery.startDate ? parseInt(parsedQuery.startDate) : undefined,
+            endEpoch: parsedQuery.endDate ? parseInt(parsedQuery.endDate) : undefined,
         };
 
         const response = await PaginationAPIResponseClass.prepareFromQueryItems
@@ -75,7 +79,9 @@ router.get<GetTxnAPI.ResponseDTO>(`/api/v1/transactions`,
                 startIndex: userQuery.start,
                 endIndex: userQuery.end,
                 id: userQuery.id,
-                title: userQuery.title
+                title: userQuery.title,
+                startDate: userQuery.startEpoch,
+                endDate: userQuery.endEpoch
             }),
             userQuery.start
         );

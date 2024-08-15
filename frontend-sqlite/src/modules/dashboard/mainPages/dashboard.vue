@@ -15,42 +15,43 @@
             :value7d="userExpensesIncomes ? parseFloat(userExpensesIncomes.incomes7d) : 0"
             :value30d="userExpensesIncomes ? parseFloat(userExpensesIncomes.incomes30d) : 0"
             :valueAll="userExpensesIncomes ? parseFloat(userExpensesIncomes.incomesTotal) : 0"
-            :isLoading="store.userExpensesIncomes.isLoading" :networkError="store.userExpensesIncomes.error"></number-cell>
-        
-            <!-- 
-            <number-cell title="Total Value" v-area="'totalValuePanel'"
-            :valueAll="store.dashboardSummary.lastSuccessfulData?.totalValue"
-            :isLoading="store.dashboardSummary.isLoading" :networkError="store.dashboardSummary.error"></number-cell>
+            :isLoading="store.userExpensesIncomes.isLoading" :networkError="store.userExpensesIncomes.error"></number-cell>       
             
-            <number-cell title="Net Change" v-area="'netChangePanel'"
+            <!-- <number-cell title="Total Value" v-area="'totalValuePanel'"
+            :valueAll="store.dashboardSummary.lastSuccessfulData?.totalValue"
+            :isLoading="store.dashboardSummary.isLoading" :networkError="store.dashboardSummary.error"></number-cell> -->
+            
+            <!-- <number-cell title="Net Change" v-area="'netChangePanel'"
             :value7d="netChange7d"
             :value30d="netChange30d"
-            :isLoading="store.dashboardSummary.isLoading" :networkError="store.dashboardSummary.error"></number-cell>
-
+            :isLoading="store.dashboardSummary.isLoading" :networkError="store.dashboardSummary.error"></number-cell> -->
+            
             <list-cell v-area="'_30dExpensesList'" title="30d Expenses" :noItemsText="'No Expenses'" 
             :isLoading="store.dashboardSummary.isLoading"
             :error="store.dashboardSummary.error"
-            :items="store.toReversed(store.dashboardSummary.lastSuccessfulData?.expenses30d ?? [])">
+            :itemsInPage="7"
+            :items="expenseTxns30d">
                 <template #row="props">
                     <grid-shortcut columns="50px 1fr 1fr" :class="
                     {
                         'fullSize': true,
-                        'pendingTxn': props.currentItem.isTypePending && !props.currentItem.isResolved,
-                        'resolvedTxn': props.currentItem.isTypePending && props.currentItem.isResolved,
-                    }" @click="viewTxn(props.currentItem['pubID'])" class="fullSize highlightableRow">
-                        <div class="listItemTitle middleLeft">{{ store.getDateAge(props.currentItem["date"]) }}</div>
+                        // 'pendingTxn': props.currentItem./ && !props.currentItem.isResolved,
+                        // 'resolvedTxn': props.currentItem.isTypePending && props.currentItem.isResolved,
+                    }" @click="viewTxn(props.currentItem.id)" class="fullSize highlightableRow">
+                        <div class="listItemTitle middleLeft">{{ store.getDateAge(props.currentItem.creationDate) }}</div>
                         <div class="listItemTitle middleLeft">
                             {{ props.currentItem["title"] }}
-                            <div v-if="props.currentItem.isTypePending && !props.currentItem.isResolved" class="pendingLabel">(Pending)</div>
-                            <div v-if="props.currentItem.isTypePending && props.currentItem.isResolved" class="resolvedLabel">(Resolved)</div>
+                            <!-- <div v-if="props.currentItem.isTypePending && !props.currentItem.isResolved" class="pendingLabel">(Pending)</div>
+                            <div v-if="props.currentItem.isTypePending && props.currentItem.isResolved" class="resolvedLabel">(Resolved)</div> -->
                         </div>
-                        <div :title="getAmountTooltip(props.currentItem)" class="listItemTitle middleRight">
-                            {{ store.formatAmount(props.currentItem, 'from') }}
+                        <div class="listItemTitle middleRight">
+                            {{ store.formatAmount(props.currentItem) }}
                         </div>
                     </grid-shortcut>
                 </template>
             </list-cell>
 
+            <!-- 
             <list-cell v-area="'_allPendingTransactionsList'" title="All Pending Txns" :noItemsText="'No Pending Txns'"
             :isLoading="store.dashboardSummary.isLoading"
             :error="store.dashboardSummary.error"
@@ -114,13 +115,16 @@
 
 <script lang="ts">
 import { useMainStore } from "@/modules/core/stores/store";
-import type { Container, ValueHydratedContainer } from "@/types/dtos/containersDTO";
+import { getTxnClassification } from '@/modules/transactions/utils/transactions';
 import type { HydratedTransaction } from "@/types/dtos/transactionsDTO";
 import vArea from "@/modules/core/directives/vArea";
+import listCellVue from '@/modules/core/components/listCell.vue';
+import cell from '@/modules/core/components/cell.vue';
 
 export default 
 {
     directives: {'area':vArea},
+    components: { "list-cell": listCellVue, "cell": cell },
     data()
     {
         let data = 
@@ -137,6 +141,8 @@ export default
         this.store.balanceValueHistory.updateData();
         this.store.txnTypes.updateData();
         this.store.userExpensesIncomes.updateData();
+        this.store.txns30d.updateData();
+        this.store.currencies.updateData();
     },
     computed:
     {
@@ -153,6 +159,11 @@ export default
         userExpensesIncomes()
         {
             return this.store.userExpensesIncomes.lastSuccessfulData;
+        },
+        expenseTxns30d()
+        {
+            if (!this.store.txns30d.lastSuccessfulData) return [];
+            return this.store.txns30d.lastSuccessfulData.rangeItems.filter(txn => getTxnClassification(txn) === 'Expense');
         }
     },
     methods:
@@ -162,17 +173,17 @@ export default
             if (txn == undefined) return "";
             return txn.changeInValue.toFixed(3) + ' HKD';
         },
-        getContainerTooltip(container: ValueHydratedContainer)
-        {
-            if (container == undefined) return "";
-            let output = "";
-            for (let [key, value] of Object.entries(container.balance))
-            {
-                let currency = (this.store.currencies.lastSuccessfulData ?? []).find(curr => curr.id == key);
-                output += `${currency?.ticker}: ${(value as any).toFixed(3)}\n`;
-            }
-            return output;
-        },
+        // getContainerTooltip(container: ValueHydratedContainer)
+        // {
+        //     if (container == undefined) return "";
+        //     let output = "";
+        //     for (let [key, value] of Object.entries(container.balance))
+        //     {
+        //         let currency = (this.store.currencies.lastSuccessfulData ?? []).find(curr => curr.id == key);
+        //         output += `${currency?.ticker}: ${(value as any).toFixed(3)}\n`;
+        //     }
+        //     return output;
+        // },
         viewTxn(pubID:string)
         {
             this.$router.push({name: 'transactions', params: { pubID: pubID }})

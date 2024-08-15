@@ -22,7 +22,7 @@ export default
     props:
     {
         isLoading: { required: true, type: Boolean, default: true },
-        error: { default: undefined, type: Object as PropType<Ref<any>> }
+        error: { default: undefined, type: Object as PropType<any> }
     },
     data() 
     { 

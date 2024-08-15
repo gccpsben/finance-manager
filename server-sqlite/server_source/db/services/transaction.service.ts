@@ -137,6 +137,7 @@ export class TransactionService
         config: 
         {
             startIndex?: number | undefined, endIndex?: number | undefined,
+            startDate?: number | undefined, endDate?: number | undefined,
             title?: string,
             id?: string,
             description?: string
@@ -153,6 +154,12 @@ export class TransactionService
 
         if (config.description !== undefined)
             query = query.andWhere(`txn.${nameofT('description')} LIKE :description`, { description: `%${config.description}%` })
+
+        if (config.startDate) 
+            query = query.andWhere(`${nameofT('creationDate')} >= :startDate`, { startDate: config.startDate });
+        
+        if (config.endDate) 
+            query = query.andWhere(`${nameofT('creationDate')} <= :endDate`, { endDate: config.endDate });
 
         query = ServiceUtils.paginateQuery(query, config);
 
