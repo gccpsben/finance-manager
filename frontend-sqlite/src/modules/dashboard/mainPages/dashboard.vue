@@ -62,6 +62,24 @@
                 </template>
             </list-cell>
 
+            <list-cell v-area="'_30dTransfersList'" title="30d Transfers" :noItemsText="'No Transfers'" 
+            :isLoading="store.txns30d.isLoading"
+            :error="store.txns30d.error"
+            :itemsInPage="7"
+            :items="transferTxns30d">
+                <template #row="props">
+                    <grid-shortcut columns="50px 1fr 1fr" :class="{'fullSize': true}" @click="viewTxn(props.currentItem.id)" class="fullSize highlightableRow">
+                        <div class="listItemTitle middleLeft">{{ store.getDateAge(props.currentItem.creationDate) }}</div>
+                        <div class="listItemTitle middleLeft">
+                            {{ props.currentItem["title"] }}
+                        </div>
+                        <div class="listItemTitle middleRight">
+                            {{ store.formatAmount(props.currentItem) }}
+                        </div>
+                    </grid-shortcut>
+                </template>
+            </list-cell>
+
             <!-- 
             <list-cell v-area="'_allPendingTransactionsList'" title="All Pending Txns" :noItemsText="'No Pending Txns'"
             :isLoading="store.dashboardSummary.isLoading"
@@ -180,6 +198,11 @@ export default
         {
             if (!this.store.txns30d.lastSuccessfulData) return [];
             return this.store.txns30d.lastSuccessfulData.rangeItems.filter(txn => getTxnClassification(txn) === 'Income');
+        },
+        transferTxns30d()
+        {
+            if (!this.store.txns30d.lastSuccessfulData) return [];
+            return this.store.txns30d.lastSuccessfulData.rangeItems.filter(txn => getTxnClassification(txn) === 'Transfer');
         }
     },
     methods:
@@ -230,14 +253,14 @@ export default
     {
         box-sizing: border-box; gap:15px;
         .fullSize; .gridColumns_4;
-        grid-template-rows:100px 220px 220px 400px 1fr;
+        grid-template-rows:100px 220px 220px 220px 1fr;
         height:2000px; .fg(gray);
 
         grid-template-areas: 
         'expensesPanel incomesPanel totalValuePanel netChangePanel' 
         '_30dExpensesList _30dExpensesList ContainersList ContainersList'
         '_30dIncomesList _30dIncomesList TotalValueGraph TotalValueGraph'
-        '_allPendingTransactionsList _allPendingTransactionsList containerValuesGraph containerValuesGraph';
+        '_30dTransfersList _30dTransfersList containerValuesGraph containerValuesGraph';
 
         .listItemTitle 
         {
@@ -266,7 +289,7 @@ export default
         'ContainersList ContainersList'
         '_30dIncomesList _30dIncomesList'
         'TotalValueGraph TotalValueGraph'
-        '_allPendingTransactionsList _allPendingTransactionsList'
+        '_30dTransfersList _30dTransfersList'
         'containerValuesGraph containerValuesGraph' !important;
     }
 }
