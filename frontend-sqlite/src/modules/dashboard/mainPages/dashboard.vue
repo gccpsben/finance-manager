@@ -5,26 +5,27 @@
 
         <grid-shortcut id="mainGrid">
 
-            <number-cell title="Expenses" :noItemsText="'No Expenses'" v-area="'expensesPanel'"
+            <number-cell title="Expenses" :noItemsText="'No Data'" v-area="'expensesPanel'"
             :value7d="userExpensesIncomes ? parseFloat(userExpensesIncomes.expenses7d) : 0"
             :value30d="userExpensesIncomes ? parseFloat(userExpensesIncomes.expenses30d) : 0"
             :valueAll="userExpensesIncomes ? parseFloat(userExpensesIncomes.expensesTotal) : 0"
             :isLoading="store.userExpensesIncomes.isLoading" :networkError="store.userExpensesIncomes.error"></number-cell>
         
-            <number-cell title="Incomes" :noItemsText="'No Incomes'" v-area="'incomesPanel'"
+            <number-cell title="Incomes" :noItemsText="'No Data'" v-area="'incomesPanel'"
             :value7d="userExpensesIncomes ? parseFloat(userExpensesIncomes.incomes7d) : 0"
             :value30d="userExpensesIncomes ? parseFloat(userExpensesIncomes.incomes30d) : 0"
             :valueAll="userExpensesIncomes ? parseFloat(userExpensesIncomes.incomesTotal) : 0"
             :isLoading="store.userExpensesIncomes.isLoading" :networkError="store.userExpensesIncomes.error"></number-cell>       
             
-            <!-- <number-cell title="Total Value" v-area="'totalValuePanel'"
-            :valueAll="store.dashboardSummary.lastSuccessfulData?.totalValue"
-            :isLoading="store.dashboardSummary.isLoading" :networkError="store.dashboardSummary.error"></number-cell> -->
+            <number-cell title="Total Value" v-area="'totalValuePanel'"
+            :valueAll="userTotalValue"
+            :isLoading="store.userExpensesIncomes.isLoading" :networkError="store.userExpensesIncomes.error"></number-cell>
             
-            <!-- <number-cell title="Net Change" v-area="'netChangePanel'"
-            :value7d="netChange7d"
-            :value30d="netChange30d"
-            :isLoading="store.dashboardSummary.isLoading" :networkError="store.dashboardSummary.error"></number-cell> -->
+            <div v-area="'netChangePanel'">
+                <number-cell title="Net Change" :noItemsText="'No Data'" 
+                :value7d="netChange7d" :value30d="netChange30d"
+                :isLoading="store.userExpensesIncomes.isLoading" :networkError="store.userExpensesIncomes.error"></number-cell>
+            </div>
             
             <list-cell v-area="'_30dExpensesList'" title="30d Expenses" :noItemsText="'No Expenses'" 
             :isLoading="store.txns30d.isLoading"
@@ -177,17 +178,25 @@ export default
     {
         netChange30d()
         {
-            if (!this.store.dashboardSummary?.lastSuccessfulData) return;
-            return this.store.dashboardSummary.lastSuccessfulData.totalIncomes30d - this.store.dashboardSummary.lastSuccessfulData.totalExpenses30d;
+            if (this.store.userExpensesIncomes.isLoading || this.store.userExpensesIncomes.error) return 0;
+            if (!this.userExpensesIncomes?.incomes30d || !this.userExpensesIncomes?.expenses30d) return 0;
+            return (parseFloat(this.userExpensesIncomes.incomes30d) - parseFloat(this.userExpensesIncomes.expenses30d));
         },
         netChange7d()
         {
-            if (!this.store.dashboardSummary?.lastSuccessfulData) return;
-            return this.store.dashboardSummary.lastSuccessfulData.totalIncomes30d - this.store.dashboardSummary.lastSuccessfulData.totalExpenses30d;
+            if (this.store.userExpensesIncomes.isLoading || this.store.userExpensesIncomes.error) return 0;
+            if (!this.userExpensesIncomes?.incomes7d || !this.userExpensesIncomes?.expenses7d) return 0;
+            return (parseFloat(this.userExpensesIncomes.incomes7d) - parseFloat(this.userExpensesIncomes.expenses7d));
+        },
+        userTotalValue()
+        {
+            if (this.store.userExpensesIncomes.isLoading || this.store.userExpensesIncomes.error) return 0;
+            if (!this.userExpensesIncomes?.incomes7d || !this.userExpensesIncomes?.expenses7d) return 0;
+            return (parseFloat(this.userExpensesIncomes.incomesTotal) - parseFloat(this.userExpensesIncomes.expensesTotal));
         },
         userExpensesIncomes()
         {
-            return this.store.userExpensesIncomes.lastSuccessfulData;
+            return this.store.userExpensesIncomes?.lastSuccessfulData;
         },
         expenseTxns30d()
         {
