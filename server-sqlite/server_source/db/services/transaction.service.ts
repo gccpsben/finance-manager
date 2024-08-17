@@ -141,7 +141,7 @@ export class TransactionService
             title?: string,
             id?: string,
             description?: string
-        }
+        } | undefined = undefined
     ): Promise<{ totalCount: number, rangeItems: SQLitePrimitiveOnly<Transaction>[] }>
     {   
         let query = TransactionRepository.getInstance()
