@@ -1,5 +1,5 @@
 import { Decimal } from "decimal.js";
-import { CurrencyListCache, CurrencyRepository } from "../repositories/currency.repository.js";
+import { CurrencyRepository } from "../repositories/currency.repository.js";
 import { UserRepository } from "../repositories/user.repository.js";
 import createHttpError from "http-errors";
 import { Currency, RateHydratedPrimitiveCurrency } from "../entities/currency.entity.js";
@@ -8,6 +8,7 @@ import { CurrencyRateDatumRepository } from "../repositories/currencyRateDatum.r
 import { LinearInterpolator } from "../../calculations/linearInterpolator.js";
 import { SQLitePrimitiveOnly } from "../../index.d.js";
 import { nameof, ServiceUtils } from "../servicesUtils.js";
+import { CurrencyListCache } from "../caches/currencyListCache.cache.js";
 
 export class CurrencyCalculator
 {

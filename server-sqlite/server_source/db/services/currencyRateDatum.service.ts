@@ -2,7 +2,8 @@ import { UserService } from "./user.service.js";
 import { CurrencyRateDatumRepository, CurrencyRateDatumsCache } from "../repositories/currencyRateDatum.repository.js";
 import { CurrencyCalculator, CurrencyService } from "./currency.service.js";
 import { Decimal } from "decimal.js";
-import { CurrencyListCache } from "../repositories/currency.repository.js";
+import { CurrencyListCache } from "../caches/currencyListCache.cache.js";
+
 
 function minAndMax<T> (array: T[], getter: (obj:T) => number)
 {
