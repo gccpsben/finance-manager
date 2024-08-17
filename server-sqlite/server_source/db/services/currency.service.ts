@@ -1,5 +1,5 @@
 import { Decimal } from "decimal.js";
-import { CurrencyRepository } from "../repositories/currency.repository.js";
+import { CurrencyListCache, CurrencyRepository } from "../repositories/currency.repository.js";
 import { UserRepository } from "../repositories/user.repository.js";
 import createHttpError from "http-errors";
 import { Currency, RateHydratedPrimitiveCurrency } from "../entities/currency.entity.js";
@@ -7,7 +7,6 @@ import { FindOptionsWhere } from "typeorm";
 import { CurrencyRateDatumRepository } from "../repositories/currencyRateDatum.repository.js";
 import { LinearInterpolator } from "../../calculations/linearInterpolator.js";
 import { SQLitePrimitiveOnly } from "../../index.d.js";
-import { MutableDataCache } from "../dataCache.js";
 import { nameof, ServiceUtils } from "../servicesUtils.js";
 
 export class CurrencyCalculator
@@ -28,10 +27,10 @@ export class CurrencyCalculator
         ownerId: string, 
         from: SQLitePrimitiveOnly<Currency>, 
         date: Date = new Date(),
-        cache: MutableDataCache = undefined
+        cache: CurrencyListCache | undefined = undefined
     ): Promise<Decimal>
     { 
-        if (cache === undefined) cache = new MutableDataCache(ownerId);
+        if (cache === undefined) cache = new CurrencyListCache(ownerId);
         if (from.isBase) return new Decimal(`1`);
     
         const getCurrById = async (id: string) => 
@@ -55,8 +54,7 @@ export class CurrencyCalculator
         (
             ownerId, 
             from.id, 
-            date,
-            cache
+            date
         );
         const d1 = nearestTwoDatums[0]; const d2 = nearestTwoDatums[1];
 
@@ -129,11 +127,10 @@ export class CurrencyCalculator
     (
         userId:string, 
         currencyId: string, 
-        cache: MutableDataCache = undefined
+        cache: CurrencyListCache | undefined = undefined
     ): Promise<LinearInterpolator>
     {   
-        if (cache === undefined) cache = new MutableDataCache(userId);
-
+        if (cache === undefined) cache = new CurrencyListCache(userId);
         await cache.ensureCurrenciesList();
 
         const datums = await CurrencyRateDatumRepository.getInstance().getCurrencyDatums(userId, currencyId);

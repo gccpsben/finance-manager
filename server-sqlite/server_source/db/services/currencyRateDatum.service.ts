@@ -1,8 +1,8 @@
-import { CurrencyRateDatumRepository } from "../repositories/currencyRateDatum.repository.js";
 import { UserService } from "./user.service.js";
+import { CurrencyRateDatumRepository, CurrencyRateDatumsCache } from "../repositories/currencyRateDatum.repository.js";
 import { CurrencyCalculator, CurrencyService } from "./currency.service.js";
-import { MutableDataCache } from "../dataCache.js";
 import { Decimal } from "decimal.js";
+import { CurrencyListCache } from "../repositories/currency.repository.js";
 
 function minAndMax<T> (array: T[], getter: (obj:T) => number)
 {
@@ -56,10 +56,11 @@ export class CurrencyRateDatumService
         currencyId: string,
         startDate: Date = undefined, endDate: Date = undefined,
         division: number = 10,
-        cache: MutableDataCache = undefined
+        datumsCache: CurrencyRateDatumsCache = undefined,
+        currenciesCache: CurrencyListCache = undefined
     )
     {
-        const cacheInner = cache !== undefined ? cache : new MutableDataCache(await UserService.getUserById(ownerId));
+        const cacheInner = datumsCache !== undefined ? datumsCache : new CurrencyRateDatumsCache(ownerId);
         const currency = await CurrencyService.getCurrencyById(ownerId, currencyId);
         const datumsWithinRange = await CurrencyRateDatumRepository.getInstance().getCurrencyDatums(ownerId, currencyId, startDate, endDate);
 
@@ -73,9 +74,9 @@ export class CurrencyRateDatumService
         }
 
         const datumsStat = minAndMax(datumsWithinRange, x => x.date);
+        cacheInner.ensureCurrenciesRateDatumsList(currency.id);
 
-        cacheInner.setCurrenciesRateDatumsList(currency.id, datumsWithinRange);
-        const interpolator = await CurrencyCalculator.getCurrencyToBaseRateInterpolator(ownerId, currencyId, cacheInner);
+        const interpolator = await CurrencyCalculator.getCurrencyToBaseRateInterpolator(ownerId, currencyId, currenciesCache);
         
         const output: {date: number, rateToBase: Decimal}[] = [];
         const minDate = new Decimal(datumsStat.min);

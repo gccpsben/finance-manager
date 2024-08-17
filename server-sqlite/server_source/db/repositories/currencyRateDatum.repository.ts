@@ -3,14 +3,32 @@ import { CurrencyRateDatum } from "../entities/currencyRateDatum.entity.js";
 import { Database } from "../db.js";
 import { SQLitePrimitiveOnly } from "../../index.d.js";
 import { isDate } from "class-validator";
-import { MutableDataCache } from "../dataCache.js";
+import { RepositoryCache } from "../dataCache.js";
 
 export type DifferenceHydratedCurrencyRateDatum = SQLitePrimitiveOnly<CurrencyRateDatum> &
-{
-    difference: number
-}
+{ difference: number }
 
 const nameofD = (k: keyof CurrencyRateDatum) => k;
+
+export class CurrencyRateDatumsCache extends RepositoryCache
+{
+    private _datumsList: { [currId: string]: SQLitePrimitiveOnly<CurrencyRateDatum>[] } = {};
+    public constructor(ownerId: string) { super(ownerId); }
+    
+    public getCurrenciesRateDatumsList(currId: string) { return this._datumsList[currId]; }
+    public setCurrenciesRateDatumsList(currId: string, list: SQLitePrimitiveOnly<CurrencyRateDatum>[]) 
+    { 
+        if (list.find(x => x.ownerId !== this._ownerId))
+            throw new Error(`DataCache owner mismatch: Data inserted into DataCache must only belong to one user.`);
+        this._datumsList[currId] = list;
+    }
+    public async ensureCurrenciesRateDatumsList(currId: string)
+    {
+        const ratesDatums = await CurrencyRateDatumRepository.getInstance().getCurrencyDatums(this._ownerId, currId);
+        this.setCurrenciesRateDatumsList(currId, ratesDatums);
+        return ratesDatums;
+    }
+}
 
 class CurrencyRateDatumRepositoryExtension
 {
@@ -22,14 +40,14 @@ class CurrencyRateDatumRepositoryExtension
     public async findNearestTwoDatum
     (
         this: Repository<CurrencyRateDatum>, userId: string,  currencyId: string, date: Date,
-        cache: MutableDataCache = undefined
+        datumsCache: CurrencyRateDatumsCache | undefined = undefined
     ): Promise<DifferenceHydratedCurrencyRateDatum[]>
     {
         if (!date || !isDate(date)) throw new Error(`findNearestTwoDatum: The provided date is not a date object.`);
 
-        if (cache?.getCurrenciesRateDatumsList(currencyId))
+        if (datumsCache?.getCurrenciesRateDatumsList(currencyId))
         {
-            const results = cache.getCurrenciesRateDatumsList(currencyId)
+            const results = datumsCache.getCurrenciesRateDatumsList(currencyId)
             .filter(d => d.ownerId === userId && d.refCurrencyId === currencyId)
             .map(d => ({ ...d, difference: Math.abs(d.date - date.getTime()) }))
             .sort((a,b) => a.difference - b.difference)
@@ -43,12 +61,10 @@ class CurrencyRateDatumRepositoryExtension
         query = query.setParameter("_target_date_", date.getTime());
         query = query.select(`abs(datum.date - :_target_date_)`, `difference`);
         query = query.orderBy("difference", 'ASC');
-        if (!cache) query = query.limit(2); // if there's no cache object provided, no need to fetch all of the datums
+        if (!datumsCache) query = query.limit(2); // if there's no cache object provided, no need to fetch all of the datums
         query = query.addSelect("*");
 
         const results = await query.getRawMany() as (SQLitePrimitiveOnly<CurrencyRateDatum> & { difference: number })[];
-        if (cache) cache.setCurrenciesRateDatumsList(currencyId, results); // set to cache if it's defined.
-
         return results.slice(0,2);
     }
 
