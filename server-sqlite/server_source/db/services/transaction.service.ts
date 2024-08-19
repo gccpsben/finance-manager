@@ -1,15 +1,14 @@
 import createHttpError from "http-errors";
-import { ContainerRepository } from "../repositories/container.repository.js";
 import { TransactionRepository } from "../repositories/transaction.repository.js";
 import { ContainerService } from "./container.service.js";
 import { CurrencyService } from "./currency.service.js";
-import { TransactionTypeRepository } from "../repositories/transactionType.repository.js";
 import { TransactionTypeService } from "./transactionType.service.js";
 import { UserService } from "./user.service.js";
 import { Transaction } from "../entities/transaction.entity.js";
 import { Decimal } from "decimal.js";
 import type { SQLitePrimitiveOnly } from "../../index.d.js";
 import { nameof, ServiceUtils } from "../servicesUtils.js";
+import { Container } from "../entities/container.entity.js";
 
 const nameofT = (x: keyof Transaction) => nameof<Transaction>(x);
 
@@ -177,12 +176,31 @@ export class TransactionService
         const nameofT = (x: keyof Transaction) => nameof<Transaction>(x);
 
         let query = await TransactionRepository.getInstance()
-        .createQueryBuilder(`txn`)
+        .createQueryBuilder(`txn`) 
         .where(`${nameofT('ownerId')} = :ownerId`, { ownerId: userId ?? null })
         .orderBy(`txn.${nameofT('creationDate')}`, "ASC")
         .limit(1)
         .getOne();
 
         return query;
+    }
+
+    public static async getContainersTransactions(userId: string, containerIds: string[] | SQLitePrimitiveOnly<Container>[])
+    {
+        const targetContainerIds = ServiceUtils.normalizeEntitiesToIds(containerIds, 'id');
+
+        let query = TransactionRepository.getInstance()
+        .createQueryBuilder(`txn`)
+        .where(`${nameofT('ownerId')} = :ownerId`, { ownerId: userId ?? null })
+        .andWhere
+        (
+            /*sql*/`
+                ${nameofT('fromContainerId')} IN (:...targetContainerIds)
+                    OR 
+                ${nameofT('toContainerId')} IN (:...targetContainerIds)`, 
+            { targetContainerIds: targetContainerIds }
+        );
+
+        return await query.getMany() as SQLitePrimitiveOnly<Transaction>[];
     }
 }

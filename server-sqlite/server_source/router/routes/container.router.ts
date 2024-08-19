@@ -6,6 +6,9 @@ import { ContainerService } from '../../db/services/container.service.js';
 import { TypesafeRouter } from '../typescriptRouter.js';
 import type { GetContainerAPI, PostContainerAPI } from '../../../../api-types/container.js';
 import { OptionalPaginationAPIQueryRequest, PaginationAPIResponseClass } from '../logics/pagination.js';
+import { IsUTCDateIntString } from '../../db/validators.js';
+import { ServiceUtils } from '../../db/servicesUtils.js';
+import { Decimal } from 'decimal.js';
 
 const router = new TypesafeRouter(express.Router());
 
@@ -18,6 +21,9 @@ router.get<GetContainerAPI.ResponseDTO>(`/api/v1/containers`,
         {
             @IsOptional() @IsString() id: string;
             @IsOptional() @IsString() name: string;
+
+            /** If this is set, the value of each container will use the rate of each currency's rate at the given date. This defatuls to now. */
+            @IsOptional() @IsUTCDateIntString() currencyRateDate: string;
         }
 
         const parsedQuery = await ExpressValidations.validateBodyAgainstModel<query>(query, req.query);
@@ -26,7 +32,8 @@ router.get<GetContainerAPI.ResponseDTO>(`/api/v1/containers`,
             start: parsedQuery.start ? parseInt(parsedQuery.start) : undefined,
             end: parsedQuery.end ? parseInt(parsedQuery.end) : undefined,
             name: parsedQuery.name,
-            id: parsedQuery.id
+            id: parsedQuery.id,
+            currencyRateDate: parsedQuery.currencyRateDate ? parseInt(parsedQuery.currencyRateDate) : Date.now()
         };
         
         const response = await PaginationAPIResponseClass.prepareFromQueryItems
@@ -40,8 +47,16 @@ router.get<GetContainerAPI.ResponseDTO>(`/api/v1/containers`,
             }),
             userQuery.start
         );
-
+        
+        const containerValues = await ContainerService.valueHydrateContainers
+        (
+            authResult.ownerUserId,
+            response.rangeItems.map(container => container.id),
+            userQuery.currencyRateDate
+        );
+        
         return {
+            rateCalculatedToEpoch: userQuery.currencyRateDate,
             totalItems: response.totalItems,
             endingIndex: response.endingIndex,
             startingIndex: response.startingIndex,
@@ -50,7 +65,13 @@ router.get<GetContainerAPI.ResponseDTO>(`/api/v1/containers`,
                 creationDate: item.creationDate,
                 id: item.id,
                 name: item.name,
-                owner: item.ownerId
+                owner: item.ownerId,
+                value: (containerValues.values[item.id] ?? new Decimal(`0`)).toString(),
+                balances: containerValues.balances[item.id] ? ServiceUtils.mapObjectValues
+                (
+                    containerValues.balances[item.id], 
+                    x => x.toString()
+                ) : {}
             }))
         };
     }

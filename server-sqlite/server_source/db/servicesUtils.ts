@@ -1,9 +1,9 @@
 import { SelectQueryBuilder } from "typeorm";
 
 export const nameof = <T>(name: Extract<keyof T, string>): string => name;
-export class ServiceUtils
+export namespace ServiceUtils
 {
-    public static paginateQuery<T>
+    export function paginateQuery<T>
     (
         dbQuery: SelectQueryBuilder<T>, 
         query:
@@ -28,5 +28,23 @@ export class ServiceUtils
             dbQuery = dbQuery.limit(query.startIndex);  
         }
         return dbQuery;
+    }
+
+    export function normalizeEntitiesToIds<T extends {[P in IdKey]: string}, IdKey extends keyof T>
+    (
+        array: T[] | string[],
+        key: IdKey
+    ): string[]
+    {
+        if (array.every(i => typeof i === "string")) return array;
+        else return array.map(x => x[key]);
+    }
+
+    export function mapObjectValues<T, R>(dict: { [ key: string ] : T}, mapper: (arg : T) => R)
+    {
+        const output: { [key: string]: R } = {};
+        for (const [key, value] of Object.entries(dict))
+            output[key] = mapper(value);   
+        return output;
     }
 }

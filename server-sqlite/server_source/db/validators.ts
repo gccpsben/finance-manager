@@ -1,4 +1,4 @@
-import { registerDecorator, ValidationOptions, ValidationArguments, isInt, isPositive, isNumber, isNumberString } from 'class-validator';
+import { registerDecorator, ValidationOptions, ValidationArguments, isInt, isPositive, isNumber, isNumberString, IsNumberString } from 'class-validator';
 import { Decimal } from 'decimal.js';
 
 export function EnsureNotPlainForeignKey(validationOptions?: ValidationOptions) 
@@ -43,6 +43,37 @@ export function IsDecimalJSString(validationOptions?: ValidationOptions)
                     try
                     {
                         let test = new Decimal(value);
+                        return true;
+                    }
+                    catch(e) { return false; }
+                },
+            },
+        });
+    };
+}
+
+export function IsUTCDateIntString(validationOptions?: ValidationOptions) 
+{
+    return function (object: Object, propertyName: string) 
+    {
+        registerDecorator(
+        {
+            name: 'isUTCDateIntString',
+            target: object.constructor,
+            propertyName: propertyName,
+            options: {
+                message: "Expected an UTC int representing a datetime as a string."
+            },
+            validator: 
+            {
+                validate(value: any, args: ValidationArguments) 
+                {
+                    try
+                    {
+                        if (!isNumberString(value)) return false;
+                        const parsed = parseFloat(value);
+                        if (!isPositive(parsed)) return false;
+                        if (!isInt(parsed)) return false;
                         return true;
                     }
                     catch(e) { return false; }
