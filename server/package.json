@@ -4,7 +4,7 @@
 	"description": "",
 	"private": true,
 	"scripts": {
-		"dev_watch": "tsc-watch -p \"./tsconfig.json\" --onSuccess \"node server_build/entry.js ./dev.env\"",
+		"dev_watch": "tsc-watch -p \"./tsconfig.json\" --onEmitDebounceMs 1000 --onSuccess \"node server_build/entry.js ./dev.env\"",
 		"dev_once": "tsc && node server_build/entry.js ./dev.env",
 		"run_prod": "node ./server_production/entry.js ./.env",
 		"build_prod": "tsc --outDir ./server_production",
