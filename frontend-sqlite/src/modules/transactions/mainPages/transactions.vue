@@ -42,7 +42,7 @@
                                     <div>{{ store.getDateAge(item?.creationDate) }} ago</div>
                                 </div>
                                 <div v-area.class="'txnType'" class="tight yCenter ellipsisContainer">
-                                    <div>{{ getTxnTypeNameById(item?.txnType, store.txnTypes.lastSuccessfulData?.rangeItems ?? []) }}</div>
+                                    <div>{{ getTxnTypeNameById(item?.txnType, txnTypesStore.txnTypes.lastSuccessfulData?.rangeItems ?? []) }}</div>
                                 </div>
                                 <!-- <div v-area.class="'txnValueChange'" class="tight yCenter consoleFont ellipsisContainer" 
                                 :class="{'disabled': item?.changeInValue == 0}">
@@ -436,11 +436,13 @@ import { formatDate } from '@/modules/core/utils/date';
 import numberPagination from '@/modules/core/components/numberPagination.vue';
 import type { TxnDTO } from '../../../../../api-types/txn';
 import { useContainersStore } from '../../containers/stores/useContainersStore';
+import { useTxnTypesStore } from '../../txnTypes/stores/useTxnTypesStore';
 
 // #region CONSTANTS:
 const itemsInPage = 15;
 const store = useMainStore();
 const containersStore = useContainersStore();
+const txnTypesStore = useTxnTypesStore();
 const moveToPageZero = () => { mainPagination.pageIndex.value = 0; };
 // #endregion
 

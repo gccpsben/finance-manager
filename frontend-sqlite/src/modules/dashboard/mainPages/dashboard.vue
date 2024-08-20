@@ -146,6 +146,7 @@
 <script lang="ts">
 import { useMainStore } from "@/modules/core/stores/store";
 import { useContainersStore } from '@/modules/containers/stores/useContainersStore';
+import { useTxnTypesStore } from '../../txnTypes/stores/useTxnTypesStore';
 import { getTxnClassification } from '@/modules/transactions/utils/transactions';
 import type { HydratedTransaction } from "@/types/dtos/transactionsDTO";
 import vArea from "@/modules/core/directives/vArea";
@@ -164,6 +165,7 @@ export default
             store: useMainStore(),
             currenciesStore: useCurrenciesStore(),
             containersStore: useContainersStore(),
+            txnTypesStore: useTxnTypesStore(),
             selectedItem: 'Main'
         };
         return data;
@@ -173,7 +175,7 @@ export default
         // this.store.updateAll();
         this.store.updateDashboardBatch();     
         // this.store.balanceValueHistory.updateData();
-        this.store.txnTypes.updateData();
+        this.txnTypesStore.txnTypes.updateData();
         this.store.userExpensesIncomes.updateData();
         this.store.txns30d.updateData();
         this.currenciesStore.currencies.updateData();

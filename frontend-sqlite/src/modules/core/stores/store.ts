@@ -75,7 +75,7 @@ export const useMainStore = defineStore(
 
             txns30d: useNetworkRequest<GetTxnAPI.ResponseDTO>(`${API_TRANSACTIONS_PATH}?startDate=${Date.now() - 2.628e+9}`, { includeAuthHeaders: true, updateOnMount: false }),
             // containers: useNetworkRequest<GetContainerAPI.ResponseDTO>(API_CONTAINERS_PATH, { includeAuthHeaders: true }),
-            txnTypes: useNetworkRequest<GetTxnTypesAPI.ResponseDTO>(API_TXN_TYPES_PATH, { includeAuthHeaders: true }),
+            // txnTypes: useNetworkRequest<GetTxnTypesAPI.ResponseDTO>(API_TXN_TYPES_PATH, { includeAuthHeaders: true }),
             netWorthHistory: useNetworkRequest<NetWorthAPIResponse>(API_NET_WORTH_GRAPH_PATH, { includeAuthHeaders: true, updateOnMount: false }),
             lastUpdateTime: new Date(0) as Date,
             mainViewSidebarVisible: true
@@ -118,7 +118,7 @@ export const useMainStore = defineStore(
             [
                 this.dashboardSummary.updateData(),
                 // this.containers.updateData(),
-                this.txnTypes.updateData(),
+                // this.txnTypes.updateData(),
                 this.netWorthHistory.updateData(),
                 this.balanceValueHistory.updateData()
             ]);
