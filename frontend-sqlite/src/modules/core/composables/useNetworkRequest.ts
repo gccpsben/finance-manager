@@ -1,5 +1,5 @@
 import router from '@/router';
-import axios, { AxiosError, type AxiosResponse, type RawAxiosRequestHeaders } from 'axios';
+import axios from 'axios';
 import { ref, watchEffect, toValue } from 'vue';
 
 export type NetworkQuery = 
