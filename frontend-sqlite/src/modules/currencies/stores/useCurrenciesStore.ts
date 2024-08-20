@@ -51,6 +51,11 @@ export const useCurrenciesStore = defineStore
                 if (!this.currencies.lastSuccessfulData) return "...";
                 return this.currencies.lastSuccessfulData.rangeItems.find(x => x.id == currencyId)?.ticker;
             },
+            getBaseCurrencySymbol(): string
+            {
+                if (!this.currencies.lastSuccessfulData) return "...";
+                return this.currencies.lastSuccessfulData.rangeItems.find(x => x.isBase)?.ticker ?? "...";
+            }
         }
     }
 );
