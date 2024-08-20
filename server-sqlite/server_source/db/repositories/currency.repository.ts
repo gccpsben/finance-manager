@@ -4,7 +4,7 @@ import { Database } from "../db.js";
 
 class CurrencyRepositoryExtension
 {
-    public async isCurrencyByIdExists(this: Repository<Currency>, currencyId: string, userId: string): Promise<boolean>
+    isCurrencyByIdExists = async function (this: Repository<Currency>, currencyId: string, userId: string): Promise<boolean>
     {
         const currency = await this.findOne(
         {
@@ -14,7 +14,7 @@ class CurrencyRepositoryExtension
         return !!currency;
     }
 
-    public async isCurrencyByNameExists(this: Repository<Currency>, name: string, userId: string): Promise<boolean>
+    isCurrencyByNameExists = async function (this: Repository<Currency>, name: string, userId: string): Promise<boolean>
     {
         const currency = await this.findOne(
         {
@@ -24,7 +24,7 @@ class CurrencyRepositoryExtension
         return !!currency;
     }
 
-    public async isCurrencyByTickerExists(this: Repository<Currency>, ticker: string, userId: string): Promise<boolean>
+    isCurrencyByTickerExists = async function(this: Repository<Currency>, ticker: string, userId: string): Promise<boolean>
     {
         const currency = await this.findOne({where: { ticker: ticker, owner: { id: userId } }});
         return !!currency;
@@ -38,7 +38,8 @@ export class CurrencyRepository
     public static getInstance()
     {
         if (!CurrencyRepository.extendedRepo) 
-            CurrencyRepository.extendedRepo = Database.AppDataSource.getRepository(Currency).extend(new CurrencyRepositoryExtension())      
+            CurrencyRepository.extendedRepo = Database.AppDataSource.getRepository(Currency).extend(new CurrencyRepositoryExtension());
+
         return CurrencyRepository.extendedRepo;
     }
 }

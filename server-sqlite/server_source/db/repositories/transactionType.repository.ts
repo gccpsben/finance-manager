@@ -4,7 +4,7 @@ import { Database } from "../db.js";
 
 class TransactionTypeRepositoryExtension
 {
-    public async isTransactionTypeByIdExists(this: Repository<TransactionType>, TransactionTypeId: string, userId: string): Promise<boolean>
+    isTransactionTypeByIdExists = async function(this: Repository<TransactionType>, TransactionTypeId: string, userId: string): Promise<boolean>
     {
         const TransactionType = await this.findOne({where: { id: TransactionTypeId, owner: { id: userId } }});
         return !!TransactionType;
@@ -18,7 +18,7 @@ export class TransactionTypeRepository
     public static getInstance()
     {
         if (!TransactionTypeRepository.extendedRepo) 
-            TransactionTypeRepository.extendedRepo = Database.AppDataSource.getRepository(TransactionType).extend(new TransactionTypeRepositoryExtension())      
+            TransactionTypeRepository.extendedRepo = Database.AppDataSource.getRepository(TransactionType).extend(new TransactionTypeRepositoryExtension());
         return TransactionTypeRepository.extendedRepo;
     }
 }

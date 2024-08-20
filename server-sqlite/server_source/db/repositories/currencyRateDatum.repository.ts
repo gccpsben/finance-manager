@@ -37,7 +37,7 @@ class CurrencyRateDatumRepositoryExtension
      * #### Notice that the datums returned may NOT be on each of the direction of the given date.
      * #### Two of the datums may both be *before* or *after* the given date.
      */
-    public async findNearestTwoDatum
+    findNearestTwoDatum = async function
     (
         this: Repository<CurrencyRateDatum>, userId: string,  currencyId: string, date: Date,
         datumsCache: CurrencyRateDatumsCache | undefined = undefined
@@ -68,7 +68,7 @@ class CurrencyRateDatumRepositoryExtension
         return results.slice(0,2);
     }
 
-    public async getCurrencyDatums
+    getCurrencyDatums = async function
     (
         this: Repository<CurrencyRateDatum>,
         userId:string, 
