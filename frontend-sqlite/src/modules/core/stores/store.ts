@@ -1,4 +1,4 @@
-import { API_BAL_VAL_PATH, API_CONTAINERS_PATH, API_CURRENCIES_PATH, API_DASHBOARD_BATCH_PATH, API_GRAPHS_PATH, API_NET_WORTH_GRAPH_PATH, API_SUMMARY_PATH, API_TRANSACTIONS_PATH, API_TXN_TYPES_PATH, API_USER_INCOMES_EXPENSES_PATH } from '@/apiPaths';
+import { API_BAL_VAL_PATH, API_CONTAINERS_PATH, API_GRAPHS_PATH, API_NET_WORTH_GRAPH_PATH, API_SUMMARY_PATH, API_TRANSACTIONS_PATH, API_TXN_TYPES_PATH, API_USER_INCOMES_EXPENSES_PATH } from '@/apiPaths';
 import { useNetworkRequest } from '../composables/useNetworkRequest';
 import type { DashboardSummary } from '@/types/dtos/dashboardSummaryDTO';
 import axios, { AxiosError } from 'axios';
@@ -7,9 +7,7 @@ import type { GraphsSummary } from '@/types/dtos/graphsSummaryDTO';
 import type { ResponseGetExpensesAndIncomesDTO } from "@/../../api-types/calculations";
 import type { GetTxnTypesAPI } from '@/../../api-types/txnType';
 import type { GetContainerAPI } from "@/../../api-types/container";
-import type { GetCurrencyAPI } from '@/../../api-types/currencies';
-import type { GetTxnAPI, TxnDTO } from '../../../../../api-types/txn';
-import { getTxnClassification } from '@/modules/transactions/utils/transactions';
+import type { GetTxnAPI } from '../../../../../api-types/txn';
 
 export type Subpage = { name: string; }
 
@@ -77,7 +75,6 @@ export const useMainStore = defineStore(
             balanceValueHistory: useNetworkRequest<BalanceValueHistoryAPIResponse>(API_BAL_VAL_PATH, { includeAuthHeaders: true, updateOnMount: false }),
 
             txns30d: useNetworkRequest<GetTxnAPI.ResponseDTO>(`${API_TRANSACTIONS_PATH}?startDate=${Date.now() - 2.628e+9}`, { includeAuthHeaders: true, updateOnMount: false }),
-            currencies: useNetworkRequest<GetCurrencyAPI.ResponseDTO>(API_CURRENCIES_PATH, { includeAuthHeaders: true }),
             containers: useNetworkRequest<GetContainerAPI.ResponseDTO>(API_CONTAINERS_PATH, { includeAuthHeaders: true }),
             txnTypes: useNetworkRequest<GetTxnTypesAPI.ResponseDTO>(API_TXN_TYPES_PATH, { includeAuthHeaders: true }),
             netWorthHistory: useNetworkRequest<NetWorthAPIResponse>(API_NET_WORTH_GRAPH_PATH, { includeAuthHeaders: true, updateOnMount: false }),
@@ -121,7 +118,6 @@ export const useMainStore = defineStore(
             await Promise.all(
             [
                 this.dashboardSummary.updateData(),
-                this.currencies.updateData(),
                 this.containers.updateData(),
                 this.txnTypes.updateData(),
                 this.netWorthHistory.updateData(),
@@ -189,19 +185,6 @@ export const useMainStore = defineStore(
             this.setCookie(cname, "", -1);
         },
 
-        formatAmount(txn:TxnDTO)
-        {
-            if (!this.currencies.lastSuccessfulData) return "Loading...";
-            if (this.currencies.lastSuccessfulData.rangeItems.length == 0) return "Loading...";
-            const txnCategory = getTxnClassification(txn);
-            if (txnCategory === 'Transfer') return "(Mixed)";
-            const currencyId = txnCategory === 'Expense' ? txn.fromCurrency! : txn.toCurrency!;
-            const currency = this.findCurrencyByPubID(currencyId);
-            if (!currency) return "Loading...";
-            const amount = txnCategory === 'Expense' ? txn.fromAmount! : txn.toAmount!;
-            return `${parseFloat(amount).toFixed(2)} ${currency.ticker}`
-        },
-
         /**
          * Get the passed time of a date relative to current time.
          */
@@ -212,18 +195,6 @@ export const useMainStore = defineStore(
             else if (msDiff < 3.6e+6) return `${(msDiff / 60000).toFixed(0)}m`; // if < 1 hour
             else if (msDiff < 8.64e+7) return `${(msDiff / (3.6e+6)).toFixed(0)}h`; // if < 1 day
             else return `${(msDiff / (8.64e+7)).toFixed(0)}d`;
-        },
-        
-        getCurrencyName(currencyPubID: string)
-        {
-            if (!this.currencies.lastSuccessfulData) return "";
-            return this.currencies.lastSuccessfulData.rangeItems.find(x => x.id == currencyPubID)?.name;
-        },
-        
-        getCurrencySymbol(currencyPubID: string)
-        {
-            if (!this.currencies.lastSuccessfulData) return "";
-            return this.currencies.lastSuccessfulData.rangeItems.find(x => x.id == currencyPubID)?.ticker;
         },
 
         toSorted<T>(array:Array<T>, func:(a:T, b:T) => number)
@@ -237,14 +208,7 @@ export const useMainStore = defineStore(
             let newArray = [...array];
             return newArray.reverse();
         },
-        
-        getValue(currencyID: string, amount: number) 
-        {
-            if (!this.currencies.lastSuccessfulData) return "";
-            if (this.currencies.lastSuccessfulData.rangeItems.find(x => x.id == currencyID) == undefined) console.log(`Unknown currency ${currencyID} found.`);
-            const rateToBase = this.currencies.lastSuccessfulData.rangeItems.find(x => x.id == currencyID)?.rateToBase ?? "0";
-            return amount * parseFloat(rateToBase);
-        },
+    
 
         findContainerByPubID(id:string) 
         {
@@ -253,12 +217,6 @@ export const useMainStore = defineStore(
             return this.containers.lastSuccessfulData.rangeItems.find(x => x.id == id); 
         },
         
-        isContainerExist(id:string) { return this.findContainerByPubID(id) != undefined; },
-        
-        findCurrencyByPubID(id:string) 
-        {
-            if (!this.currencies.lastSuccessfulData) return undefined;
-            return this.currencies.lastSuccessfulData.rangeItems.find(x => x.id == id); 
-        }
+        isContainerExist(id:string) { return this.findContainerByPubID(id) != undefined; }
     }
 })

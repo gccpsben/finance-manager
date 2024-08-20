@@ -3,7 +3,7 @@
 
         <view-title :title="title"></view-title>
 
-        <pagination v-model:currentPage="currentPage" v-if="!selectedCurrencyID && !store.currencies.isLoading" :itemsInPage="15" :items="store.currencies.lastSuccessfulData!.rangeItems" 
+        <pagination v-model:currentPage="currentPage" v-if="!selectedCurrencyID && !currenciesStore.currencies.isLoading" :itemsInPage="15" :items="currenciesStore.currencies.lastSuccessfulData!.rangeItems" 
                     v-slot="props" class="fullSize" style="height:calc(100svh - 170px);"> 
             <div id="panel">
                 <grid-shortcut rows="1fr" columns="1fr auto">
@@ -70,7 +70,7 @@
 
 .panel 
 { 
-    background:@background; 
+    background:@cellBackground; 
     padding:25px;
     color:gray;
     & h2 { font-weight:100; }
@@ -148,6 +148,7 @@ import paginationVue from '@/modules/core/components/pagination.vue';
 import cell from '@/modules/core/components/cell.vue';
 import WrappedLineChart from '@/modules/core/components/wrappedLineChart.vue';
 import currencyRatesHistoryCell from '@/modules/currencies/components/currencyRatesHistoryCell.vue';
+import { useCurrenciesStore } from '../stores/useCurrenciesStore';
 
 export default
 {
@@ -157,7 +158,8 @@ export default
         let data = 
         {
             store: useMainStore(),
-            currentPage: 0
+            currentPage: 0,
+            currenciesStore: useCurrenciesStore()
         };
         return data;
     },
@@ -172,7 +174,7 @@ export default
         selectedCurrency()
         {
             if (this.selectedCurrencyID == undefined) return undefined;
-            let currency = (this.store.currencies.lastSuccessfulData?.rangeItems ?? [])
+            let currency = (this.currenciesStore.currencies.lastSuccessfulData?.rangeItems ?? [])
                 .find(x => x.id == this.selectedCurrencyID);
 
             return currency as CurrencyDTO|undefined;

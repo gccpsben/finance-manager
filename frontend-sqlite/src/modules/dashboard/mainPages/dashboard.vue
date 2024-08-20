@@ -39,7 +39,7 @@
                             {{ props.currentItem["title"] }}
                         </div>
                         <div class="listItemTitle middleRight">
-                            {{ store.formatAmount(props.currentItem) }}
+                            {{ currenciesStore.formatAmount(props.currentItem) }}
                         </div>
                     </grid-shortcut>
                 </template>
@@ -57,7 +57,7 @@
                             {{ props.currentItem["title"] }}
                         </div>
                         <div class="listItemTitle middleRight">
-                            {{ store.formatAmount(props.currentItem) }}
+                            {{ currenciesStore.formatAmount(props.currentItem) }}
                         </div>
                     </grid-shortcut>
                 </template>
@@ -75,7 +75,7 @@
                             {{ props.currentItem["title"] }}
                         </div>
                         <div class="listItemTitle middleRight">
-                            {{ store.formatAmount(props.currentItem) }}
+                            {{ currenciesStore.formatAmount(props.currentItem) }}
                         </div>
                     </grid-shortcut>
                 </template>
@@ -120,25 +120,25 @@
                         </div>
                     </grid-shortcut>
                 </template>
-            </list-cell>
+            </list-cell>-->
 
             <list-cell v-area="'ContainersList'" title="Containers" :noItemsText="'No Containers'"
             :isLoading="store.containers.isLoading"
             :error="store.containers.error"
-            :items="store.toSorted(store.containers.lastSuccessfulData ?? [], (a,b) => { return b.value - a.value; })">
+            :items="store.toSorted(store.containers.lastSuccessfulData?.rangeItems ?? [], (a,b) => parseFloat(b.value) - parseFloat(a.value))">
                 <template #row="props">
-                    <grid-shortcut :title="getContainerTooltip(props.currentItem)" columns="1fr 1fr" class="fullSize">
+                    <grid-shortcut columns="1fr 1fr" class="fullSize">
                         <div class="listItemTitle middleLeft">{{ props.currentItem.name }}</div>
-                        <div class="listItemTitle middleRight">{{ props.currentItem.value.toFixed(2) }} HKD</div>
+                        <div class="listItemTitle middleRight">{{ props.currentItem.value }} HKD</div>
                     </grid-shortcut>
                 </template>
             </list-cell>
 
-            <net-worth-graph-cell v-area="'TotalValueGraph'" title="Total Value"></net-worth-graph-cell>
+            <!-- <net-worth-graph-cell v-area="'TotalValueGraph'" title="Total Value"></net-worth-graph-cell> -->
 
-            <container-values-graph-cell v-area="'containerValuesGraph'"
-            title="Containers Value"></container-values-graph-cell>
-         -->
+            <!-- <container-values-graph-cell v-area="'containerValuesGraph'"
+            title="Containers Value"></container-values-graph-cell> -->
+         
         </grid-shortcut>
     </div>
 </template>
@@ -148,6 +148,7 @@ import { useMainStore } from "@/modules/core/stores/store";
 import { getTxnClassification } from '@/modules/transactions/utils/transactions';
 import type { HydratedTransaction } from "@/types/dtos/transactionsDTO";
 import vArea from "@/modules/core/directives/vArea";
+import { useCurrenciesStore } from '@/modules/currencies/stores/useCurrenciesStore';
 import listCellVue from '@/modules/core/components/listCell.vue';
 import cell from '@/modules/core/components/cell.vue';
 
@@ -160,6 +161,7 @@ export default
         let data = 
         { 
             store: useMainStore(),
+            currenciesStore: useCurrenciesStore(),
             selectedItem: 'Main'
         };
         return data;
@@ -172,7 +174,7 @@ export default
         this.store.txnTypes.updateData();
         this.store.userExpensesIncomes.updateData();
         this.store.txns30d.updateData();
-        this.store.currencies.updateData();
+        this.currenciesStore.currencies.updateData();
     },
     computed:
     {
