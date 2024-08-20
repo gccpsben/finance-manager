@@ -533,12 +533,12 @@ watch(selectedTransaction, () =>
     });
 }, { deep: true });
 
-function viewTransaction(pubID: string)
+function viewTransaction(txnId: string)
 {
     router.push(
     {
         name: "transactions",
-        params: { pubID: pubID }
+        params: { id: txnId }
     });
 }
 
