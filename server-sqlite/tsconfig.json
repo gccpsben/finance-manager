@@ -4,7 +4,7 @@
     "outDir":"./server_build",
     "experimentalDecorators":true,
     "emitDecoratorMetadata": true,
-    "target": "es5",
+    "target": "ES2023",
     "esModuleInterop": true,
     "resolveJsonModule": true,
     "module": "NodeNext",

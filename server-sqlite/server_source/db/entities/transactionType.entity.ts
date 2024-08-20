@@ -1,4 +1,4 @@
-import { Entity, PrimaryGeneratedColumn, Column, ManyToOne } from "typeorm";
+import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, Relation } from "typeorm";
 import "reflect-metadata"
 import { IsNotEmpty, IsString, MaxLength } from "class-validator";
 import { EntityClass } from "../dbEntityBase.js";
@@ -22,5 +22,5 @@ export class TransactionType extends EntityClass
 
     @ManyToOne(type => User, user => user.transactionTypes)
     @EnsureNotPlainForeignKey() 
-    owner: User;
+    owner: Relation<User>;
 }

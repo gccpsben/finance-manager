@@ -1,4 +1,4 @@
-import { Entity, PrimaryGeneratedColumn, Column, BeforeInsert, BeforeUpdate, PrimaryColumn } from "typeorm";
+import { Entity, Column, PrimaryColumn, Relation } from "typeorm";
 import "reflect-metadata"
 import { ManyToOne } from "typeorm";
 import { User } from "./user.entity.js";
@@ -22,5 +22,5 @@ export class AccessToken extends EntityClass
 
     @ManyToOne(type => User, user => user.accessTokens, { nullable: false })
     @EnsureNotPlainForeignKey() 
-    owner: User;
+    owner: Relation<User>;
 }

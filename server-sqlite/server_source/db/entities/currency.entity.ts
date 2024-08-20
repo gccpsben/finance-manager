@@ -1,4 +1,4 @@
-import { Entity, PrimaryGeneratedColumn, Column, BeforeInsert, BeforeUpdate, PrimaryColumn, OneToOne, JoinColumn, Check, Unique, Index, AfterLoad, EntitySubscriberInterface, EventSubscriber, InsertEvent } from "typeorm";
+import { Entity, PrimaryGeneratedColumn, Column, BeforeInsert, BeforeUpdate, JoinColumn, Check, Unique, Relation } from "typeorm";
 import "reflect-metadata"
 import { ManyToOne } from "typeorm";
 import { User } from "./user.entity.js";
@@ -37,7 +37,7 @@ export class Currency extends EntityClass
     @ManyToOne(type => Currency, currency => currency.fallbackRateCurrency, { nullable: true })
     @JoinColumn()
     @EnsureNotPlainForeignKey() 
-    fallbackRateCurrency: Omit<Omit<Currency, 'owner'>, 'refCurrency'> | null;
+    fallbackRateCurrency: Omit<Omit<Relation<Currency>, 'owner'>, 'refCurrency'> | null;
 
     @Column( { nullable: false })
     ownerId: string;
@@ -45,7 +45,7 @@ export class Currency extends EntityClass
     @ManyToOne(type => User, user => user.currencies, { nullable: false })
     @JoinColumn()
     @EnsureNotPlainForeignKey() 
-    owner: User;
+    owner: Relation<User>;
 
     @Column()
     @IsBoolean()

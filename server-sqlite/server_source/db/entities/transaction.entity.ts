@@ -1,4 +1,4 @@
-import { Entity, PrimaryGeneratedColumn, Column, BeforeInsert, BeforeUpdate, ManyToOne, JoinColumn, Check, Index } from "typeorm";
+import { Entity, PrimaryGeneratedColumn, Column, BeforeInsert, BeforeUpdate, ManyToOne, JoinColumn, Check, Index, Relation } from "typeorm";
 import "reflect-metadata"
 import { IsNotEmpty, IsOptional, IsString, MaxLength } from "class-validator";
 import { EntityClass } from "../dbEntityBase.js";
@@ -72,7 +72,7 @@ export class Transaction extends EntityClass
     @ManyToOne(type => User, user => user.transactions, { nullable: false })
     @JoinColumn({ name: "ownerId" })
     @EnsureNotPlainForeignKey()  
-    owner: User;
+    owner: Relation<User>;
 
     @Column({ type: "int", nullable: false })
     @IsUTCDateInt()
@@ -84,7 +84,7 @@ export class Transaction extends EntityClass
     @ManyToOne(type => TransactionType, { nullable: false })
     @JoinColumn({ name: "txnTypeId" })
     @EnsureNotPlainForeignKey()
-    txnType: TransactionType | undefined;
+    txnType: Relation<TransactionType> | undefined;
 
     // #region From
     @Column( { nullable: true } )
@@ -99,7 +99,7 @@ export class Transaction extends EntityClass
     @JoinColumn({ name: "fromCurrencyId" })
     @EnsureNotPlainForeignKey()
     @ManyToOne(type => Currency, { nullable: true })
-    fromCurrency: Currency | undefined;
+    fromCurrency: Relation<Currency> | undefined;
 
     @Column({nullable: true})
     fromContainerId: string;
@@ -107,7 +107,7 @@ export class Transaction extends EntityClass
     @JoinColumn({ name: "fromContainerId" })
     @EnsureNotPlainForeignKey()
     @ManyToOne(type => Container, { nullable: true })
-    fromContainer: Container | undefined;
+    fromContainer: Relation<Container> | undefined;
     // #endregion
 
     // #region To
@@ -123,7 +123,7 @@ export class Transaction extends EntityClass
     @JoinColumn({ name: "toCurrencyId" })
     @EnsureNotPlainForeignKey()
     @ManyToOne(type => Currency, { nullable: true })
-    toCurrency: Currency | undefined;
+    toCurrency: Relation<Currency> | undefined;
 
     @Column({nullable: true})
     toContainerId: string;
@@ -131,7 +131,7 @@ export class Transaction extends EntityClass
     @JoinColumn({ name: "toContainerId" })
     @EnsureNotPlainForeignKey()
     @ManyToOne(type => Container, { nullable: true })
-    toContainer: Container | undefined;
+    toContainer: Relation<Container> | undefined;
     // #endregion
 
     @BeforeInsert()

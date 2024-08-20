@@ -1,4 +1,4 @@
-import { Check, Column, Entity, JoinColumn, ManyToOne, PrimaryGeneratedColumn, Unique } from "typeorm";
+import { Check, Column, Entity, JoinColumn, ManyToOne, PrimaryGeneratedColumn, Relation, Unique } from "typeorm";
 import { EntityClass } from "../dbEntityBase.js";
 import { IsDate, IsNotEmpty, IsNumber, IsString, MaxLength } from "class-validator";
 import { User } from "./user.entity.js";
@@ -27,5 +27,5 @@ export class Container extends EntityClass
     @ManyToOne(type => User, user => user.containers, { nullable: false })
     @JoinColumn()
     @EnsureNotPlainForeignKey() 
-    owner: User;
+    owner: Relation<User>;
 }   
