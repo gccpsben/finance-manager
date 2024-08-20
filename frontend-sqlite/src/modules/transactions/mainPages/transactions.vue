@@ -49,13 +49,13 @@
                                     <div>{{ formatChangeInValue(item?.changeInValue) }}</div>
                                 </div> -->
                                 <div v-area.class="'txnFrom'" class="tight yCenter xRight ellipsisContainer">
-                                    <div v-if="item?.fromContainer">{{ getContainerNameById(item?.fromContainer, store.containers.lastSuccessfulData?.rangeItems ?? []) }}</div>
+                                    <div v-if="item?.fromContainer">{{ getContainerNameById(item?.fromContainer, containersStore.containers.lastSuccessfulData?.rangeItems ?? []) }}</div>
                                 </div>
                                 <div v-area.class="'arrowIcon'" class="center">
                                     <fa-icon icon="fa-solid fa-arrow-right"></fa-icon>
                                 </div>
                                 <div v-area.class="'txnTo'" class="tight yCenter xLeft ellipsisContainer">
-                                    <div v-if="item?.toContainer">{{ getContainerNameById(item?.toContainer, store.containers.lastSuccessfulData?.rangeItems ?? []) }}</div>
+                                    <div v-if="item?.toContainer">{{ getContainerNameById(item?.toContainer, containersStore.containers.lastSuccessfulData?.rangeItems ?? []) }}</div>
                                 </div>
                                 <!-- <div v-area.class="'chips'" class="tight yCenter">
                                     <div :class="{'botChip': item?.isFromBot}">{{ item?.isFromBot ? 'Bot' : '' }}</div>
@@ -98,11 +98,11 @@
             <div class="field">
                 <div class="tight xLeft yCenter fieldTitle">From Container: </div>
                 <div class="fullSize dropdown">
-                    <custom-dropdown :items="(mainStore.containers.lastSuccessfulData?.rangeItems ?? []).map(x => x.id)" 
+                    <custom-dropdown :items="(containersStore.containers.lastSuccessfulData?.rangeItems ?? []).map(x => x.id)" 
                         v-model:currentItem="(selectedTransaction.currentData as any).fromContainer">
                         <template #itemToText="props">
-                            <div class="middleLeft" v-if="mainStore.isContainerExist(props.item)">
-                                {{ mainStore.findContainerByPubID(props.item)?.name}}
+                            <div class="middleLeft" v-if="containersStore.isContainerExist(props.item)">
+                                {{ containersStore.findContainerById(props.item)?.name}}
                             </div>
                             <div class="middleLeft disabled" v-else>None</div>
                         </template>
@@ -112,11 +112,11 @@
             <div class="field">
                 <div class="tight xLeft yCenter fieldTitle">To Container: </div>
                 <div class="fullSize dropdown">
-                    <custom-dropdown :items="(mainStore.containers.lastSuccessfulData?.rangeItems ?? []).map(x => x.id)" 
+                    <custom-dropdown :items="(containersStore.containers.lastSuccessfulData?.rangeItems ?? []).map(x => x.id)" 
                         v-model:currentItem="(selectedTransaction.currentData as any).toContainer">
                         <template #itemToText="props">
-                            <div class="middleLeft" v-if="mainStore.isContainerExist(props.item)">
-                                {{ mainStore.findContainerByPubID(props.item)?.name}}
+                            <div class="middleLeft" v-if="containersStore.isContainerExist(props.item)">
+                                {{ containersStore.findContainerById(props.item)?.name}}
                             </div>
                             <div class="middleLeft disabled" v-else>None</div>
                         </template>
@@ -435,10 +435,12 @@ import { getContainerNameById } from '@/modules/containers/utils/containers';
 import { formatDate } from '@/modules/core/utils/date';
 import numberPagination from '@/modules/core/components/numberPagination.vue';
 import type { TxnDTO } from '../../../../../api-types/txn';
+import { useContainersStore } from '../../containers/stores/useContainersStore';
 
 // #region CONSTANTS:
 const itemsInPage = 15;
 const store = useMainStore();
+const containersStore = useContainersStore();
 const moveToPageZero = () => { mainPagination.pageIndex.value = 0; };
 // #endregion
 
@@ -516,7 +518,7 @@ watch(selectedTransactionID, async () =>
         selectedTransaction.value = new ResettableObject<HydratedTransaction>(txnObject);
         let currentData = selectedTransaction.value.currentData;
     });
-    await mainStore.containers.updateData();
+    await containersStore.containers.updateData();
     // await mainStore.updateContainers();
 
 }, { immediate: true, deep: true });

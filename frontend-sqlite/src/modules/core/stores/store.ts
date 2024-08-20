@@ -6,7 +6,6 @@ import { defineStore } from 'pinia';
 import type { GraphsSummary } from '@/types/dtos/graphsSummaryDTO';
 import type { ResponseGetExpensesAndIncomesDTO } from "@/../../api-types/calculations";
 import type { GetTxnTypesAPI } from '@/../../api-types/txnType';
-import type { GetContainerAPI } from "@/../../api-types/container";
 import type { GetTxnAPI } from '../../../../../api-types/txn';
 
 export type Subpage = { name: string; }
@@ -75,7 +74,7 @@ export const useMainStore = defineStore(
             balanceValueHistory: useNetworkRequest<BalanceValueHistoryAPIResponse>(API_BAL_VAL_PATH, { includeAuthHeaders: true, updateOnMount: false }),
 
             txns30d: useNetworkRequest<GetTxnAPI.ResponseDTO>(`${API_TRANSACTIONS_PATH}?startDate=${Date.now() - 2.628e+9}`, { includeAuthHeaders: true, updateOnMount: false }),
-            containers: useNetworkRequest<GetContainerAPI.ResponseDTO>(API_CONTAINERS_PATH, { includeAuthHeaders: true }),
+            // containers: useNetworkRequest<GetContainerAPI.ResponseDTO>(API_CONTAINERS_PATH, { includeAuthHeaders: true }),
             txnTypes: useNetworkRequest<GetTxnTypesAPI.ResponseDTO>(API_TXN_TYPES_PATH, { includeAuthHeaders: true }),
             netWorthHistory: useNetworkRequest<NetWorthAPIResponse>(API_NET_WORTH_GRAPH_PATH, { includeAuthHeaders: true, updateOnMount: false }),
             lastUpdateTime: new Date(0) as Date,
@@ -118,7 +117,7 @@ export const useMainStore = defineStore(
             await Promise.all(
             [
                 this.dashboardSummary.updateData(),
-                this.containers.updateData(),
+                // this.containers.updateData(),
                 this.txnTypes.updateData(),
                 this.netWorthHistory.updateData(),
                 this.balanceValueHistory.updateData()
@@ -210,13 +209,5 @@ export const useMainStore = defineStore(
         },
     
 
-        findContainerByPubID(id:string) 
-        {
-            if (this.containers.isLoading) return undefined;
-            if (!this.containers.lastSuccessfulData) return undefined;
-            return this.containers.lastSuccessfulData.rangeItems.find(x => x.id == id); 
-        },
-        
-        isContainerExist(id:string) { return this.findContainerByPubID(id) != undefined; }
     }
 })

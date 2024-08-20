@@ -123,9 +123,9 @@
             </list-cell>-->
 
             <list-cell v-area="'ContainersList'" title="Containers" :noItemsText="'No Containers'"
-            :isLoading="store.containers.isLoading"
-            :error="store.containers.error"
-            :items="store.toSorted(store.containers.lastSuccessfulData?.rangeItems ?? [], (a,b) => parseFloat(b.value) - parseFloat(a.value))">
+            :isLoading="containersStore.containers.isLoading"
+            :error="containersStore.containers.error"
+            :items="store.toSorted(containersStore.containers.lastSuccessfulData?.rangeItems ?? [], (a,b) => parseFloat(b.value) - parseFloat(a.value))">
                 <template #row="props">
                     <grid-shortcut columns="1fr 1fr" class="fullSize">
                         <div class="listItemTitle middleLeft">{{ props.currentItem.name }}</div>
@@ -145,6 +145,7 @@
 
 <script lang="ts">
 import { useMainStore } from "@/modules/core/stores/store";
+import { useContainersStore } from '@/modules/containers/stores/useContainersStore';
 import { getTxnClassification } from '@/modules/transactions/utils/transactions';
 import type { HydratedTransaction } from "@/types/dtos/transactionsDTO";
 import vArea from "@/modules/core/directives/vArea";
@@ -162,6 +163,7 @@ export default
         { 
             store: useMainStore(),
             currenciesStore: useCurrenciesStore(),
+            containersStore: useContainersStore(),
             selectedItem: 'Main'
         };
         return data;

@@ -4,7 +4,7 @@
         <view-title :title="title"></view-title>
 
         <pagination v-if="!selectedContainerID" 
-                    v-model:currentPage="currentPage" :itemsInPage="15" :items="store.containers.lastSuccessfulData?.rangeItems ?? []" 
+                    v-model:currentPage="currentPage" :itemsInPage="15" :items="containersStore.containers.lastSuccessfulData?.rangeItems ?? []" 
                     v-slot="props" class="fullSize" style="height:calc(100svh - 170px);"> 
             <div id="panel">
                 <grid-shortcut rows="1fr" columns="1fr auto">
@@ -144,6 +144,7 @@
 import { useMainStore } from '@/modules/core/stores/store';
 import type { Container, ValueHydratedContainer } from '@/types/dtos/containersDTO';
 import paginationVue from '@/modules/core/components/pagination.vue';
+import { useContainersStore } from '../stores/useContainersStore';
 
 export default
 {
@@ -153,6 +154,7 @@ export default
         let data = 
         {
             store: useMainStore(),
+            containersStore: useContainersStore(),
             currentPage: 0
         };
         return data;
@@ -171,7 +173,7 @@ export default
         selectedContainer()
         {
             if (this.selectedContainerID == undefined) return undefined;
-            let container = this.store.findContainerByPubID(this.selectedContainerID);
+            let container = this.containersStore.findContainerById(this.selectedContainerID);
             return container as Container|undefined;
         },
         title()
