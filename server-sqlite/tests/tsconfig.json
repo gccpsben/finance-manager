@@ -1,20 +1,19 @@
 {
-    "compilerOptions": 
-    { 
-      "outDir":"../server_ut-build",
-      "experimentalDecorators":true,
-      "emitDecoratorMetadata": true,
-      "target": "es5",
-      "esModuleInterop": true,
-      "resolveJsonModule": true,
-      "module": "NodeNext",
-      "lib": ["ES6", "DOM"]
-    },
-    "include": [
-      "./**/*.ts",
-    ],
-    "exclude": [
-      "node_modules"
-    ]
-  }
-  
+  "compilerOptions": 
+  { 
+    "outDir":"../server_ut-build",
+    "experimentalDecorators":true,
+    "emitDecoratorMetadata": true,
+    "target": "ES2023",
+    "esModuleInterop": true,
+    "resolveJsonModule": true,
+    "module": "NodeNext",
+    "lib": ["ES6", "DOM"]
+  },
+  "include": [
+    "./**/*.ts",
+  ],
+  "exclude": [
+    "node_modules"
+  ]
+}
