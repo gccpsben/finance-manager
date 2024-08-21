@@ -6,9 +6,23 @@
 
     <div id="topDiv" class="center">
 
-        <div v-if="isLoading && !isFormUploading" class="fullSize center">Initializing...</div>
+        <div v-if="isLoading && !isFormUploading" class="fullSize center">
+            <div class="upDownGrid" style="gap: 14px;">
+                <div class="center">Initializing...</div>
+                <div class="center">
+                    <v-progress-circular indeterminate style="color:white"/>
+                </div>
+            </div>
+        </div>
 
-        <div v-if="!isLoading && isFormUploading" class="fullSize center">Uploading...</div>
+        <div v-if="!isLoading && isFormUploading" class="fullSize center">
+            <div class="upDownGrid" style="gap: 14px;">
+                <div class="center">Uploading...</div>
+                <div class="center">
+                    <v-progress-circular indeterminate style="color:white"/>
+                </div>
+            </div>
+        </div>
 
         <div id="containersSelectDiv" v-if="!isFormUploading && !isLoading">
             
@@ -146,10 +160,12 @@ import type { CurrencyDTO } from "../../../../../api-types/currencies";
 import type { TxnTypesDTO } from "@/../../api-types/txnType";
 import type { PostTxnAPI } from "@/../../api-types/txn";
 import vNumberOnly from '@/modules/core/directives/vNumberOnly';
+import { VProgressCircular } from "vuetify/components";
 
 export default
 {
     directives: { "number-only": vNumberOnly },
+    components: { VProgressCircular },
     setup () 
     {
         useMeta(
