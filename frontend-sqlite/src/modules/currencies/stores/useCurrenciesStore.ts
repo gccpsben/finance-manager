@@ -41,17 +41,17 @@ export const useCurrenciesStore = defineStore
                 const rateToBase = this.currencies.lastSuccessfulData.rangeItems.find(x => x.id == currencyID)?.rateToBase ?? "0";
                 return amount * parseFloat(rateToBase);
             },
-            getCurrencyName(currencyId: string)
+            getCurrencyName(currencyId: string): string | "..."
             {
                 if (!this.currencies.lastSuccessfulData) return "...";
-                return this.currencies.lastSuccessfulData.rangeItems.find(x => x.id == currencyId)?.name;
+                return this.currencies.lastSuccessfulData.rangeItems.find(x => x.id == currencyId)?.name ?? '...';
             },
-            getCurrencySymbol(currencyId: string)
+            getCurrencySymbol(currencyId: string): string | "..."
             {
                 if (!this.currencies.lastSuccessfulData) return "...";
-                return this.currencies.lastSuccessfulData.rangeItems.find(x => x.id == currencyId)?.ticker;
+                return this.currencies.lastSuccessfulData.rangeItems.find(x => x.id == currencyId)?.ticker ?? '...';
             },
-            getBaseCurrencySymbol(): string
+            getBaseCurrencySymbol(): string | "..."
             {
                 if (!this.currencies.lastSuccessfulData) return "...";
                 return this.currencies.lastSuccessfulData.rangeItems.find(x => x.isBase)?.ticker ?? "...";
