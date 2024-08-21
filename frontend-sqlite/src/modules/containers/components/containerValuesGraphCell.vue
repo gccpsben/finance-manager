@@ -4,17 +4,16 @@
             <grid-shortcut rows="1fr" columns="1fr auto">
                 <h2 class="graphPanelTitle">{{ title }}</h2>
                 <div class="pageSelector">
-                    <fa-icon @click="props.previous()" :class="{'disabled': !props.isPreviousArrowAllowed}" id="previousArrow" icon="fa-solid fa-chevron-left"></fa-icon>
-                    <h2 id="currentPage" class="graphPanelTitle variantTab">{{ props.currentPage + 1 }}</h2>
-                    <fa-icon @click="props.next()" :class="{'disabled': !props.isNextArrowAllowed}" id="nextArrow" icon="fa-solid fa-chevron-right"></fa-icon>
+                    <numberPagination v-model="props.currentPage" :min-page-readable="1" 
+                                      :max-page-readable="containersStore.containers?.lastSuccessfulData?.rangeItems.length ?? 0 + 1"></numberPagination>
                 </div>
             </grid-shortcut>
             <div style="gap:15px; display:grid; grid-template-rows: 1fr auto;">             
                 <div style="border-bottom:1px solid #303030; padding-bottom:15px;" v-if="props.pageItems[0] != undefined">
-                    <pagination style="display:grid; grid-template-rows: 1fr auto;" class="fullHeight" v-slot="props2" :items="getContainerBalances(props.pageItems[0].balance)" :itemsInPage="3">
+                    <pagination style="display:grid; grid-template-rows: 1fr auto;" class="fullHeight" v-slot="props2" :items="getContainerBalances(props.pageItems[0].balances)" :itemsInPage="3">
                         <div>
                             <div class="currencyRow" v-for="entry in props2.pageItems">
-                                <div class="xLeft yCenter"> {{ (entry[1] as number).toFixed(2) }} {{ store.getCurrencySymbol(entry[0]) }}</div>
+                                <div class="xLeft yCenter"> {{ entry[1] }} {{ currenciesStore.getCurrencySymbol(entry[0]) }}</div>
                                 <div class="xRight yCenter">{{ (getCurrencyValue(entry[0], entry[1]) as number).toFixed(2) }}</div>
                             </div>
                         </div>
@@ -32,7 +31,7 @@
                 <div style="height:fit-content;">
                     <div class="containerRow" v-for="container in props.pageItems">
                         <div class="xLeft yCenter">{{ container.name }}</div>
-                        <div class="xRight yCenter">{{ container.value.toFixed(2) }} HKD</div>
+                        <div class="xRight yCenter">{{ container.value }} HKD</div>
                     </div>
                 </div>
             </div>
@@ -82,15 +81,18 @@
 
 <script lang="ts">
 import paginationVue from '@/modules/core/components/pagination.vue';
+import numberPagination from '@/modules/core/components/numberPagination.vue';
 import { defineComponent } from 'vue';
 import { LineChart, type ExtractComponentData } from 'vue-chart-3';
 import { Chart, registerables, type ChartOptions, type ChartData } from "chart.js";
 import { useMainStore } from '@/modules/core/stores/store';
+import { useContainersStore } from '../stores/useContainersStore';
+import { useCurrenciesStore } from '../../currencies/stores/useCurrenciesStore';
 Chart.register(...registerables);
 
 export default defineComponent(
 {
-    components: { "pagination": paginationVue  },
+    components: { "pagination": paginationVue, "numberPagination": numberPagination },
     props: { "title": { default: "", type: String }, },
     setup()
     {
@@ -102,6 +104,8 @@ export default defineComponent(
         let data = 
         { 
             store: useMainStore(), 
+            containersStore: useContainersStore(),
+            currenciesStore: useCurrenciesStore(),
             currentPage: 0
         };
         return data;
@@ -110,20 +114,20 @@ export default defineComponent(
     {
         sortedContainers()
         {
-            return this.store.toSorted(this.store.containers.lastSuccessfulData ?? [], (a,b) => b.value - a.value);
+            return this.store.toSorted(this.containersStore.containers.lastSuccessfulData?.rangeItems ?? [], (a,b) => parseFloat(b.value) - parseFloat(a.value));
         }
     },
     methods:
     {
-        getCurrencyValue(currencyPubID:string, amount:number)
+        getCurrencyValue(id:string, amount:string)
         {   
-            let currency = (this.store.currencies.lastSuccessfulData ?? []).find(x => x.pubID == currencyPubID);
+            let currency = (this.currenciesStore.currencies.lastSuccessfulData?.rangeItems ?? []).find(x => x.id == id);
             if (currency == undefined) return 0;
-            else return currency.rate as number * amount;
+            else return parseFloat(currency.rateToBase) * parseFloat(amount);
         },
-        getContainerBalances(containerBalances: {[key: string]: number}): Array<[string, number]>
+        getContainerBalances(containerBalances: {[key: string]: string}): Array<[string, string]>
         {
-            let sortingFunction = (x: [string,number], y: [string,number]) => 
+            let sortingFunction = (x: [string,string], y: [string,string]) => 
             {
                 return this.getCurrencyValue(y[0], y[1]) - this.getCurrencyValue(x[0], x[1])
             };
