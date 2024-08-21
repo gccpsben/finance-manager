@@ -1,11 +1,14 @@
 <template>
-    <cell :availableOptions="availableOptions" v-model:selectedOption="selectedVarient" :title="title">
+    <cell :title="title">
         <div v-if="!isLoading && !networkError" class="fullHeight xLeft">
             <h2 class="variantSelectorTab">$ {{ currentValue?.toFixed(2) }}</h2>
         </div>
         <div v-else class="fullHeight">
             <NetworkCircularIndicator :error="networkError" :isLoading="isLoading" class="fullHeight"/>
         </div>
+        <template #cellOptions>
+            <variants-selector :availableOptions="availableOptions" v-model:selectedOption="selectedVarient"></variants-selector>
+        </template>
     </cell>
 </template>
 
@@ -13,10 +16,11 @@
 import { VProgressCircular } from 'vuetify/lib/components/index.mjs';
 import NetworkCircularIndicator from '../components/networkCircularIndicator.vue';
 import Cell from '@/modules/core/components/cell.vue';
+import variantsSelectorVue from './variantsSelector.vue';
 
 export default
 {
-    components: { VProgressCircular, NetworkCircularIndicator, Cell },
+    components: { VProgressCircular, NetworkCircularIndicator, Cell, "variants-selector": variantsSelectorVue },
     props:
     {
         "value7d": { default: undefined, type: Number },
