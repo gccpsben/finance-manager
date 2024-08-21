@@ -78,6 +78,6 @@ input
     outline: none;
     appearance: none;
 }
-#currentPage { .horiMargin(4px); .vertMargin(5px); font-size:16px; min-width:15px; display:inline-block; text-align: center; }
+#currentPage { .horiMargin(4px); font-size:16px; min-width:15px; display:inline-block; text-align: center; }
 *[disabled] { pointer-events: none; opacity:0.2; }
 </style>
