@@ -31,7 +31,7 @@
                 <div style="height:fit-content;">
                     <div class="containerRow" v-for="container in props.pageItems">
                         <div class="xLeft yCenter">{{ container.name }}</div>
-                        <div class="xRight yCenter">{{ container.value }} HKD</div>
+                        <div class="xRight yCenter">{{ container.value }} {{ currenciesStore.getBaseCurrencySymbol() }}</div>
                     </div>
                 </div>
             </div>
