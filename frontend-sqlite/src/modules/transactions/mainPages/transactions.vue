@@ -23,9 +23,11 @@
                                     {{ uiRangeText }}
                                 </h2>
                             </div>
-                            <numberPagination id="tablePagination"
+                            <div class="center">
+                                <numberPagination id="tablePagination"
                                               v-model="mainPagination.pageIndex.value" :min-page-readable="1" 
-                                              :max-page-readable="mainPagination.maxPageIndex.value + 1"></numberPagination>
+                                              :max-page-readable="mainPagination.maxPageIndex.value + 1" />
+                            </div>
                         </div>
                     </div>
                     <div class="rel">
