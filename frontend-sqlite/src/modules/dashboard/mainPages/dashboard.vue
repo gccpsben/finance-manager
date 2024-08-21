@@ -136,8 +136,8 @@
 
             <!-- <net-worth-graph-cell v-area="'TotalValueGraph'" title="Total Value"></net-worth-graph-cell> -->
 
-            <!-- <container-values-graph-cell v-area="'containerValuesGraph'"
-            title="Containers Value"></container-values-graph-cell> -->
+            <container-values-graph-cell v-area="'containerValuesGraph'"
+            title="Containers Value"></container-values-graph-cell>
          
         </grid-shortcut>
     </div>
@@ -153,11 +153,12 @@ import vArea from "@/modules/core/directives/vArea";
 import { useCurrenciesStore } from '@/modules/currencies/stores/useCurrenciesStore';
 import listCellVue from '@/modules/core/components/listCell.vue';
 import cell from '@/modules/core/components/cell.vue';
+import containerValuesGraphCell from '@/modules/containers/components/containerValuesGraphCell.vue';
 
 export default 
 {
     directives: {'area':vArea},
-    components: { "list-cell": listCellVue, "cell": cell },
+    components: { "list-cell": listCellVue, "cell": cell, containerValuesGraphCell },
     data()
     {
         let data = 
