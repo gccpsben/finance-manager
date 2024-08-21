@@ -3,7 +3,8 @@
     <cell :title="title.get()">
         <template #cellOptions>
             <div class="pageSelector">
-                <numberPagination :max-page-readable="maxPageAllowed" v-model:model-value="currentPageIndex" />
+                <numberPagination v-model="currentPageIndex" :min-page-readable="1" 
+                                  :max-page-readable="maxPageAllowed + 1" />
             </div>
         </template>
         <grid-shortcut style="overflow: hidden; grid-auto-rows: 1fr;" columns="1fr">

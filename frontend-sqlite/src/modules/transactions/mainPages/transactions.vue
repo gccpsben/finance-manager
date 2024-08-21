@@ -23,7 +23,9 @@
                                     {{ uiRangeText }}
                                 </h2>
                             </div>
-                            <numberPagination v-model="mainPagination.pageIndex.value" :min-page-readable="1" :max-page-readable="mainPagination.maxPageIndex.value + 1"></numberPagination>
+                            <numberPagination id="tablePagination"
+                                              v-model="mainPagination.pageIndex.value" :min-page-readable="1" 
+                                              :max-page-readable="mainPagination.maxPageIndex.value + 1"></numberPagination>
                         </div>
                     </div>
                     <div class="rel">
@@ -211,7 +213,7 @@ textarea
 
     #searchInput { width: 50%; }
     .fullSize; box-sizing:border-box;
-    .panelTitle { text-align:start; color:gray; font-size:14px; .tight; display:inline; }
+    
     .pageSelector  
     {
         color:gray !important; transform: translateY(-3px); 
@@ -219,6 +221,7 @@ textarea
         grid-template-columns: 1fr 1fr;
         grid-template-rows: 1fr;
     }
+    #tablePagination { margin-left:5px; }
 
     #currentPage { .horiMargin(15px); .vertMargin(5px); font-size:16px; min-width:15px; display:inline-block; text-align: center; }
     .disabled { pointer-events: none; opacity:0.2; }

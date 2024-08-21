@@ -4,13 +4,16 @@
             <fa-icon-btn id="previousArrow" 
                     :disabled="modelValue < minPageReadable"
                     @click="$emit('update:modelValue', modelValue - 1)"
-                    class="optionIcon" 
                     icon="fa-solid fa-chevron-left" />
-            <input id="currentPage" ref="currentPage" type="number" :min="minPageReadable.toString()" :max="maxPageReadable.toString()" v-int-only size="1" v-model.lazy.number="pageReadable"> 
+            <input  id="currentPage" 
+                    ref="currentPage" 
+                    type="number" 
+                    :min="minPageReadable.toString()" 
+                    :max="maxPageReadable.toString()" 
+                    v-int-only size="1" v-model.lazy.number="pageReadable"> 
             <fa-icon-btn id="nextArrow" 
                     :disabled="modelValue >= maxPageReadable - 1"
                     @click="$emit('update:modelValue', modelValue + 1)"
-                    class="optionIcon" 
                     icon="fa-solid fa-chevron-right" />
         </div>
     </div> 
@@ -65,7 +68,16 @@ const pageReadable = computed(
 <style lang="less">
 @import "@/modules/core/stylesheets/globalStyle.less";
 
-.pageSelector  { color:gray !important; transform: translateY(-1px); }
+.pageSelector  
+{ 
+    color:gray !important; 
+    transform: translateY(-1px); 
+}
+input
+{
+    outline: none;
+    appearance: none;
+}
 #currentPage { .horiMargin(4px); .vertMargin(5px); font-size:16px; min-width:15px; display:inline-block; text-align: center; }
-.disabled { pointer-events: none; opacity:0.2; }
+*[disabled] { pointer-events: none; opacity:0.2; }
 </style>
