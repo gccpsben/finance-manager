@@ -40,18 +40,20 @@
 
             <grid-shortcut columns="100px 1fr" class="fullWidth field">
                 <div class="middleLeft">Type:</div>
-                <custom-dropdown :items="store.txnTypes.lastSuccessfulData?.rangeItems ?? []" v-model:currentItem="selectedTxnType">
+                <custom-dropdown :items="txnTypesStore.txnTypes.lastSuccessfulData?.rangeItems ?? []" v-model:currentItem="selectedTxnType">
                     <template #itemToText="props">
-                        <div class="middleLeft" :class="{'grayText': !props.item?.name }">{{ props.item?.name ?? 'No Type Selected' }}</div>
+                        <div class="middleLeft" :class="{'grayText': !props.item?.name, 'dropdownRow': !props.isSelector }">
+                            {{ props.item?.name ?? 'No Type Selected' }}
+                        </div>
                     </template>
                 </custom-dropdown>
             </grid-shortcut>
             
             <grid-shortcut v-if="selectedMode == 'transfer' || selectedMode == 'spending'" columns="100px 1fr" class="fullWidth field">
                 <div class="middleLeft">From:</div>
-                <custom-dropdown :items="store.containers.lastSuccessfulData?.rangeItems ?? []" v-model:currentItem="selectedFromContainer">
+                <custom-dropdown :items="containersStore.containers.lastSuccessfulData?.rangeItems ?? []" v-model:currentItem="selectedFromContainer">
                     <template #itemToText="props">
-                        <grid-shortcut :style="{'padding-left': props.isSelector ? '0px' : '5px', 'padding-right': props.isSelector ? '5px' : '0px'}" columns="1fr auto" class="fullWidth">
+                        <grid-shortcut :class="{'dropdownRow': !props.isSelector}" columns="1fr auto" class="fullWidth">
                             <div class="middleLeft" :class="{'grayText': !props.item?.name }">{{ props.item?.name ?? '/' }}</div>
                             <!-- <div class="middleRight containerValueText">{{ props.item?.toFixed(1) }} {{ props.item ? 'HKD' : '' }}</div> -->
                         </grid-shortcut>
@@ -61,9 +63,9 @@
 
             <grid-shortcut v-if="selectedMode == 'transfer' || selectedMode == 'earning'" columns="100px 1fr" class="fullWidth field">
                 <div class="middleLeft">To:</div>
-                <custom-dropdown :items="store.containers.lastSuccessfulData?.rangeItems ?? []" v-model:currentItem="selectedToContainer">
+                <custom-dropdown :items="containersStore.containers.lastSuccessfulData?.rangeItems ?? []" v-model:currentItem="selectedToContainer">
                     <template #itemToText="props">
-                        <grid-shortcut :style="{'padding-left': props.isSelector ? '0px' : '5px', 'padding-right': props.isSelector ? '5px' : '0px' }" columns="1fr 1fr" class="fullWidth">
+                        <grid-shortcut :class="{'dropdownRow': !props.isSelector}" columns="1fr 1fr" class="fullWidth">
                             <div class="middleLeft" :class="{'grayText': !props.item?.name }">{{ props.item?.name ?? '/' }}</div>
                             <!-- <div class="middleRight containerValueText">{{ props.item?.value.toFixed(1) }} {{ props.item ? 'HKD' : '' }}</div> -->
                         </grid-shortcut>
@@ -74,9 +76,11 @@
             <grid-shortcut id="spendingFieldContainer" v-if="selectedFromContainer" class="fullWidth field">
                 <div class="middleLeft">Spending:</div>
                 <input class="noSpin" inputmode="decimal" type="number" v-model="fromAmount" v-number-only/>
-                <custom-dropdown :items="store.currencies.lastSuccessfulData?.rangeItems" v-model:currentItem="selectedSpendingCurrency">
+                <custom-dropdown :items="currenciesStore.currencies.lastSuccessfulData?.rangeItems" v-model:currentItem="selectedSpendingCurrency">
                     <template #itemToText="props">
-                        {{ props.item?.ticker ?? '-' }}
+                        <div :class="{'dropdownRow': !props.isSelector}" class="xLeft yCenter">
+                            {{ props.item?.ticker ?? '-' }}
+                        </div>
                     </template>
                 </custom-dropdown>
             </grid-shortcut>
@@ -84,9 +88,11 @@
             <grid-shortcut v-if="selectedToContainer" columns="100px 1fr 100px" class="fullWidth field">
                 <div class="middleLeft">Receiving:</div>
                 <input class="noSpin" inputmode="decimal" type="number" v-model="toAmount" v-number-only/>
-                <custom-dropdown :items="store.currencies.lastSuccessfulData?.rangeItems" v-model:currentItem="selectedReceivingCurrency">
+                <custom-dropdown :items="currenciesStore.currencies.lastSuccessfulData?.rangeItems" v-model:currentItem="selectedReceivingCurrency">
                     <template #itemToText="props">
-                        {{ props.item?.ticker ?? '-' }}
+                        <div :class="{'dropdownRow': !props.isSelector}" class="xLeft yCenter">
+                            {{ props.item?.ticker ?? '-' }}
+                        </div>
                     </template>
                 </custom-dropdown>
             </grid-shortcut>
@@ -96,7 +102,7 @@
                     <div v-if="fromAmount != undefined && selectedSpendingCurrency && selectedFromContainer">
                         <div class="containerValueText" style="text-align: start;">{{ selectedFromContainer.name }}</div>
                         <div style="text-align: start;">{{ fromAmount }} {{ selectedSpendingCurrency.ticker }}</div>
-                        <div class="containerValueText" style="text-align: start; margin-top:5px;">{{ fromAmount * decimalJSToNumber(selectedSpendingCurrency.rateToBase) }} HKD</div>
+                        <div class="containerValueText" style="text-align: start; margin-top:5px;">{{ fromAmount * decimalJSToNumber(selectedSpendingCurrency.rateToBase) }} {{ currenciesStore.getBaseCurrencySymbol() }}</div>
                     </div>
                 </div>
                 <div class="center">
@@ -106,7 +112,7 @@
                     <div v-if="toAmount != undefined && selectedReceivingCurrency && selectedToContainer" >
                         <div class="containerValueText" style="text-align: end;">{{ selectedToContainer.name }}</div>
                         <div style="text-align: end;">{{ toAmount }} {{ selectedReceivingCurrency.ticker }}</div>
-                        <div class="containerValueText" style="text-align: end; margin-top:5px;">{{ toAmount * decimalJSToNumber(selectedReceivingCurrency.rateToBase) }} HKD</div>
+                        <div class="containerValueText" style="text-align: end; margin-top:5px;">{{ toAmount * decimalJSToNumber(selectedReceivingCurrency.rateToBase) }} {{ currenciesStore.getBaseCurrencySymbol() }}</div>
                     </div>
                 </div>
             </grid-shortcut>
@@ -131,14 +137,19 @@
 
 <script lang="ts">
 import { useMainStore } from "@/modules/core/stores/store";
-import type { ContainerDTO, ResponseGetContainerDTO } from "@/../../api-types/container";
-import type { CurrencyDTO, ResponseGetCurrencyDTO } from "@/../../api-types/currencies"
-import type { TransactionTypesDTO, ResponseGetTransactionTypesDTO } from "@/../../api-types/txnType";
-import type { PostTransactionDTO } from "@/../../api-types/txn";
+import { useCurrenciesStore } from '../../currencies/stores/useCurrenciesStore';
+import { useContainersStore } from '../../containers/stores/useContainersStore';
+import { useTxnTypesStore } from '../../txnTypes/stores/useTxnTypesStore';
 import { useMeta } from 'vue-meta';
+import type { ContainerDTO } from "../../../../../api-types/container";
+import type { CurrencyDTO } from "../../../../../api-types/currencies";
+import type { TxnTypesDTO } from "@/../../api-types/txnType";
+import type { PostTxnAPI } from "@/../../api-types/txn";
+import vNumberOnly from '@/modules/core/directives/vNumberOnly';
 
 export default
 {
+    directives: { "number-only": vNumberOnly },
     setup () 
     {
         useMeta(
@@ -153,13 +164,12 @@ export default
             ] 
         });
 
-        // let link:HTMLLinkElement = document.querySelector("link[rel*='icon']") || document.createElement('link');
-
-        // link.rel = 'icon';
-        // link.href = "";
-
-        // // Append the favicon to the `head`
-        // document.getElementsByTagName('head')[0].appendChild(link);
+        return {
+            store: useMainStore(),
+            currenciesStore: useCurrenciesStore(),
+            containersStore: useContainersStore(),
+            txnTypesStore: useTxnTypesStore()
+        }
     },
     async mounted() 
     { 
@@ -171,12 +181,11 @@ export default
     {
         return { 
             isLoading: true,
-            store: useMainStore(),
             selectedFromContainer: undefined as undefined | ContainerDTO,
             selectedToContainer: undefined as undefined | ContainerDTO,
             selectedSpendingCurrency: undefined as undefined | CurrencyDTO,
             selectedReceivingCurrency: undefined as undefined | CurrencyDTO,
-            selectedTxnType: undefined as undefined | TransactionTypesDTO,
+            selectedTxnType: undefined as undefined | TxnTypesDTO,
             fromAmount: 0 as number,
             toAmount: 0 as number,
             txnTitle: '' as string,
@@ -203,7 +212,7 @@ export default
             else
             {
                 let self = this;
-                let body: Partial<PostTransactionDTO> = 
+                let body: Partial<PostTxnAPI.RequestDTO> = 
                 {
                     "title": this.txnTitle,
                     "typeId": this.selectedTxnType!.id,
@@ -241,10 +250,6 @@ export default
     },
     computed:
     {
-        summaryBoxStyle() : any
-        {
-            
-        },
         isAmountsValid(): boolean
         {
             if (this.selectedMode == "earning") return typeof this.toAmount == 'number';
@@ -394,6 +399,12 @@ export default
     button { background:@backgroundDark; border:0px; color:white; padding:10px; margin-top:15px; cursor:pointer; }
     button:hover { background:@surfaceHigh; }
     button:disabled { opacity:0.5; cursor:not-allowed; }
+
+    .dropdownRow
+    {
+        margin-left: 5px;
+        margin-right: 5px;
+    }
 }
 
 .containerValueText

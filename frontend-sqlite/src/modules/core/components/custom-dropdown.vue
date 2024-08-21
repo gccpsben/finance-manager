@@ -65,7 +65,7 @@
                                 <div style="padding-left:5px;">{{ item }}</div>
                             </slot>
                         </div>
-                        <div v-if="currentItem==item" class="checkIcon">
+                        <div v-if="currentItem==item" class="checkIcon center">
                             <fa-icon style="font-size:12px; color:white;" icon="fa-solid fa-check"></fa-icon>
                         </div>
                     </grid-shortcut>
@@ -122,9 +122,12 @@ export default
     { 
         z-index:1000; max-height:250px; overflow:auto !important; 
         width:100%;
+        transform: translateY(5px);
+        border: 1px solid @border;
+        box-shadow: 0px 0px 5px black,
     }
 
-    .checkIcon { transform: translateX(2px); }
+    .checkIcon { transform: translateY(1px); }
 
     .row 
     { 
