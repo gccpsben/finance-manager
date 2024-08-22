@@ -1,9 +1,8 @@
 <template>
     <div>
-        <fieldset class="rootFieldset" :class="{'float': shouldTextFloat, 'highlighted': shouldHighlight}">
-            <legend v-if="shouldTextFloat" ref="legend">
-                {{ fieldName.get() }}
-            </legend>
+        <fieldset class="rootFieldset" :class="{'float': shouldTextFloat, 'highlighted': shouldHighlight}" 
+                  :style="fieldsetRootStyleOverrideObj">
+            <legend v-if="shouldTextFloat" ref="legend">{{ fieldName.get() }}</legend>
             <div ref="contentPanel" class="contentPanel fullSize">
                 <div class="contentPanelInner fullSize" v-area="'main'">
                     <input :type="inputType.get()" ref="textFieldInput" class="textFieldInput" :value="text.get()" @keyup="text.set(($event.target as HTMLInputElement).value!)"/>
@@ -11,7 +10,8 @@
                         <slot name="fieldActions"></slot>
                     </div>
                 </div>
-                <div ref="placeholderText" v-basic="'.placeholderText'" v-area="'main'">{{ fieldName.get() }}</div>
+                <div ref="placeholderText" v-basic="'.placeholderText'" 
+                     v-area="'main'" :style="placeholderTextStyleOverrideObj" >{{ fieldName.get() }}</div>
                 <div ref="unscaledPlaceholderText" v-basic="'.unscaledPlaceholderText'" v-area="'main'">{{ fieldName.get() }}</div>
             </div>
         </fieldset>
@@ -25,17 +25,26 @@ import { useElementSize, useFocus } from '@vueuse/core';
 import { ref, computed } from 'vue';
 import { defineProperty } from '../utils/defineProperty';
 import type { HTMLInputType } from '@/shims-vue';
+import tinycolor from "tinycolor2";
 
-const props = withDefaults(defineProps<{ text: string|null, fieldName: string, inputType: HTMLInputType }>(), 
+const props = withDefaults(defineProps<
+{ 
+    text: string|null, 
+    fieldName: string, 
+    inputType: HTMLInputType, 
+    overrideThemeColor: string | undefined 
+}>(), 
 { 
     text: null, 
     fieldName: 'Placeholder here',
-    inputType: 'text'
+    inputType: 'text',
+    overrideThemeColor: undefined
 });
 const emit = defineEmits<{ (e: 'update:text', v: string): void }>();
 const text = defineProperty<null | string, "text", typeof props>("text", { emitFunc: emit, props: props, withEmits: true });
 const fieldName = defineProperty<string, "fieldName", typeof props>("fieldName", { emitFunc: undefined, props: props, withEmits: false });
 const inputType = defineProperty<HTMLInputType, "inputType", typeof props>("inputType", { emitFunc: undefined, props: props, withEmits: false });
+const overrideThemeColor = defineProperty<string | undefined, "overrideThemeColor", typeof props>("overrideThemeColor", { emitFunc: undefined, props: props, withEmits: false });
 
 const textFieldInput = ref(null);
 const placeholderText = ref(null);
@@ -58,6 +67,18 @@ const placeholderTextYOffsetStyle = computed(() =>
     if (shouldTextFloat.value) return "translateY(calc(-50% - 1px))";
     return `translateY(${(contentPanelHeight.value - unscaledPlaceholderTextHeight.value) / 2}px)`
 });
+const fieldsetRootStyleOverrideObj = computed(() => // a style object overriding the style of fieldsetRoot base on props
+{
+    return overrideThemeColor.get() && shouldHighlight.value
+    ? { 'border-color': overrideThemeColor.get() }
+    : { };
+});
+const placeholderTextStyleOverrideObj = computed(() => // a style object overriding the style of placeholderText base on props
+{
+    return overrideThemeColor.get() && shouldHighlight.value
+    ? { 'color': "#" + tinycolor(overrideThemeColor.get()).lighten(30).toHex() }
+    : { };
+});
 
 const shouldTextFloat = computed(() => 
 {
@@ -70,6 +91,15 @@ const shouldHighlight = computed(() =>
     if (textFieldInputIsFocused.value) return true;
     return false;
 });
+
+function parseColor(input:string) 
+{
+    var div = document.createElement('div'), m;
+    div.style.color = input;
+    m = getComputedStyle(div).color.match(/^rgb\s*\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)\s*\)$/i);
+    if( m) return [m[1],m[2],m[3]];
+    else throw new Error("Colour "+input+" could not be parsed.");
+}
 </script>
 
 <style lang="less" scoped>
@@ -95,7 +125,10 @@ const shouldHighlight = computed(() =>
     font-family: @font;
     font-weight: 100;
     transition: border-color 0.5s ease;
-    &.highlighted { border-color: @textFieldFocusThemeColor; }
+    &.highlighted 
+    { 
+        border-color: @textFieldFocusThemeColor; 
+    }
 
     legend
     {

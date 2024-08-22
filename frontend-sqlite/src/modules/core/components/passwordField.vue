@@ -16,16 +16,24 @@
 import { defineProperty } from '../utils/defineProperty';
 import textField from '@/modules/core/components/textField.vue';
 
-const props = withDefaults(defineProps<{ text: string|null, fieldName: string, isRevealed: boolean|null }>(), 
+const props = withDefaults(defineProps<
+{
+    text: string|null, 
+    fieldName: string, 
+    isRevealed: boolean|null,
+    overrideThemeColor: string | undefined
+}>(), 
 { 
     text: null,
     fieldName: 'Placeholder here',
-    isRevealed: null
+    isRevealed: null,
+    overrideThemeColor: undefined
 });
 const emit = defineEmits<{ (e: 'update:text', v: string): void, (e: 'update:isRevealed', v: boolean): void }>();
 const text = defineProperty<null | string, "text", typeof props>("text", { emitFunc: emit, props: props, withEmits: true });
 const fieldName = defineProperty<string, "fieldName", typeof props>("fieldName", { emitFunc: undefined, props: props, withEmits: false });
 const isRevealed = defineProperty<null | boolean, "isRevealed", typeof props>("isRevealed", { emitFunc: emit, props: props, withEmits: true });
+const overrideThemeColor = defineProperty<string | undefined, "overrideThemeColor", typeof props>("overrideThemeColor", { emitFunc: undefined, props: props, withEmits: false });
 </script>
 
 <style lang="less" scoped>
