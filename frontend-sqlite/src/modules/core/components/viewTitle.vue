@@ -38,6 +38,7 @@ export default
     display:grid; gap:15px;
     grid-template-columns: 1fr; grid-template-rows: auto 1fr;
     .fullWidth; padding-bottom: 30px;
+    font-family: @font;
     
     #tabsContainer
     {
@@ -60,8 +61,6 @@ export default
     #title 
     { 
         color:white; font-size:24px; font-weight: 300; 
-        font-family: 'Lato', sans-serif; 
-        font-family: 'Roboto', sans-serif; 
         .tight;
     }
 }
