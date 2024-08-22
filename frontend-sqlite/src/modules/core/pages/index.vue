@@ -107,7 +107,7 @@ export default
     border-right:1px solid @border; z-index:999;
     box-sizing: border-box; box-shadow: 0px 0px 10px black;
     width: 225px;
-    transition: all 0.3s ease-in-out;
+    transition: all 0.2s ease-in-out;
     
     &.hidden { width: 0px; }
 
@@ -128,7 +128,7 @@ export default
         & > div 
         {
             .center; .gridBase; 
-            transition: width 0s ease, background-color 0.5s ease; 
+            transition: all 0.3s ease;
             .horiPadding(10px); 
             font-size:14px;
             grid-template-columns: 0.5fr 1fr; 
@@ -141,6 +141,7 @@ export default
             &:hover 
             { 
                 .bg(@focusDark); transition: all 0.2s ease;
+                padding-left: 0px;
             }
             div { grid-area:header; text-align: justify; }
         }
