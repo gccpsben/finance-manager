@@ -1,6 +1,6 @@
 <template>
     <div>
-        <fieldset class="rootFieldset" :class="{'float': shouldTextFloat}">
+        <fieldset class="rootFieldset" :class="{'float': shouldTextFloat, 'highlighted': shouldHighlight}">
             <legend v-if="shouldTextFloat" ref="legend">
                 {{ fieldName.get() }}
             </legend>
@@ -54,9 +54,11 @@ const shouldTextFloat = computed(() =>
     if (text.get()) return true;
     return false;
 });
-
-// const 
-
+const shouldHighlight = computed(() => 
+{
+    if (textFieldInputIsFocused.value) return true;
+    return false;
+});
 </script>
 
 <style lang="less" scoped>
@@ -69,6 +71,7 @@ const shouldTextFloat = computed(() =>
 @textFieldInputRightPadding: 10px;
 @textFieldFloatingTextFontSize: 12px;
 @textFieldNonfloatingTextFontSize: 14px;
+@textFieldPlaceholderColor: #606060;
 
 @import "@/modules/core/stylesheets/globalStyle.less";
 
@@ -81,7 +84,7 @@ const shouldTextFloat = computed(() =>
     font-family: @font;
     font-weight: 100;
     transition: border-color 0.5s ease;
-    &.float { border-color: @textFieldFocusThemeColor; }
+    &.highlighted { border-color: @textFieldFocusThemeColor; }
 
     legend
     {
@@ -119,7 +122,7 @@ const shouldTextFloat = computed(() =>
             width: fit-content;
             transition: all 0.5s ease;
             transform: v-bind(placeholderTextYOffsetStyle);
-            color: white;
+            color: @textFieldPlaceholderColor;
         }
 
         .unscaledPlaceholderText
@@ -132,12 +135,19 @@ const shouldTextFloat = computed(() =>
         }
     }
 
+    &.highlighted
+    {
+        .placeholderText 
+        { 
+            color: lighten(@textFieldFocusThemeColor, 30%);
+        }
+    }
+
     &.float
     {
         .placeholderText 
         { 
             font-size: @textFieldFloatingTextFontSize; 
-            color: lighten(@textFieldFocusThemeColor, 30%);
         }
     }
 }
