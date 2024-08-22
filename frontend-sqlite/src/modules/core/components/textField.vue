@@ -5,7 +5,12 @@
                 {{ fieldName.get() }}
             </legend>
             <div ref="contentPanel" class="contentPanel fullSize">
-                <input :type="inputType.get()" ref="textFieldInput" class="textFieldInput" v-area="'main'" :value="text.get()" @keyup="text.set(($event.target as HTMLInputElement).value!)"/>
+                <div class="contentPanelInner fullSize" v-area="'main'">
+                    <input :type="inputType.get()" ref="textFieldInput" class="textFieldInput" :value="text.get()" @keyup="text.set(($event.target as HTMLInputElement).value!)"/>
+                    <div class="center">
+                        <slot name="fieldActions"></slot>
+                    </div>
+                </div>
                 <div ref="placeholderText" v-basic="'.placeholderText'" v-area="'main'">{{ fieldName.get() }}</div>
                 <div ref="unscaledPlaceholderText" v-basic="'.unscaledPlaceholderText'" v-area="'main'">{{ fieldName.get() }}</div>
             </div>
@@ -40,7 +45,6 @@ const legend = ref(null);
 
 const { focused:textFieldInputIsFocused } = useFocus(textFieldInput);
 const { focused:placeholderTextIsFocused } = useFocus(placeholderText);
-const { height: placeholderTextHeight, width: placeholderTextWidth } = useElementSize(placeholderText);
 const { height: unscaledPlaceholderTextHeight } = useElementSize(unscaledPlaceholderText);
 const { height: legendHeight, width: legendWidth } = useElementSize(legend);
 const { height: contentPanelHeight } = useElementSize(contentPanel);
@@ -51,7 +55,7 @@ const contentYOffsetStyle = computed(() => `translateY(-${legendHeight.value / 2
 const contentHeightOffsetStyle = computed(() => `calc(100% + ${legendHeight.value / 2}px)`);
 const placeholderTextYOffsetStyle = computed(() => 
 {
-    if (shouldTextFloat.value) return "translateY(-50%)";
+    if (shouldTextFloat.value) return "translateY(calc(-50% - 1px))";
     return `translateY(${(contentPanelHeight.value - unscaledPlaceholderTextHeight.value) / 2}px)`
 });
 
@@ -109,6 +113,13 @@ const shouldHighlight = computed(() =>
         transform: v-bind(contentYOffsetStyle);
         height: v-bind(contentHeightOffsetStyle);
         display: grid; grid-template-columns: 1fr; grid-template-rows: 1fr; grid-template-areas: 'main';
+
+        .contentPanelInner
+        {
+            display: grid;
+            grid-template-columns: 1fr auto;
+            grid-template-rows: 1fr;
+        }
 
         .textFieldInput
         {
