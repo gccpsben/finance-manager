@@ -33,6 +33,7 @@
             font-size:14px; 
             user-select: none;
             .yTop;
+            font-weight: normal;
         }
         .variantTab.selected { color:@focus; }
     }

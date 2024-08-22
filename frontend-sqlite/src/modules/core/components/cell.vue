@@ -16,9 +16,21 @@
 @import '../stylesheets/globalStyle.less';
 .panel
 {
-    .fullSize; .bg(@cellBackground);
+    .fullSize; 
+    .bg(@cellBackground);
     box-sizing:border-box;
-    .panelTitle { text-align:start; color:gray; font-size:14px; .tight; display:inline; }
+    font-family: @font;
+    font-weight: normal;
+
+    .panelTitle 
+    { 
+        text-align:start; 
+        color:gray; 
+        font-size:14px; 
+        .tight; 
+        display:inline; 
+        font-weight: inherit;
+    }
     box-shadow: 0px 0px 15px #050505;
 
     .variantSelectorsContainer

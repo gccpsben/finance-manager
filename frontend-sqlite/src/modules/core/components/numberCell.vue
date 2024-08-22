@@ -1,7 +1,7 @@
 <template>
     <cell :title="title">
         <div v-if="!isLoading && !networkError" class="fullHeight xLeft">
-            <h2 class="variantSelectorTab">$ {{ currentValue?.toFixed(2) }}</h2>
+            <h2 class="variantSelectorTab">{{ currentValue?.toFixed(2) }}</h2>
         </div>
         <div v-else class="fullHeight">
             <NetworkCircularIndicator :error="networkError" :isLoading="isLoading" class="fullHeight"/>
@@ -76,23 +76,8 @@ export default
 
 <style lang="less" scoped>
 @import '../stylesheets/globalStyle.less';
-#numbersPanel
+.variantSelectorTab
 {
-    .fullSize; .bg(@backgroundDark);
-    box-sizing:border-box;
-
-    .numbersPanelTitle { text-align:start; color:gray; font-size:14px; .tight; display:inline; }
-    .variantSelector
-    {
-        & > h2:nth-child(2) { margin-left:5px; }
-        & > h2:nth-child(3) { margin-left:5px; }
-        .variantTab { cursor: pointer; }
-        .variantTab.selected { color:@focus;}
-    }
-    & /deep/ .variantSelectorTab
-    {
-        color:white; text-align:start; color:gray; font-size:26px;
-        .tight;
-    }
+    font-weight: normal;
 }
 </style>
