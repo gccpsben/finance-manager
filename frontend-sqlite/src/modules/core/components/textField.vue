@@ -5,7 +5,7 @@
                 {{ fieldName.get() }}
             </legend>
             <div ref="contentPanel" class="contentPanel fullSize">
-                <input ref="textFieldInput" class="textFieldInput" v-area="'main'" :value="text.get()" @keyup="text.set(($event.target as HTMLInputElement).value!)"/>
+                <input :type="inputType.get()" ref="textFieldInput" class="textFieldInput" v-area="'main'" :value="text.get()" @keyup="text.set(($event.target as HTMLInputElement).value!)"/>
                 <div ref="placeholderText" v-basic="'.placeholderText'" v-area="'main'">{{ fieldName.get() }}</div>
                 <div ref="unscaledPlaceholderText" v-basic="'.unscaledPlaceholderText'" v-area="'main'">{{ fieldName.get() }}</div>
             </div>
@@ -19,11 +19,18 @@ import vArea from '@/modules/core/directives/vArea';
 import { useElementSize, useFocus } from '@vueuse/core';
 import { ref, computed } from 'vue';
 import { defineProperty } from '../utils/defineProperty';
+import type { HTMLInputType } from '@/shims-vue';
 
-const props = withDefaults(defineProps<{ text: string|null, fieldName: string }>(), { text: null, fieldName: 'Placeholder here'});
+const props = withDefaults(defineProps<{ text: string|null, fieldName: string, inputType: HTMLInputType }>(), 
+{ 
+    text: null, 
+    fieldName: 'Placeholder here',
+    inputType: 'text'
+});
 const emit = defineEmits<{ (e: 'update:text', v: string): void }>();
 const text = defineProperty<null | string, "text", typeof props>("text", { emitFunc: emit, props: props, withEmits: true });
-const fieldName = defineProperty<string, "fieldName", typeof props>("fieldName", { emitFunc: undefined, props: props, withEmits: true });
+const fieldName = defineProperty<string, "fieldName", typeof props>("fieldName", { emitFunc: undefined, props: props, withEmits: false });
+const inputType = defineProperty<HTMLInputType, "inputType", typeof props>("inputType", { emitFunc: undefined, props: props, withEmits: false });
 
 const textFieldInput = ref(null);
 const placeholderText = ref(null);
