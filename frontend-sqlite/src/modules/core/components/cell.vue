@@ -13,6 +13,10 @@
 </template>
 
 <style lang="less" scoped>
+// Default values before importing globalStyle.
+@cellHeaderColor: white;
+@cellBackground: #0f0f0f;
+
 @import '../stylesheets/globalStyle.less';
 .panel
 {
@@ -24,8 +28,8 @@
 
     .panelTitle 
     { 
+        color: @cellHeaderColor;
         text-align:start; 
-        color:gray; 
         font-size:14px; 
         .tight; 
         display:inline; 
