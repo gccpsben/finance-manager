@@ -27,30 +27,22 @@
         <div id="containersSelectDiv" v-if="!isFormUploading && !isLoading">
             
             <grid-shortcut id="pendingSelector" columns="1fr 1fr" class="fullWidth field">
-
                 <div>
                     <div :class="{'selected': !isPending}" class="immediate" @click="isPending=false">Immediate</div>
                 </div>
-
                 <div>
                     <div :class="{'selected': isPending}" class="pending" @click="isPending=true">Pending</div>
                 </div>
-
             </grid-shortcut>
 
             <grid-shortcut id="modeSelector" columns="1fr 1fr 1fr" class="fullWidth field">
-
                 <div v-for="option in ['spending', 'earning', 'transfer']">
                     <div :class="{'selected': selectedMode == option}" @click="selectedMode = option"
                     v-bind:class="option" >{{ option }}</div>
                 </div>
-
             </grid-shortcut>
 
-            <grid-shortcut columns="100px 1fr" class="fullWidth field">
-                <div class="middleLeft">Title:</div>
-                <input type="text" placeholder="Title Here..." v-model="txnTitle"/>
-            </grid-shortcut>
+            <text-field class="fullSize" field-name="Transaction Title" v-model:text="txnTitle"/>
 
             <grid-shortcut columns="100px 1fr" class="fullWidth field">
                 <div class="middleLeft">Type:</div>
@@ -131,10 +123,9 @@
                 </div>
             </grid-shortcut>
 
-            <grid-shortcut columns="100px 1fr" class="fullWidth field">
-                <div class="middleLeft">Date:</div>
-                <input type="text" placeholder="YYYY-MM-DD HH:MM:SS" v-model="txnDateInput"/>
-            </grid-shortcut>
+            <text-field class="fullSize" field-name="Date" placeholder="YYYY-MM-DD HH:MM:SS" 
+                        v-model:text="txnDateInput" :override-theme-color="isEnteredDateValid ? undefined : 'red'"/>
+
 
             <grid-shortcut columns="1fr auto auto" style="gap: 5px;">
                 <div class="middleLeft"><button @click="reset">Reset</button></div>
@@ -161,11 +152,12 @@ import type { TxnTypesDTO } from "@/../../api-types/txnType";
 import type { PostTxnAPI } from "@/../../api-types/txn";
 import vNumberOnly from '@/modules/core/directives/vNumberOnly';
 import { VProgressCircular } from "vuetify/components";
+import textField from '@/modules/core/components/textField.vue';
 
 export default
 {
     directives: { "number-only": vNumberOnly },
-    components: { VProgressCircular },
+    components: { VProgressCircular, "text-field": textField },
     setup () 
     {
         useMeta(
@@ -313,6 +305,11 @@ export default
                 }
             }
             catch(ex) { return undefined; }
+        },
+        isEnteredDateValid()
+        {
+            if (this.txnDateInput.trim() === '') return true;
+            return this.enteredDate !== undefined;
         }
     },
     watch:
@@ -328,7 +325,15 @@ export default
 
 #topDiv
 {
-    #containersSelectDiv { .size(500px, auto); }
+    #containersSelectDiv 
+    { 
+        .size(500px, auto); 
+        display:grid;
+        grid-template-columns: 1fr;
+        grid-auto-rows: 45px;
+        grid-auto-flow: row;
+        gap: 10px;
+    }
 
     background: @background; .fullSize;
     color:white;
@@ -398,7 +403,7 @@ export default
 
     .field
     {
-        height:45px; margin-top:5px;
+        .fullSize;
         div { .fullSize; }
     }
 
