@@ -1,6 +1,8 @@
 <template>
     <div>
-        <text-field :text="text.get()" @update:text="text.set($event)" :field-name="fieldName.get()" class="fullSize" :input-type="!isRevealed.get() ? 'password' : 'text'">
+        <text-field :text="text.get()" @update:text="text.set($event)" :field-name="fieldName.get()" 
+                    class="fullSize" :input-type="!isRevealed.get() ? 'password' : 'text'"
+                    :override-theme-color="overrideThemeColor.get()">
             <template #fieldActions>
                 <div class="revealButton" @click="isRevealed.set(!isRevealed.get())">
                     <span class="material-symbols-outlined">
