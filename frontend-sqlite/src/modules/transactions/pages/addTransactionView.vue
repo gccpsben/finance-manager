@@ -124,7 +124,13 @@
             </grid-shortcut>
 
             <text-field class="fullSize" field-name="Date" placeholder="YYYY-MM-DD HH:MM:SS" 
-                        v-model:text="txnDateInput" :override-theme-color="isEnteredDateValid ? undefined : 'red'"/>
+                        v-model:text="txnDateInput" :override-theme-color="isEnteredDateValid ? undefined : 'red'">
+                <template #fieldActions>
+                    <div class="nowButtonContainer">
+                        <button class="nowButton" @click="resetDateToNow()">Now</button>
+                    </div>
+                </template>
+            </text-field>
 
 
             <grid-shortcut columns="1fr auto auto" style="gap: 5px;">
@@ -251,9 +257,14 @@ export default
                 .finally(() => { self.isFormUploading = false; });
             }
         },
-        decimalJSToNumber(decimalJSStr: string)
+        decimalJSToNumber(decimalJSStr: string) { return parseFloat(decimalJSStr); },
+        resetDateToNow()
         {
-            return parseFloat(decimalJSStr);
+            const now = new Date();
+            const pad = (arg: string | number, padCount: number = 2) => `${arg}`.padStart(padCount, '0');
+            const dateSegment = `${pad(now.getFullYear(), 4)}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`;
+            const timeSegment = `${pad(now.getHours())}:${pad(now.getMinutes())}:${pad(now.getSeconds())}`;
+            this.txnDateInput = `${dateSegment} ${timeSegment}`;
         }
     },
     computed:
@@ -417,7 +428,7 @@ export default
         & > div > div > div:first-child { margin-bottom:5px; }
     }
 
-    button { background:@backgroundDark; border:0px; color:white; padding:10px; margin-top:15px; cursor:pointer; }
+    button { background:@backgroundDark; border:0px; color:white; cursor:pointer; }
     button:hover { background:@surfaceHigh; }
     button:disabled { opacity:0.5; cursor:not-allowed; }
 
@@ -425,6 +436,19 @@ export default
     {
         margin-left: 5px;
         margin-right: 5px;
+    }
+
+    .nowButtonContainer
+    {
+        .fullSize; .center;
+        padding-left: 5px; padding-right: 5px;
+
+        .nowButton
+        {
+            padding:5px;
+            font-size:12px;
+            font-weight: bold;
+        }
     }
 }
 
