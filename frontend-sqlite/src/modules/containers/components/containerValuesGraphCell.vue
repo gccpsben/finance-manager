@@ -70,7 +70,6 @@
     .currencyRow
     {
         .leftRightGrid;
-        .vertMargin(10px);
         font-size:14px;
     }
 }
