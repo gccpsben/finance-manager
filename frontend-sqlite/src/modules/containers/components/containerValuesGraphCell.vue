@@ -1,13 +1,10 @@
 <template>
     <pagination id="pagination" :items="sortedContainers" :itemsInPage="1" v-model:currentPage="currentPage" v-slot="props" style="overflow:hidden; box-sizing:border-box;">
-        <grid-shortcut id="graphPanel" style="padding:15px; gap:15px;" columns="1fr" rows="auto 1fr">
-            <grid-shortcut rows="1fr" columns="1fr auto">
-                <h2 class="graphPanelTitle">{{ title }}</h2>
-                <div class="pageSelector">
-                    <numberPagination v-model="props.currentPage" :min-page-readable="1" 
-                                      :max-page-readable="containersStore.containers?.lastSuccessfulData?.rangeItems.length ?? 0 + 1"></numberPagination>
-                </div>
-            </grid-shortcut>
+        <cell :title="title" id="graphPanel">
+            <template #cellOptions>
+                <numberPagination v-model="props.currentPage" :min-page-readable="1" 
+                    :max-page-readable="containersStore.containers?.lastSuccessfulData?.rangeItems.length ?? 0 + 1"></numberPagination>
+            </template>
             <div style="gap:15px; display:grid; grid-template-rows: 1fr auto;">             
                 <div style="border-bottom:1px solid #303030; padding-bottom:15px;" v-if="props.pageItems[0] != undefined">
                     <pagination style="display:grid; grid-template-rows: 1fr auto;" class="fullHeight" v-slot="props2" :items="getContainerBalances(props.pageItems[0].balances)" :itemsInPage="3">
@@ -35,7 +32,7 @@
                     </div>
                 </div>
             </div>
-        </grid-shortcut>
+        </cell>
     </pagination>
 </template>
 
@@ -88,11 +85,12 @@ import { Chart, registerables, type ChartOptions, type ChartData } from "chart.j
 import { useMainStore } from '@/modules/core/stores/store';
 import { useContainersStore } from '../stores/useContainersStore';
 import { useCurrenciesStore } from '../../currencies/stores/useCurrenciesStore';
+import cell from '@/modules/core/components/cell.vue';
 Chart.register(...registerables);
 
 export default defineComponent(
 {
-    components: { "pagination": paginationVue, "numberPagination": numberPagination },
+    components: { "pagination": paginationVue, "numberPagination": numberPagination, "cell": cell },
     props: { "title": { default: "", type: String }, },
     setup()
     {
