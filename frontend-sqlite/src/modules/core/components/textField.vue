@@ -5,13 +5,13 @@
             <legend v-if="shouldTextFloat" ref="legend">{{ fieldName.get() }}</legend>
             <div ref="contentPanel" class="contentPanel fullSize">
                 <div class="contentPanelInner fullSize" v-area="'main'">
-                    <input :type="inputType.get()" ref="textFieldInput" class="textFieldInput" :value="text.get()" @keyup="text.set(($event.target as HTMLInputElement).value!)"/>
+                    <input :type="inputType.get()" ref="textFieldInput" class="textFieldInput" :value="text.get()" 
+                           @keyup="text.set(($event.target as HTMLInputElement).value!)" :placeholder="textFieldInputIsFocused ? placeholder.get() : ''"/>
                     <div class="center">
                         <slot name="fieldActions"></slot>
                     </div>
                 </div>
-                <div ref="placeholderText" v-basic="'.placeholderText'" 
-                     v-area="'main'" :style="placeholderTextStyleOverrideObj" >{{ fieldName.get() }}</div>
+                <div ref="placeholderText" v-basic="'.placeholderText'" v-area="'main'" :style="placeholderTextStyleOverrideObj" >{{ fieldName.get() }}</div>
                 <div ref="unscaledPlaceholderText" v-basic="'.unscaledPlaceholderText'" v-area="'main'">{{ fieldName.get() }}</div>
             </div>
         </fieldset>
@@ -32,16 +32,19 @@ const props = withDefaults(defineProps<
     text: string|null, 
     fieldName: string, 
     inputType: HTMLInputType, 
-    overrideThemeColor: string | undefined 
+    overrideThemeColor: string | undefined,
+    placeholder: string | undefined
 }>(), 
 { 
     text: null, 
     fieldName: 'Placeholder here',
     inputType: 'text',
-    overrideThemeColor: undefined
+    overrideThemeColor: undefined,
+    placeholder: undefined
 });
 const emit = defineEmits<{ (e: 'update:text', v: string): void }>();
 const text = defineProperty<null | string, "text", typeof props>("text", { emitFunc: emit, props: props, withEmits: true });
+const placeholder = defineProperty<undefined | string, "placeholder", typeof props>("placeholder", { emitFunc: undefined, props: props, withEmits: false });
 const fieldName = defineProperty<string, "fieldName", typeof props>("fieldName", { emitFunc: undefined, props: props, withEmits: false });
 const inputType = defineProperty<HTMLInputType, "inputType", typeof props>("inputType", { emitFunc: undefined, props: props, withEmits: false });
 const overrideThemeColor = defineProperty<string | undefined, "overrideThemeColor", typeof props>("overrideThemeColor", { emitFunc: undefined, props: props, withEmits: false });
@@ -125,10 +128,9 @@ function parseColor(input:string)
     font-family: @font;
     font-weight: 100;
     transition: border-color 0.5s ease;
-    &.highlighted 
-    { 
-        border-color: @textFieldFocusThemeColor; 
-    }
+    &.highlighted { border-color: @textFieldFocusThemeColor; }
+
+    input::placeholder { color: @textFieldPlaceholderColor; }
 
     legend
     {
