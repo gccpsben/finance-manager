@@ -39,6 +39,11 @@ const overrideThemeColor = defineProperty<string | undefined, "overrideThemeColo
 <style lang="less" scoped>
 @import "@/modules/core/stylesheets/globalStyle.less";
 
+div /deep/ input
+{
+    font-family: Consolas;
+}
+
 .revealButton
 {
     padding-right: 14px;
