@@ -148,22 +148,22 @@ export class TransactionService
         .orderBy(`txn.${nameofT('creationDate')}`, "DESC")
         .where(`${nameofT('ownerId')} = :ownerId`, { ownerId: userId });
 
-        if (config.id !== undefined)
+        if (config?.id !== undefined)
             query = query.andWhere(`txn.${nameofT('id')} == :target_id`, {target_id: `${config.id}`});
 
-        if (config.title !== undefined)
+        if (config?.title !== undefined)
             query = query.andWhere(`txn.${nameofT('title')} LIKE :title`, { title: `%${config.title}%` });
 
-        if (config.description !== undefined)
+        if (config?.description !== undefined)
             query = query.andWhere(`txn.${nameofT('description')} LIKE :description`, { description: `%${config.description}%` });
 
-        if (config.startDate) 
+        if (config?.startDate) 
             query = query.andWhere(`${nameofT('creationDate')} >= :startDate`, { startDate: config.startDate });
         
-        if (config.endDate) 
+        if (config?.endDate) 
             query = query.andWhere(`${nameofT('creationDate')} <= :endDate`, { endDate: config.endDate });
 
-        query = ServiceUtils.paginateQuery(query, config);
+        query = ServiceUtils.paginateQuery(query, config ?? {});
 
         const queryResult = await query.getManyAndCount();
         

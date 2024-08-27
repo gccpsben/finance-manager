@@ -10,20 +10,20 @@ export namespace ServiceUtils
         {
             startIndex?: number | undefined, 
             endIndex?: number | undefined
-        }
+        } | undefined
     )
     {
-        if (query.startIndex !== undefined && query.endIndex !== undefined)
+        if (query?.startIndex !== undefined && query?.endIndex !== undefined)
         {
             dbQuery = dbQuery
             .limit(query.endIndex - query.startIndex)
             .offset(query.startIndex);
         }
-        else if (query.startIndex !== undefined && query.endIndex === undefined)
+        else if (query?.startIndex !== undefined && query?.endIndex === undefined)
         {
             dbQuery = dbQuery.skip(query.startIndex);  
         }
-        else if (query.startIndex === undefined && query.endIndex !== undefined)
+        else if (query?.startIndex === undefined && query?.endIndex !== undefined)
         {
             dbQuery = dbQuery.limit(query.startIndex);  
         }
