@@ -29,7 +29,7 @@ export function isDecimalJSString(value: any)
     try { const test = new Decimal(value); return true; }
     catch(e) { return false; }
 }
-export function IsDecimalJSString(validationOptions?: ValidationOptions) 
+export function IsDecimalJSString() 
 {
     return function (object: Object, propertyName: string) 
     {
@@ -53,6 +53,60 @@ export function IsDecimalJSString(validationOptions?: ValidationOptions)
     };
 }
 
+export function isEpochKeyedMap(value: any)
+{
+    if (typeof value !== 'object') return false;
+    if (Object.keys(value).some(key => !isUTCDateIntString(key))) return false;
+    return true;
+}
+export function IsEpochKeyedMap() 
+{
+    return function (object: Object, propertyName: string) 
+    {
+        registerDecorator(
+        {
+            name: 'isEpochKeyedMap',
+            target: object.constructor,
+            propertyName: propertyName,
+            options: {
+                message: "Expected a map where each key is a DateTime epoch."
+            },
+            validator: 
+            {
+                validate(value: any, args: ValidationArguments) 
+                {
+                    if (!isEpochKeyedMap(value)) return false;
+                    return true;
+                },
+            },
+        });
+    };
+}
+
+export function IsPassing(predicate: (value: any) => boolean)
+{
+    return function (object: Object, propertyName: string) 
+    {
+        registerDecorator(
+        {
+            name: 'isUTCDateIntString',
+            target: object.constructor,
+            propertyName: propertyName,
+            options: {
+                message: "Expected a value that passes the predicate provided."
+            },
+            validator: 
+            {
+                validate(value: any, args: ValidationArguments) 
+                {
+                    if (!predicate(value)) return false;
+                    return true;
+                },
+            },
+        });
+    };
+}
+
 export function isUTCDateIntString(value: any)
 {
     try
@@ -65,7 +119,7 @@ export function isUTCDateIntString(value: any)
     }
     catch(e) { return false; }
 }
-export function IsUTCDateIntString(validationOptions?: ValidationOptions) 
+export function IsUTCDateIntString() 
 {
     return function (object: Object, propertyName: string) 
     {
@@ -100,7 +154,7 @@ export function isUTCDateInt(value: any)
     }
     catch(e) { return false; }
 }
-export function IsUTCDateInt(validationOptions?: ValidationOptions) 
+export function IsUTCDateInt() 
 {
     return function (object: Object, propertyName: string) 
     {
@@ -134,7 +188,7 @@ export function isIntString(value: any)
     }
     catch(e) { return false; }
 }
-export function IsIntString(validationOptions?: ValidationOptions) 
+export function IsIntString() 
 {
     return function (object: Object, propertyName: string) 
     {
@@ -170,7 +224,7 @@ export function isStringToStringDict(value :any)
     }
     catch(e) { return false; }
 }
-export function IsStringToStringDict(validationOptions?: ValidationOptions) 
+export function IsStringToStringDict() 
 {
     return function (object: Object, propertyName: string) 
     {
@@ -204,7 +258,7 @@ export function isStringToDecimalJSStringDict(value:any)
     }
     catch(e) { return false; }
 }
-export function IsStringToDecimalJSStringDict(validationOptions?: ValidationOptions) 
+export function IsStringToDecimalJSStringDict() 
 {
     return function (object: Object, propertyName: string) 
     {

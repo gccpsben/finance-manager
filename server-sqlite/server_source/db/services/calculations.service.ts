@@ -3,7 +3,14 @@ import { TransactionRepository } from "../repositories/transaction.repository.js
 import { TransactionService } from "./transaction.service.js";
 import { SQLitePrimitiveOnly } from "../../index.d.js";
 import { Transaction } from "../entities/transaction.entity.js";
-import { nameof } from "../servicesUtils.js";
+import { DecimalAdditionMapReducer, nameof } from "../servicesUtils.js";
+
+export type UserBalanceHistoryMap = { [epoch: string]: { [currencyId: string]: Decimal } };
+export type UserBalanceHistoryResults = 
+{
+    historyMap: UserBalanceHistoryMap,
+    currenciesEarliestPresentEpoch: { [currencyId: string]: number }
+};
 
 export class CalculationsService
 {
@@ -63,5 +70,38 @@ export class CalculationsService
             total30d: total30d,
             total7d: total7d
         };
+    }
+
+    /** Get the balance history of a user across all containers. */
+    public static async getUserBalanceHistory(userId: string): Promise<UserBalanceHistoryResults>
+    {
+        const usrTxns = (await TransactionService.getTransactions(userId)).rangeItems.reverse();
+        const output: UserBalanceHistoryResults = 
+        {
+            currenciesEarliestPresentEpoch: {},
+            historyMap: {}
+        };
+        const balancesReducer = new DecimalAdditionMapReducer<string>({});
+        const appendCurrencyToEpoch = (cId: string, epoch: number) => 
+        {
+            if (output.currenciesEarliestPresentEpoch[cId]) return;
+            output.currenciesEarliestPresentEpoch[cId] = epoch;
+        };
+
+        for (const txn of usrTxns)
+        {
+            if (txn.fromAmount)
+            {
+                await balancesReducer.reduce(txn.fromCurrencyId, new Decimal(txn.fromAmount).neg());
+                appendCurrencyToEpoch(txn.fromCurrencyId, txn.creationDate);
+            }
+            if (txn.toAmount) 
+            {
+                await balancesReducer.reduce(txn.toCurrencyId, new Decimal(txn.toAmount));
+                appendCurrencyToEpoch(txn.toCurrencyId, txn.creationDate);
+            }
+            output.historyMap[txn.creationDate.toString()] = { ...balancesReducer.currentValue };
+        }
+        return output;
     }
 }

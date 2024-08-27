@@ -8,3 +8,11 @@ export type ResponseGetExpensesAndIncomesDTO =
     expenses7d: string;
     incomes7d: string
 };
+
+export namespace GetUserBalanceHistoryAPI
+{
+    export type ResponseDTO = 
+    { 
+        map: { [epoch: string]: { [currencyId: string]: string } };
+    };
+}

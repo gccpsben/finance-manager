@@ -53,7 +53,7 @@ export function assertStrictEqual(actualValue: any, expectedValue: any)
 export function assertJSONEqual(actualValue: any, expectedValue: any)
 {
     if (JSON.stringify(actualValue) === JSON.stringify(expectedValue)) return;
-    throw new UnitTestAssertion(`Expected strictly ${expectedValue} but got ${actualValue}`);
+    throw new UnitTestAssertion(`Expected strictly ${JSON.stringify(expectedValue, null, 4)} but got ${JSON.stringify(actualValue, null, 4)}`);
 }
 
 export async function assertArrayAgainstModel<T extends object>

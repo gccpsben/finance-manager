@@ -1,13 +1,32 @@
 import { LinearInterpolator } from '../server_source/calculations/linearInterpolator.js';
 import { resetDatabase, serverURL, UnitTestEndpoints } from "./index.test.js";
-import { assertStrictEqual, HTTPAssert } from "./lib/assert.js";
+import { assertJSONEqual, assertStrictEqual, HTTPAssert } from "./lib/assert.js";
 import { Context } from "./lib/context.js";
 import { HookShortcuts } from "./shortcuts/hookShortcuts.js";
 import { Decimal } from "decimal.js";
 import { randomUUID } from "crypto";
 import { simpleFaker } from "@faker-js/faker";
-import { ResponseGetExpensesAndIncomesDTO } from "../../api-types/calculations.js";
-import { IsDecimalJSString } from "../server_source/db/validators.js";
+import { GetUserBalanceHistoryAPI, ResponseGetExpensesAndIncomesDTO } from "../../api-types/calculations.js";
+import { isDecimalJSString, IsDecimalJSString, IsEpochKeyedMap, IsPassing } from "../server_source/db/validators.js";
+
+export namespace GetUserBalanceHistoryAPIClass
+{
+    export class ResponseDTO implements GetUserBalanceHistoryAPI.ResponseDTO
+    {
+        @IsEpochKeyedMap()
+        @IsPassing(value => 
+        {
+            const val = value as { [epoch: string]: unknown };
+            for (const innerMap of Object.values(val))
+            {
+                if (Object.keys(innerMap).some(k => typeof k !== 'string')) return false;
+                if (Object.values(innerMap).some(v => !isDecimalJSString(v))) return false;
+            }
+            return true;
+        })
+        map: { [epoch: string]: { [currencyId: string]: string; }; };       
+    }
+}
 
 export class ResponseGetExpensesAndIncomesDTOClass implements ResponseGetExpensesAndIncomesDTO
 {
@@ -19,10 +38,15 @@ export class ResponseGetExpensesAndIncomesDTOClass implements ResponseGetExpense
     @IsDecimalJSString() incomes7d: string;
 }
 
+function choice<T> (list: T[]) { return list[Math.floor((Math.random()*list.length))]; }
+
 export default async function(this: Context)
 {
     await resetDatabase();
     Decimal.set({ precision: 32 });
+
+    const testDate = Date.now();
+    const transformOffsetDate = (x: number) => testDate - x * 8.64e+7;
 
     await this.describe("Calculations", async function()
     {
@@ -32,7 +56,6 @@ export default async function(this: Context)
             {
                 await this.test(`Test for Correctness`, async function()
                 {
-                    function choice<T> (list: T[]) { return list[Math.floor((Math.random()*list.length))]; }
                     const userCreds = await HookShortcuts.registerRandMockUsers(serverURL, 3);
         
                     for (const [userKeyname, userObj] of Object.entries(userCreds))
@@ -95,7 +118,7 @@ export default async function(this: Context)
                                 body: 
                                 { 
                                     title: randomUUID(),
-                                    creationDate: Date.now() - txnToPost.txnAgeDays * 8.64e+7,
+                                    creationDate: transformOffsetDate(txnToPost.txnAgeDays),
                                     description: simpleFaker.string.sample(100),
                                     fromAmount: isFrom ? txnToPost.fromAmount.toString() : undefined, 
                                     fromContainerId: isFrom ? choice(containers).containerId : undefined,
@@ -129,7 +152,141 @@ export default async function(this: Context)
                     }
                 }, { timeout: 60000 });
             })
-        })
+        });
+
+        await this.describe(UnitTestEndpoints.calculationsEndpoints.balanceHistory, async function () 
+        {
+            await resetDatabase();
+            
+            await this.describe(`get`, async function()
+            {
+                await this.test(`Test for Correctness`, async function()
+                {
+                    const userCreds = await HookShortcuts.registerRandMockUsers(serverURL, 1);
+                    const firstUserObj = Object.values(userCreds)[0];
+    
+                    const txnTypes = await HookShortcuts.postRandomTxnTypes(
+                    {
+                        serverURL: serverURL, token: firstUserObj.token,
+                        txnCount: 3, assertBody: true, expectedCode: 200
+                    });
+                    const containers = await HookShortcuts.postRandomContainers(
+                    {
+                        serverURL: serverURL, token: firstUserObj.token,
+                        containerCount: 3, assertBody: true, expectedCode: 200
+                    });
+                    const baseCurrency = await HookShortcuts.postCreateCurrency(
+                    {
+                        body: { name: "BASE", ticker: "BASE" }, serverURL: serverURL,
+                        token: firstUserObj.token, assertBody: true, expectedCode: 200
+                    });
+                    const secondCurrency = await HookShortcuts.postCreateCurrency(
+                    {
+                        body: { name: "SEC", ticker: "SEC", fallbackRateAmount: '1', fallbackRateCurrencyId: baseCurrency.currencyId }, 
+                        serverURL: serverURL, token: firstUserObj.token, assertBody: true, expectedCode: 200
+                    });
+                    const thirdCurrency = await HookShortcuts.postCreateCurrency(
+                    {
+                        body: { name: "THI", ticker: "THI", fallbackRateAmount: '1', fallbackRateCurrencyId: secondCurrency.currencyId },
+                        serverURL: serverURL, token: firstUserObj.token, assertBody: true, expectedCode: 200
+                    });
+                    const txnsToPost: 
+                    { 
+                        toAmount: string|undefined, 
+                        fromAmount: string|undefined, 
+                        txnAgeDays: number, 
+                        currId: string, 
+                        conId: string 
+                    }[] = 
+                    [
+                        { fromAmount: undefined , toAmount: `100.0001`, txnAgeDays: 90  , currId: baseCurrency.currencyId   , conId: containers[0].containerId },
+                        { fromAmount: `0.0001`  , toAmount: `0.0001`  , txnAgeDays: 50  , currId: baseCurrency.currencyId   , conId: containers[1].containerId },
+                        { fromAmount: `0.0001`  , toAmount: undefined , txnAgeDays: 18  , currId: thirdCurrency.currencyId  , conId: containers[2].containerId },
+                        { fromAmount: `0`       , toAmount: `12710`   , txnAgeDays: 6.9 , currId: thirdCurrency.currencyId  , conId: containers[1].containerId },
+                        { fromAmount: `1820`    , toAmount: undefined , txnAgeDays: 6.7 , currId: baseCurrency.currencyId   , conId: containers[0].containerId },
+                        { fromAmount: undefined , toAmount: `78777`   , txnAgeDays: 1.5 , currId: secondCurrency.currencyId , conId: containers[1].containerId },
+                        { fromAmount: `1912.30` , toAmount: undefined , txnAgeDays: 0.3 , currId: baseCurrency.currencyId   , conId: containers[2].containerId },
+                        { fromAmount: `192`     , toAmount: `72727`   , txnAgeDays: 0.1 , currId: secondCurrency.currencyId , conId: containers[0].containerId },
+                        { fromAmount: `09037`   , toAmount: undefined , txnAgeDays: 0   , currId: thirdCurrency.currencyId  , conId: containers[1].containerId }
+                    ];
+                    
+                    for (const txnToPost of txnsToPost)
+                    {
+                        const isFrom = !!txnToPost.fromAmount;
+                        const isTo = !!txnToPost.toAmount;
+    
+                        await HookShortcuts.postCreateTransaction(
+                        {
+                            body: 
+                            { 
+                                title: randomUUID(),
+                                creationDate: transformOffsetDate(txnToPost.txnAgeDays),
+                                description: simpleFaker.string.sample(100),
+                                fromAmount: isFrom ? txnToPost.fromAmount : undefined, 
+                                fromContainerId: isFrom ? txnToPost.conId : undefined,
+                                fromCurrencyId: isFrom ? txnToPost.currId : undefined,
+                                toAmount: isTo ? txnToPost.toAmount : undefined, 
+                                toContainerId: isTo ? txnToPost.conId : undefined,
+                                toCurrencyId: isTo ? txnToPost.currId : undefined,
+                                typeId: choice(txnTypes).txnId
+                            },
+                            serverURL: serverURL, token: firstUserObj.token, assertBody: true, expectedCode: 200
+                        });   
+                    }
+    
+                    const userBalances = await HookShortcuts.getUserBalanceHistory({ serverURL: serverURL, token: firstUserObj.token, assertBody: true, expectedCode: 200 });
+                    const expectedJSON = 
+                    {
+                        "map": 
+                        {
+                            [transformOffsetDate(90)]: { [baseCurrency.currencyId]: "100.0001" },
+                            [transformOffsetDate(50)]: { [baseCurrency.currencyId]: "100.0001" },
+                            [transformOffsetDate(18)]: 
+                            { 
+                                [baseCurrency.currencyId]: "100.0001",
+                                [thirdCurrency.currencyId]: "-0.0001"
+                            },
+                            [transformOffsetDate(6.9)]: 
+                            { 
+                                [baseCurrency.currencyId]: "100.0001",
+                                [thirdCurrency.currencyId]: "12709.9999"
+                            },
+                            [transformOffsetDate(6.7)]: 
+                            { 
+                                [baseCurrency.currencyId]: "-1719.9999",
+                                [thirdCurrency.currencyId]: "12709.9999"
+                            },
+                            [transformOffsetDate(1.5)]: 
+                            { 
+                                [baseCurrency.currencyId]: "-1719.9999",
+                                [thirdCurrency.currencyId]: "12709.9999",
+                                [secondCurrency.currencyId]: "78777",
+                            },
+                            [transformOffsetDate(0.3)]: 
+                            { 
+                                [baseCurrency.currencyId]: "-3632.2999",
+                                [thirdCurrency.currencyId]: "12709.9999",
+                                [secondCurrency.currencyId]: "78777",
+                            },
+                            [transformOffsetDate(0.1)]: 
+                            { 
+                                [baseCurrency.currencyId]: "-3632.2999",
+                                [thirdCurrency.currencyId]: "12709.9999",
+                                [secondCurrency.currencyId]: "151312",
+                            },
+                            [transformOffsetDate(0)]: 
+                            { 
+                                [baseCurrency.currencyId]: "-3632.2999",
+                                [thirdCurrency.currencyId]: "3672.9999",
+                                [secondCurrency.currencyId]: "151312",
+                            }
+                        }
+                    } satisfies GetUserBalanceHistoryAPI.ResponseDTO;
+
+                    assertJSONEqual(userBalances.res.parsedBody, expectedJSON);
+                })
+            });
+        });
     });
 }
 

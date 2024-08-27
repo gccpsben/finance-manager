@@ -37,7 +37,8 @@ export class UnitTestEndpoints
     };
     public static calculationsEndpoints = 
     {
-        "expensesAndIncomes": `/api/v1/calculations/expensesAndIncomes`
+        "expensesAndIncomes": `/api/v1/calculations/expensesAndIncomes`,
+        "balanceHistory":  `/api/v1/calculations/balanceHistory`
     };
     public static currenciesEndpoints = 
     {
