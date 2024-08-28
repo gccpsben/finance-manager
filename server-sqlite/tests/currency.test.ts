@@ -170,13 +170,13 @@ async function getCurrencyById(token:string, id: string, date?: number|undefined
 
 export default async function(this: Context)
 {
-    await this.describe("Currencies", async function()
+    await this.module("Currencies", async function()
     {
-        await this.describe(UnitTestEndpoints.currenciesEndpoints['get'], async function()
+        await this.module(UnitTestEndpoints.currenciesEndpoints['get'], async function()
         {
-            await this.describe(`post`, async function()
+            await this.module(`post`, async function()
             {
-                await this.describe(`Base Currencies`, async function()
+                await this.module(`Base Currencies`, async function()
                 {
                     await resetDatabase();
                     const testUsersCreds: TestUserDict = { "user1" : { username: "user1", password: "user1password" } };
@@ -279,7 +279,7 @@ export default async function(this: Context)
                     });
                 });
 
-                await this.describe(`Regular Currencies`, async function()
+                await this.module(`Regular Currencies`, async function()
                 {
                     await resetDatabase();
                     const testUsersCreds = await HookShortcuts.registerRandMockUsers(serverURL, 1);
@@ -392,13 +392,13 @@ export default async function(this: Context)
                 });
             });
 
-            await this.describe(`get`, async function()
+            await this.module(`get`, async function()
             {
                 const testDateTimestamp = Date.now();
 
-                await this.describe(`Currencies Latest Rates Correctness`, async function()
+                await this.module(`Currencies Latest Rates Correctness`, async function()
                 {
-                    await this.describe(`Without Rates Datum`, async function()
+                    await this.module(`Without Rates Datum`, async function()
                     {
                         await resetDatabase();
                         const testUsersCreds = await HookShortcuts.registerRandMockUsers(serverURL, 1);
@@ -455,7 +455,7 @@ export default async function(this: Context)
                         });
                     });
 
-                    await this.describe(`With Rates Datum`, async function()
+                    await this.module(`With Rates Datum`, async function()
                     {
                         await resetDatabase();
                         const testUsersCreds = await HookShortcuts.registerRandMockUsers(serverURL, 1);
@@ -589,7 +589,7 @@ export default async function(this: Context)
                     });
                 });
 
-                await this.describe(`Currencies Rate History Correctness`, async function()
+                await this.module(`Currencies Rate History Correctness`, async function()
                 {
                     await resetDatabase();
                     const offsetDate = (d: number) => testDateTimestamp + d * 100 * 1000; // convert the mock date in test case to real date

@@ -77,11 +77,11 @@ export default async function(this: Context)
     const testDateTimestamp = Date.now();
     const offsetDate = (d: number) => testDateTimestamp + d * 100 * 1000; // convert the mock date in test case to real date
 
-    await this.describe("Containers", async function()
+    await this.module("Containers", async function()
     {
-        await this.describe(UnitTestEndpoints.containersEndpoints['get'], async function()
+        await this.module(UnitTestEndpoints.containersEndpoints['get'], async function()
         {
-            await this.describe(`post`, async function()
+            await this.module(`post`, async function()
             {
                 await resetDatabase();
                 await this.test(`Forbid creating containers without / wrong tokens`, async function()
@@ -129,7 +129,7 @@ export default async function(this: Context)
                 });
             });
 
-            await this.describe(`get`, async function()
+            await this.module(`get`, async function()
             {
                 await resetDatabase();
 
@@ -148,7 +148,7 @@ export default async function(this: Context)
                     });
                 });
 
-                await this.describe(`Container balances and values correctness`, async function()
+                await this.module(`Container balances and values correctness`, async function()
                 {
                     type txnDatum = 
                     {

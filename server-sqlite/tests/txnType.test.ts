@@ -38,9 +38,9 @@ export default async function(this: Context)
 {
     await resetDatabase();
 
-    await this.describe("Txn Types", async function()
+    await this.module("Txn Types", async function()
     {
-        await this.describe(UnitTestEndpoints.transactionTypesEndpoints['get'], async function()
+        await this.module(UnitTestEndpoints.transactionTypesEndpoints['get'], async function()
         {
             const userCreds = await HookShortcuts.registerRandMockUsers(serverURL, 1);
             const { username:firstUserName, token:firstUserToken } = Object.values(userCreds)[0];

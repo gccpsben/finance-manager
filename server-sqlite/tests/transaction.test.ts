@@ -55,9 +55,9 @@ function getRandTxnBaseBody()
 
 export default async function(this: Context)
 { 
-    await this.describe("Transactions", async function()
+    await this.module("Transactions", async function()
     {
-        await this.describe(UnitTestEndpoints.transactionsEndpoints['get'], async function()
+        await this.module(UnitTestEndpoints.transactionsEndpoints['get'], async function()
         {
             await resetDatabase();
         

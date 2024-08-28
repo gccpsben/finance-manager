@@ -47,15 +47,16 @@ export class Context
         return { 
             describe: this.describe.bind(this), 
             test: this.test.bind(this) ,
-            log: this.log.bind(this)
+            log: this.log.bind(this),
+            module: this.module.bind(this)
         } as {
             "describe": (name: string, fn: (this: Context) => Promise<void> ) => Promise<void>
         };
     }
 
-    public async describe(name: string, fn: (this: Context) => Promise<void>)
+    private async propagate(name: string, fn: (this: Context) => Promise<void>, colorFunc: (arg: any) => string)
     {
-        this.log(chalk.cyan(`${name}:`));
+        this.log(colorFunc(`${name}:`));
         this.level++;
         try 
         {
@@ -72,6 +73,18 @@ export class Context
         }
         catch(e) { this.errors.push({name: name, err: e}); }
         this.level--;
+    }
+
+    /** A renamed method of `describe`. The convention is to use this when the test is self-containing. */
+    public async module(name: string, fn: (this: Context) => Promise<void>)
+    {
+        return await this.propagate(`${name}`, fn, chalk.yellowBright.bold);
+    }
+
+    /** A section of the unit test containing multiple tests. The convention is to use this when the test is NOT self-containing. */
+    public async describe(name: string, fn: (this: Context) => Promise<void>)
+    {
+        return await this.propagate(`${name}`, fn, chalk.cyan);
     }
 
     public async test(name: string, fn: (this: Context) => Promise<void>, config = undefined as undefined | TestConfig)

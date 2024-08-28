@@ -40,11 +40,11 @@ export namespace PostLoginAPIClass
 
 export default async function(this: Context)
 {
-    await this.describe("Auth", async function()
+    await this.module("Auth", async function()
     {
-        await this.describe(UnitTestEndpoints.loginEndpoints['post'], async function()
+        await this.module(UnitTestEndpoints.loginEndpoints['post'], async function()
         {
-            await this.describe(`post`, async function()
+            await this.module(`post`, async function()
             {
                 const correctUsername = "User 1";
                 const correctPassword = "password123";

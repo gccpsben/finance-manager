@@ -42,16 +42,17 @@ function choice<T> (list: T[]) { return list[Math.floor((Math.random()*list.leng
 
 export default async function(this: Context)
 {
-    await resetDatabase();
     Decimal.set({ precision: 32 });
 
     const testDate = Date.now();
     const transformOffsetDate = (x: number) => testDate - x * 8.64e+7;
 
-    await this.describe("Calculations", async function()
+    await this.module("Calculations", async function()
     {
-        await this.describe(UnitTestEndpoints.calculationsEndpoints.expensesAndIncomes, async function()
+        await this.module(UnitTestEndpoints.calculationsEndpoints.expensesAndIncomes, async function()
         {
+            await resetDatabase();
+            
             await this.describe(`get`, async function()
             {
                 await this.test(`Test for Correctness`, async function()
@@ -154,7 +155,7 @@ export default async function(this: Context)
             })
         });
 
-        await this.describe(UnitTestEndpoints.calculationsEndpoints.balanceHistory, async function () 
+        await this.module(UnitTestEndpoints.calculationsEndpoints.balanceHistory, async function () 
         {
             await resetDatabase();
             
