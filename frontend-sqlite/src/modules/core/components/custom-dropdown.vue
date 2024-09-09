@@ -29,7 +29,7 @@
             </div>
             <slot v-if="filteredOptions.length === 0" name="noItemRow">
                 <div class="dropdownItemRow">
-                    {{ searchText.get()?.trim() ? 'No items matched' : 'No items' }}
+                    <div>{{ searchText.get()?.trim() ? 'No items matched' : 'No items' }}</div>
                 </div>
             </slot>
         </div>
