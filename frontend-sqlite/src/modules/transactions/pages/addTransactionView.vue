@@ -25,7 +25,7 @@
         </div>
 
         <div id="containersSelectDiv" v-if="!isFormUploading && !isLoading">
-            
+
             <grid-shortcut id="pendingSelector" columns="1fr 1fr" class="fullWidth field">
                 <div>
                     <div :class="{'selected': !isPending}" class="immediate" @click="isPending=false">Immediate</div>
@@ -44,81 +44,48 @@
 
             <text-field class="fullSize" field-name="Transaction Title" v-model:text="txnTitle"/>
 
-            <grid-shortcut columns="100px 1fr" class="fullWidth field">
-                <div class="middleLeft">Type:</div>
-                <custom-dropdown :items="txnTypesStore.txnTypes.lastSuccessfulData?.rangeItems ?? []" v-model:currentItem="selectedTxnType">
-                    <template #itemToText="props">
-                        <div class="middleLeft" :class="{'grayText': !props.item?.name, 'dropdownRow': !props.isSelector }">
-                            {{ props.item?.name ?? 'No Type Selected' }}
-                        </div>
-                    </template>
-                </custom-dropdown>
-            </grid-shortcut>
+            <custom-dropdown :field-name="'Type'" :options="txnTypesOptions" v-model:selected-option="selectedTxnTypeId" />
             
-            <grid-shortcut v-if="selectedMode == 'transfer' || selectedMode == 'spending'" columns="100px 1fr" class="fullWidth field">
-                <div class="middleLeft">From:</div>
-                <custom-dropdown :items="containersStore.containers.lastSuccessfulData?.rangeItems ?? []" v-model:currentItem="selectedFromContainer">
-                    <template #itemToText="props">
-                        <grid-shortcut :class="{'dropdownRow': !props.isSelector}" columns="1fr auto" class="fullWidth">
-                            <div class="middleLeft" :class="{'grayText': !props.item?.name }">{{ props.item?.name ?? '/' }}</div>
-                            <!-- <div class="middleRight containerValueText">{{ props.item?.toFixed(1) }} {{ props.item ? 'HKD' : '' }}</div> -->
-                        </grid-shortcut>
-                    </template>
-                </custom-dropdown>
+            <custom-dropdown v-if="selectedMode == 'transfer' || selectedMode == 'spending'"
+                             :field-name="'From'" 
+                             :options="containersOptions" 
+                             v-model:selected-option="selectedFromContainerId" />
+
+            <custom-dropdown v-if="selectedMode == 'transfer' || selectedMode == 'earning'"
+                             :field-name="'To'" 
+                             :options="containersOptions" 
+                             v-model:selected-option="selectedToContainerId" />
+
+            <grid-shortcut v-if="selectedFromContainerId" columns="1fr 150px" class="fullWidth field">
+                <text-field field-name="Spending" class="noSpin" :input-type="'number'" :text="fromAmount.toString()" @update:text="fromAmount = parseFloat($event)" v-number-only/>
+                <custom-dropdown :field-name="'Currency'" :options="currenciesOptions" v-model:selected-option="selectedSpendingCurrencyId" />
             </grid-shortcut>
 
-            <grid-shortcut v-if="selectedMode == 'transfer' || selectedMode == 'earning'" columns="100px 1fr" class="fullWidth field">
-                <div class="middleLeft">To:</div>
-                <custom-dropdown :items="containersStore.containers.lastSuccessfulData?.rangeItems ?? []" v-model:currentItem="selectedToContainer">
-                    <template #itemToText="props">
-                        <grid-shortcut :class="{'dropdownRow': !props.isSelector}" columns="1fr 1fr" class="fullWidth">
-                            <div class="middleLeft" :class="{'grayText': !props.item?.name }">{{ props.item?.name ?? '/' }}</div>
-                            <!-- <div class="middleRight containerValueText">{{ props.item?.value.toFixed(1) }} {{ props.item ? 'HKD' : '' }}</div> -->
-                        </grid-shortcut>
-                    </template>
-                </custom-dropdown>
-            </grid-shortcut>
-
-            <grid-shortcut id="spendingFieldContainer" v-if="selectedFromContainer" class="fullWidth field">
-                <div class="middleLeft">Spending:</div>
-                <input class="noSpin" inputmode="decimal" type="number" v-model="fromAmount" v-number-only/>
-                <custom-dropdown :items="currenciesStore.currencies.lastSuccessfulData?.rangeItems" v-model:currentItem="selectedSpendingCurrency">
-                    <template #itemToText="props">
-                        <div :class="{'dropdownRow': !props.isSelector}" class="xLeft yCenter">
-                            {{ props.item?.ticker ?? '-' }}
-                        </div>
-                    </template>
-                </custom-dropdown>
-            </grid-shortcut>
-
-            <grid-shortcut v-if="selectedToContainer" columns="100px 1fr 100px" class="fullWidth field">
-                <div class="middleLeft">Receiving:</div>
-                <input class="noSpin" inputmode="decimal" type="number" v-model="toAmount" v-number-only/>
-                <custom-dropdown :items="currenciesStore.currencies.lastSuccessfulData?.rangeItems" v-model:currentItem="selectedReceivingCurrency">
-                    <template #itemToText="props">
-                        <div :class="{'dropdownRow': !props.isSelector}" class="xLeft yCenter">
-                            {{ props.item?.ticker ?? '-' }}
-                        </div>
-                    </template>
-                </custom-dropdown>
+            <grid-shortcut v-if="selectedToContainerId" columns="1fr 150px" class="fullWidth field">
+                <text-field field-name="Receiving" class="noSpin" :input-type="'number'" :text="toAmount.toString()" @update:text="toAmount = parseFloat($event)" v-number-only/>
+                <custom-dropdown :field-name="'Currency'" :options="currenciesOptions" v-model:selected-option="selectedReceivingCurrencyId" />
             </grid-shortcut>
 
             <grid-shortcut v-if="shouldSummaryBoxVisible" id="summaryBox" columns="1fr 50px 1fr" class="fullWidth">
                 <div class="middleLeft fullWidth">
-                    <div v-if="fromAmount != undefined && selectedSpendingCurrency && selectedFromContainer">
-                        <div class="containerValueText" style="text-align: start;">{{ selectedFromContainer.name }}</div>
-                        <div style="text-align: start;">{{ fromAmount }} {{ selectedSpendingCurrency.ticker }}</div>
-                        <div class="containerValueText" style="text-align: start; margin-top:5px;">{{ fromAmount * decimalJSToNumber(selectedSpendingCurrency.rateToBase) }} {{ currenciesStore.getBaseCurrencySymbol() }}</div>
+                    <div v-if="fromAmount != undefined && selectedSpendingCurrencyId && selectedFromContainerId">
+                        <div class="containerValueText" style="text-align: start;">{{ containersStore.findContainerById(selectedFromContainerId)?.name ?? '-' }}</div>
+                        <div style="text-align: start;">{{ fromAmount }} {{ currenciesStore.findCurrencyByPubID(selectedSpendingCurrencyId)?.ticker ?? '-' }}</div>
+                        <div class="containerValueText" style="text-align: start; margin-top:5px;">
+                            {{ fromAmount * decimalJSToNumber(currenciesStore.findCurrencyByPubID(selectedSpendingCurrencyId)?.rateToBase ?? '0') }} {{ currenciesStore.getBaseCurrencySymbol() }}
+                        </div>
                     </div>
                 </div>
                 <div class="center">
                     <fa-icon style="font-size:12px; color:white;" icon="fa-solid fa-chevron-right"></fa-icon>
                 </div>
                 <div class="middleRight fullWidth">
-                    <div v-if="toAmount != undefined && selectedReceivingCurrency && selectedToContainer" >
-                        <div class="containerValueText" style="text-align: end;">{{ selectedToContainer.name }}</div>
-                        <div style="text-align: end;">{{ toAmount }} {{ selectedReceivingCurrency.ticker }}</div>
-                        <div class="containerValueText" style="text-align: end; margin-top:5px;">{{ toAmount * decimalJSToNumber(selectedReceivingCurrency.rateToBase) }} {{ currenciesStore.getBaseCurrencySymbol() }}</div>
+                    <div v-if="toAmount != undefined && selectedReceivingCurrencyId && selectedToContainerId" >
+                        <div class="containerValueText" style="text-align: end;">{{ containersStore.findContainerById(selectedToContainerId)?.name ?? '-' }}</div>
+                        <div style="text-align: end;">{{ toAmount }} {{  currenciesStore.findCurrencyByPubID(selectedReceivingCurrencyId)?.ticker ?? '-' }}</div>
+                        <div class="containerValueText" style="text-align: end; margin-top:5px;">
+                            {{ toAmount * decimalJSToNumber(currenciesStore.findCurrencyByPubID(selectedReceivingCurrencyId)?.rateToBase ?? '0') }} {{ currenciesStore.getBaseCurrencySymbol() }}
+                        </div>
                     </div>
                 </div>
             </grid-shortcut>
@@ -131,7 +98,6 @@
                     </div>
                 </template>
             </text-field>
-
 
             <grid-shortcut columns="1fr auto auto" style="gap: 5px;">
                 <div class="middleLeft"><button @click="reset">Reset</button></div>
@@ -152,18 +118,16 @@ import { useCurrenciesStore } from '../../currencies/stores/useCurrenciesStore';
 import { useContainersStore } from '../../containers/stores/useContainersStore';
 import { useTxnTypesStore } from '../../txnTypes/stores/useTxnTypesStore';
 import { useMeta } from 'vue-meta';
-import type { ContainerDTO } from "../../../../../api-types/container";
-import type { CurrencyDTO } from "../../../../../api-types/currencies";
-import type { TxnTypesDTO } from "@/../../api-types/txnType";
 import type { PostTxnAPI } from "@/../../api-types/txn";
 import vNumberOnly from '@/modules/core/directives/vNumberOnly';
 import { VProgressCircular } from "vuetify/components";
 import textField from '@/modules/core/components/textField.vue';
+import customDropdown, { type DropdownItem } from "@/modules/core/components/custom-dropdown.vue";
 
 export default
 {
     directives: { "number-only": vNumberOnly },
-    components: { VProgressCircular, "text-field": textField },
+    components: { VProgressCircular, "text-field": textField, customDropdown },
     setup () 
     {
         useMeta(
@@ -195,11 +159,11 @@ export default
     {
         return { 
             isLoading: true,
-            selectedFromContainer: undefined as undefined | ContainerDTO,
-            selectedToContainer: undefined as undefined | ContainerDTO,
-            selectedSpendingCurrency: undefined as undefined | CurrencyDTO,
-            selectedReceivingCurrency: undefined as undefined | CurrencyDTO,
-            selectedTxnType: undefined as undefined | TxnTypesDTO,
+            selectedFromContainerId: undefined as undefined | string,
+            selectedToContainerId: undefined as undefined | string,
+            selectedSpendingCurrencyId: undefined as undefined | string,
+            selectedReceivingCurrencyId: undefined as undefined | string,
+            selectedTxnTypeId: undefined as undefined | string,
             fromAmount: 0 as number,
             toAmount: 0 as number,
             txnTitle: '' as string,
@@ -213,10 +177,10 @@ export default
     {
         reset()
         {
-            this.selectedFromContainer = undefined;
-            this.selectedToContainer = undefined;
-            this.selectedSpendingCurrency = undefined;
-            this.selectedReceivingCurrency = undefined;
+            this.selectedFromContainerId = undefined;
+            this.selectedToContainerId = undefined;
+            this.selectedSpendingCurrencyId = undefined;
+            this.selectedReceivingCurrencyId = undefined;
             this.fromAmount = 0;
             this.toAmount = 0;
         },
@@ -229,7 +193,7 @@ export default
                 let body: Partial<PostTxnAPI.RequestDTO> = 
                 {
                     "title": this.txnTitle,
-                    "typeId": this.selectedTxnType!.id,
+                    "typeId": this.selectedTxnTypeId,
                     "creationDate": Date.now(),
                     "description": "testing desc"
                 };
@@ -237,17 +201,17 @@ export default
                 if (this.enteredDate != undefined) 
                     body['creationDate'] = this.enteredDate.getTime();
 
-                if (this.selectedFromContainer)
+                if (this.selectedFromContainerId)
                 {
                     body.fromAmount = this.fromAmount.toString();
-                    body.fromContainerId = this.selectedFromContainer.id;
-                    body.fromCurrencyId = this.selectedSpendingCurrency!.id;
+                    body.fromContainerId = this.selectedFromContainerId;
+                    body.fromCurrencyId = this.selectedSpendingCurrencyId;
                 }
-                if (this.selectedToContainer)
+                if (this.selectedToContainerId)
                 {
                     body.toAmount = this.toAmount.toString();
-                    body.toContainerId = this.selectedToContainer.id;
-                    body.toCurrencyId = this.selectedReceivingCurrency!.id;
+                    body.toContainerId = this.selectedToContainerId;
+                    body.toCurrencyId = this.selectedReceivingCurrencyId;
                 }
                 
                 this.isFormUploading = true;
@@ -279,18 +243,18 @@ export default
         shouldSummaryBoxVisible(): boolean
         {
             if (!this.isAmountsValid) return false;
-            if (this.selectedMode == "earning") return this.selectedReceivingCurrency !== undefined && this.selectedToContainer !== undefined;
-            else if (this.selectedMode == "spending") return this.selectedSpendingCurrency !== undefined && this.selectedFromContainer !== undefined;
+            if (this.selectedMode == "earning") return this.selectedReceivingCurrencyId !== undefined && this.selectedToContainerId !== undefined;
+            else if (this.selectedMode == "spending") return this.selectedSpendingCurrencyId !== undefined && this.selectedFromContainerId !== undefined;
             else if (this.selectedMode == "transfer") 
-                return this.selectedSpendingCurrency !== undefined && 
-                this.selectedReceivingCurrency !== undefined && 
-                this.selectedFromContainer !== undefined && 
-                this.selectedToContainer !== undefined;
+                return this.selectedSpendingCurrencyId !== undefined && 
+                this.selectedReceivingCurrencyId !== undefined && 
+                this.selectedFromContainerId !== undefined && 
+                this.selectedToContainerId !== undefined;
             else return false;
         },
         isFormValid(): boolean
         {
-            return this.shouldSummaryBoxVisible && this.isAmountsValid && this.txnTitle?.length > 0 && this.selectedTxnType !== undefined
+            return this.shouldSummaryBoxVisible && this.isAmountsValid && this.txnTitle?.length > 0 && this.selectedTxnTypeId !== undefined
             && (this.txnDateInput == '' || this.enteredDate != undefined);
         },
         enteredDate(): Date|undefined
@@ -321,6 +285,33 @@ export default
         {
             if (this.txnDateInput.trim() === '') return true;
             return this.enteredDate !== undefined;
+        },
+        currenciesOptions(): DropdownItem[]
+        {
+            return this.currenciesStore.currencies.lastSuccessfulData?.rangeItems
+            .map(item => ({
+                id: item.id,
+                label: item.name,
+                searchTerms: `${item.name} ${item.id} ${item.owner} ${item.ticker}`
+            })) ?? [];
+        },
+        containersOptions(): DropdownItem[]
+        {
+            return this.containersStore.containers.lastSuccessfulData?.rangeItems
+            .map(item => ({
+                id: item.id,
+                label: item.name,
+                searchTerms: `${item.name} ${item.id} ${item.owner}`
+            })) ?? [];
+        },
+        txnTypesOptions(): DropdownItem[]
+        {
+            return this.txnTypesStore.txnTypes.lastSuccessfulData?.rangeItems
+            .map(item => ({
+                id: item.id,
+                label: item.name,
+                searchTerms: `${item.name} ${item.id} ${item.owner}`
+            })) ?? [];
         }
     },
     watch:
@@ -341,18 +332,13 @@ export default
         .size(500px, auto); 
         display:grid;
         grid-template-columns: 1fr;
-        grid-auto-rows: 45px;
+        grid-auto-rows: minmax(45px, auto);
         grid-auto-flow: row;
         gap: 10px;
     }
 
     background: @background; .fullSize;
     color:white;
-
-    #spendingFieldContainer
-    {
-        grid-template-columns: 100px 1fr 100px;
-    }
 
     #modeSelector
     {
