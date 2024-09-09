@@ -453,7 +453,6 @@ div.grayText { opacity: 0.2; }
     #containersSelectDiv
     {
         width:90vw !important;
-        overflow-x: hidden;
     }
 }
 

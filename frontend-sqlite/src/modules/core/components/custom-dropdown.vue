@@ -1,5 +1,5 @@
 <template>
-    <div class="dropdownRoot" style="position: relative;" :class="{'expanded': isInputFocused}">
+    <div ref="dropdownRoot" class="dropdownRoot" style="position: relative;" :class="{'expanded': isInputFocused}">
         <div class="dropdownFieldContainer fullSize">
                 <text-field class="fullSize dropdownField" 
                         :field-name="fieldName"
@@ -72,7 +72,7 @@
     clip-path: inset(0 0 100% 0);
     transition: all 0.3s ease;
     overflow-y: scroll;
-    max-height:500px;
+    max-height:200px;
     box-shadow: 0 0 @dropdownShadowRange black;
     border: 1px solid @border;
 
@@ -101,11 +101,14 @@
 
 .dropdownField
 {
-    transition: all 0.3s ease;
+    transition: transform 0.5s ease, width 0.5s ease;
+    width: 100%;
 }
 
 @media (max-width: 500px) or (max-height: 500px)
 {
+    @expandedFieldHeight: 45px;
+
     // Styles for mobile friendly dropdown
     #dropdownPanelContainer
     {
@@ -114,6 +117,7 @@
         left:0px;
         right:0px;
         clip-path: inset(100% 0 0 0);
+        max-height: calc(100svh - @expandedFieldHeight * 2);
 
         &.expanded 
         {
@@ -132,8 +136,10 @@
         .dropdownField
         {
             position: absolute;
-            transform:translateY(-100px);
             z-index: calc(@dropdownZIndex + 2);
+            height: @expandedFieldHeight;
+            width: calc(100vw - 50px);
+            transform: v-bind(fieldTransform);
         }
 
         .mobileDropdownBackdrop
@@ -152,7 +158,7 @@
 <script lang="ts" setup>
 import textField from '@/modules/core/components/textField.vue';
 import { defineProperty } from '../utils/defineProperty';
-import { ref, computed } from 'vue';
+import { ref, computed, useTemplateRef } from 'vue';
 import faIcon from '@/modules/core/components/faIcon.vue';
 
 export type DropdownItem =
@@ -190,9 +196,23 @@ const selectedOption = defineProperty<null | undefined | string, "selectedOption
 
 const filteredOptions = computed(() => 
 {
-    let searchQuery = searchText.get()?.trim();
+    const normalizeText = (str: string) => str.trim().toLocaleLowerCase();
+
+    const searchQuery = !!searchText.get() ? normalizeText(searchText.get()!) : '';
     if (!searchQuery) return options.get();
-    else return options.get().filter(o => o.searchTerms.includes(searchQuery));
+    else return options.get().filter(o => normalizeText(o.searchTerms).includes(searchQuery));
+});
+
+const dropdownRoot = useTemplateRef('dropdownRoot');
+const fieldTransform = computed(() => 
+{
+    let yPixels = -1 * (dropdownRoot.value?.offsetTop ?? 0) + 25;
+    if (!isInputFocused.value) yPixels = 0;
+
+    let xPixels = 25 + -1 * (dropdownRoot.value?.offsetLeft ?? 0);
+    if (!isInputFocused.value) xPixels = 0;
+
+    return `translateY(${yPixels}px) translateX(${xPixels}px)`;
 });
 
 const isInputFocused = ref<boolean>(false);
