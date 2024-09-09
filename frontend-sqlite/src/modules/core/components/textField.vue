@@ -5,8 +5,16 @@
             <legend v-if="shouldTextFloat" ref="legend">{{ fieldName.get() }}</legend>
             <div ref="contentPanel" class="contentPanel fullSize">
                 <div class="contentPanelInner fullSize" v-area="'main'">
-                    <input :type="inputType.get()" ref="textFieldInput" class="textFieldInput" :value="text.get()" 
-                           @keyup="text.set(($event.target as HTMLInputElement).value!)" :placeholder="textFieldInputIsFocused ? placeholder.get() : ''"/>
+                    <input :type="inputType.get()" 
+                           ref="textFieldInput" 
+                           class="textFieldInput" 
+                           :value="text.get()" 
+                           :readonly="readonly.get()"
+                           :disabled="disabled.get()"
+                           @focus="$emit('focus')"
+                           @blur="$emit('blur')"
+                           @keyup="text.set(($event.target as HTMLInputElement).value!)" 
+                           :placeholder="textFieldInputIsFocused ? placeholder.get() : ''"/>
                     <div class="center">
                         <slot name="fieldActions"></slot>
                     </div>
@@ -33,21 +41,32 @@ const props = withDefaults(defineProps<
     fieldName: string, 
     inputType: HTMLInputType, 
     overrideThemeColor: string | undefined,
-    placeholder: string | undefined
+    placeholder: string | undefined,
+    disabled: boolean | undefined,
+    readonly: boolean | undefined
 }>(), 
 { 
     text: null, 
     fieldName: 'Placeholder here',
     inputType: 'text',
     overrideThemeColor: undefined,
-    placeholder: undefined
+    placeholder: undefined,
+    disabled: false,
+    readonly: false
 });
-const emit = defineEmits<{ (e: 'update:text', v: string): void }>();
+const emit = defineEmits<
+{ 
+    (e: 'update:text', v: string): void,
+    (e: 'focus'):void,
+    (e: 'blur'):void
+}>();
 const text = defineProperty<null | string, "text", typeof props>("text", { emitFunc: emit, props: props, withEmits: true });
 const placeholder = defineProperty<undefined | string, "placeholder", typeof props>("placeholder", { emitFunc: undefined, props: props, withEmits: false });
 const fieldName = defineProperty<string, "fieldName", typeof props>("fieldName", { emitFunc: undefined, props: props, withEmits: false });
 const inputType = defineProperty<HTMLInputType, "inputType", typeof props>("inputType", { emitFunc: undefined, props: props, withEmits: false });
 const overrideThemeColor = defineProperty<string | undefined, "overrideThemeColor", typeof props>("overrideThemeColor", { emitFunc: undefined, props: props, withEmits: false });
+const disabled = defineProperty<boolean | undefined, "disabled", typeof props>("disabled", { emitFunc: undefined, props: props, withEmits: false });
+const readonly = defineProperty<boolean | undefined, "readonly", typeof props>("readonly", { emitFunc: undefined, props: props, withEmits: false });
 
 const textFieldInput = ref(null);
 const placeholderText = ref(null);
@@ -163,6 +182,7 @@ function parseColor(input:string)
             appearance: none;
             padding-left: @textFieldInputLeftPadding;
             padding-right: @textFieldInputRightPadding;
+            &:read-only { opacity: 0.4; }
         }
 
         .placeholderText
