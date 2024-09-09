@@ -1,17 +1,20 @@
 <template>
-    <div style="position: relative;">
-        <text-field class="fullSize" 
-                    :field-name="fieldName"
-                    :text="isInputFocused ? (searchText.get() === null ? '' : searchText.get()) : (options.get().find(o => o.id === selectedOption.get())?.label) ?? ''"
-                    @update:text="searchText.set($event)"
-                    @blur="onInputBlur()"
-                    @focus="isInputFocused = true">
-            <template #fieldActions>
-                <div id="dropdownIconContainer" :class="{'expanded': isInputFocused}">
-                    <fa-icon icon="fa-solid fa-chevron-down" />
-                </div>
-            </template>
-        </text-field>
+    <div class="dropdownRoot" style="position: relative;" :class="{'expanded': isInputFocused}">
+        <div class="dropdownFieldContainer fullSize">
+                <text-field class="fullSize dropdownField" 
+                        :field-name="fieldName"
+                        :text="isInputFocused ? (searchText.get() === null ? '' : searchText.get()) : (options.get().find(o => o.id === selectedOption.get())?.label) ?? ''"
+                        @update:text="searchText.set($event)"
+                        @blur="onInputBlur()"
+                        @focus="isInputFocused = true">
+                <template #fieldActions>
+                    <div id="dropdownIconContainer" :class="{'expanded': isInputFocused}">
+                        <fa-icon icon="fa-solid fa-chevron-down" />
+                    </div>
+                </template>
+            </text-field>
+        </div>
+
         <div id="dropdownPanelContainer" :class="{'expanded': isInputFocused}">
             <div v-for="option of filteredOptions">
                 <slot name="itemRow" :option="option" :selectedOptionId="selectedOption.get()">
@@ -30,10 +33,11 @@
                 </div>
             </slot>
         </div>
+        <div class="mobileDropdownBackdrop"></div>
     </div>
 </template>
 
-<style lang="less" scope>
+<style lang="less" scoped>
 @dropdownIconColor: white;
 @dropdownIconSize: 12px;
 @dropdownItemRowPadding: 6px 0px 6px 10px;
@@ -41,6 +45,8 @@
 @dropdownRowHighlightBackground: #202020;
 
 @import '@/modules/core/stylesheets/globalStyle.less';
+
+@dropdownZIndex: 999;
 
 #dropdownIconContainer
 {
@@ -59,7 +65,7 @@
 
 #dropdownPanelContainer
 {
-    z-index:999;
+    z-index: calc(@dropdownZIndex + 1) ;
     opacity: 0;
     position: absolute;
     .fullWidth;
@@ -92,6 +98,55 @@
         &:hover { background: @dropdownRowHighlightBackground; }
     }
 }
+
+.dropdownField
+{
+    transition: all 0.3s ease;
+}
+
+@media (max-width: 500px) or (max-height: 500px)
+{
+    // Styles for mobile friendly dropdown
+    #dropdownPanelContainer
+    {
+        position: fixed;
+        bottom:0px;
+        left:0px;
+        right:0px;
+        clip-path: inset(100% 0 0 0);
+
+        &.expanded 
+        {
+            clip-path: inset(calc(@dropdownShadowRange * -1) calc(@dropdownShadowRange * -1) 0 calc(@dropdownShadowRange * -1));
+        }
+    }
+
+    .mobileDropdownBackdrop
+    {
+        background: transparent;      
+        transition: all 0.3s ease;
+    }
+
+    .expanded
+    {
+        .dropdownField
+        {
+            position: absolute;
+            transform:translateY(-100px);
+            z-index: calc(@dropdownZIndex + 2);
+        }
+
+        .mobileDropdownBackdrop
+        {
+            background: #000000AA;
+            position: fixed;
+            .fullSize;
+            top:0; right:0; left:0; bottom:0;
+            z-index: @dropdownZIndex;
+        }
+    }
+}
+
 </style>
 
 <script lang="ts" setup>
