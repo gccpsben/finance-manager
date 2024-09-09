@@ -101,7 +101,7 @@
 
 .dropdownField
 {
-    transition: transform 0.5s ease, width 0.5s ease;
+    transition: transform 0.3s ease, width 0.3s ease;
     width: 100%;
 }
 
