@@ -301,7 +301,8 @@ export default
             .map(item => ({
                 id: item.id,
                 label: item.name,
-                searchTerms: `${item.name} ${item.id} ${item.owner}`
+                searchTerms: `${item.name} ${item.id} ${item.owner}`,
+                helperText: `${item.value} ${this.currenciesStore.getBaseCurrencySymbol()}`
             })) ?? [];
         },
         txnTypesOptions(): DropdownItem[]
@@ -334,7 +335,7 @@ export default
         grid-template-columns: 1fr;
         grid-auto-rows: minmax(45px, auto);
         grid-auto-flow: row;
-        gap: 10px;
+        gap: 15px;
     }
 
     background: @background; .fullSize;

@@ -17,7 +17,8 @@
                 <slot name="itemRow" :option="option" :selectedOptionId="selectedOption.get()">
                     <div @click="selectedOption.set(option.id)" class="dropdownItemRow">
                         <div> {{ option.label }} </div>
-                        <div v-if="option.id === selectedOption.get()">
+                        <div class="helperText"> {{ option.helperText }} </div>
+                        <div v-if="option.id === selectedOption.get()" class="center">
                             <fa-icon icon="fa-solid fa-check"/>
                         </div>
                     </div>
@@ -35,7 +36,7 @@
 <style lang="less" scope>
 @dropdownIconColor: white;
 @dropdownIconSize: 12px;
-@dropdownInputPadding: 3px 10px 3px 10px;
+@dropdownItemRowPadding: 6px 0px 6px 10px;
 @dropdownShadowRange: 15px;
 @dropdownRowHighlightBackground: #202020;
 
@@ -68,7 +69,6 @@
     max-height:500px;
     box-shadow: 0 0 @dropdownShadowRange black;
     border: 1px solid @border;
-    padding-top: 5px;
 
     &.expanded 
     {
@@ -78,12 +78,16 @@
 
     .dropdownItemRow
     {
-        padding: @dropdownInputPadding;
+        *:not(.fa-solid) { font-family: @font; }
+        padding: @dropdownItemRowPadding;
         background: #101010;
         cursor: pointer;
         display: grid;
-        grid-template-columns: 1fr auto;
+        grid-template-columns: 1fr auto 35px;
         grid-template-rows: 1fr;
+        gap:5px;
+
+        .helperText { color: gray; }
 
         &:hover { background: @dropdownRowHighlightBackground; }
     }
@@ -101,6 +105,7 @@ export type DropdownItem =
     id: string,
     searchTerms: string,
     label: string,
+    helperText?: string | undefined
 }
 
 const props = withDefaults(defineProps<
