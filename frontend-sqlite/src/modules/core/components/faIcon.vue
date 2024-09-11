@@ -4,14 +4,6 @@
     </div>
 </template>
 
-<script>
-export default 
-{
-    props: ['icon'],
-    data() { return { }; },
-}
+<script lang="ts" setup>
+defineProps<{icon: string}>();
 </script>
-
-<style lang="less" scoped>
-
-</style>
