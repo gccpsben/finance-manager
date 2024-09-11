@@ -29,7 +29,7 @@ export function defineProperty<T, PropName extends string, Props extends { [K in
     return {
         checkIsControlled: checkIsControlled,
         propEmit: propEmit,
-        get: () => { return checkIsControlled() ? config.props[propName] : uncontrolledRef.value },
+        get: () => { return checkIsControlled() ? config.props[propName] as T : uncontrolledRef.value as T },
         set: (val: T) => 
         {
             if (checkIsControlled()) propEmit(val);

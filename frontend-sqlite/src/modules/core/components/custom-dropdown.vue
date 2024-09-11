@@ -172,13 +172,13 @@ export type DropdownItem =
 const props = withDefaults(defineProps<
 { 
     options: DropdownItem[],
-    selectedOption: null | undefined | string,
-    fieldName: string, 
-    overrideThemeColor: string | undefined,
-    placeholder: string | undefined,
-    disabled: boolean | undefined,
-    readonly: boolean | undefined,
-    searchText: string | null
+    selectedOption?: null | undefined | string,
+    fieldName?: string, 
+    overrideThemeColor?: string | undefined,
+    placeholder?: string | undefined,
+    disabled?: boolean | undefined,
+    readonly?: boolean | undefined,
+    searchText?: string | null
 }>(), 
 { 
     fieldName: 'Placeholder here',

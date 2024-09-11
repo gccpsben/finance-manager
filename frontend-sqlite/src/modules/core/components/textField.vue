@@ -37,13 +37,13 @@ import tinycolor from "tinycolor2";
 
 const props = withDefaults(defineProps<
 { 
-    text: string|null, 
-    fieldName: string, 
-    inputType: HTMLInputType, 
-    overrideThemeColor: string | undefined,
-    placeholder: string | undefined,
-    disabled: boolean | undefined,
-    readonly: boolean | undefined
+    text?: string|null, 
+    fieldName?: string, 
+    inputType?: HTMLInputType, 
+    overrideThemeColor?: string | undefined,
+    placeholder?: string | undefined,
+    disabled?: boolean | undefined,
+    readonly?: boolean | undefined
 }>(), 
 { 
     text: null, 
