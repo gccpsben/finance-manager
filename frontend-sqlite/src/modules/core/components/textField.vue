@@ -54,8 +54,7 @@ const props = withDefaults(defineProps<
     disabled: false,
     readonly: false
 });
-const emit = defineEmits<
-{ 
+const emit = defineEmits<{
     (e: 'update:text', v: string): void,
     (e: 'focus'):void,
     (e: 'blur'):void
@@ -113,15 +112,6 @@ const shouldHighlight = computed(() =>
     if (textFieldInputIsFocused.value) return true;
     return false;
 });
-
-function parseColor(input:string) 
-{
-    var div = document.createElement('div'), m;
-    div.style.color = input;
-    m = getComputedStyle(div).color.match(/^rgb\s*\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)\s*\)$/i);
-    if( m) return [m[1],m[2],m[3]];
-    else throw new Error("Colour "+input+" could not be parsed.");
-}
 </script>
 
 <style lang="less" scoped>
