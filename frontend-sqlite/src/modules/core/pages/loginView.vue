@@ -5,26 +5,10 @@
     </metainfo>
 
     <div id="topDiv">
-        <grid-shortcut id="loginForm" rows="45px 45px 35px" columns="1fr">
-            <div class="field">
-                <div><span class="material-symbols-outlined noHighlight">person</span></div>
-                <div class="flex">
-                    <input v-model="enteredUsername"
-                    placeholder="Username">
-                </div>
-            </div>
-            <div class="field">
-                <div><span class="material-symbols-outlined smallIcon noHighlight">key</span></div>
-                <div class="flex">
-                    <input v-model="enteredPassword"
-                    placeholder="Password" :type="pwVisible ? 'text' : 'password'">
-                </div>
-                <div @click="pwVisible = !pwVisible" class="noHighlight">
-                    <span class="material-symbols-outlined smallIcon pwToggle">
-                        {{ pwVisible ? 'visibility_off' : 'visibility' }}
-                    </span>
-                </div>
-            </div>
+        <grid-shortcut id="loginForm" rows="auto 45px 45px 35px" columns="1fr">
+            <div id="loginHeader">Login</div>
+            <text-field :field-name="'Username'" v-model:text="enteredUsername"/>
+            <password-field v-model:text="enteredPassword" :input-type="'text'" :field-name="'Password'"/>
             <div id="loginCell">
                 <button @click="login">Login</button>
             </div>
@@ -40,9 +24,17 @@
     background:@background;
     .fullSize; .center;
     overflow:hidden;
+    font-family: @font;
 
     #loginForm
     {
+        #loginHeader
+        {
+           .center;
+           margin-bottom:16px;
+           font-weight: bold; 
+        }
+
         gap: 15px;
         width:clamp(200px, 80vw, 300px);
 
@@ -86,9 +78,12 @@
 import { API_LOGIN_PATH } from '@/apiPaths';
 import { useMainStore } from '@/modules/core/stores/store';
 import { useMeta } from 'vue-meta';
+import passwordField from '@/modules/core/components/passwordField.vue';
+import textField from '../components/textField.vue';
 
 export default
 {
+    components: { "password-field": passwordField, "text-field": textField },
     setup()
     {
         useMeta(
