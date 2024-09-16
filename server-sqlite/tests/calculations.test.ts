@@ -61,31 +61,10 @@ export default async function(this: Context)
         
                     for (const [userKeyname, userObj] of Object.entries(userCreds))
                     {
-                        // const baseConfig = { serverURL, token: userObj.token, assertBody: true, expectedCode: 200 };
-                        const txnTypes = await HookShortcuts.postRandomTxnTypes(
-                        {
-                            serverURL: serverURL,
-                            token: userObj.token,
-                            txnCount: 3,
-                            assertBody: true,
-                            expectedCode: 200
-                        });
-                        const containers = await HookShortcuts.postRandomContainers(
-                        {
-                            serverURL: serverURL,
-                            token: userObj.token,
-                            containerCount: 3,
-                            assertBody: true,
-                            expectedCode: 200
-                        });
-                        const baseCurrency = await HookShortcuts.postCreateCurrency(
-                        {
-                            body: { name: "BASE", ticker: "BASE" },
-                            serverURL: serverURL,
-                            token: userObj.token,
-                            assertBody: true,
-                            expectedCode: 200
-                        });
+                        const baseConfig = { serverURL, token: userObj.token, assertBody: true, expectedCode: 200 };
+                        const txnTypes = await HookShortcuts.postRandomTxnTypes({ ...baseConfig, txnCount: 3, });
+                        const containers = await HookShortcuts.postRandomContainers({ ...baseConfig, containerCount: 3 });
+                        const baseCurrency = await HookShortcuts.postCreateCurrency({ ...baseConfig, body: { name: "BASE", ticker: "BASE" } });
         
                         const txnsToPost: { toAmount: Decimal|undefined, fromAmount: Decimal|undefined, txnAgeDays: number }[] = 
                         [
@@ -129,20 +108,11 @@ export default async function(this: Context)
                                     toCurrencyId: isTo ? baseCurrency.currencyId : undefined,
                                     typeId: choice(txnTypes).txnId
                                 },
-                                serverURL: serverURL,
-                                token: userObj.token,
-                                assertBody: true,
-                                expectedCode: 200
+                                ...baseConfig
                             });   
                         }
         
-                        const userExpensesAndIncomes = await HookShortcuts.getUserExpensesAndIncomes(
-                        {
-                            serverURL: serverURL,
-                            token: userObj.token,
-                            assertBody: true,
-                            expectedCode: 200
-                        });
+                        const userExpensesAndIncomes = await HookShortcuts.getUserExpensesAndIncomes(baseConfig);
         
                         assertStrictEqual(userExpensesAndIncomes.res.parsedBody.expenses30d.toString(), expectedResult.expenses30d.toString());
                         assertStrictEqual(userExpensesAndIncomes.res.parsedBody.expenses7d.toString(), expectedResult.expenses7d.toString());
@@ -165,31 +135,20 @@ export default async function(this: Context)
                 {
                     const userCreds = await HookShortcuts.registerRandMockUsers(serverURL, 1);
                     const firstUserObj = Object.values(userCreds)[0];
+                    const baseConfig = { serverURL: serverURL, token: firstUserObj.token, assertBody: true, expectedCode: 200 };
     
-                    const txnTypes = await HookShortcuts.postRandomTxnTypes(
-                    {
-                        serverURL: serverURL, token: firstUserObj.token,
-                        txnCount: 3, assertBody: true, expectedCode: 200
-                    });
-                    const containers = await HookShortcuts.postRandomContainers(
-                    {
-                        serverURL: serverURL, token: firstUserObj.token,
-                        containerCount: 3, assertBody: true, expectedCode: 200
-                    });
-                    const baseCurrency = await HookShortcuts.postCreateCurrency(
-                    {
-                        body: { name: "BASE", ticker: "BASE" }, serverURL: serverURL,
-                        token: firstUserObj.token, assertBody: true, expectedCode: 200
-                    });
+                    const txnTypes = await HookShortcuts.postRandomTxnTypes({ txnCount: 3, ...baseConfig });
+                    const containers = await HookShortcuts.postRandomContainers({ containerCount: 3, ...baseConfig });
+                    const baseCurrency = await HookShortcuts.postCreateCurrency({ body: { name: "BASE", ticker: "BASE" }, ...baseConfig });
                     const secondCurrency = await HookShortcuts.postCreateCurrency(
                     {
                         body: { name: "SEC", ticker: "SEC", fallbackRateAmount: '1', fallbackRateCurrencyId: baseCurrency.currencyId }, 
-                        serverURL: serverURL, token: firstUserObj.token, assertBody: true, expectedCode: 200
+                        ...baseConfig
                     });
                     const thirdCurrency = await HookShortcuts.postCreateCurrency(
                     {
                         body: { name: "THI", ticker: "THI", fallbackRateAmount: '1', fallbackRateCurrencyId: secondCurrency.currencyId },
-                        serverURL: serverURL, token: firstUserObj.token, assertBody: true, expectedCode: 200
+                        ...baseConfig
                     });
                     const txnsToPost: 
                     { 
