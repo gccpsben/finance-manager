@@ -13,12 +13,11 @@
 
 <script lang="ts">
 import { VIcon, VProgressCircular, VTooltip, VBtn } from 'vuetify/lib/components/index.mjs';
-import faIcon from './faIcon.vue';
-import type { PropType, Ref } from 'vue/dist/vue.js';
+import type { PropType } from 'vue/dist/vue.js';
 
 export default
 {
-    components: { VProgressCircular, VIcon, faIcon, VTooltip, VBtn },
+    components: { VProgressCircular, VIcon, VTooltip, VBtn },
     props:
     {
         isLoading: { required: true, type: Boolean, default: true },
