@@ -20,10 +20,10 @@ import textField from '@/modules/core/components/textField.vue';
 
 const props = withDefaults(defineProps<
 {
-    text: string|null, 
+    text?: string|null, 
     fieldName: string, 
-    isRevealed: boolean|null,
-    overrideThemeColor: string | undefined
+    isRevealed?: boolean|null,
+    overrideThemeColor?: string | undefined
 }>(), 
 { 
     text: null,
