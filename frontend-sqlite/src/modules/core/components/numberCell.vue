@@ -1,5 +1,5 @@
 <template>
-    <cell :title="title">
+    <cell :title="title" :icon="icon">
         <div v-if="!isLoading && !networkError" class="fullHeight xLeft">
             <h2 class="variantSelectorTab">{{ currentValue?.toFixed(2) }}</h2>
         </div>
@@ -15,8 +15,9 @@
 <script lang="ts">
 import { VProgressCircular } from 'vuetify/lib/components/index.mjs';
 import NetworkCircularIndicator from '../components/networkCircularIndicator.vue';
-import Cell from '@/modules/core/components/cell.vue';
+import Cell, { type IconType } from '@/modules/core/components/cell.vue';
 import variantsSelectorVue from './variantsSelector.vue';
+import type { PropType } from 'vue';
 
 export default
 {
@@ -28,7 +29,8 @@ export default
         "valueAll": { default: undefined, type: Number },
         "title": { default: "", type: String },
         "isLoading": { default: true, type: Boolean },
-        "networkError": { default: undefined }
+        "networkError": { default: undefined },
+        "icon": { default: undefined, type: Object as PropType<{type: IconType, name: string}> }
     },
     data() 
     { 

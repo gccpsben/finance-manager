@@ -2,6 +2,12 @@
     <grid-shortcut class="panel" style="padding:15px; box-sizing:border-box; height:100%; gap:15px;" columns="minmax(0,1fr)" rows="auto minmax(0,1fr)">
         <grid-shortcut rows="1fr" columns="1fr auto">
             <div class="yCenter xLeft">
+                <template v-if="icon && icon.type === 'FontAwesome'">
+                    <fa-icon style="font-size:12px; color:white; margin-right: 14px;" :icon="`fa-solid ${icon.name}`" />
+                </template>
+                <template v-else-if="icon && icon.type === 'Google'">
+                    <ga-icon style="font-size:12px; color:white; margin-right: 14px;" :icon="`${icon.name}`" />
+                </template>
                 <h2 class="panelTitle">{{ title.get() }}</h2>
             </div>
             <div>
@@ -65,10 +71,13 @@
 <script lang="ts" setup>
 import { defineProperty } from '../utils/defineProperty';
 
+export type IconType = "Google" | "FontAwesome";
+
 const props = withDefaults(defineProps<
 {
-    title: string
-}>(), { title: "No Title" });
+    title: string,
+    icon?: { type: IconType, name: string } | undefined
+}>(), { title: "No Title", icon: undefined });
 
 const title = defineProperty<string, "title", typeof props>("title", 
 {   

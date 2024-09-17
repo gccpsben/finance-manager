@@ -20,6 +20,7 @@ import viewTitle from "@/modules/core/components/viewTitle.vue";
 import vBasic from '@/modules/core/directives/vBasic';
 import vArea from '@/modules/core/directives/vArea';
 import vIntegerOnly from '@/modules/core/directives/vIntegerOnly'
+import GaIcon from './modules/core/components/gaIcon.vue'
 
 export const vuetify = createVuetify(
 {
@@ -35,6 +36,7 @@ app.directive('basic', vBasic);
 app.directive('int-only', vIntegerOnly);
 app.component('grid-shortcut',gridShortcut);
 app.component('fa-icon', faIcon);
+app.component('ga-icon', GaIcon);
 app.component('fa-icon-btn', faIconButton);
 app.component('grid-area', gridArea);
 app.component('cell', cell);
