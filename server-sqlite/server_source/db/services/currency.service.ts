@@ -61,15 +61,15 @@ export class CurrencyCalculator
 
         if (nearestTwoDatums.length === 0) 
         {
-            const currenyBaseAmount = new Decimal(from.fallbackRateAmount);
-            const currenyBaseAmountUnitToBaseRate = await CurrencyCalculator.currencyToBaseRate
+            const currencyBaseAmount = new Decimal(from.fallbackRateAmount);
+            const currencyBaseAmountUnitToBaseRate = await CurrencyCalculator.currencyToBaseRate
             (
                 ownerId, 
                 await getCurrById(from.fallbackRateCurrencyId), 
                 date,
                 cache
             )!;
-            return currenyBaseAmount.mul(currenyBaseAmountUnitToBaseRate);
+            return currencyBaseAmount.mul(currencyBaseAmountUnitToBaseRate);
         }
 
         if (nearestTwoDatums.length === 1) 
