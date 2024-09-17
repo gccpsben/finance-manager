@@ -1,145 +1,146 @@
 <template>
     <div id="topDiv">
+        <div id="topDivInner">
+            <view-title class="pageTitle" :title="'Dashboard'"></view-title>
 
-        <view-title :title="'Dashboard'"></view-title>
+            <grid-shortcut id="mainGrid">
 
-        <grid-shortcut id="mainGrid">
-
-            <number-cell title="Expenses" :noItemsText="'No Data'" v-area="'expensesPanel'"
-            :value7d="userExpensesIncomes ? parseFloat(userExpensesIncomes.expenses7d) : 0"
-            :value30d="userExpensesIncomes ? parseFloat(userExpensesIncomes.expenses30d) : 0"
-            :valueAll="userExpensesIncomes ? parseFloat(userExpensesIncomes.expensesTotal) : 0"
-            :isLoading="store.userExpensesIncomes.isLoading" :networkError="store.userExpensesIncomes.error"></number-cell>
-        
-            <number-cell title="Incomes" :noItemsText="'No Data'" v-area="'incomesPanel'"
-            :value7d="userExpensesIncomes ? parseFloat(userExpensesIncomes.incomes7d) : 0"
-            :value30d="userExpensesIncomes ? parseFloat(userExpensesIncomes.incomes30d) : 0"
-            :valueAll="userExpensesIncomes ? parseFloat(userExpensesIncomes.incomesTotal) : 0"
-            :isLoading="store.userExpensesIncomes.isLoading" :networkError="store.userExpensesIncomes.error"></number-cell>       
-            
-            <number-cell title="Total Value" v-area="'totalValuePanel'"
-            :valueAll="userTotalValue"
-            :isLoading="store.userExpensesIncomes.isLoading" :networkError="store.userExpensesIncomes.error"></number-cell>
-            
-            <div v-area="'netChangePanel'">
-                <number-cell title="Net Change" :noItemsText="'No Data'" 
-                :value7d="netChange7d" :value30d="netChange30d"
+                <number-cell title="Expenses" :noItemsText="'No Data'" v-area="'expensesPanel'"
+                :value7d="userExpensesIncomes ? parseFloat(userExpensesIncomes.expenses7d) : 0"
+                :value30d="userExpensesIncomes ? parseFloat(userExpensesIncomes.expenses30d) : 0"
+                :valueAll="userExpensesIncomes ? parseFloat(userExpensesIncomes.expensesTotal) : 0"
                 :isLoading="store.userExpensesIncomes.isLoading" :networkError="store.userExpensesIncomes.error"></number-cell>
-            </div>
+
+                <number-cell title="Incomes" :noItemsText="'No Data'" v-area="'incomesPanel'"
+                :value7d="userExpensesIncomes ? parseFloat(userExpensesIncomes.incomes7d) : 0"
+                :value30d="userExpensesIncomes ? parseFloat(userExpensesIncomes.incomes30d) : 0"
+                :valueAll="userExpensesIncomes ? parseFloat(userExpensesIncomes.incomesTotal) : 0"
+                :isLoading="store.userExpensesIncomes.isLoading" :networkError="store.userExpensesIncomes.error"></number-cell>       
+                
+                <number-cell title="Total Value" v-area="'totalValuePanel'"
+                :valueAll="userTotalValue"
+                :isLoading="store.userExpensesIncomes.isLoading" :networkError="store.userExpensesIncomes.error"></number-cell>
+                
+                <div v-area="'netChangePanel'">
+                    <number-cell title="Net Change" :noItemsText="'No Data'" 
+                    :value7d="netChange7d" :value30d="netChange30d"
+                    :isLoading="store.userExpensesIncomes.isLoading" :networkError="store.userExpensesIncomes.error"></number-cell>
+                </div>
+                
+                <list-cell v-area="'_30dExpensesList'" title="30d Expenses" :noItemsText="'No Expenses'" 
+                :isLoading="store.txns30d.isLoading"
+                :error="store.txns30d.error"
+                :itemsInPage="7"
+                :items="expenseTxns30d">
+                    <template #row="props">
+                        <grid-shortcut columns="50px 1fr 1fr" :class="{'fullSize': true}" @click="viewTxn(props.currentItem.id)" class="fullSize highlightableRow">
+                            <div class="listItemTitle middleLeft">{{ store.getDateAge(props.currentItem.creationDate) }}</div>
+                            <div class="listItemTitle middleLeft">
+                                {{ props.currentItem["title"] }}
+                            </div>
+                            <div class="listItemTitle middleRight">
+                                {{ currenciesStore.formatAmount(props.currentItem) }}
+                            </div>
+                        </grid-shortcut>
+                    </template>
+                </list-cell>
+
+                <list-cell v-area="'_30dIncomesList'" title="30d Incomes" :noItemsText="'No Incomes'" 
+                :isLoading="store.txns30d.isLoading"
+                :error="store.txns30d.error"
+                :itemsInPage="7"
+                :items="incomeTxns30d">
+                    <template #row="props">
+                        <grid-shortcut columns="50px 1fr 1fr" :class="{'fullSize': true}" @click="viewTxn(props.currentItem.id)" class="fullSize highlightableRow">
+                            <div class="listItemTitle middleLeft">{{ store.getDateAge(props.currentItem.creationDate) }}</div>
+                            <div class="listItemTitle middleLeft">
+                                {{ props.currentItem["title"] }}
+                            </div>
+                            <div class="listItemTitle middleRight">
+                                {{ currenciesStore.formatAmount(props.currentItem) }}
+                            </div>
+                        </grid-shortcut>
+                    </template>
+                </list-cell>
+
+                <list-cell v-area="'_30dTransfersList'" title="30d Transfers" :noItemsText="'No Transfers'" 
+                :isLoading="store.txns30d.isLoading"
+                :error="store.txns30d.error"
+                :itemsInPage="7"
+                :items="transferTxns30d">
+                    <template #row="props">
+                        <grid-shortcut columns="50px 1fr 1fr" :class="{'fullSize': true}" @click="viewTxn(props.currentItem.id)" class="fullSize highlightableRow">
+                            <div class="listItemTitle middleLeft">{{ store.getDateAge(props.currentItem.creationDate) }}</div>
+                            <div class="listItemTitle middleLeft">
+                                {{ props.currentItem["title"] }}
+                            </div>
+                            <div class="listItemTitle middleRight">
+                                {{ currenciesStore.formatAmount(props.currentItem) }}
+                            </div>
+                        </grid-shortcut>
+                    </template>
+                </list-cell>
+
+                <!-- 
+                <list-cell v-area="'_allPendingTransactionsList'" title="All Pending Txns" :noItemsText="'No Pending Txns'"
+                :isLoading="store.dashboardSummary.isLoading"
+                :error="store.dashboardSummary.error"
+                :items="store.dashboardSummary?.lastSuccessfulData?.allPendingTransactions ?? []">
+                    <template #row="props">
+                        <grid-shortcut columns="50px 1fr 1fr" :class="
+                        {
+                            'fullSize': true,
+                            'pendingTxn': props.currentItem.isTypePending && !props.currentItem.isResolved,
+                            'resolvedTxn': props.currentItem.isTypePending && props.currentItem.isResolved,
+                        }">
+                            <div class="listItemTitle middleLeft">{{ store.getDateAge(props.currentItem["date"]) }}</div>
+                            <div class="listItemTitle middleLeft">
+                                {{ props.currentItem["title"] }}
+                                <div v-if="props.currentItem.isTypePending && !props.currentItem.isResolved" class="pendingLabel">(Pending)</div>
+                                <div v-if="props.currentItem.isTypePending && props.currentItem.isResolved" class="resolvedLabel">(Resolved)</div>
+                            </div>
+                            <div :title="getAmountTooltip(props.currentItem)" class="listItemTitle middleRight">
+                                {{ store.formatAmount(props.currentItem, 'from') }}
+                            </div>
+                        </grid-shortcut>
+                    </template>
+                </list-cell>
+
+                <list-cell v-area="'_30dIncomesList'" title="30d Incomes" :noItemsText="'No Incomes'"
+                :isLoading="store.dashboardSummary.isLoading"
+                :error="store.dashboardSummary.error"
+                :items="store.toReversed(store.dashboardSummary?.lastSuccessfulData?.incomes30d ?? [])">
+                    <template #row="props">
+                        <grid-shortcut columns="50px 1fr 1fr" @click="viewTxn(props.currentItem['pubID'])"
+                        class="fullSize highlightableRow">
+                            <div class="listItemTitle middleLeft">{{ store.getDateAge(props.currentItem["date"]) }}</div>
+                            <div class="listItemTitle middleLeft">{{ props.currentItem["title"] }}</div>
+                            <div :title="getAmountTooltip(props.currentItem)" class="listItemTitle middleRight">
+                                {{ store.formatAmount(props.currentItem, 'to') }}
+                            </div>
+                        </grid-shortcut>
+                    </template>
+                </list-cell>-->
+
+                <list-cell v-area="'ContainersList'" title="Containers" :noItemsText="'No Containers'"
+                :isLoading="containersStore.containers.isLoading"
+                :error="containersStore.containers.error"
+                :items="store.toSorted(containersStore.containers.lastSuccessfulData?.rangeItems ?? [], (a,b) => parseFloat(b.value) - parseFloat(a.value))">
+                    <template #row="props">
+                        <grid-shortcut columns="1fr 1fr" class="fullSize">
+                            <div class="listItemTitle middleLeft">{{ props.currentItem.name }}</div>
+                            <div class="listItemTitle middleRight">{{ props.currentItem.value }} {{ currenciesStore.getBaseCurrencySymbol() }}</div>
+                        </grid-shortcut>
+                    </template>
+                </list-cell>
+
+                <!-- <net-worth-graph-cell v-area="'TotalValueGraph'" title="Total Value"></net-worth-graph-cell> -->
+
+                <container-values-graph-cell v-area="'containerValuesGraph'"
+                title="Containers Value"></container-values-graph-cell>
             
-            <list-cell v-area="'_30dExpensesList'" title="30d Expenses" :noItemsText="'No Expenses'" 
-            :isLoading="store.txns30d.isLoading"
-            :error="store.txns30d.error"
-            :itemsInPage="7"
-            :items="expenseTxns30d">
-                <template #row="props">
-                    <grid-shortcut columns="50px 1fr 1fr" :class="{'fullSize': true}" @click="viewTxn(props.currentItem.id)" class="fullSize highlightableRow">
-                        <div class="listItemTitle middleLeft">{{ store.getDateAge(props.currentItem.creationDate) }}</div>
-                        <div class="listItemTitle middleLeft">
-                            {{ props.currentItem["title"] }}
-                        </div>
-                        <div class="listItemTitle middleRight">
-                            {{ currenciesStore.formatAmount(props.currentItem) }}
-                        </div>
-                    </grid-shortcut>
-                </template>
-            </list-cell>
-
-            <list-cell v-area="'_30dIncomesList'" title="30d Incomes" :noItemsText="'No Incomes'" 
-            :isLoading="store.txns30d.isLoading"
-            :error="store.txns30d.error"
-            :itemsInPage="7"
-            :items="incomeTxns30d">
-                <template #row="props">
-                    <grid-shortcut columns="50px 1fr 1fr" :class="{'fullSize': true}" @click="viewTxn(props.currentItem.id)" class="fullSize highlightableRow">
-                        <div class="listItemTitle middleLeft">{{ store.getDateAge(props.currentItem.creationDate) }}</div>
-                        <div class="listItemTitle middleLeft">
-                            {{ props.currentItem["title"] }}
-                        </div>
-                        <div class="listItemTitle middleRight">
-                            {{ currenciesStore.formatAmount(props.currentItem) }}
-                        </div>
-                    </grid-shortcut>
-                </template>
-            </list-cell>
-
-            <list-cell v-area="'_30dTransfersList'" title="30d Transfers" :noItemsText="'No Transfers'" 
-            :isLoading="store.txns30d.isLoading"
-            :error="store.txns30d.error"
-            :itemsInPage="7"
-            :items="transferTxns30d">
-                <template #row="props">
-                    <grid-shortcut columns="50px 1fr 1fr" :class="{'fullSize': true}" @click="viewTxn(props.currentItem.id)" class="fullSize highlightableRow">
-                        <div class="listItemTitle middleLeft">{{ store.getDateAge(props.currentItem.creationDate) }}</div>
-                        <div class="listItemTitle middleLeft">
-                            {{ props.currentItem["title"] }}
-                        </div>
-                        <div class="listItemTitle middleRight">
-                            {{ currenciesStore.formatAmount(props.currentItem) }}
-                        </div>
-                    </grid-shortcut>
-                </template>
-            </list-cell>
-
-            <!-- 
-            <list-cell v-area="'_allPendingTransactionsList'" title="All Pending Txns" :noItemsText="'No Pending Txns'"
-            :isLoading="store.dashboardSummary.isLoading"
-            :error="store.dashboardSummary.error"
-            :items="store.dashboardSummary?.lastSuccessfulData?.allPendingTransactions ?? []">
-                <template #row="props">
-                    <grid-shortcut columns="50px 1fr 1fr" :class="
-                    {
-                        'fullSize': true,
-                        'pendingTxn': props.currentItem.isTypePending && !props.currentItem.isResolved,
-                        'resolvedTxn': props.currentItem.isTypePending && props.currentItem.isResolved,
-                    }">
-                        <div class="listItemTitle middleLeft">{{ store.getDateAge(props.currentItem["date"]) }}</div>
-                        <div class="listItemTitle middleLeft">
-                            {{ props.currentItem["title"] }}
-                            <div v-if="props.currentItem.isTypePending && !props.currentItem.isResolved" class="pendingLabel">(Pending)</div>
-                            <div v-if="props.currentItem.isTypePending && props.currentItem.isResolved" class="resolvedLabel">(Resolved)</div>
-                        </div>
-                        <div :title="getAmountTooltip(props.currentItem)" class="listItemTitle middleRight">
-                            {{ store.formatAmount(props.currentItem, 'from') }}
-                        </div>
-                    </grid-shortcut>
-                </template>
-            </list-cell>
-
-            <list-cell v-area="'_30dIncomesList'" title="30d Incomes" :noItemsText="'No Incomes'"
-            :isLoading="store.dashboardSummary.isLoading"
-            :error="store.dashboardSummary.error"
-            :items="store.toReversed(store.dashboardSummary?.lastSuccessfulData?.incomes30d ?? [])">
-                <template #row="props">
-                    <grid-shortcut columns="50px 1fr 1fr" @click="viewTxn(props.currentItem['pubID'])"
-                    class="fullSize highlightableRow">
-                        <div class="listItemTitle middleLeft">{{ store.getDateAge(props.currentItem["date"]) }}</div>
-                        <div class="listItemTitle middleLeft">{{ props.currentItem["title"] }}</div>
-                        <div :title="getAmountTooltip(props.currentItem)" class="listItemTitle middleRight">
-                            {{ store.formatAmount(props.currentItem, 'to') }}
-                        </div>
-                    </grid-shortcut>
-                </template>
-            </list-cell>-->
-
-            <list-cell v-area="'ContainersList'" title="Containers" :noItemsText="'No Containers'"
-            :isLoading="containersStore.containers.isLoading"
-            :error="containersStore.containers.error"
-            :items="store.toSorted(containersStore.containers.lastSuccessfulData?.rangeItems ?? [], (a,b) => parseFloat(b.value) - parseFloat(a.value))">
-                <template #row="props">
-                    <grid-shortcut columns="1fr 1fr" class="fullSize">
-                        <div class="listItemTitle middleLeft">{{ props.currentItem.name }}</div>
-                        <div class="listItemTitle middleRight">{{ props.currentItem.value }} {{ currenciesStore.getBaseCurrencySymbol() }}</div>
-                    </grid-shortcut>
-                </template>
-            </list-cell>
-
-            <!-- <net-worth-graph-cell v-area="'TotalValueGraph'" title="Total Value"></net-worth-graph-cell> -->
-
-            <container-values-graph-cell v-area="'containerValuesGraph'"
-            title="Containers Value"></container-values-graph-cell>
-         
-        </grid-shortcut>
+            </grid-shortcut>
+        </div>
     </div>
 </template>
 
@@ -256,7 +257,7 @@ export default
     container-type: size;
     container-name: topDiv;
 
-    overflow-x:hidden; .fullSize; padding:50px; box-sizing: border-box;
+    overflow-x:hidden; .fullSize; box-sizing: border-box;
     font-family: 'Schibsted Grotesk', sans-serif;
     .gradBackground;
 
@@ -264,6 +265,7 @@ export default
     .resolvedTxn { .fg(inherit); }
     .pendingLabel { font-weight: bold; margin-left:5px; }
     .resolvedLabel { font-weight: bold; margin-left:5px; }
+    #topDivInner { padding: @desktopPagePadding; }
     
     #mainGrid
     {
@@ -307,6 +309,30 @@ export default
         'TotalValueGraph TotalValueGraph'
         '_30dTransfersList _30dTransfersList'
         'containerValuesGraph containerValuesGraph' !important;
+    }
+}
+
+@container topDiv (width <= 400px)
+{
+    #topDivInner { padding: @mobilePagePadding !important; }
+    // #pageTitle { display: none; }
+
+    #mainGrid
+    {
+        gap:15px !important;
+        grid-template-columns: 1fr !important;
+        grid-template-rows: 100px 100px 100px 100px 250px 250px 250px 250px 250px 250px 1fr !important;
+        grid-template-areas: 
+        'expensesPanel' 
+        'incomesPanel'
+        'totalValuePanel'
+        'netChangePanel' 
+        '_30dExpensesList'
+        'ContainersList'
+        '_30dIncomesList'
+        'TotalValueGraph'
+        '_30dTransfersList'
+        'containerValuesGraph' !important;
     }
 }
 
