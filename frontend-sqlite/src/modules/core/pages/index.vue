@@ -136,6 +136,7 @@ export default
             grid-template-areas: 'icon header'; 
             cursor:pointer; height:40px; 
             color: white;
+            font-family: @font;
 
             i { grid-area:icon; display:inline-block; color: inherit; }
             &:hover 
