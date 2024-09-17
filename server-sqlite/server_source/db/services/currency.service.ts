@@ -127,14 +127,16 @@ export class CurrencyCalculator
     public static async getCurrencyToBaseRateInterpolator
     (
         userId:string, 
-        currencyId: string, 
+        currencyId: string,
+        startDate?: Date,
+        endDate?: Date,
         cache: CurrencyListCache | undefined = undefined
     ): Promise<LinearInterpolator>
     {   
         if (cache === undefined) cache = new CurrencyListCache(userId);
         await cache.ensureCurrenciesList();
 
-        const datums = await CurrencyRateDatumRepository.getInstance().getCurrencyDatums(userId, currencyId);
+        const datums = await CurrencyRateDatumRepository.getInstance().getCurrencyDatums(userId, currencyId, startDate, endDate);
         const entries: { key:Decimal, value: Decimal }[] = await (async () => 
         {
             const output: { key:Decimal, value: Decimal }[] = [];

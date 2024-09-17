@@ -77,7 +77,7 @@ export class CurrencyRateDatumService
         const datumsStat = minAndMax(datumsWithinRange, x => x.date);
         cacheInner.ensureCurrenciesRateDatumsList(currency.id);
 
-        const interpolator = await CurrencyCalculator.getCurrencyToBaseRateInterpolator(ownerId, currencyId, currenciesCache);
+        const interpolator = await CurrencyCalculator.getCurrencyToBaseRateInterpolator(ownerId, currencyId, undefined, undefined, currenciesCache);
         
         const output: {date: number, rateToBase: Decimal}[] = [];
         const minDate = new Decimal(datumsStat.min);
