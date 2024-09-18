@@ -206,11 +206,11 @@ export class HookShortcuts
             {
                 txnId: (await HookShortcuts.postCreateTxnType(
                 {
-                    body: { name: randomName },
-                    serverURL: config.serverURL,
-                    token: config.token,
-                    assertBody: config.assertBody,
-                    expectedCode: config.expectedCode
+                    body         : { name: randomName },
+                    serverURL    : config.serverURL,
+                    token        : config.token,
+                    assertBody   : config.assertBody,
+                    expectedCode : config.expectedCode
                 })).txnTypeId,
                 txnName: randomName
             });
@@ -238,11 +238,11 @@ export class HookShortcuts
             {
                 containerId: (await HookShortcuts.postCreateContainer(
                 {
-                    body: { name: randomName },
-                    serverURL: config.serverURL,
-                    token: config.token,
-                    assertBody: config.assertBody,
-                    expectedCode: config.expectedCode
+                    body         : { name: randomName },
+                    serverURL    : config.serverURL,
+                    token        : config.token,
+                    assertBody   : config.assertBody,
+                    expectedCode : config.expectedCode
                 })).containerId,
                 containerName: randomName
             });
@@ -286,15 +286,15 @@ export class HookShortcuts
                 {
                     body: 
                     { 
-                        name: randomName,
-                        fallbackRateAmount: amount.toString(),
-                        fallbackRateCurrencyId: refCurrencyId,
-                        ticker: randomName
+                        name                   : randomName,
+                        fallbackRateAmount     : amount.toString(),
+                        fallbackRateCurrencyId : refCurrencyId,
+                        ticker                 : randomName
                     },
-                    serverURL: config.serverURL,
-                    token: config.token,
-                    assertBody: config.assertBody,
-                    expectedCode: config.expectedCode,
+                    serverURL    : config.serverURL,
+                    token        : config.token,
+                    assertBody   : config.assertBody,
+                    expectedCode : config.expectedCode,
                 })).currencyId,
                 amount: amount,
                 name: randomName,
