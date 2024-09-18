@@ -29,7 +29,36 @@ router.get<GetUserBalanceHistoryAPI.ResponseDTO>(`/api/v1/calculations/balanceHi
     handler: async (req: express.Request, res: express.Response) => 
     {
         const authResults = await AccessTokenService.ensureRequestTokenValidated(req);
-        const calResults = await CalculationsService.getUserBalanceHistory(authResults.ownerUserId);
+
+        class query implements GetUserBalanceHistoryAPI.RequestQueryDTO
+        {
+            @IsOptional() @IsUTCDateIntString() startDate: string | undefined;
+            @IsOptional() @IsUTCDateIntString() endDate: string | undefined;
+            @IsOptional() @IsPositiveIntString() division: string | undefined;
+        }
+        const parsedQuery = await ExpressValidations.validateBodyAgainstModel<query>(query, req.query);
+        const reqQuery = 
+        {
+            startDate: parsedQuery.startDate === undefined ? undefined : parseInt(parsedQuery.startDate),
+            endDate: parsedQuery.endDate === undefined ? undefined : parseInt(parsedQuery.endDate),
+            division: parsedQuery.division === undefined ? undefined : parseInt(parsedQuery.division),
+        };
+        
+        const input = 
+        {
+            startDate: reqQuery.startDate ?? Date.now() - 2.592e+9, // 30d
+            endDate: reqQuery.endDate ?? Date.now(),
+            division: reqQuery.division ?? 100
+        };
+        
+        const calResults = await CalculationsService.getUserBalanceHistory
+        (
+            authResults.ownerUserId,
+            input.startDate,
+            input.endDate,
+            input.division
+        );
+
         return (() => 
         {
             const outputMap = {};

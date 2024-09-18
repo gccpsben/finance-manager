@@ -72,36 +72,67 @@ export class CalculationsService
         };
     }
 
-    /** Get the balance history of a user across all containers. */
-    public static async getUserBalanceHistory(userId: string): Promise<UserBalanceHistoryResults>
+    /** 
+     * Get the balance history of a user across all containers. 
+     * The resulting map will have exactly ``division`` count of entires.
+     * The first entry will be the startDate, and the last entry will be the endDate.
+     */
+    public static async getUserBalanceHistory(userId: string, startDate: number, endDate: number, division: number): Promise<UserBalanceHistoryResults>
     {
+        if (startDate >= endDate)
+            throw createHttpError(400, `Start date "${startDate}" cannot be larger than or equal to "${endDate}".`);
+
+        if (division <= 1)
+            throw createHttpError(400, `Division must be a positive integer higher than 1, received "${division}".`);
+
+        /** Sorted: From earliest to latest txns */
         const usrTxns = (await TransactionService.getTransactions(userId)).rangeItems.reverse();
+
         const output: UserBalanceHistoryResults = 
         {
             currenciesEarliestPresentEpoch: {},
             historyMap: {}
         };
         const balancesReducer = new DecimalAdditionMapReducer<string>({});
+        const divisionEpoch = (endDate - startDate) / (division - 1);
         const appendCurrencyToEpoch = (cId: string, epoch: number) => 
         {
             if (output.currenciesEarliestPresentEpoch[cId]) return;
             output.currenciesEarliestPresentEpoch[cId] = epoch;
         };
 
-        for (const txn of usrTxns)
+        // Step with the given division epoch and get each epoch's balance
+        await (async () => 
         {
-            if (txn.fromAmount)
+            let currentTxnIndex = 0;
+            for (let datumIndex = 0; datumIndex < division; datumIndex++)
             {
-                await balancesReducer.reduce(txn.fromCurrencyId, new Decimal(txn.fromAmount).neg());
-                appendCurrencyToEpoch(txn.fromCurrencyId, txn.creationDate);
+                const currentEpoch = Math.round(startDate + divisionEpoch * datumIndex);
+
+                while (currentTxnIndex < usrTxns.length && usrTxns[currentTxnIndex].creationDate <= currentEpoch)
+                {
+                    const txn = usrTxns[currentTxnIndex];
+                    if (txn.fromAmount)
+                    {
+                        await balancesReducer.reduce(txn.fromCurrencyId, new Decimal(txn.fromAmount).neg());
+                        appendCurrencyToEpoch(txn.fromCurrencyId, txn.creationDate);
+                    }
+                    if (txn.toAmount) 
+                    {
+                        await balancesReducer.reduce(txn.toCurrencyId, new Decimal(txn.toAmount));
+                        appendCurrencyToEpoch(txn.toCurrencyId, txn.creationDate);
+                    }
+                    
+                    output.historyMap[currentEpoch.toString()] = { ...balancesReducer.currentValue };
+                    currentTxnIndex++;
+                }
+
+                if (!(currentEpoch.toString() in output.historyMap))
+                    output.historyMap[currentEpoch.toString()] = { ...balancesReducer.currentValue };
             }
-            if (txn.toAmount) 
-            {
-                await balancesReducer.reduce(txn.toCurrencyId, new Decimal(txn.toAmount));
-                appendCurrencyToEpoch(txn.toCurrencyId, txn.creationDate);
-            }
-            output.historyMap[txn.creationDate.toString()] = { ...balancesReducer.currentValue };
-        }
+
+        })();
+
         return output;
     }
 }

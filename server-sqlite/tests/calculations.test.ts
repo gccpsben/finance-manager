@@ -8,6 +8,7 @@ import { randomUUID } from "crypto";
 import { simpleFaker } from "@faker-js/faker";
 import { GetUserBalanceHistoryAPI, ResponseGetExpensesAndIncomesDTO } from "../../api-types/calculations.js";
 import { isDecimalJSString, IsDecimalJSString, IsEpochKeyedMap, IsPassing } from "../server_source/db/validators.js";
+import { shuffleArray } from './lib/utils.js';
 
 export namespace GetUserBalanceHistoryAPIClass
 {
@@ -128,113 +129,160 @@ export default async function(this: Context)
         await this.module(UnitTestEndpoints.calculationsEndpoints.balanceHistory, async function () 
         {
             await resetDatabase();
+
+            const makeCurrBody = (name: string, ticker: string, fallbackRateAmount: string, fallbackRateCurrencyId: string) =>
+                ({ name, ticker, fallbackRateAmount, fallbackRateCurrencyId });
+
+            const userCreds = await HookShortcuts.registerRandMockUsers(serverURL, 1);
+            const firstUserObj = Object.values(userCreds)[0];
+            const baseConfig = { serverURL: serverURL, token: firstUserObj.token, assertBody: true, expectedCode: 200 };
+
+            const txnTypes = await HookShortcuts.postRandomTxnTypes({ txnCount: 3, ...baseConfig });
+            const containers = await HookShortcuts.postRandomContainers({ containerCount: 3, ...baseConfig });
+            const baseCurrency = await HookShortcuts.postCreateCurrency({ body: { name: "BASE", ticker: "BASE" }, ...baseConfig });
+            const secondCurrency = await HookShortcuts.postCreateCurrency({ body: makeCurrBody("SEC", "SEC", '1', baseCurrency.currencyId), ...baseConfig });
+            const thirdCurrency = await HookShortcuts.postCreateCurrency({ body: makeCurrBody("THI", "THI", '1', secondCurrency.currencyId), ...baseConfig });
+            const txnsToPost: { toAmount: string | undefined, fromAmount: string | undefined, txnAgeDays: number, currId: string, conId: string }[] =
+            [
+                { fromAmount: undefined, toAmount: `100.0001`, txnAgeDays: 90, currId: baseCurrency.currencyId, conId: containers[0].containerId },
+                { fromAmount: `0.0001`, toAmount: `0.0001`, txnAgeDays: 50, currId: baseCurrency.currencyId, conId: containers[1].containerId },
+                { fromAmount: `0.0001`, toAmount: undefined, txnAgeDays: 18, currId: thirdCurrency.currencyId, conId: containers[2].containerId },
+                { fromAmount: `0`, toAmount: `12710`, txnAgeDays: 6.9, currId: thirdCurrency.currencyId, conId: containers[1].containerId },
+                { fromAmount: `1820`, toAmount: undefined, txnAgeDays: 6.7, currId: baseCurrency.currencyId, conId: containers[0].containerId },
+                { fromAmount: undefined, toAmount: `78777`, txnAgeDays: 1.5, currId: secondCurrency.currencyId, conId: containers[1].containerId },
+                { fromAmount: `1912.30`, toAmount: undefined, txnAgeDays: 0.3, currId: baseCurrency.currencyId, conId: containers[2].containerId },
+                { fromAmount: `192`, toAmount: `72727`, txnAgeDays: 0.1, currId: secondCurrency.currencyId, conId: containers[0].containerId },
+                { fromAmount: `09037`, toAmount: undefined, txnAgeDays: 0, currId: thirdCurrency.currencyId, conId: containers[1].containerId }
+            ];
+
+            shuffleArray(txnsToPost);
+
+            // Start posting defined test transactions to server
+            for (const txnToPost of txnsToPost) 
+            {
+                const isFrom = !!txnToPost.fromAmount;
+                const isTo = !!txnToPost.toAmount;
+
+                await HookShortcuts.postCreateTransaction
+                (
+                    {
+                        body:
+                        {
+                            title: randomUUID(),
+                            creationDate: transformOffsetDate(txnToPost.txnAgeDays),
+                            description: simpleFaker.string.sample(100),
+                            fromAmount: isFrom ? txnToPost.fromAmount : undefined,
+                            fromContainerId: isFrom ? txnToPost.conId : undefined,
+                            fromCurrencyId: isFrom ? txnToPost.currId : undefined,
+                            toAmount: isTo ? txnToPost.toAmount : undefined,
+                            toContainerId: isTo ? txnToPost.conId : undefined,
+                            toCurrencyId: isTo ? txnToPost.currId : undefined,
+                            typeId: choice(txnTypes).txnId
+                        },
+                        serverURL: serverURL, token: firstUserObj.token, assertBody: true, expectedCode: 200
+                    }
+                );
+            }
             
             await this.describe(`get`, async function()
             {
+                await this.test(`Forbid division is not an int`, async function()
+                {
+                    await HookShortcuts.getUserBalanceHistory(
+                    { 
+                        serverURL: serverURL, 
+                        token: firstUserObj.token, 
+                        assertBody: false, 
+                        expectedCode: 400,
+                        division: 5.2,
+                        startDate: transformOffsetDate(100),
+                        endDate: transformOffsetDate(0)
+                    });
+                });
+
+                await this.test(`Forbid division === 1 or division === 0`, async function()
+                {
+                    await HookShortcuts.getUserBalanceHistory(
+                    { 
+                        serverURL: serverURL, 
+                        token: firstUserObj.token, 
+                        assertBody: false, 
+                        expectedCode: 400,
+                        division: 0,
+                        startDate: transformOffsetDate(100),
+                        endDate: transformOffsetDate(0)
+                    });
+
+                    await HookShortcuts.getUserBalanceHistory(
+                    { 
+                        serverURL: serverURL, 
+                        token: firstUserObj.token, 
+                        assertBody: false, 
+                        expectedCode: 400,
+                        division: 1,
+                        startDate: transformOffsetDate(100),
+                        endDate: transformOffsetDate(0)
+                    });
+                });
+
                 await this.test(`Test for Correctness`, async function()
                 {
-                    const userCreds = await HookShortcuts.registerRandMockUsers(serverURL, 1);
-                    const firstUserObj = Object.values(userCreds)[0];
-                    const baseConfig = { serverURL: serverURL, token: firstUserObj.token, assertBody: true, expectedCode: 200 };
-    
-                    const txnTypes = await HookShortcuts.postRandomTxnTypes({ txnCount: 3, ...baseConfig });
-                    const containers = await HookShortcuts.postRandomContainers({ containerCount: 3, ...baseConfig });
-                    const baseCurrency = await HookShortcuts.postCreateCurrency({ body: { name: "BASE", ticker: "BASE" }, ...baseConfig });
-                    const secondCurrency = await HookShortcuts.postCreateCurrency(
-                    {
-                        body: { name: "SEC", ticker: "SEC", fallbackRateAmount: '1', fallbackRateCurrencyId: baseCurrency.currencyId }, 
-                        ...baseConfig
-                    });
-                    const thirdCurrency = await HookShortcuts.postCreateCurrency(
-                    {
-                        body: { name: "THI", ticker: "THI", fallbackRateAmount: '1', fallbackRateCurrencyId: secondCurrency.currencyId },
-                        ...baseConfig
-                    });
-                    const txnsToPost: 
+                    const rangeStart = 59;
+                    const rangeEnd = -10;
+                    const division = 10;
+
+                    const userBalances = await HookShortcuts.getUserBalanceHistory(
                     { 
-                        toAmount: string|undefined, 
-                        fromAmount: string|undefined, 
-                        txnAgeDays: number, 
-                        currId: string, 
-                        conId: string 
-                    }[] = 
-                    [
-                        { fromAmount: undefined , toAmount: `100.0001`, txnAgeDays: 90  , currId: baseCurrency.currencyId   , conId: containers[0].containerId },
-                        { fromAmount: `0.0001`  , toAmount: `0.0001`  , txnAgeDays: 50  , currId: baseCurrency.currencyId   , conId: containers[1].containerId },
-                        { fromAmount: `0.0001`  , toAmount: undefined , txnAgeDays: 18  , currId: thirdCurrency.currencyId  , conId: containers[2].containerId },
-                        { fromAmount: `0`       , toAmount: `12710`   , txnAgeDays: 6.9 , currId: thirdCurrency.currencyId  , conId: containers[1].containerId },
-                        { fromAmount: `1820`    , toAmount: undefined , txnAgeDays: 6.7 , currId: baseCurrency.currencyId   , conId: containers[0].containerId },
-                        { fromAmount: undefined , toAmount: `78777`   , txnAgeDays: 1.5 , currId: secondCurrency.currencyId , conId: containers[1].containerId },
-                        { fromAmount: `1912.30` , toAmount: undefined , txnAgeDays: 0.3 , currId: baseCurrency.currencyId   , conId: containers[2].containerId },
-                        { fromAmount: `192`     , toAmount: `72727`   , txnAgeDays: 0.1 , currId: secondCurrency.currencyId , conId: containers[0].containerId },
-                        { fromAmount: `09037`   , toAmount: undefined , txnAgeDays: 0   , currId: thirdCurrency.currencyId  , conId: containers[1].containerId }
-                    ];
-                    
-                    for (const txnToPost of txnsToPost)
-                    {
-                        const isFrom = !!txnToPost.fromAmount;
-                        const isTo = !!txnToPost.toAmount;
-    
-                        await HookShortcuts.postCreateTransaction(
-                        {
-                            body: 
-                            { 
-                                title: randomUUID(),
-                                creationDate: transformOffsetDate(txnToPost.txnAgeDays),
-                                description: simpleFaker.string.sample(100),
-                                fromAmount: isFrom ? txnToPost.fromAmount : undefined, 
-                                fromContainerId: isFrom ? txnToPost.conId : undefined,
-                                fromCurrencyId: isFrom ? txnToPost.currId : undefined,
-                                toAmount: isTo ? txnToPost.toAmount : undefined, 
-                                toContainerId: isTo ? txnToPost.conId : undefined,
-                                toCurrencyId: isTo ? txnToPost.currId : undefined,
-                                typeId: choice(txnTypes).txnId
-                            },
-                            serverURL: serverURL, token: firstUserObj.token, assertBody: true, expectedCode: 200
-                        });   
-                    }
-    
-                    const userBalances = await HookShortcuts.getUserBalanceHistory({ serverURL: serverURL, token: firstUserObj.token, assertBody: true, expectedCode: 200 });
+                        serverURL: serverURL, token: firstUserObj.token, assertBody: true, expectedCode: 200,
+                        division: division,
+                        startDate: transformOffsetDate(rangeStart), // 59 is chosen intentionally to check if txns outside the range is correctly included.
+                        endDate: transformOffsetDate(rangeEnd)
+                    });
                     const expectedJSON = 
                     {
                         "map": 
                         {
-                            [transformOffsetDate(90)]: { [baseCurrency.currencyId]: "100.0001" },
-                            [transformOffsetDate(50)]: { [baseCurrency.currencyId]: "100.0001" },
-                            [transformOffsetDate(18)]: 
+                            [transformOffsetDate(rangeStart)]: 
+                            { 
+                                [baseCurrency.currencyId]: "100.0001" 
+                            },
+                            [transformOffsetDate(rangeStart + (rangeEnd - rangeStart) / (division - 1) * 1)]: 
+                            { 
+                                [baseCurrency.currencyId]: "100.0001" 
+                            },
+                            [transformOffsetDate(rangeStart + (rangeEnd - rangeStart) / (division - 1) * 2)]: 
+                            { 
+                                [baseCurrency.currencyId]: "100.0001" 
+                            },
+                            [transformOffsetDate(rangeStart + (rangeEnd - rangeStart) / (division - 1) * 3)]: 
+                            { 
+                                [baseCurrency.currencyId]: "100.0001" 
+                            },
+                            [transformOffsetDate(rangeStart + (rangeEnd - rangeStart) / (division - 1) * 4)]: 
+                            { 
+                                [baseCurrency.currencyId]: "100.0001"
+                            },
+                            [transformOffsetDate(rangeStart + (rangeEnd - rangeStart) / (division - 1) * 5)]: 
+                            { 
+                                [baseCurrency.currencyId]: "100.0001" 
+                            },
+                            [transformOffsetDate(rangeStart + (rangeEnd - rangeStart) / (division - 1) * 6)]: 
                             { 
                                 [baseCurrency.currencyId]: "100.0001",
                                 [thirdCurrency.currencyId]: "-0.0001"
                             },
-                            [transformOffsetDate(6.9)]: 
-                            { 
-                                [baseCurrency.currencyId]: "100.0001",
-                                [thirdCurrency.currencyId]: "12709.9999"
-                            },
-                            [transformOffsetDate(6.7)]: 
+                            [transformOffsetDate(rangeStart + (rangeEnd - rangeStart) / (division - 1) * 7)]: 
                             { 
                                 [baseCurrency.currencyId]: "-1719.9999",
                                 [thirdCurrency.currencyId]: "12709.9999"
                             },
-                            [transformOffsetDate(1.5)]: 
-                            { 
-                                [baseCurrency.currencyId]: "-1719.9999",
-                                [thirdCurrency.currencyId]: "12709.9999",
-                                [secondCurrency.currencyId]: "78777",
-                            },
-                            [transformOffsetDate(0.3)]: 
+                            [transformOffsetDate(rangeStart + (rangeEnd - rangeStart) / (division - 1) * 8)]: 
                             { 
                                 [baseCurrency.currencyId]: "-3632.2999",
-                                [thirdCurrency.currencyId]: "12709.9999",
-                                [secondCurrency.currencyId]: "78777",
-                            },
-                            [transformOffsetDate(0.1)]: 
-                            { 
-                                [baseCurrency.currencyId]: "-3632.2999",
-                                [thirdCurrency.currencyId]: "12709.9999",
+                                [thirdCurrency.currencyId]: "3672.9999",
                                 [secondCurrency.currencyId]: "151312",
                             },
-                            [transformOffsetDate(0)]: 
+                            [transformOffsetDate(rangeStart + (rangeEnd - rangeStart) / (division - 1) * 9)]: 
                             { 
                                 [baseCurrency.currencyId]: "-3632.2999",
                                 [thirdCurrency.currencyId]: "3672.9999",
@@ -242,7 +290,7 @@ export default async function(this: Context)
                             }
                         }
                     } satisfies GetUserBalanceHistoryAPI.ResponseDTO;
-
+                    
                     assertJSONEqual(userBalances.res.parsedBody, expectedJSON);
                 })
             });

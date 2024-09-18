@@ -333,13 +333,16 @@ export class HookShortcuts
         serverURL:string,
         token:string,
         assertBody?: boolean,
-        expectedCode?: number
+        expectedCode?: number,
+        startDate: number,
+        endDate: number,
+        division: number
     })
     {
         const assertBody = config.assertBody === undefined ? true : config.assertBody;
         const response = await HTTPAssert.assertFetch
         (
-            UnitTestEndpoints.calculationsEndpoints['balanceHistory'], 
+            `${UnitTestEndpoints.calculationsEndpoints['balanceHistory']}?startDate=${config.startDate}&endDate=${config.endDate}&division=${config.division}`,
             {
                 baseURL: config.serverURL, expectedStatus: config.expectedCode, method: "GET",
                 headers: { "authorization": config.token },

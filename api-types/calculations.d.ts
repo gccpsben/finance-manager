@@ -11,8 +11,18 @@ export type ResponseGetExpensesAndIncomesDTO =
 
 export namespace GetUserBalanceHistoryAPI
 {
+    export type RequestQueryDTO = 
+    {
+        startDate: string | undefined;
+        endDate: string | undefined;
+        division: string | undefined;
+    };
+
     export type ResponseDTO = 
     { 
-        map: { [epoch: string]: { [currencyId: string]: string } };
+        map: 
+        { 
+            [epoch: string]: { [currencyId: string]: string } 
+        };
     };
 }
