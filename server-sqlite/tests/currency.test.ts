@@ -99,7 +99,7 @@ export namespace GetCurrencyRatesHistoryAPIClass
     }
 }
 
-function createBaseCurrencyPostBody(name: string, ticker: string)
+export function createBaseCurrencyPostBody(name: string, ticker: string)
 {
     return { 
         name: name, 
@@ -109,7 +109,7 @@ function createBaseCurrencyPostBody(name: string, ticker: string)
     } satisfies PostCurrencyAPI.RequestDTO;
 }
 
-function createCurrencyPostBody(name: string, ticker: string, refCurrencyId: string, amount: string)
+export function createCurrencyPostBody(name: string, ticker: string, refCurrencyId: string, amount: string)
 {
     return { 
         name: name, 
@@ -120,7 +120,7 @@ function createCurrencyPostBody(name: string, ticker: string, refCurrencyId: str
 }
 
 /** This does not perform assertion */
-async function postBaseCurrency(token:string, name: string, ticker: string)
+export async function postBaseCurrency(token:string, name: string, ticker: string)
 {
     const response = await HTTPAssert.assertFetch(UnitTestEndpoints.currenciesEndpoints['post'], 
     {
@@ -132,7 +132,7 @@ async function postBaseCurrency(token:string, name: string, ticker: string)
 }
 
 /** This does not perform assertion */
-async function postCurrency(token:string, name: string, ticker: string, refCurrencyId: string, amount: string)
+export async function postCurrency(token:string, name: string, ticker: string, refCurrencyId: string, amount: string)
 {
     const response = await HTTPAssert.assertFetch(UnitTestEndpoints.currenciesEndpoints['post'], 
     {
@@ -143,7 +143,7 @@ async function postCurrency(token:string, name: string, ticker: string, refCurre
     return response;
 }
 
-async function postCurrencyRateDatum(token:string, amount: string, refCurrencyId: string, refAmountCurrencyId: string, date: number)
+export async function postCurrencyRateDatum(token:string, amount: string, refCurrencyId: string, refAmountCurrencyId: string, date: number)
 {
     const response = await HTTPAssert.assertFetch(UnitTestEndpoints.currencyRateDatumsEndpoints['post'], 
     {
@@ -155,7 +155,7 @@ async function postCurrencyRateDatum(token:string, amount: string, refCurrencyId
 }
 
 /** This does not perform assertion */
-async function getCurrencyById(token:string, id: string, date?: number|undefined)
+export async function getCurrencyById(token:string, id: string, date?: number|undefined)
 {
     const response = await HTTPAssert.assertFetch
     (

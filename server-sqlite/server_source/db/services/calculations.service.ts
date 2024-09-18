@@ -3,7 +3,11 @@ import { TransactionRepository } from "../repositories/transaction.repository.js
 import { TransactionService } from "./transaction.service.js";
 import { SQLitePrimitiveOnly } from "../../index.d.js";
 import { Transaction } from "../entities/transaction.entity.js";
-import { DecimalAdditionMapReducer, nameof } from "../servicesUtils.js";
+import { DecimalAdditionMapReducer, nameof, safeWhile, ServiceUtils } from "../servicesUtils.js";
+import { LinearInterpolator } from "../../calculations/linearInterpolator.js";
+import createHttpError from "http-errors";
+import { CurrencyListCache } from "../caches/currencyListCache.cache.js";
+import { CurrencyCalculator } from "./currency.service.js";
 
 export type UserBalanceHistoryMap = { [epoch: string]: { [currencyId: string]: Decimal } };
 export type UserBalanceHistoryResults = 
@@ -134,5 +138,68 @@ export class CalculationsService
         })();
 
         return output;
+    }
+
+    public static async getUserNetworthHistory(userId: string, startDate: number, endDate: number, division: number): Promise<{[epoch: string]:string}>
+    {
+        type cInterpolatorMap = { [currencyId: string]: LinearInterpolator };
+
+        if (startDate >= endDate)
+            throw createHttpError(400, `Start date "${startDate}" cannot be larger than or equal to "${endDate}".`);
+
+        if (division <= 1)
+            throw createHttpError(400, `Division must be a positive integer higher than 1, received "${division}".`);
+
+        const balanceHistory = await CalculationsService.getUserBalanceHistory(userId, startDate, endDate, division);
+        const currenciesListCache = new CurrencyListCache(userId);
+        const currenciesIdsInvolved = Object.keys(balanceHistory.currenciesEarliestPresentEpoch);
+        const currenciesInterpolators: cInterpolatorMap = await (async () => 
+        {
+            const output: cInterpolatorMap = {};
+            for (const cId of currenciesIdsInvolved)
+            {
+                output[cId] = await CurrencyCalculator.getCurrencyToBaseRateInterpolator
+                (
+                    userId,
+                    cId,
+                    undefined,
+                    undefined,
+                    currenciesListCache
+                );
+            }
+            return output;
+        })();
+
+        /** After obtaining the balance history, map each entry in the history to the actual value at that epoch. */
+        const balanceToNetworthEntries: [ string, string ][] = [];
+        for (const epoch of Object.keys(balanceHistory.historyMap))
+        {
+            let valueOfAllCurrenciesSum = new Decimal(0);
+            for (const currencyID of Object.keys(balanceHistory.historyMap[epoch]))
+            {
+                const currencyObject = currenciesListCache.getCurrenciesList().find(x => x.id === currencyID)!;
+                let currencyRateToBase = currenciesInterpolators[currencyID].getValue(new Decimal(epoch));
+
+                // Happens when the rate is unavailable at the given epoch (first rate is after the given epoch)
+                // when this happen, use base rate instead.
+                if (currencyRateToBase === undefined)
+                {
+                    currencyRateToBase = await CurrencyCalculator.currencyToBaseRate
+                    (
+                        userId, 
+                        currencyObject, 
+                        new Date(parseInt(epoch)), 
+                        currenciesListCache
+                    );
+                }
+                const currencyValue = currencyRateToBase.mul(balanceHistory.historyMap[epoch][currencyID]);
+                valueOfAllCurrenciesSum = valueOfAllCurrenciesSum.add(currencyValue);
+            }
+            balanceToNetworthEntries.push([epoch, valueOfAllCurrenciesSum.toString()]);
+        }
+
+        const balanceToNetworthHistory = ServiceUtils.reverseMap(balanceToNetworthEntries);
+        
+        return balanceToNetworthHistory;
     }
 }

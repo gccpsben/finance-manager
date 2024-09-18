@@ -6,9 +6,10 @@ import { HookShortcuts } from "./shortcuts/hookShortcuts.js";
 import { Decimal } from "decimal.js";
 import { randomUUID } from "crypto";
 import { simpleFaker } from "@faker-js/faker";
-import { GetUserBalanceHistoryAPI, ResponseGetExpensesAndIncomesDTO } from "../../api-types/calculations.js";
+import { GetUserBalanceHistoryAPI, GetUserNetworthHistoryAPI, ResponseGetExpensesAndIncomesDTO } from "../../api-types/calculations.js";
 import { isDecimalJSString, IsDecimalJSString, IsEpochKeyedMap, IsPassing } from "../server_source/db/validators.js";
 import { shuffleArray } from './lib/utils.js';
+import { postCurrencyRateDatum } from './currency.test.js';
 
 export namespace GetUserBalanceHistoryAPIClass
 {
@@ -26,6 +27,22 @@ export namespace GetUserBalanceHistoryAPIClass
             return true;
         })
         map: { [epoch: string]: { [currencyId: string]: string; }; };       
+    }
+}
+
+export namespace GetUserNetworthHistoryAPIClass
+{
+    export class ResponseDTO implements GetUserNetworthHistoryAPI.ResponseDTO
+    {
+        @IsEpochKeyedMap()
+        @IsPassing(value => 
+        {
+            const val = value as { [epoch: string]: unknown };
+            if (Object.keys(value).some(k => typeof k !== 'string')) return false;
+            if (Object.values(value).some(v => !isDecimalJSString(v))) return false;
+            return true;
+        })
+        map: { [epoch: string]: string; };
     }
 }
 
@@ -293,6 +310,170 @@ export default async function(this: Context)
                     
                     assertJSONEqual(userBalances.res.parsedBody, expectedJSON);
                 })
+            });
+        });
+
+        await this.module(UnitTestEndpoints.calculationsEndpoints.networthHistory, async function () 
+        {
+            await resetDatabase();
+
+            const makeCurrBody = (name: string, ticker: string, fallbackRateAmount: string, fallbackRateCurrencyId: string) =>
+                ({ name, ticker, fallbackRateAmount, fallbackRateCurrencyId });
+
+            const userCreds = await HookShortcuts.registerRandMockUsers(serverURL, 1);
+            const firstUserObj = Object.values(userCreds)[0];
+            const baseConfig = { serverURL: serverURL, token: firstUserObj.token, assertBody: true, expectedCode: 200 };
+
+            const rangeStart = 100;
+            const rangeEnd = 0;
+            const division = 10;
+            const txnTypes = await HookShortcuts.postRandomTxnTypes({ txnCount: 3, ...baseConfig });
+            const containers = await HookShortcuts.postRandomContainers({ containerCount: 3, ...baseConfig });
+            const baseCurrency = await HookShortcuts.postCreateCurrency({ body: { name: "BASE", ticker: "BASE" }, ...baseConfig });
+            const secondCurrency = await HookShortcuts.postCreateCurrency({ body: makeCurrBody("SEC", "SEC", '1', baseCurrency.currencyId), ...baseConfig });
+            const thirdCurrency = await HookShortcuts.postCreateCurrency({ body: makeCurrBody("THI", "THI", '1', secondCurrency.currencyId), ...baseConfig });
+            const txnsToPost: { toAmount: string | undefined, fromAmount: string | undefined, txnAgeDays: number, currId: string, conId: string }[] =
+            [
+                { fromAmount: undefined  , toAmount: `100.0001` , txnAgeDays: 90, currId: baseCurrency.currencyId   , conId: containers[0].containerId },
+                { fromAmount: `0.0001`   , toAmount: `0.0001`   , txnAgeDays: 85, currId: baseCurrency.currencyId   , conId: containers[1].containerId },
+                { fromAmount: `0.0001`   , toAmount: undefined  , txnAgeDays: 65, currId: thirdCurrency.currencyId  , conId: containers[2].containerId },
+                { fromAmount: `0`        , toAmount: `12710`    , txnAgeDays: 60, currId: thirdCurrency.currencyId  , conId: containers[1].containerId },
+                { fromAmount: `1820`     , toAmount: undefined  , txnAgeDays: 40, currId: baseCurrency.currencyId   , conId: containers[0].containerId },
+                { fromAmount: undefined  , toAmount: `78777`    , txnAgeDays: 32, currId: secondCurrency.currencyId , conId: containers[1].containerId },
+                { fromAmount: `1912.30`  , toAmount: undefined  , txnAgeDays: 18, currId: baseCurrency.currencyId   , conId: containers[2].containerId },
+                { fromAmount: `192`      , toAmount: `72727`    , txnAgeDays: 9 , currId: secondCurrency.currencyId , conId: containers[0].containerId },
+                { fromAmount: `09037`    , toAmount: undefined  , txnAgeDays: 0 , currId: thirdCurrency.currencyId  , conId: containers[1].containerId }
+            ];
+            const ratesDatums = 
+            [
+                { datumAgeDays: 100, amount: "0.06"   , refAmountCurrency: baseCurrency   , refCurrency: secondCurrency },
+                { datumAgeDays: 78,  amount: "0.05"   , refAmountCurrency: baseCurrency   , refCurrency: secondCurrency }, // 
+                { datumAgeDays: 48,  amount: "0.04"   , refAmountCurrency: baseCurrency   , refCurrency: secondCurrency }, // 
+                { datumAgeDays: 15,  amount: "0.1"    , refAmountCurrency: baseCurrency   , refCurrency: secondCurrency },
+
+                { datumAgeDays: 78,  amount: "78"     , refAmountCurrency: baseCurrency   , refCurrency: thirdCurrency }, //
+                { datumAgeDays: 32,  amount: "770"    , refAmountCurrency: secondCurrency , refCurrency: thirdCurrency }, // 
+                { datumAgeDays: 10,  amount: "147.22" , refAmountCurrency: baseCurrency   , refCurrency: thirdCurrency },
+                { datumAgeDays: 0,   amount: "1111"   , refAmountCurrency: secondCurrency , refCurrency: thirdCurrency },
+            ];
+
+            shuffleArray(txnsToPost);
+            shuffleArray(ratesDatums);
+
+            // Start posting defined test transactions to server
+            for (const txnToPost of txnsToPost) 
+            {
+                const isFrom = !!txnToPost.fromAmount;
+                const isTo = !!txnToPost.toAmount;
+
+                await HookShortcuts.postCreateTransaction
+                (
+                    {
+                        body:
+                        {
+                            title: randomUUID(),
+                            creationDate: transformOffsetDate(txnToPost.txnAgeDays),
+                            description: simpleFaker.string.sample(100),
+                            fromAmount: isFrom ? txnToPost.fromAmount : undefined,
+                            fromContainerId: isFrom ? txnToPost.conId : undefined,
+                            fromCurrencyId: isFrom ? txnToPost.currId : undefined,
+                            toAmount: isTo ? txnToPost.toAmount : undefined,
+                            toContainerId: isTo ? txnToPost.conId : undefined,
+                            toCurrencyId: isTo ? txnToPost.currId : undefined,
+                            typeId: choice(txnTypes).txnId
+                        },
+                        serverURL: serverURL, token: firstUserObj.token, assertBody: true, expectedCode: 200
+                    }
+                );
+            }
+            
+            // Start posting defined currency rate datums to server
+            for (const datum of ratesDatums)
+            {
+                const response = await postCurrencyRateDatum
+                (
+                    firstUserObj.token, 
+                    datum.amount,
+                    datum.refCurrency.currencyId,
+                    datum.refAmountCurrency.currencyId,
+                    transformOffsetDate(datum.datumAgeDays)
+                );
+                assertStrictEqual(response.res.status, 200);
+            }
+            
+            await this.describe(`get`, async function()
+            {
+                await this.test(`Forbid division is not an int`, async function()
+                {
+                    await HookShortcuts.getUserNetworthHistory(
+                    { 
+                        serverURL: serverURL, 
+                        token: firstUserObj.token, 
+                        assertBody: false, 
+                        expectedCode: 400,
+                        division: 5.2,
+                        startDate: transformOffsetDate(rangeStart),
+                        endDate: transformOffsetDate(rangeEnd)
+                    });
+                });
+
+                await this.test(`Forbid division === 1 or division === 0`, async function()
+                {
+                    await HookShortcuts.getUserNetworthHistory(
+                    { 
+                        serverURL: serverURL, 
+                        token: firstUserObj.token, 
+                        assertBody: false, 
+                        expectedCode: 400,
+                        division: 0,
+                        startDate: transformOffsetDate(100),
+                        endDate: transformOffsetDate(0)
+                    });
+
+                    await HookShortcuts.getUserNetworthHistory(
+                    { 
+                        serverURL: serverURL, 
+                        token: firstUserObj.token, 
+                        assertBody: false, 
+                        expectedCode: 400,
+                        division: 1,
+                        startDate: transformOffsetDate(rangeStart),
+                        endDate: transformOffsetDate(rangeEnd)
+                    });
+                });
+
+                await this.test(`Test for Correctness`, async function()
+                {
+                    const response = await HookShortcuts.getUserNetworthHistory(
+                    { 
+                        serverURL: serverURL, 
+                        token: firstUserObj.token, 
+                        assertBody: true, 
+                        expectedCode: 200,
+                        division: 10,
+                        startDate: transformOffsetDate(rangeStart),
+                        endDate: transformOffsetDate(rangeEnd)
+                    });
+                    
+                    const expectedJSON = 
+                    {
+                        "map": 
+                        {
+                            [transformOffsetDate(rangeStart)]: "0",
+                            [transformOffsetDate(rangeStart + (rangeEnd - rangeStart) / (division - 1) * 1)]: "100.0001",
+                            [transformOffsetDate(rangeStart + (rangeEnd - rangeStart) / (division - 1) * 2)]: "100.0001",
+                            [transformOffsetDate(rangeStart + (rangeEnd - rangeStart) / (division - 1) * 3)]: "100.0001",
+                            [transformOffsetDate(rangeStart + (rangeEnd - rangeStart) / (division - 1) * 4)]: "837682.85341342995169082125603865",
+                            [transformOffsetDate(rangeStart + (rangeEnd - rangeStart) / (division - 1) * 5)]: "761545.65594483091787439613526571",
+                            [transformOffsetDate(rangeStart + (rangeEnd - rangeStart) / (division - 1) * 6)]: "683588.45847623188405797101449275",
+                            [transformOffsetDate(rangeStart + (rangeEnd - rangeStart) / (division - 1) * 7)]: "1212403.7784801212121212121212122",
+                            [transformOffsetDate(rangeStart + (rangeEnd - rangeStart) / (division - 1) * 8)]: "1815058.3434286060606060606060607",
+                            [transformOffsetDate(rangeStart + (rangeEnd - rangeStart) / (division - 1) * 9)]: "419569.18899",
+                        }
+                    } satisfies GetUserNetworthHistoryAPI.ResponseDTO;
+                    
+                    assertJSONEqual(response.res.parsedBody, expectedJSON);
+                });
             });
         });
     });

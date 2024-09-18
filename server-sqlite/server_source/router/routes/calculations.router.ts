@@ -2,8 +2,11 @@ import express from 'express';
 import { AccessTokenService } from '../../db/services/accessToken.service.js';
 import { TypesafeRouter } from '../typescriptRouter.js';
 import { CalculationsService } from '../../db/services/calculations.service.js';
-import { GetUserBalanceHistoryAPI, type ResponseGetExpensesAndIncomesDTO } from '../../../../api-types/calculations.js';
+import { GetUserBalanceHistoryAPI, GetUserNetworthHistoryAPI, type ResponseGetExpensesAndIncomesDTO } from '../../../../api-types/calculations.js';
 import { ServiceUtils } from '../../db/servicesUtils.js';
+import { IsPositiveIntString, IsUTCDateIntString } from '../../db/validators.js';
+import { IsOptional } from 'class-validator';
+import { ExpressValidations } from '../validation.js';
 
 const router = new TypesafeRouter(express.Router());
 
@@ -22,6 +25,43 @@ router.get<ResponseGetExpensesAndIncomesDTO>("/api/v1/calculations/expensesAndIn
             incomes7d: calResults.total7d.incomes.toString()
         }
     }
+});
+
+router.get<GetUserNetworthHistoryAPI.ResponseDTO>(`/api/v1/calculations/networthHistory`, 
+{
+    handler: async (req: express.Request, res: express.Response) => 
+    {
+        class query implements GetUserNetworthHistoryAPI.RequestQueryDTO
+        {
+            @IsOptional() @IsUTCDateIntString() startDate: string | undefined;
+            @IsOptional() @IsUTCDateIntString() endDate: string | undefined;
+            @IsOptional() @IsPositiveIntString() division: string | undefined;
+        }
+        const parsedQuery = await ExpressValidations.validateBodyAgainstModel<query>(query, req.query);
+        const reqQuery = 
+        {
+            startDate: parsedQuery.startDate === undefined ? undefined : parseInt(parsedQuery.startDate),
+            endDate: parsedQuery.endDate === undefined ? undefined : parseInt(parsedQuery.endDate),
+            division: parsedQuery.division === undefined ? undefined : parseInt(parsedQuery.division),
+        };
+        const input = 
+        {
+            startDate: reqQuery.startDate ?? Date.now() - 2.592e+9, // 30d
+            endDate: reqQuery.endDate ?? Date.now(),
+            division: reqQuery.division ?? 100
+        };
+
+        const authResults = await AccessTokenService.ensureRequestTokenValidated(req);
+        return { 
+            map: await CalculationsService.getUserNetworthHistory
+            (
+                authResults.ownerUserId, 
+                input.startDate, 
+                input.endDate, 
+                input.division
+            )
+        }
+    }   
 });
 
 router.get<GetUserBalanceHistoryAPI.ResponseDTO>(`/api/v1/calculations/balanceHistory`, 

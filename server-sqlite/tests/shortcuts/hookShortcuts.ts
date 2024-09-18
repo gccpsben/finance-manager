@@ -6,7 +6,7 @@ import { PostContainerAPI } from '../../../api-types/container.js';
 import { PostCurrencyAPI } from '../../../api-types/currencies.js';
 import { PostTxnTypesAPI } from '../../../api-types/txnType.js';
 import { PostLoginAPIClass } from '../auth.test.js';
-import { GetUserBalanceHistoryAPIClass, ResponseGetExpensesAndIncomesDTOClass } from '../calculations.test.js';
+import { GetUserBalanceHistoryAPIClass, GetUserNetworthHistoryAPIClass, ResponseGetExpensesAndIncomesDTOClass } from '../calculations.test.js';
 import { GetContainerAPIClass, PostContainerAPIClass } from '../container.test.js';
 import { PostCurrencyAPIClass } from '../currency.test.js';
 import { TestUserDict, TestUserEntry, UnitTestEndpoints } from '../index.test.js';
@@ -347,6 +347,33 @@ export class HookShortcuts
                 baseURL: config.serverURL, expectedStatus: config.expectedCode, method: "GET",
                 headers: { "authorization": config.token },
                 expectedBodyType: assertBody ? GetUserBalanceHistoryAPIClass.ResponseDTO : undefined,
+            }
+        );
+        return {
+            res: response,
+            parsedBody: response.parsedBody
+        };
+    }
+
+    public static async getUserNetworthHistory(config: 
+    {
+        serverURL:string,
+        token:string,
+        assertBody?: boolean,
+        expectedCode?: number,
+        startDate: number,
+        endDate: number,
+        division: number
+    })
+    {
+        const assertBody = config.assertBody === undefined ? true : config.assertBody;
+        const response = await HTTPAssert.assertFetch
+        (
+            `${UnitTestEndpoints.calculationsEndpoints['networthHistory']}?startDate=${config.startDate}&endDate=${config.endDate}&division=${config.division}`,
+            {
+                baseURL: config.serverURL, expectedStatus: config.expectedCode, method: "GET",
+                headers: { "authorization": config.token },
+                expectedBodyType: assertBody ? GetUserNetworthHistoryAPIClass.ResponseDTO : undefined,
             }
         );
         return {

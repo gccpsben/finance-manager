@@ -26,3 +26,21 @@ export namespace GetUserBalanceHistoryAPI
         };
     };
 }
+
+export namespace GetUserNetworthHistoryAPI
+{
+    export type RequestQueryDTO = 
+    {
+        startDate: string | undefined;
+        endDate: string | undefined;
+        division: string | undefined;
+    };
+
+    export type ResponseDTO = 
+    {
+        map: 
+        {
+            [epoch: string]: string
+        }
+    };
+}

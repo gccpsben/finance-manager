@@ -48,6 +48,14 @@ export namespace ServiceUtils
             output[key] = mapper(value);   
         return output;
     }
+
+    export function reverseMap<T>(entries: [string, T][])
+    {
+        const output: {[key: string]: T} = {};
+        for (const entry of entries)
+            output[entry[0]] = entry[1];
+        return output;
+    }
 }
 
 /**
