@@ -178,6 +178,41 @@ export function IsUTCDateInt()
     };
 }
 
+export function isPositiveIntString(value: any)
+{
+    try
+    {
+        if (!isNumberString(value)) return false;
+        if (!isInt(parseFloat(value))) return false;
+        if (parseInt(value) <= 0) return false;
+        return true;
+    }
+    catch(e) { return false; }
+}
+export function IsPositiveIntString() 
+{
+    return function (object: Object, propertyName: string) 
+    {
+        registerDecorator(
+        {
+            name: 'isPositiveIntString',
+            target: object.constructor,
+            propertyName: propertyName,
+            options: {
+                message: "Expected string with a positive int value."
+            },
+            validator: 
+            {
+                validate(value: any, args: ValidationArguments) 
+                {
+                    if (!isIntString(value)) return false;
+                    return true;
+                },
+            },
+        });
+    };
+}
+
 export function isIntString(value: any)
 {
     try
