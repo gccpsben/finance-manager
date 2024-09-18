@@ -146,7 +146,7 @@ export class CurrencyCalculator
                 output.push(
                 {
                     key: new Decimal(datum.date),
-                    value: new Decimal(datum.amount).mul(await CurrencyCalculator.currencyToBaseRate(userId, datumUnitCurrency, undefined, cache))
+                    value: new Decimal(datum.amount).mul(await CurrencyCalculator.currencyToBaseRate(userId, datumUnitCurrency, new Date(datum.date), cache))
                 });   
             }
             return output;
