@@ -444,6 +444,7 @@ export default async function(this: Context)
 
                 await this.test(`Test for Correctness`, async function()
                 {
+                    const divisionRangeInEpoch = (rangeEnd - rangeStart) / (division - 1);
                     const response = await HookShortcuts.getUserNetworthHistory(
                     { 
                         serverURL: serverURL, 
@@ -460,15 +461,15 @@ export default async function(this: Context)
                         "map": 
                         {
                             [transformOffsetDate(rangeStart)]: "0",
-                            [transformOffsetDate(rangeStart + (rangeEnd - rangeStart) / (division - 1) * 1)]: "100.0001",
-                            [transformOffsetDate(rangeStart + (rangeEnd - rangeStart) / (division - 1) * 2)]: "100.0001",
-                            [transformOffsetDate(rangeStart + (rangeEnd - rangeStart) / (division - 1) * 3)]: "100.0001",
-                            [transformOffsetDate(rangeStart + (rangeEnd - rangeStart) / (division - 1) * 4)]: "837682.85341342995169082125603865",
-                            [transformOffsetDate(rangeStart + (rangeEnd - rangeStart) / (division - 1) * 5)]: "761545.65594483091787439613526571",
-                            [transformOffsetDate(rangeStart + (rangeEnd - rangeStart) / (division - 1) * 6)]: "683588.45847623188405797101449275",
-                            [transformOffsetDate(rangeStart + (rangeEnd - rangeStart) / (division - 1) * 7)]: "1212403.7784801212121212121212122",
-                            [transformOffsetDate(rangeStart + (rangeEnd - rangeStart) / (division - 1) * 8)]: "1815058.3434286060606060606060607",
-                            [transformOffsetDate(rangeStart + (rangeEnd - rangeStart) / (division - 1) * 9)]: "419569.18899",
+                            [transformOffsetDate(rangeStart + divisionRangeInEpoch * 1)]: "100.0001",
+                            [transformOffsetDate(rangeStart + divisionRangeInEpoch * 2)]: "100.0001",
+                            [transformOffsetDate(rangeStart + divisionRangeInEpoch * 3)]: "100.0001",
+                            [transformOffsetDate(rangeStart + divisionRangeInEpoch * 4)]: "837682.85341342995169082125603865",
+                            [transformOffsetDate(rangeStart + divisionRangeInEpoch * 5)]: "761545.65594483091787439613526571",
+                            [transformOffsetDate(rangeStart + divisionRangeInEpoch * 6)]: "683588.45847623188405797101449275",
+                            [transformOffsetDate(rangeStart + divisionRangeInEpoch * 7)]: "1212403.7784801212121212121212122",
+                            [transformOffsetDate(rangeStart + divisionRangeInEpoch * 8)]: "1815058.3434286060606060606060607",
+                            [transformOffsetDate(rangeStart + divisionRangeInEpoch * 9)]: "419569.18899",
                         }
                     } satisfies GetUserNetworthHistoryAPI.ResponseDTO;
                     
