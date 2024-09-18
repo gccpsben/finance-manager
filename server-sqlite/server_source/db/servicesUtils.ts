@@ -79,3 +79,17 @@ export class DecimalAdditionMapReducer<K extends string | symbol> extends MapRed
         super(initialValue, (key, oldVal, newVal) => !oldVal ? newVal : newVal.add(oldVal));
     }
 }
+
+/**
+ * This method is for dev-only.
+ * @devOnly
+ */
+export async function safeWhile(maxTries:number, condition: () => boolean, callback: Function)
+{
+    for (let i = 0; i < maxTries; i++)
+    {
+        if (!condition()) return;
+        await callback();
+    }
+    console.log(`Max retires reached. Something is wrong with your logic.`);
+}
