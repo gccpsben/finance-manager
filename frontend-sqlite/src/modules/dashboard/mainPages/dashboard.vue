@@ -262,7 +262,7 @@ export default
 
     overflow-x:hidden; .fullSize; box-sizing: border-box;
     font-family: 'Schibsted Grotesk', sans-serif;
-    background: @pageBackground;
+    background: transparent;
 
     .pendingTxn { color:@yellow !important; }
     .resolvedTxn { .fg(inherit); }

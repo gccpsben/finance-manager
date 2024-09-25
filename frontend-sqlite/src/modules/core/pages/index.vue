@@ -52,6 +52,14 @@ export default
                 </div>
             </grid-shortcut>
 
+            <div v-area="'content'" class="rel" style="overflow:scroll">
+                <router-view v-area="'content'" v-slot="{ Component }">
+                    <Transition name="fade">
+                        <component :is="Component"/>
+                    </Transition>
+                </router-view>
+            </div>
+
             <div v-basic="'#mobileBar'">
                 <div v-for="page in store.availablePages" :class="{'activeButton': isSelected(page)}"
                 @click="goToPage(page)">
@@ -60,8 +68,6 @@ export default
                     </div>
                 </div>
             </div>
-
-            <router-view v-area="'content'"></router-view>
             
         </grid-shortcut>
     </div>
@@ -71,6 +77,8 @@ export default
 @import "../stylesheets/globalStyle.less";
 
 #mobileBar { display:none; }
+
+#topGrid { background: @pageBackground; }
 
 @media only screen and (max-width: 800px) 
 {
@@ -178,5 +186,35 @@ export default
 	-moz-osx-font-smoothing: grayscale;
 	text-align: center;
 	color: #2c3e50;
+    overflow: hidden;
+}
+
+.fade-enter-active
+{ 
+    transition: all 0.5s ease;
+    position: absolute;
+    opacity:1;
+    transform: scale(1);
+}
+.fade-leave-active 
+{ 
+    transition: all 0.5s ease;
+    position: absolute;
+    opacity:0;
+    transform: scale(0.9);
+}
+.fade-enter-from
+{ 
+    transition: all 0.5s ease;
+    position: absolute;
+    transform: scale(0.9);
+    opacity:0;
+}
+.fade-leave-to 
+{ 
+    transition: all 0.5s ease;
+    position: absolute;
+    transform: scale(0.9);
+    opacity:0;
 }
 </style>

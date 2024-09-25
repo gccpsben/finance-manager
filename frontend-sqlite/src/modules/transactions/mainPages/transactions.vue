@@ -249,7 +249,6 @@ textarea
     padding:50px; box-sizing: border-box;
     overflow-x:hidden; .fullSize;
     font-family: 'Schibsted Grotesk', sans-serif;
-    .gradBackground;
 
     .botChip
     {
