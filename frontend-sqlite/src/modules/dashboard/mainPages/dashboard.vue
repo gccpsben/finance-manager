@@ -24,15 +24,15 @@
                 :valueAll="userTotalValue"
                 :isLoading="store.userExpensesIncomes.isLoading" :networkError="store.userExpensesIncomes.error"></number-cell>
                 
-                <number-cell title="Net Change" :noItemsText="'No Data'" 
+                <number-cell title="Net Change" :noItemsText="'No Data'"
                 :value7d="netChange7d" :value30d="netChange30d" v-area="'netChangePanel'"
                 style="background: linear-gradient(-45deg, rgba(51, 213, 190, 0.09) 0%, rgba(81, 218, 218, 0.43) 100%); color:white;"
                 :isLoading="store.userExpensesIncomes.isLoading" :networkError="store.userExpensesIncomes.error"></number-cell>
                 
-                <list-cell v-area="'_30dExpensesList'" title="30d Expenses" :noItemsText="'No Expenses'" 
+                <list-cell v-area="'_30dExpensesList'" title="30d Expenses" :noItemsText="'No Expenses'"
                 :isLoading="store.txns30d.isLoading"
                 :error="store.txns30d.error"
-                :itemsInPage="7"
+                :itemsInPage="6"
                 :items="expenseTxns30d">
                     <template #row="props">
                         <grid-shortcut columns="50px 1fr 1fr" :class="{'fullSize': true}" @click="viewTxn(props.currentItem.id)" class="fullSize highlightableRow">
@@ -47,10 +47,10 @@
                     </template>
                 </list-cell>
 
-                <list-cell v-area="'_30dIncomesList'" title="30d Incomes" :noItemsText="'No Incomes'" 
+                <list-cell v-area="'_30dIncomesList'" title="30d Incomes" :noItemsText="'No Incomes'"
                 :isLoading="store.txns30d.isLoading"
                 :error="store.txns30d.error"
-                :itemsInPage="7"
+                :itemsInPage="6"
                 :items="incomeTxns30d">
                     <template #row="props">
                         <grid-shortcut columns="50px 1fr 1fr" :class="{'fullSize': true}" @click="viewTxn(props.currentItem.id)" class="fullSize highlightableRow">
@@ -68,7 +68,7 @@
                 <list-cell v-area="'_30dTransfersList'" title="30d Transfers" :noItemsText="'No Transfers'" 
                 :isLoading="store.txns30d.isLoading"
                 :error="store.txns30d.error"
-                :itemsInPage="7"
+                :itemsInPage="6"
                 :items="transferTxns30d">
                     <template #row="props">
                         <grid-shortcut columns="50px 1fr 1fr" :class="{'fullSize': true}" @click="viewTxn(props.currentItem.id)" class="fullSize highlightableRow">
@@ -157,6 +157,7 @@ import { useCurrenciesStore } from '@/modules/currencies/stores/useCurrenciesSto
 import listCellVue from '@/modules/core/components/listCell.vue';
 import cell from '@/modules/core/components/cell.vue';
 import containerValuesGraphCell from '@/modules/containers/components/containerValuesGraphCell.vue';
+import { useMediaQuery } from "@vueuse/core";
 
 export default 
 {
