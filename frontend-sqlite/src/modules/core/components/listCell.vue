@@ -1,20 +1,28 @@
 <template>
 
-    <cell :title="title.get()">
+    <cell :title="title.get()" :inset-mode="props.insetMode">
         <template #cellOptions>
             <div class="pageSelector">
                 <numberPagination v-model="currentPageIndex" :min-page-readable="1" 
                                   :max-page-readable="maxPageAllowed + 1" />
             </div>
         </template>
-        <grid-shortcut style="overflow: hidden; grid-auto-rows: 1fr;" columns="1fr">
-            <NetworkCircularIndicator v-if="isLoading.get()||error.get()" :isLoading="isLoading.get()" :error="error.get()" class="fullHeight"/>
-            <div v-else-if="currentViewItems.length == 0" class="fullSize center"> {{ noItemsText.get() }} </div>
+        <grid-shortcut style="overflow: hidden; grid-auto-rows: 1fr;" columns="1fr" class="fullSize">
+            <NetworkCircularIndicator v-if="isLoading.get()||error.get()" 
+                                      :isLoading="isLoading.get()" 
+                                      :error="error.get()" 
+                                      class="fullHeight"
+            />
+            <div v-else-if="currentViewItems.length == 0" class="fullSize center"> 
+                {{ noItemsText.get() }} 
+            </div>
             <div v-for="currentItem in currentViewItems">
                 <slot name="row" :currentItem="currentItem"></slot>
             </div>
             <!-- Automatically add empty rows if the current page hasn't enough items -->
-            <div v-if="currentViewItems.length > 0" v-for="blankRow in new Array(itemsInPage.get()! - currentViewItems.length)"></div>
+            <div v-if="currentViewItems.length > 0" v-for="blankRow in new Array(itemsInPage.get()! - currentViewItems.length)">
+
+            </div>
         </grid-shortcut>
     </cell>
 
@@ -34,7 +42,8 @@ const props = withDefaults(defineProps<
     title?: string,
     noItemsText?: string,
     isLoading?: boolean,
-    error?: object
+    error?: object,
+    insetMode?: boolean
 }>(), 
 {
     itemsInPage: 7,
@@ -42,7 +51,8 @@ const props = withDefaults(defineProps<
     isLoading: true,
     items: () => [] as T[],
     title: "Title Here",
-    noItemsText: "No Items"
+    noItemsText: "No Items",
+    insetMode: false
 });
 
 const items = defineProperty<T[], 'items', typeof props>("items", { emitFunc: undefined, props: props, withEmits: false });

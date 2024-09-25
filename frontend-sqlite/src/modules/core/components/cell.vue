@@ -1,5 +1,5 @@
 <template>
-    <grid-shortcut class="panel" style="padding:15px; box-sizing:border-box; height:100%; gap:15px;" columns="minmax(0,1fr)" rows="auto minmax(0,1fr)">
+    <grid-shortcut class="panel" :class="{'insetMode': props.insetMode}" columns="minmax(0,1fr)" rows="auto minmax(0,1fr)">
         <grid-shortcut rows="1fr" columns="1fr auto">
             <div class="yCenter xLeft">
                 <template v-if="icon && icon.type === 'FontAwesome'">
@@ -14,7 +14,9 @@
                 <slot name="cellOptions"></slot>
             </div>
         </grid-shortcut>
-        <slot></slot>
+        <div class="panelContent fullSize">
+            <slot></slot>
+        </div>
     </grid-shortcut>
 </template>
 
@@ -22,16 +24,24 @@
 // Default values before importing globalStyle.
 @cellHeaderColor: white;
 @cellBackground: #0f0f0f;
+@cellBorderRadius: 7px;
 
 @import '../stylesheets/globalStyle.less';
 .panel
 {
-    border-radius: 7px;
+    gap:15px;
+    border-radius: @cellBorderRadius;
     .fullSize; 
-    .bg(@cellBackground);
     box-sizing:border-box;
     font-family: @font;
     font-weight: normal;
+
+    &:not(.insetMode) 
+    {
+        padding:15px;
+        .bg(@cellBackground);
+        box-shadow: 0px 0px 15px #050505;
+    }
 
     .panelTitle 
     { 
@@ -42,7 +52,22 @@
         display:inline; 
         font-weight: inherit;
     }
-    box-shadow: 0px 0px 15px #050505;
+    &.insetMode .panelTitle
+    {
+        padding-left: 15px;
+        padding-right: 15px;
+    }
+
+    &.insetMode
+    {
+        .panelContent
+        {
+            border-radius: @cellBorderRadius;
+            // padding:15px;
+            .bg(@cellBackground);
+            box-shadow: 0px 0px 15px #050505;
+        }
+    }
 
     .variantSelectorsContainer
     {
@@ -77,8 +102,9 @@ export type IconType = "Google" | "FontAwesome";
 const props = withDefaults(defineProps<
 {
     title: string,
-    icon?: { type: IconType, name: string } | undefined
-}>(), { title: "No Title", icon: undefined });
+    icon?: { type: IconType, name: string } | undefined,
+    insetMode?: boolean | undefined
+}>(), { title: "No Title", icon: undefined, insetMode: false });
 
 const title = defineProperty<string, "title", typeof props>("title", 
 {   

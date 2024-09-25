@@ -1,5 +1,5 @@
 <template>
-    <cell :title="title" :icon="icon">
+    <cell :title="title" :icon="icon" :inset-mode="insetMode">
         <div v-if="!isLoading && !networkError" class="fullHeight xLeft">
             <h2 class="variantSelectorTab">{{ currentValue?.toFixed(2) }}</h2>
         </div>
@@ -30,7 +30,8 @@ export default
         "title": { default: "", type: String },
         "isLoading": { default: true, type: Boolean },
         "networkError": { default: undefined },
-        "icon": { default: undefined, type: Object as PropType<{type: IconType, name: string}> }
+        "icon": { default: undefined, type: Object as PropType<{type: IconType, name: string}> },
+        "insetMode": { default: false }
     },
     data() 
     { 
