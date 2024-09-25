@@ -26,6 +26,7 @@
 @import '../stylesheets/globalStyle.less';
 .panel
 {
+    border-radius: 7px;
     .fullSize; 
     .bg(@cellBackground);
     box-sizing:border-box;

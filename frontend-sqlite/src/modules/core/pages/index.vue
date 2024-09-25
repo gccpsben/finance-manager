@@ -31,15 +31,11 @@ export default
     <div id="routerViewTopDiv">
         <grid-shortcut v-basic="'#topGrid.fullSize'" columns="auto 1fr" rows="1fr" areas="'leftBar content'">
 
-            <grid-shortcut v-basic="'#leftBar.fullSize'" v-area="'leftBar'" columns="1fr" rows="250px 1fr" class="rel" :class="{'hidden': !store.mainViewSidebarVisible}">
+            <grid-shortcut v-basic="'#leftBar.fullSize'" v-area="'leftBar'" columns="1fr" rows="100px 1fr" class="rel" :class="{'hidden': !store.mainViewSidebarVisible}">
                 <div v-basic="'#userDiv.center'" style="overflow: hidden;">
-                    <div>
+                    <!-- <div>
                         <div v-basic="'#userIcon.center'">P1</div>
-                        <div id="accountButtonsContainer">
-                            <button><i class="fa fa-gear"></i></button>
-                            <button><i class="fa fa-right-from-bracket"></i></button>
-                        </div>
-                    </div>
+                    </div> -->
                 </div>
                 <div id="leftButtonsContainer" style="overflow: hidden;">
                     <div v-for="page in store.availablePages" @click="goToPage(page)"
@@ -89,12 +85,13 @@ export default
             display:unset; 
             .bg(#151515); .fg(gray);
             box-sizing: border-box;
+            border-top: 1px solid @border;
 
             & > div
             {
                 .size(50px, 50px); display:inline-block;
-                &.activeButton i { .fg(white); }
-                &.activeButton { .bg(@focusDark); box-sizing: border-box; }
+                &.activeButton i { .fg(@focus); text-shadow: 0px 0px 15px fade(@focus, 50%); }
+                &.activeButton { box-sizing: border-box; }
             }
         }
     }
@@ -106,21 +103,14 @@ export default
 {
     border-right:1px solid @border; z-index:999;
     box-sizing: border-box; box-shadow: 0px 0px 10px black;
-    width: 225px;
+    width: 200px;
     transition: all 0.2s ease-in-out;
     
     &.hidden { width: 0px; }
 
     #userDiv
     {
-        #accountButtonsContainer
-        {
-            .center; margin-top:15px; width:100%;
-            & > button { .minButtonBase; padding-bottom:2px; color:white; background:@focusDark; margin:5px; border-radius: 5px; width:30px; height:30px; font-size:14px; }
-            & > button:hover { background: @focus; }
-        }
-
-        #userIcon { background: @surfaceHigh; .circle(100px); color:white; }
+        #userIcon { background: @surfaceHigh; .circle(50px); color:white; }
     }
 
     #leftButtonsContainer

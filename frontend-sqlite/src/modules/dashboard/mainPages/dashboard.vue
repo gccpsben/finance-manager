@@ -6,26 +6,28 @@
             <grid-shortcut id="mainGrid">
 
                 <number-cell title="Expenses" :noItemsText="'No Data'" v-area="'expensesPanel'"
+                style="background: linear-gradient(-45deg, rgba(213, 51, 105, 0.13) 0%, rgba(218, 81, 81, 0.42) 100%); color:white;"
                 :value7d="userExpensesIncomes ? parseFloat(userExpensesIncomes.expenses7d) : 0"
                 :value30d="userExpensesIncomes ? parseFloat(userExpensesIncomes.expenses30d) : 0"
                 :valueAll="userExpensesIncomes ? parseFloat(userExpensesIncomes.expensesTotal) : 0"
                 :isLoading="store.userExpensesIncomes.isLoading" :networkError="store.userExpensesIncomes.error"></number-cell>
 
                 <number-cell title="Incomes" :noItemsText="'No Data'" v-area="'incomesPanel'"
+                style="background: linear-gradient(-45deg, rgba(56, 213, 51, 0.09) 0%, rgba(81, 218, 90, 0.35) 100%); color:white;"
                 :value7d="userExpensesIncomes ? parseFloat(userExpensesIncomes.incomes7d) : 0"
                 :value30d="userExpensesIncomes ? parseFloat(userExpensesIncomes.incomes30d) : 0"
                 :valueAll="userExpensesIncomes ? parseFloat(userExpensesIncomes.incomesTotal) : 0"
                 :isLoading="store.userExpensesIncomes.isLoading" :networkError="store.userExpensesIncomes.error"></number-cell>       
                 
                 <number-cell title="Total Value" v-area="'totalValuePanel'"
+                style="background: linear-gradient(-45deg, rgba(213, 180, 51, 0.09) 0%, rgba(218, 203, 81, 0.44) 100%); color:white;"
                 :valueAll="userTotalValue"
                 :isLoading="store.userExpensesIncomes.isLoading" :networkError="store.userExpensesIncomes.error"></number-cell>
                 
-                <div v-area="'netChangePanel'">
-                    <number-cell title="Net Change" :noItemsText="'No Data'" 
-                    :value7d="netChange7d" :value30d="netChange30d"
-                    :isLoading="store.userExpensesIncomes.isLoading" :networkError="store.userExpensesIncomes.error"></number-cell>
-                </div>
+                <number-cell title="Net Change" :noItemsText="'No Data'" 
+                :value7d="netChange7d" :value30d="netChange30d" v-area="'netChangePanel'"
+                style="background: linear-gradient(-45deg, rgba(51, 213, 190, 0.09) 0%, rgba(81, 218, 218, 0.43) 100%); color:white;"
+                :isLoading="store.userExpensesIncomes.isLoading" :networkError="store.userExpensesIncomes.error"></number-cell>
                 
                 <list-cell v-area="'_30dExpensesList'" title="30d Expenses" :noItemsText="'No Expenses'" 
                 :isLoading="store.txns30d.isLoading"
@@ -259,7 +261,7 @@ export default
 
     overflow-x:hidden; .fullSize; box-sizing: border-box;
     font-family: 'Schibsted Grotesk', sans-serif;
-    .gradBackground;
+    background: @pageBackground;
 
     .pendingTxn { color:@yellow !important; }
     .resolvedTxn { .fg(inherit); }
@@ -293,7 +295,7 @@ export default
     }
 }
 
-@container topDiv (width <= 600px)
+@container topDiv (width <= 800px)
 {
     #mainGrid
     {
@@ -312,7 +314,7 @@ export default
     }
 }
 
-@container topDiv (width <= 400px)
+@container topDiv (width <= 500px)
 {
     #topDivInner { padding: @mobilePagePadding !important; }
     // #pageTitle { display: none; }

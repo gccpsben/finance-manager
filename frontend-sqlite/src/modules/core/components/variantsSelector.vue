@@ -28,7 +28,7 @@
         .variantTab 
         { 
             cursor: pointer; 
-            color: gray; 
+            color: white; 
             display: inline-block;
             font-size:14px; 
             user-select: none;

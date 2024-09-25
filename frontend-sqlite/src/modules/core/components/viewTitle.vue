@@ -70,7 +70,7 @@ export default
     { 
         color:white; 
         font-size:24px; 
-        font-weight: 300; 
+        font-weight: 500; 
         .tight;
     }
 
