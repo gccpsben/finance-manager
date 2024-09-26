@@ -452,7 +452,7 @@ const moveToPageZero = () => { mainPagination.pageIndex.value = 0; };
 
 // #region All transactions view:
 const searchText = ref("");
-const mainPagination = useNetworkPagination<TxnDTO>({ updator: updator, pageIndex: 0, pageSize: ref(itemsInPage) });
+const mainPagination = useNetworkPagination<TxnDTO>({ updater: updater, pageIndex: 0, pageSize: ref(itemsInPage) });
 const uiRangeText = computed(() => 
 { 
     let upperBound = Math.min(mainPagination.viewportUpperBoundIndex.value + 1, mainPagination.totalItems.value);
@@ -470,7 +470,7 @@ function onSearchTextChange()
     moveToPageZero();
 }
 
-async function updator(start:number, count:number): Promise<UpdatorReturnType<TxnDTO>>
+async function updater(start:number, count:number): Promise<UpdaterReturnType<TxnDTO>>
 {
     let sendQuery = async (url:string) => await store.authGet(url);
     let queryURL = API_TRANSACTIONS_PATH;

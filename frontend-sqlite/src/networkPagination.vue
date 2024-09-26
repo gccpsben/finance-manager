@@ -22,7 +22,7 @@ export default
         "itemsInPage": { default: 10, type: Number },
         "initialItems": { default: 10, type: Number },
         "currentPage": { default: undefined, type: Number },
-        "updator": Function
+        "updater": Function
     },
     data() 
     { 
@@ -50,16 +50,16 @@ export default
         },
         async fetchAndReplace(start:number, end:number)
         {
-            if (this.updator === undefined) return;
+            if (this.updater === undefined) return;
             this.isLoading = true;
-            let results = await this.updator(start, end - start);
+            let results = await this.updater(start, end - start);
             for (let i = 0; i < results.length; i++) this.allItems[start + i] = results[i];
             this.isLoading = false;
         },
         async switchPage(page:number)
         {
             if (this.allItems.length == 0) return;
-            if (this.updator === undefined) return;
+            if (this.updater === undefined) return;
             if (this.computedPage === undefined) return;
             let bins = partition<any>(this.allItems, this.itemsInPage);
             let currentBin = bins[this.computedPage];

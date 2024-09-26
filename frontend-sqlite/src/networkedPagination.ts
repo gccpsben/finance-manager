@@ -1,13 +1,13 @@
 import { ref, watch, computed, type Ref, watchEffect, toValue, type MaybeRef, toRef  } from "vue";
 
-export type UpdatorReturnType<T> = 
+export type UpdaterReturnType<T> = 
 {
     totalItems: number,
     startingIndex: number,
     endingIndex: number,
     rangeItems: T[]
 };
-export type Updator<T> = (start:number, count:number) => Promise<UpdatorReturnType<T>>
+export type Updater<T> = (start:number, count:number) => Promise<UpdaterReturnType<T>>
 
 export type PaginationOverflowResolutionMethod = "TO_ZERO" | "TO_LAST";
 
@@ -15,7 +15,7 @@ export default function useNetworkPagination<T>
 (
     args: 
     {
-        updator: Updator<T>, 
+        updater: Updater<T>, 
         pageSize: MaybeRef<number>, 
         pageIndex: MaybeRef<number>,
         updateOnMount?: boolean,
@@ -44,7 +44,7 @@ export default function useNetworkPagination<T>
         isLoading.value = true;
         const fetchTime = new Date();
         latestFetchDateTime.value = new Date();
-        const fetchResult = await args.updator(pageIndex.value * pageSize.value, pageSize.value);
+        const fetchResult = await args.updater(pageIndex.value * pageSize.value, pageSize.value);
         if (fetchTime.getTime() < latestFetchDateTime.value.getTime()) // another fetch has finished before this one finishes
             return;
         pageItems.value = fetchResult.rangeItems;
