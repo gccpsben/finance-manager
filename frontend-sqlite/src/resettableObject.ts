@@ -2,10 +2,10 @@ import { computed, ref, watch, type Ref } from "vue";
 
 export class ResettableObject<T>
 {
-    lastSafePoint = ref<undefined|T>(undefined) as Ref<undefined | T>;
-    currentData = ref<undefined|T>(undefined) as Ref<undefined | T>;
+    lastSafePoint = ref<undefined|T>(undefined);
+    currentData = ref<undefined|T>(undefined);
     isChanged = ref(false);
-    changesWatcher = watch(this.currentData, (newVal, oldVal) => 
+    changesWatcher = watch(this.currentData, (newVal, oldVal) =>
     {
         this.isChanged.value = !this.dataComparator(newVal, this.lastSafePoint.value);
     }, { deep: true });
@@ -20,7 +20,7 @@ export class ResettableObject<T>
      */
     safePointCallback = function () { } as () => void;
 
-    dataComparator = function (latest: T|undefined, safePoint: T|undefined) 
+    dataComparator = function (latest: T|undefined, safePoint: T|undefined)
     { return JSON.stringify(latest) == JSON.stringify(safePoint); }
 
     markSafePoint(data: T)
@@ -32,7 +32,7 @@ export class ResettableObject<T>
         }
     }
 
-    reset() { this.currentData = this.lastSafePoint; }
+    reset() { this.currentData.value = this.lastSafePoint.value; }
 
     constructor(initialData: T|undefined)
     {
