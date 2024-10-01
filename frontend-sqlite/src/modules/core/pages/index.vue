@@ -54,7 +54,7 @@ export default
 
             <div v-area="'content'" class="rel" style="overflow:scroll">
                 <router-view v-area="'content'" v-slot="{ Component }">
-                    <Transition name="fade">
+                    <Transition name="page-transition">
                         <component :is="Component"/>
                     </Transition>
                 </router-view>
@@ -189,32 +189,36 @@ export default
     overflow: hidden;
 }
 
-.fade-enter-active
+.page-transition-enter-active
 { 
     transition: all 0.5s ease;
     position: absolute;
     opacity:1;
     transform: scale(1);
+    & > * { overflow: hidden !important }
 }
-.fade-leave-active 
+.page-transition-leave-active 
 { 
     transition: all 0.5s ease;
     position: absolute;
     opacity:0;
     transform: scale(0.9);
+    & > * { overflow: hidden !important }
 }
-.fade-enter-from
+.page-transition-enter-from
 { 
     transition: all 0.5s ease;
     position: absolute;
     transform: scale(0.9);
     opacity:0;
+    & > * { overflow: hidden !important }
 }
-.fade-leave-to 
+.page-transition-leave-to 
 { 
     transition: all 0.5s ease;
     position: absolute;
     transform: scale(0.9);
     opacity:0;
+    & > * { overflow: hidden !important }
 }
 </style>
