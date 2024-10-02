@@ -83,7 +83,7 @@
                     </template>
                 </list-cell>
 
-                <!-- 
+                <!--
                 <list-cell v-area="'_allPendingTransactionsList'" title="All Pending Txns" :noItemsText="'No Pending Txns'"
                 :isLoading="store.dashboardSummary.isLoading"
                 :error="store.dashboardSummary.error"
@@ -140,7 +140,7 @@
 
                 <container-values-graph-cell v-area="'containerValuesGraph'"
                 title="Containers Value"></container-values-graph-cell>
-            
+
             </grid-shortcut>
         </div>
     </div>
@@ -159,14 +159,14 @@ import cell from '@/modules/core/components/cell.vue';
 import containerValuesGraphCell from '@/modules/containers/components/containerValuesGraphCell.vue';
 import { useMediaQuery } from "@vueuse/core";
 
-export default 
+export default
 {
     directives: {'area':vArea},
     components: { "list-cell": listCellVue, "cell": cell, containerValuesGraphCell },
     data()
     {
-        let data = 
-        { 
+        let data =
+        {
             store: useMainStore(),
             currenciesStore: useCurrenciesStore(),
             containersStore: useContainersStore(),
@@ -175,10 +175,10 @@ export default
         };
         return data;
     },
-    mounted() 
-    { 
+    mounted()
+    {
         // this.store.updateAll();
-        this.store.updateDashboardBatch();     
+        this.store.updateDashboardBatch();
         // this.store.balanceValueHistory.updateData();
         this.txnTypesStore.txnTypes.updateData();
         this.store.userExpensesIncomes.updateData();
@@ -268,8 +268,7 @@ export default
     .resolvedTxn { .fg(inherit); }
     .pendingLabel { font-weight: bold; margin-left:5px; }
     .resolvedLabel { font-weight: bold; margin-left:5px; }
-    #topDivInner { padding: @desktopPagePadding; }
-    
+
     #mainGrid
     {
         box-sizing: border-box; gap:15px;
@@ -277,13 +276,13 @@ export default
         grid-template-rows:100px 220px 220px 220px 1fr;
         height:2000px; .fg(gray);
 
-        grid-template-areas: 
-        'expensesPanel incomesPanel totalValuePanel netChangePanel' 
+        grid-template-areas:
+        'expensesPanel incomesPanel totalValuePanel netChangePanel'
         '_30dExpensesList _30dExpensesList ContainersList ContainersList'
         '_30dIncomesList _30dIncomesList TotalValueGraph TotalValueGraph'
         '_30dTransfersList _30dTransfersList containerValuesGraph containerValuesGraph';
 
-        .listItemTitle 
+        .listItemTitle
         {
             .fg(inherit); font-size:14px; overflow:hidden; white-space: nowrap; text-overflow: ellipsis; 
         }
@@ -303,9 +302,9 @@ export default
         gap:15px !important;
         grid-template-columns: 1fr 1fr !important;
         grid-template-rows: 100px 100px 250px 250px 250px 250px 250px 250px 1fr !important;
-        grid-template-areas: 
-        'expensesPanel incomesPanel' 
-        'totalValuePanel netChangePanel' 
+        grid-template-areas:
+        'expensesPanel incomesPanel'
+        'totalValuePanel netChangePanel'
         '_30dExpensesList _30dExpensesList'
         'ContainersList ContainersList'
         '_30dIncomesList _30dIncomesList'
@@ -325,11 +324,11 @@ export default
         gap:15px !important;
         grid-template-columns: 1fr !important;
         grid-template-rows: 100px 100px 100px 100px 250px 250px 250px 250px 250px 250px 1fr !important;
-        grid-template-areas: 
-        'expensesPanel' 
+        grid-template-areas:
+        'expensesPanel'
         'incomesPanel'
         'totalValuePanel'
-        'netChangePanel' 
+        'netChangePanel'
         '_30dExpensesList'
         'ContainersList'
         '_30dIncomesList'

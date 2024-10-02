@@ -16,7 +16,7 @@ export namespace GetUserBalanceHistoryAPIClass
     export class ResponseDTO implements GetUserBalanceHistoryAPI.ResponseDTO
     {
         @IsEpochKeyedMap()
-        @IsPassing(value => 
+        @IsPassing(value =>
         {
             const val = value as { [epoch: string]: unknown };
             for (const innerMap of Object.values(val))
@@ -26,7 +26,7 @@ export namespace GetUserBalanceHistoryAPIClass
             }
             return true;
         })
-        map: { [epoch: string]: { [currencyId: string]: string; }; };       
+        map: { [epoch: string]: { [currencyId: string]: string; }; };
     }
 }
 
@@ -35,7 +35,7 @@ export namespace GetUserNetworthHistoryAPIClass
     export class ResponseDTO implements GetUserNetworthHistoryAPI.ResponseDTO
     {
         @IsEpochKeyedMap()
-        @IsPassing(value => 
+        @IsPassing(value =>
         {
             const val = value as { [epoch: string]: unknown };
             if (Object.keys(value).some(k => typeof k !== 'string')) return false;
@@ -70,20 +70,20 @@ export default async function(this: Context)
         await this.module(UnitTestEndpoints.calculationsEndpoints.expensesAndIncomes, async function()
         {
             await resetDatabase();
-            
+
             await this.describe(`get`, async function()
             {
                 await this.test(`Test for Correctness`, async function()
                 {
                     const userCreds = await HookShortcuts.registerRandMockUsers(serverURL, 3);
-        
+
                     for (const [userKeyname, userObj] of Object.entries(userCreds))
                     {
                         const baseConfig = { serverURL, token: userObj.token, assertBody: true, expectedCode: 200 };
                         const txnTypes = await HookShortcuts.postRandomTxnTypes({ ...baseConfig, txnCount: 3, });
                         const containers = await HookShortcuts.postRandomContainers({ ...baseConfig, containerCount: 3 });
                         const baseCurrency = await HookShortcuts.postCreateCurrency({ ...baseConfig, body: { name: "BASE", ticker: "BASE" } });
-        
+
                         const txnsToPost: { toAmount: Decimal|undefined, fromAmount: Decimal|undefined, txnAgeDays: number }[] = 
                         [
                             { fromAmount: undefined              , toAmount: new Decimal(`100.0001`), txnAgeDays: 90  },
@@ -96,7 +96,7 @@ export default async function(this: Context)
                             { fromAmount: new Decimal(`192`)     , toAmount: new Decimal(`72727`)   , txnAgeDays: 0.1 },
                             { fromAmount: new Decimal(`09037`)   , toAmount: undefined              , txnAgeDays: 0   }
                         ];
-                        const expectedResult = 
+                        const expectedResult =
                         {
                             expensesTotal: new Decimal(`12769.3001`),
                             incomesTotal: new Decimal(`164122.0001`),
@@ -105,16 +105,16 @@ export default async function(this: Context)
                             expenses7d: new Decimal(`12769.3`),
                             incomes7d: new Decimal(`164022`)
                         };
-        
+
                         for (const txnToPost of txnsToPost)
                         {
                             const isFrom = !!txnToPost.fromAmount;
                             const isTo = !!txnToPost.toAmount;
-        
+
                             await HookShortcuts.postCreateTransaction(
                             {
-                                body: 
-                                { 
+                                body:
+                                {
                                     title: randomUUID(),
                                     creationDate: transformOffsetDate(txnToPost.txnAgeDays),
                                     description: simpleFaker.string.sample(100),
@@ -127,11 +127,11 @@ export default async function(this: Context)
                                     typeId: choice(txnTypes).txnId
                                 },
                                 ...baseConfig
-                            });   
+                            });
                         }
-        
+
                         const userExpensesAndIncomes = await HookShortcuts.getUserExpensesAndIncomes(baseConfig);
-        
+
                         assertStrictEqual(userExpensesAndIncomes.res.parsedBody.expenses30d.toString(), expectedResult.expenses30d.toString());
                         assertStrictEqual(userExpensesAndIncomes.res.parsedBody.expenses7d.toString(), expectedResult.expenses7d.toString());
                         assertStrictEqual(userExpensesAndIncomes.res.parsedBody.expensesTotal.toString(), expectedResult.expensesTotal.toString());
@@ -143,7 +143,7 @@ export default async function(this: Context)
             })
         });
 
-        await this.module(UnitTestEndpoints.calculationsEndpoints.balanceHistory, async function () 
+        await this.module(UnitTestEndpoints.calculationsEndpoints.balanceHistory, async function ()
         {
             await resetDatabase();
 
@@ -175,7 +175,7 @@ export default async function(this: Context)
             shuffleArray(txnsToPost);
 
             // Start posting defined test transactions to server
-            for (const txnToPost of txnsToPost) 
+            for (const txnToPost of txnsToPost)
             {
                 const isFrom = !!txnToPost.fromAmount;
                 const isTo = !!txnToPost.toAmount;
@@ -200,16 +200,16 @@ export default async function(this: Context)
                     }
                 );
             }
-            
+
             await this.describe(`get`, async function()
             {
                 await this.test(`Forbid division is not an int`, async function()
                 {
                     await HookShortcuts.getUserBalanceHistory(
-                    { 
-                        serverURL: serverURL, 
-                        token: firstUserObj.token, 
-                        assertBody: false, 
+                    {
+                        serverURL: serverURL,
+                        token: firstUserObj.token,
+                        assertBody: false,
                         expectedCode: 400,
                         division: 5.2,
                         startDate: transformOffsetDate(100),
@@ -220,10 +220,10 @@ export default async function(this: Context)
                 await this.test(`Forbid division === 1 or division === 0`, async function()
                 {
                     await HookShortcuts.getUserBalanceHistory(
-                    { 
-                        serverURL: serverURL, 
-                        token: firstUserObj.token, 
-                        assertBody: false, 
+                    {
+                        serverURL: serverURL,
+                        token: firstUserObj.token,
+                        assertBody: false,
                         expectedCode: 400,
                         division: 0,
                         startDate: transformOffsetDate(100),
@@ -231,10 +231,10 @@ export default async function(this: Context)
                     });
 
                     await HookShortcuts.getUserBalanceHistory(
-                    { 
-                        serverURL: serverURL, 
-                        token: firstUserObj.token, 
-                        assertBody: false, 
+                    {
+                        serverURL: serverURL,
+                        token: firstUserObj.token,
+                        assertBody: false,
                         expectedCode: 400,
                         division: 1,
                         startDate: transformOffsetDate(100),
@@ -249,71 +249,71 @@ export default async function(this: Context)
                     const division = 10;
 
                     const userBalances = await HookShortcuts.getUserBalanceHistory(
-                    { 
+                    {
                         serverURL: serverURL, token: firstUserObj.token, assertBody: true, expectedCode: 200,
                         division: division,
                         startDate: transformOffsetDate(rangeStart), // 59 is chosen intentionally to check if txns outside the range is correctly included.
                         endDate: transformOffsetDate(rangeEnd)
                     });
-                    const expectedJSON = 
+                    const expectedJSON =
                     {
-                        "map": 
+                        "map":
                         {
-                            [transformOffsetDate(rangeStart)]: 
-                            { 
-                                [baseCurrency.currencyId]: "100.0001" 
-                            },
-                            [transformOffsetDate(rangeStart + (rangeEnd - rangeStart) / (division - 1) * 1)]: 
-                            { 
-                                [baseCurrency.currencyId]: "100.0001" 
-                            },
-                            [transformOffsetDate(rangeStart + (rangeEnd - rangeStart) / (division - 1) * 2)]: 
-                            { 
-                                [baseCurrency.currencyId]: "100.0001" 
-                            },
-                            [transformOffsetDate(rangeStart + (rangeEnd - rangeStart) / (division - 1) * 3)]: 
-                            { 
-                                [baseCurrency.currencyId]: "100.0001" 
-                            },
-                            [transformOffsetDate(rangeStart + (rangeEnd - rangeStart) / (division - 1) * 4)]: 
-                            { 
+                            [transformOffsetDate(rangeStart)]:
+                            {
                                 [baseCurrency.currencyId]: "100.0001"
                             },
-                            [transformOffsetDate(rangeStart + (rangeEnd - rangeStart) / (division - 1) * 5)]: 
-                            { 
-                                [baseCurrency.currencyId]: "100.0001" 
+                            [transformOffsetDate(rangeStart + (rangeEnd - rangeStart) / (division - 1) * 1)]:
+                            {
+                                [baseCurrency.currencyId]: "100.0001"
                             },
-                            [transformOffsetDate(rangeStart + (rangeEnd - rangeStart) / (division - 1) * 6)]: 
-                            { 
+                            [transformOffsetDate(rangeStart + (rangeEnd - rangeStart) / (division - 1) * 2)]:
+                            {
+                                [baseCurrency.currencyId]: "100.0001"
+                            },
+                            [transformOffsetDate(rangeStart + (rangeEnd - rangeStart) / (division - 1) * 3)]:
+                            {
+                                [baseCurrency.currencyId]: "100.0001"
+                            },
+                            [transformOffsetDate(rangeStart + (rangeEnd - rangeStart) / (division - 1) * 4)]:
+                            {
+                                [baseCurrency.currencyId]: "100.0001"
+                            },
+                            [transformOffsetDate(rangeStart + (rangeEnd - rangeStart) / (division - 1) * 5)]:
+                            {
+                                [baseCurrency.currencyId]: "100.0001"
+                            },
+                            [transformOffsetDate(rangeStart + (rangeEnd - rangeStart) / (division - 1) * 6)]:
+                            {
                                 [baseCurrency.currencyId]: "100.0001",
                                 [thirdCurrency.currencyId]: "-0.0001"
                             },
-                            [transformOffsetDate(rangeStart + (rangeEnd - rangeStart) / (division - 1) * 7)]: 
-                            { 
+                            [transformOffsetDate(rangeStart + (rangeEnd - rangeStart) / (division - 1) * 7)]:
+                            {
                                 [baseCurrency.currencyId]: "-1719.9999",
                                 [thirdCurrency.currencyId]: "12709.9999"
                             },
-                            [transformOffsetDate(rangeStart + (rangeEnd - rangeStart) / (division - 1) * 8)]: 
-                            { 
+                            [transformOffsetDate(rangeStart + (rangeEnd - rangeStart) / (division - 1) * 8)]:
+                            {
                                 [baseCurrency.currencyId]: "-3632.2999",
                                 [thirdCurrency.currencyId]: "3672.9999",
                                 [secondCurrency.currencyId]: "151312",
                             },
-                            [transformOffsetDate(rangeStart + (rangeEnd - rangeStart) / (division - 1) * 9)]: 
-                            { 
+                            [transformOffsetDate(rangeStart + (rangeEnd - rangeStart) / (division - 1) * 9)]:
+                            {
                                 [baseCurrency.currencyId]: "-3632.2999",
                                 [thirdCurrency.currencyId]: "3672.9999",
                                 [secondCurrency.currencyId]: "151312",
                             }
                         }
                     } satisfies GetUserBalanceHistoryAPI.ResponseDTO;
-                    
+
                     assertJSONEqual(userBalances.res.parsedBody, expectedJSON);
                 })
             });
         });
 
-        await this.module(UnitTestEndpoints.calculationsEndpoints.networthHistory, async function () 
+        await this.module(UnitTestEndpoints.calculationsEndpoints.networthHistory, async function ()
         {
             await resetDatabase();
 
@@ -344,15 +344,15 @@ export default async function(this: Context)
                 { fromAmount: `192`      , toAmount: `72727`    , txnAgeDays: 9 , currId: secondCurrency.currencyId , conId: containers[0].containerId },
                 { fromAmount: `09037`    , toAmount: undefined  , txnAgeDays: 0 , currId: thirdCurrency.currencyId  , conId: containers[1].containerId }
             ];
-            const ratesDatums = 
+            const ratesDatums =
             [
                 { datumAgeDays: 100, amount: "0.06"   , refAmountCurrency: baseCurrency   , refCurrency: secondCurrency },
-                { datumAgeDays: 78,  amount: "0.05"   , refAmountCurrency: baseCurrency   , refCurrency: secondCurrency }, // 
-                { datumAgeDays: 48,  amount: "0.04"   , refAmountCurrency: baseCurrency   , refCurrency: secondCurrency }, // 
+                { datumAgeDays: 78,  amount: "0.05"   , refAmountCurrency: baseCurrency   , refCurrency: secondCurrency },
+                { datumAgeDays: 48,  amount: "0.04"   , refAmountCurrency: baseCurrency   , refCurrency: secondCurrency },
                 { datumAgeDays: 15,  amount: "0.1"    , refAmountCurrency: baseCurrency   , refCurrency: secondCurrency },
 
-                { datumAgeDays: 78,  amount: "78"     , refAmountCurrency: baseCurrency   , refCurrency: thirdCurrency }, //
-                { datumAgeDays: 32,  amount: "770"    , refAmountCurrency: secondCurrency , refCurrency: thirdCurrency }, // 
+                { datumAgeDays: 78,  amount: "78"     , refAmountCurrency: baseCurrency   , refCurrency: thirdCurrency },
+                { datumAgeDays: 32,  amount: "770"    , refAmountCurrency: secondCurrency , refCurrency: thirdCurrency },
                 { datumAgeDays: 10,  amount: "147.22" , refAmountCurrency: baseCurrency   , refCurrency: thirdCurrency },
                 { datumAgeDays: 0,   amount: "1111"   , refAmountCurrency: secondCurrency , refCurrency: thirdCurrency },
             ];
@@ -361,7 +361,7 @@ export default async function(this: Context)
             shuffleArray(ratesDatums);
 
             // Start posting defined test transactions to server
-            for (const txnToPost of txnsToPost) 
+            for (const txnToPost of txnsToPost)
             {
                 const isFrom = !!txnToPost.fromAmount;
                 const isTo = !!txnToPost.toAmount;
@@ -386,13 +386,13 @@ export default async function(this: Context)
                     }
                 );
             }
-            
+
             // Start posting defined currency rate datums to server
             for (const datum of ratesDatums)
             {
                 const response = await postCurrencyRateDatum
                 (
-                    firstUserObj.token, 
+                    firstUserObj.token,
                     datum.amount,
                     datum.refCurrency.currencyId,
                     datum.refAmountCurrency.currencyId,
@@ -400,16 +400,16 @@ export default async function(this: Context)
                 );
                 assertStrictEqual(response.res.status, 200);
             }
-            
+
             await this.describe(`get`, async function()
             {
                 await this.test(`Forbid division is not an int`, async function()
                 {
                     await HookShortcuts.getUserNetworthHistory(
-                    { 
-                        serverURL: serverURL, 
-                        token: firstUserObj.token, 
-                        assertBody: false, 
+                    {
+                        serverURL: serverURL,
+                        token: firstUserObj.token,
+                        assertBody: false,
                         expectedCode: 400,
                         division: 5.2,
                         startDate: transformOffsetDate(rangeStart),
@@ -420,10 +420,10 @@ export default async function(this: Context)
                 await this.test(`Forbid division === 1 or division === 0`, async function()
                 {
                     await HookShortcuts.getUserNetworthHistory(
-                    { 
-                        serverURL: serverURL, 
-                        token: firstUserObj.token, 
-                        assertBody: false, 
+                    {
+                        serverURL: serverURL,
+                        token: firstUserObj.token,
+                        assertBody: false,
                         expectedCode: 400,
                         division: 0,
                         startDate: transformOffsetDate(100),
@@ -431,10 +431,10 @@ export default async function(this: Context)
                     });
 
                     await HookShortcuts.getUserNetworthHistory(
-                    { 
-                        serverURL: serverURL, 
-                        token: firstUserObj.token, 
-                        assertBody: false, 
+                    {
+                        serverURL: serverURL,
+                        token: firstUserObj.token,
+                        assertBody: false,
                         expectedCode: 400,
                         division: 1,
                         startDate: transformOffsetDate(rangeStart),
@@ -446,19 +446,19 @@ export default async function(this: Context)
                 {
                     const divisionRangeInEpoch = (rangeEnd - rangeStart) / (division - 1);
                     const response = await HookShortcuts.getUserNetworthHistory(
-                    { 
-                        serverURL: serverURL, 
-                        token: firstUserObj.token, 
-                        assertBody: true, 
+                    {
+                        serverURL: serverURL,
+                        token: firstUserObj.token,
+                        assertBody: true,
                         expectedCode: 200,
                         division: 10,
                         startDate: transformOffsetDate(rangeStart),
                         endDate: transformOffsetDate(rangeEnd)
                     });
-                    
-                    const expectedJSON = 
+
+                    const expectedJSON =
                     {
-                        "map": 
+                        "map":
                         {
                             [transformOffsetDate(rangeStart)]: "0",
                             [transformOffsetDate(rangeStart + divisionRangeInEpoch * 1)]: "100.0001",
@@ -472,7 +472,7 @@ export default async function(this: Context)
                             [transformOffsetDate(rangeStart + divisionRangeInEpoch * 9)]: "419569.18899",
                         }
                     } satisfies GetUserNetworthHistoryAPI.ResponseDTO;
-                    
+
                     assertJSONEqual(response.res.parsedBody, expectedJSON);
                 });
             });
@@ -487,12 +487,12 @@ export async function testForCalculationsInternals(this: Context)
         await (async function()
         {
             const definedPoints =
-            [ 
-                { key: new Decimal(`0`), value: new Decimal(`0`) }, 
-                { key: new Decimal(`1`), value: new Decimal(`100`) } 
+            [
+                { key: new Decimal(`0`), value: new Decimal(`0`) },
+                { key: new Decimal(`1`), value: new Decimal(`100`) }
             ];
             const interpolator = LinearInterpolator.fromEntries(definedPoints, e => e.key, e => e.value);
-            const expectedValues = 
+            const expectedValues =
             [
                 [ new Decimal(`-1`)     , undefined            ],
                 [ new Decimal(`-0.1`)   , undefined            ],
@@ -516,13 +516,13 @@ export async function testForCalculationsInternals(this: Context)
         await (async function()
         {
             const definedPoints =
-            [ 
-                { key: new Decimal(`-0.725`), value: new Decimal(`21.7`) }, 
+            [
+                { key: new Decimal(`-0.725`), value: new Decimal(`21.7`) },
                 { key: new Decimal(`-0.08`) , value: new Decimal(`69.1`) },
-                { key: new Decimal(`1.427`) , value: new Decimal(`89.4`) } 
+                { key: new Decimal(`1.427`) , value: new Decimal(`89.4`) }
             ];
             const interpolator = LinearInterpolator.fromEntries(definedPoints, e => e.key, e => e.value);
-            const expectedValues = 
+            const expectedValues =
             [
                 [ `-1`     , undefined                           ],
                 [ `-0.3`   , `52.932558139534883720930232558139` ],

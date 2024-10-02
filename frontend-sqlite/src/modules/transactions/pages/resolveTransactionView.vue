@@ -9,7 +9,7 @@
         <div v-if="isLoading" class="fullSize center">Initializing...</div>
 
         <div id="containersSelectDiv" v-if="!isLoading">
-            
+
             <grid-shortcut columns="100px 1fr" class="fullWidth field">
                 <div class="middleLeft">Target:</div>
                 <custom-dropdown :items="unresolvedTransactions" v-model:currentItem="selectedTransaction">
@@ -26,7 +26,7 @@
                 </div>
             </grid-shortcut>
         </div>
-        
+
     </div>
 </template>
 
@@ -38,7 +38,7 @@ import { useMeta } from 'vue-meta';
 
 export default
 {
-    setup () 
+    setup ()
     {
         useMeta(
         {
@@ -46,13 +46,13 @@ export default
             htmlAttrs: { lang: 'en', }
         });
     },
-    async mounted() 
-    { 
+    async mounted()
+    {
         await this.update();
     },
     data()
     {
-        return { 
+        return {
             isLoading: true,
             store: useMainStore(),
             containerName: "",
@@ -66,7 +66,7 @@ export default
         async update()
         {
             this.isLoading = true;
-            await this.store.updateAll(); 
+            await this.store.updateAll();
             this.unresolvedTransactions = (await this.store.authGet("/api/finance/transactions?onlyunresolved=true"))!.data;
             this.isLoading = false;
         },
@@ -77,7 +77,7 @@ export default
             if (this.selectedTransaction == undefined) { alert("Please select a target!"); return; }
 
             let body = { "resolveID": this.selectedTransaction.pubID, };
-            
+
             this.isFormUploading = true;
             this.store.authPost(`/api/finance/transactions/resolve`, body)
             .then(() => { alert("Successfully resolved transaction."); })
@@ -130,9 +130,9 @@ export default
     color:gray;
     font-family: Consolas;
 }
-div.grayText { opacity: 0.2; } 
+div.grayText { opacity: 0.2; }
 
-@media only screen and (max-width: 600px) 
+@media only screen and (max-width: 600px)
 {
     #topDiv { height: 100svh; }
 
