@@ -1,12 +1,12 @@
 <template>
     <div ref="dropdownRoot" class="dropdownRoot" style="position: relative;" :class="{'expanded': isInputFocused}">
         <div class="dropdownFieldContainer fullSize">
-                <text-field class="fullSize dropdownField" 
-                        :field-name="fieldName"
-                        :text="isInputFocused ? (searchText.get() === null ? '' : searchText.get()) : (options.get().find(o => o.id === selectedOption.get())?.label) ?? ''"
-                        @update:text="searchText.set($event)"
-                        @blur="onInputBlur()"
-                        @focus="isInputFocused = true">
+            <text-field class="fullSize dropdownField"
+                    :field-name="fieldName"
+                    :text="isInputFocused ? (searchText.get() === null ? '' : searchText.get()!) : (options.get()?.find(o => o.id === selectedOption)?.label ?? '')"
+                    @update:text="searchText.set($event)"
+                    @blur="onInputBlur()"
+                    @focus="isInputFocused = true">
                 <template #fieldActions>
                     <div id="dropdownIconContainer" :class="{'expanded': isInputFocused}">
                         <fa-icon icon="fa-solid fa-chevron-down" />
@@ -17,15 +17,15 @@
 
         <div id="dropdownPanelContainer" :class="{'expanded': isInputFocused}">
             <div v-for="option of filteredOptions">
-                <slot name="itemRow" :option="option" :selectedOptionId="selectedOption.get()">
-                    <div @click="selectedOption.set(option.id)" class="dropdownItemRow">
+                <div @click="onItemSelected(option.id)" class="dropdownItemRow">
+                    <slot name="itemRow" :option="option" :selectedOptionId="selectedOption">
                         <div> {{ option.label }} </div>
                         <div class="helperText"> {{ option.helperText }} </div>
-                        <div v-if="option.id === selectedOption.get()" class="center">
+                        <div v-if="option.id === selectedOption" class="center">
                             <fa-icon icon="fa-solid fa-check"/>
                         </div>
-                    </div>
-                </slot>
+                    </slot>
+                </div>
             </div>
             <slot v-if="filteredOptions.length === 0" name="noItemRow">
                 <div class="dropdownItemRow">
@@ -55,7 +55,7 @@
 
     & > div
     {
-        font-size: @dropdownIconSize; 
+        font-size: @dropdownIconSize;
         color: @dropdownIconColor;
         transform: rotate(0deg) !important;
         transition: all 0.5s ease;
@@ -76,7 +76,7 @@
     box-shadow: 0 0 @dropdownShadowRange black;
     border: 1px solid @border;
 
-    &.expanded 
+    &.expanded
     {
         opacity: 1;
         clip-path: inset(0 calc(@dropdownShadowRange * -1) calc(@dropdownShadowRange * -1) calc(@dropdownShadowRange * -1));
@@ -92,6 +92,8 @@
         grid-template-columns: 1fr auto 35px;
         grid-template-rows: 1fr;
         gap:5px;
+        color: white;
+        .xLeft;
 
         .helperText { color: gray; }
 
@@ -119,7 +121,7 @@
         clip-path: inset(100% 0 0 0);
         max-height: calc(100svh - @expandedFieldHeight * 2);
 
-        &.expanded 
+        &.expanded
         {
             clip-path: inset(calc(@dropdownShadowRange * -1) calc(@dropdownShadowRange * -1) 0 calc(@dropdownShadowRange * -1));
         }
@@ -127,7 +129,7 @@
 
     .mobileDropdownBackdrop
     {
-        background: transparent;      
+        background: transparent;
         transition: all 0.3s ease;
     }
 
@@ -170,31 +172,36 @@ export type DropdownItem =
 }
 
 const props = withDefaults(defineProps<
-{ 
+{
     options: DropdownItem[],
-    selectedOption?: null | undefined | string,
-    fieldName?: string, 
+    selectedOption: null | undefined | string,
+    fieldName?: string,
     overrideThemeColor?: string | undefined,
     placeholder?: string | undefined,
     disabled?: boolean | undefined,
     readonly?: boolean | undefined,
-    searchText?: string | null
-}>(), 
-{ 
+    searchText?: string | null,
+    allowUnselect?: boolean
+}>(),
+{
     fieldName: 'Placeholder here',
     overrideThemeColor: undefined,
     placeholder: undefined,
     disabled: false,
     readonly: false,
-    searchText: null
+    searchText: null,
+    allowUnselect: true
 });
 
-const emit = defineEmits<{ (e: 'update:selectedOption', v: string): void, (e: 'update:searchText', v: string): void }>();
-const searchText = defineProperty<string | null, "searchText", typeof props>("searchText", { emitFunc: emit, props: props, withEmits: true });
-const options = defineProperty<DropdownItem[], "options", typeof props>("options", { emitFunc: undefined, props: props, withEmits: false });
-const selectedOption = defineProperty<null | undefined | string, "selectedOption", typeof props>("selectedOption", { emitFunc: emit, props: props, withEmits: true });
+const emit = defineEmits<
+{
+    (e: 'update:selectedOption', v: string | null): void,
+    (e: 'update:searchText', v: string): void
+}>();
+const searchText = defineProperty<string | null, "searchText", typeof props>("searchText", { emitFunc: emit, props: props, default: '' });
+const options = defineProperty<DropdownItem[], "options", typeof props>("options", { emitFunc: undefined, props: props, default: [] });
 
-const filteredOptions = computed(() => 
+const filteredOptions = computed(() =>
 {
     const normalizeText = (str: string) => str.trim().toLocaleLowerCase();
 
@@ -203,8 +210,8 @@ const filteredOptions = computed(() =>
     else return options.get().filter(o => normalizeText(o.searchTerms).includes(searchQuery));
 });
 
-const dropdownRoot = useTemplateRef('dropdownRoot');
-const fieldTransform = computed(() => 
+const dropdownRoot = useTemplateRef<HTMLDivElement>('dropdownRoot');
+const fieldTransform = computed(() =>
 {
     let yPixels = -1 * (dropdownRoot.value?.offsetTop ?? 0) + 25;
     if (!isInputFocused.value) yPixels = 0;
@@ -217,10 +224,19 @@ const fieldTransform = computed(() =>
 
 const isInputFocused = ref<boolean>(false);
 
-const onInputBlur = () => 
+const onInputBlur = () =>
 {
     isInputFocused.value = false;
     // searchText.set(options.get().find(o => o.id === selectedOption.get())?.label ?? '');
+};
+
+const onItemSelected = (selectedOptionId: string) =>
+{
+    // If the same item is selected twice, unselect it (if enabled)
+    if (props.selectedOption === selectedOptionId && props.allowUnselect)
+        emit("update:selectedOption", null);
+    else
+        emit('update:selectedOption', selectedOptionId);
 };
 
 </script>

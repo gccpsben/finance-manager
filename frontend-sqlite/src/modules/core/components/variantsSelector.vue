@@ -24,13 +24,13 @@
     grid-auto-flow: column;
 
     .variantSelector
-    {        
-        .variantTab 
-        { 
-            cursor: pointer; 
-            color: white; 
+    {
+        .variantTab
+        {
+            cursor: pointer;
+            color: white;
             display: inline-block;
-            font-size:14px; 
+            font-size:14px;
             user-select: none;
             .yTop;
             font-weight: normal;
@@ -58,16 +58,16 @@ const selectedOption = defineProperty<null | string, "selectedOption", typeof pr
 {
     emitFunc: emit,
     props: props,
-    withEmits: true
+    default: null
 });
 
 const availableOptions = defineProperty<string[], "availableOptions", typeof props>("availableOptions", 
-{   
+{
     emitFunc: undefined,
     props: props,
-    withEmits: false
+    default: []
 });
 
-if (selectedOption.checkIsControlled() === false)
-    selectedOption.uncontrolledRef.value = availableOptions.get()[0]
+// if (selectedOption.checkIsControlled() === false)
+//     selectedOption.uncontrolledRef.value = availableOptions.get()[0]
 </script>

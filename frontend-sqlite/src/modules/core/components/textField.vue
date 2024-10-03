@@ -5,10 +5,10 @@
             <legend v-if="shouldTextFloat" ref="legend">{{ fieldName.get() }}</legend>
             <div ref="contentPanel" class="contentPanel fullSize">
                 <div class="contentPanelInner fullSize" v-area="'main'">
-                    <input :type="inputType.get()" 
-                           ref="textFieldInput" 
-                           class="textFieldInput" 
-                           :value="text.get()" 
+                    <input :type="inputType.get()"
+                           ref="textFieldInput"
+                           class="textFieldInput"
+                           :value="text.get()"
                            :readonly="readonly.get()"
                            :disabled="disabled.get()"
                            @focus="$emit('focus')"
@@ -35,18 +35,27 @@ import { defineProperty } from '../utils/defineProperty';
 import type { HTMLInputType } from '@/shims-vue';
 import tinycolor from "tinycolor2";
 
-const props = withDefaults(defineProps<
-{ 
-    text?: string|null, 
-    fieldName?: string, 
-    inputType?: HTMLInputType, 
+export type TextFieldProps =
+{
+    text: string,
+    fieldName?: string,
+    inputType?: HTMLInputType,
     overrideThemeColor?: string | undefined,
     placeholder?: string | undefined,
     disabled?: boolean | undefined,
     readonly?: boolean | undefined
-}>(), 
-{ 
-    text: null, 
+};
+
+export type TextFieldEmits =
+{
+    (e: 'update:text', v: string): void,
+    (e: 'focus'):void,
+    (e: 'blur'):void
+};
+
+const props = withDefaults(defineProps<TextFieldProps>(),
+{
+    text: '',
     fieldName: 'Placeholder here',
     inputType: 'text',
     overrideThemeColor: undefined,
@@ -54,18 +63,14 @@ const props = withDefaults(defineProps<
     disabled: false,
     readonly: false
 });
-const emit = defineEmits<{
-    (e: 'update:text', v: string): void,
-    (e: 'focus'):void,
-    (e: 'blur'):void
-}>();
-const text = defineProperty<null | string, "text", typeof props>("text", { emitFunc: emit, props: props, withEmits: true });
-const placeholder = defineProperty<undefined | string, "placeholder", typeof props>("placeholder", { emitFunc: undefined, props: props, withEmits: false });
-const fieldName = defineProperty<string, "fieldName", typeof props>("fieldName", { emitFunc: undefined, props: props, withEmits: false });
-const inputType = defineProperty<HTMLInputType, "inputType", typeof props>("inputType", { emitFunc: undefined, props: props, withEmits: false });
-const overrideThemeColor = defineProperty<string | undefined, "overrideThemeColor", typeof props>("overrideThemeColor", { emitFunc: undefined, props: props, withEmits: false });
-const disabled = defineProperty<boolean | undefined, "disabled", typeof props>("disabled", { emitFunc: undefined, props: props, withEmits: false });
-const readonly = defineProperty<boolean | undefined, "readonly", typeof props>("readonly", { emitFunc: undefined, props: props, withEmits: false });
+const emit = defineEmits<TextFieldEmits>();
+const text = defineProperty<string, "text", typeof props>("text", { emitFunc: emit, props: props, default: '' });
+const placeholder = defineProperty<undefined | string, "placeholder", typeof props>("placeholder", { emitFunc: undefined, props: props, default: '' });
+const fieldName = defineProperty<string, "fieldName", typeof props>("fieldName", { emitFunc: undefined, props: props, default: 'Placeholder here' });
+const inputType = defineProperty<HTMLInputType, "inputType", typeof props>("inputType", { emitFunc: undefined, props: props, default: 'text' });
+const overrideThemeColor = defineProperty<string | undefined, "overrideThemeColor", typeof props>("overrideThemeColor", { emitFunc: undefined, props: props, default: undefined });
+const disabled = defineProperty<boolean | undefined, "disabled", typeof props>("disabled", { emitFunc: undefined, props: props, default: false });
+const readonly = defineProperty<boolean | undefined, "readonly", typeof props>("readonly", { emitFunc: undefined, props: props, default: false });
 
 const textFieldInput = ref(null);
 const placeholderText = ref(null);
@@ -83,7 +88,7 @@ const rootYOffsetStyle = computed(() => `translateY(-${legendHeight.value / 2}px
 const rootHeightOffsetStyle = computed(() => `calc(100% + ${legendHeight.value / 2}px)`);
 const contentYOffsetStyle = computed(() => `translateY(-${legendHeight.value / 2}px)`);
 const contentHeightOffsetStyle = computed(() => `calc(100% + ${legendHeight.value / 2}px)`);
-const placeholderTextYOffsetStyle = computed(() => 
+const placeholderTextYOffsetStyle = computed(() =>
 {
     if (shouldTextFloat.value) return "translateY(calc(-50% - 1px))";
     return `translateY(${(contentPanelHeight.value - unscaledPlaceholderTextHeight.value) / 2}px)`
@@ -101,13 +106,13 @@ const placeholderTextStyleOverrideObj = computed(() => // a style object overrid
     : { };
 });
 
-const shouldTextFloat = computed(() => 
+const shouldTextFloat = computed(() =>
 {
     if (textFieldInputIsFocused.value || placeholderTextIsFocused.value) return true;
     if (text.get()) return true;
     return false;
 });
-const shouldHighlight = computed(() => 
+const shouldHighlight = computed(() =>
 {
     if (textFieldInputIsFocused.value) return true;
     return false;
@@ -200,17 +205,17 @@ const shouldHighlight = computed(() =>
 
     &.highlighted
     {
-        .placeholderText 
-        { 
+        .placeholderText
+        {
             color: lighten(@textFieldFocusThemeColor, 30%);
         }
     }
 
     &.float
     {
-        .placeholderText 
-        { 
-            font-size: @textFieldFloatingTextFontSize; 
+        .placeholderText
+        {
+            font-size: @textFieldFloatingTextFontSize;
         }
     }
 }

@@ -2,64 +2,77 @@
 
     <div class="topDivTxn">
 
-        <view-title :title="'Transactions'" v-model:selectedItem="selectedItem"
-        :items="!selectedTransactionID ? ['All Transactions', 'Advanced Filter View'] : []">
-        </view-title>
+        <view-title :title="'Transactions'" />
+        <br /><br />
 
-        <div v-show="!selectedTransactionID">
+        <div v-if="!selectedTransactionID">
 
             <div id="mainCell">
-                
-                <div v-basic="'#panel.gridBase.tight'" v-if="selectedItem == 'All Transactions'">
+
+                <div v-basic="'#panel.gridBase.tight'">
                     <div class="pageSelector">
                         <div class="xLeft yCenter">
-                            <fa-icon class="optionIcon" icon="fa-solid fa-rotate"></fa-icon>
-                            <input v-basic="'#searchInput.fullHeight.minTextarea'" type="text" placeholder="Search for name..." v-model="searchText"
-                            @change="onSearchTextChange">
+                            <fa-icon class="optionIcon" icon="fa-solid fa-rotate" />
+                            <input v-basic="'#searchInput.fullHeight.minTextarea'"
+                                   type="text"
+                                   placeholder="Search for name..."
+                                   v-model="searchText"
+                                   @change="onSearchTextChange">
                         </div>
                         <div class="xRight">
                             <div v-basic="'#summaryContainer.yCenter'">
-                                <h2 class="numbersPanelTitle variantTab tight" style="font-size:14px; display:inline; padding-right:15px;">
-                                    {{ uiRangeText }}
-                                </h2>
+                                <h2 class="uiRangeText">{{ uiRangeText }}</h2>
                             </div>
                             <div class="center">
                                 <numberPagination id="tablePagination"
-                                              v-model="mainPagination.pageIndex.value" :min-page-readable="1" 
-                                              :max-page-readable="mainPagination.maxPageIndex.value + 1" />
+                                                  v-model="currentPageIndex"
+                                                  :min-page-readable="1"
+                                                  :max-page-readable="mainPagination.lastCallMaxPageIndex.value + 1" />
                             </div>
                         </div>
                     </div>
                     <div class="rel">
                         <div class="fullSize abs" :class="{'darkened': mainPagination.isLoading.value}"
                         style="display:grid; grid-template-rows: repeat(15,1fr);">
-                            <div class="row tight" @click="viewTransaction(item?.id)" style="font-size:14px;" v-for="item in mainPagination.pageItems.value">
+                            <div class="row tight"
+                                 @click="viewTransaction(item?.id)" style="font-size:14px;"
+                                 v-for="item in mainPagination.lastCallResult.value?.rangeItems ?? []">
                                 <div v-area.class="'checkbox'" class="tight center">
                                     <div class="checkbox">
                                         <input type="checkbox"/>
                                     </div>
                                 </div>
                                 <div v-area.class="'txnName'" class="tight yCenter ellipsisContainer">
-                                    <div>{{ item?.title }}</div>
+                                    <div>
+                                        {{ item?.title }}
+                                    </div>
                                 </div>
                                 <div v-area.class="'txnAge'" class="tight yCenter ellipsisContainer">
-                                    <div>{{ store.getDateAge(item?.creationDate) }} ago</div>
+                                    <div>
+                                        {{ getDateAge(item?.creationDate) }} ago
+                                    </div>
                                 </div>
                                 <div v-area.class="'txnType'" class="tight yCenter ellipsisContainer">
-                                    <div>{{ getTxnTypeNameById(item?.txnType, txnTypesStore.txnTypes.lastSuccessfulData?.rangeItems ?? []) }}</div>
+                                    <div>
+                                        {{ getTxnTypeNameById(item?.txnType, txnTypes.lastSuccessfulData?.rangeItems ?? []) }}
+                                    </div>
                                 </div>
-                                <!-- <div v-area.class="'txnValueChange'" class="tight yCenter consoleFont ellipsisContainer" 
+                                <!-- <div v-area.class="'txnValueChange'" class="tight yCenter consoleFont ellipsisContainer"
                                 :class="{'disabled': item?.changeInValue == 0}">
                                     <div>{{ formatChangeInValue(item?.changeInValue) }}</div>
                                 </div> -->
                                 <div v-area.class="'txnFrom'" class="tight yCenter xRight ellipsisContainer">
-                                    <div v-if="item?.fromContainer">{{ getContainerNameById(item?.fromContainer, containersStore.containers.lastSuccessfulData?.rangeItems ?? []) }}</div>
+                                    <div v-if="item?.fromContainer">
+                                        {{ getContainerNameById(item?.fromContainer, containers.lastSuccessfulData?.rangeItems ?? []) }}
+                                    </div>
                                 </div>
                                 <div v-area.class="'arrowIcon'" class="center">
-                                    <fa-icon icon="fa-solid fa-arrow-right"></fa-icon>
+                                    <fa-icon icon="fa-solid fa-arrow-right" />
                                 </div>
                                 <div v-area.class="'txnTo'" class="tight yCenter xLeft ellipsisContainer">
-                                    <div v-if="item?.toContainer">{{ getContainerNameById(item?.toContainer, containersStore.containers.lastSuccessfulData?.rangeItems ?? []) }}</div>
+                                    <div v-if="item?.toContainer">
+                                        {{ getContainerNameById(item?.toContainer, containers.lastSuccessfulData?.rangeItems ?? []) }}
+                                    </div>
                                 </div>
                                 <!-- <div v-area.class="'chips'" class="tight yCenter">
                                     <div :class="{'botChip': item?.isFromBot}">{{ item?.isFromBot ? 'Bot' : '' }}</div>
@@ -68,74 +81,237 @@
                         </div>
                     </div>
                 </div>
-
-                <div style="height:calc(100svh - 190px);" v-if="selectedItem == 'Advanced Filter View'">
-                    <div style="display:grid; grid-template-columns: 1fr 30px; grid-template-rows: 1fr;">
-                        <textarea spellcheck="false" class="noResize fullWidth" v-model="advancedFilterViewExpress"></textarea>
-                        <div class="center" id="executeExpression">
-                            <fa-icon icon="fa-solid fa-chevron-right"></fa-icon>
-                        </div>
-                    </div>
-                </div>
-
             </div>
-
         </div>
 
-        <!-- <p>{{ selectedTransaction?.currentData == undefined }}</p> -->
-        <div id="viewTxnGrid" v-if="selectedTransaction?.currentData != undefined && selectedTransactionID != ''">
-            <div class="field">
-                <div class="tight xLeft yCenter fieldTitle">Public ID: </div>
-                <input type="text" class="fieldText" placeholder="Transaction Name" 
-                :value="(selectedTransaction.currentData as any).id" disabled/>
-            </div>
-            <div class="field">
-                <div class="tight xLeft yCenter fieldTitle">Date: </div>
-                <input type="text" class="fieldText" placeholder="Transaction Date (DD-MM-YYYY HH:MM:SS)" 
-                :value="formatDate(new Date((selectedTransaction.currentData as any).creationDate))" disabled/>
-            </div>
-            <div class="field">
-                <div class="tight xLeft yCenter fieldTitle">Name: </div>
-                <input type="text" class="fieldText" placeholder="Transaction Name" 
-                v-model="(selectedTransaction.currentData as any).title"/>
-            </div>
-            <div class="field">
-                <div class="tight xLeft yCenter fieldTitle">From Container: </div>
-                <div class="fullSize dropdown">
-                    <custom-dropdown :items="(containersStore.containers.lastSuccessfulData?.rangeItems ?? []).map(x => x.id)" 
-                        v-model:currentItem="(selectedTransaction.currentData as any).fromContainer">
-                        <template #itemToText="props">
-                            <div class="middleLeft" v-if="containersStore.isContainerExist(props.item)">
-                                {{ containersStore.findContainerById(props.item)?.name}}
-                            </div>
-                            <div class="middleLeft disabled" v-else>None</div>
-                        </template>
-                    </custom-dropdown>
-                </div>
-            </div>
-            <div class="field">
-                <div class="tight xLeft yCenter fieldTitle">To Container: </div>
-                <div class="fullSize dropdown">
-                    <custom-dropdown :items="(containersStore.containers.lastSuccessfulData?.rangeItems ?? []).map(x => x.id)" 
-                        v-model:currentItem="(selectedTransaction.currentData as any).toContainer">
-                        <template #itemToText="props">
-                            <div class="middleLeft" v-if="containersStore.isContainerExist(props.item)">
-                                {{ containersStore.findContainerById(props.item)?.name}}
-                            </div>
-                            <div class="middleLeft disabled" v-else>None</div>
-                        </template>
-                    </custom-dropdown>
-                </div>
-            </div>
+        <div id="viewTxnGrid" v-else-if="selectedTransaction?.currentData != undefined">
+            <text-field v-area="'id'" :field-name="'ID'" :text="selectedTransactionWorkingCopy!.id!" readonly/>
+            <text-field v-area="'name'" :field-name="'Name'" v-model:text="selectedTransactionWorkingCopy!.title!"/>
+            <text-field v-area="'date'" :field-name="'Date'" v-model:text="selectedTransactionWorkingCopy!.creationDate!"
+                        :override-theme-color="isEnteredDateValid ? undefined : 'red'">
+                <template #fieldActions>
+                    <div class="nowButtonContainer">
+                        <button class="nowButton" @click="autoFillCurrentDateTime">Now</button>
+                    </div>
+                </template>
+            </text-field>
 
-            <div class="fullSize xRight" id="resetSaveContainer" v-if="selectedTransaction?.currentData">
-                <button class="defaultButton" :disabled="!hasTxnModified" @click="resetForm()">Reset</button>
-                <button class="defaultButton" :disabled="!hasTxnModified">Save</button>
+            <custom-dropdown :options="selectableContainerOptions"
+                             class="fullSize" v-area="'fromContainer'" field-name="From Container"
+                             v-model:selected-option="selectedTransactionWorkingCopy!.fromContainer!" />
+            <template v-if="selectedTransactionWorkingCopy!.fromContainer">
+                <custom-dropdown :options="selectableCurrenciesOptions"
+                                class="fullSize" v-area="'fromCurrency'" field-name="From Currency"
+                                v-model:selected-option="selectedTransactionWorkingCopy!.fromCurrency!" />
+                <text-field v-area="'fromAmount'" :field-name="'From Amount'" input-type="number"
+                            :override-theme-color="isEnteredFromAmountValid ? undefined : 'red'"
+                            v-model:text="selectedTransactionWorkingCopy!.fromAmount!"/>
+            </template>
+
+            <custom-dropdown :options="selectableContainerOptions"
+                             class="fullSize" v-area="'toContainer'" field-name="To Container"
+                             v-model:selected-option="selectedTransactionWorkingCopy!.toContainer!" />
+            <template v-if="selectedTransactionWorkingCopy!.toContainer">
+                <custom-dropdown v-area="'toCurrency'" :options="selectableCurrenciesOptions"
+                             class="fullSize" field-name="To Currency"
+                             v-model:selected-option="selectedTransactionWorkingCopy!.toCurrency!" />
+                <text-field v-area="'toAmount'" :field-name="'To Amount'" input-type="number"
+                            :override-theme-color="isEnteredToAmountValid ? undefined : 'red'"
+                            v-model:text="selectedTransactionWorkingCopy!.toAmount!"/>
+            </template>
+
+            <div id="resetSaveContainer" v-area="'actions'" v-if="selectedTransaction?.currentData">
+                <button class="defaultButton" :disabled="!isResetButtonAvailable" @click="resetForm()">Reset</button>
+                <button class="defaultButton" :disabled="!isSaveButtonAvailable" @click="submitSave()">Save</button>
             </div>
         </div>
 
     </div>
 </template>
+
+<script lang="ts" setup>
+import { API_TRANSACTIONS_PATH } from "@/apiPaths";
+import { getContainerNameById } from '@/modules/containers/utils/containers';
+import CustomDropdown from '@/modules/core/components/custom-dropdown.vue';
+import numberPagination from '@/modules/core/components/numberPagination.vue';
+import textField from '@/modules/core/components/textField.vue';
+import useNetworkPaginationNew, { type UpdaterReturnType } from "@/modules/core/composables/useNetworkedPagination";
+import vArea from "@/modules/core/directives/vArea";
+import { useMainStore } from "@/modules/core/stores/store";
+import { formatDate } from '@/modules/core/utils/date';
+import { isNullOrUndefined } from "@/modules/core/utils/equals";
+import { buildSearchParams } from "@/modules/core/utils/urlParams";
+import { getTxnTypeNameById } from '@/modules/txnTypes/utils/transactionTypes';
+import { ResettableObject } from "@/resettableObject";
+import router from "@/router";
+import type { HydratedTransaction } from "@/types/dtos/transactionsDTO";
+import { computed, onMounted, ref, toRaw, watch, type Ref } from 'vue';
+import type { TxnDTO } from '../../../../../api-types/txn';
+import { useContainersStore } from '../../containers/stores/useContainersStore';
+import { useTxnTypesStore } from '../../txnTypes/stores/useTxnTypesStore';
+import { nextTick } from "vue";
+import { useCurrenciesStore } from "@/modules/currencies/stores/useCurrenciesStore";
+import { isNumeric } from "@/modules/core/utils/numbers";
+
+const { authGet, getDateAge, updateAll: mainStoreUpdateAll } = useMainStore();
+const { currencies } = useCurrenciesStore();
+const { containers } = useContainersStore();
+const { txnTypes } = useTxnTypesStore();
+
+// #region All Txns View
+const currentPageIndex = ref(0);
+const itemsInPage = 15;
+const searchText = ref("");
+const mainPagination = useNetworkPaginationNew<TxnDTO>(
+{
+    updater: async (start:number, end:number): Promise<UpdaterReturnType<TxnDTO>> =>
+    {
+        const sendQuery = async (url:string) => await authGet(url);
+
+        const queryString = buildSearchParams(
+        {
+            start: `${start}`, end: `${end}`,
+            title: !!searchText.value ? searchText.value : undefined
+        }, { ignoreKey: "ALL" });
+
+        const responseJSON = (await sendQuery(`${API_TRANSACTIONS_PATH}?${queryString}`)).data;
+
+        return {
+            totalItems: responseJSON.totalItems,
+            startingIndex: responseJSON.startingIndex,
+            endingIndex: responseJSON.endingIndex,
+            rangeItems: responseJSON.rangeItems
+        };
+    },
+    pageIndex: currentPageIndex,
+    pageSize: ref(itemsInPage),
+    overflowResolutionHandler: (_, lastAvailablePageIndex) => currentPageIndex.value = lastAvailablePageIndex,
+    updateOnMount: true
+});
+const uiRangeText = computed(() =>
+{
+    if (isNullOrUndefined(mainPagination.lastCallResult?.value)) return "Loading...";
+    const start = mainPagination.viewportStartIndex.value + 1;
+    const end = Math.min(mainPagination.lastCallResult.value.totalItems, mainPagination.viewportEndIndex.value + 1);
+    const totalItems = mainPagination.lastCallResult.value.totalItems;
+    if (start === end || totalItems === 0) return "Showing 0 - 0 of 0";
+    return `Showing ${start} - ${end} of ${totalItems}`;
+});
+function onSearchTextChange()
+{
+    mainPagination.update();
+    currentPageIndex.value = 0;
+}
+function viewTransaction(txnId: string)
+{
+    router.push(
+    {
+        name: "transactions",
+        params: { id: txnId }
+    });
+}
+onMounted(async () => await mainStoreUpdateAll());
+// #endregion
+
+// #region Single Transaction View
+const selectedTransactionID = computed(() => router.currentRoute.value.params?.id);
+const selectableContainerOptions = computed(() =>
+{
+    const items = containers.lastSuccessfulData?.rangeItems;
+    return items?.map(x => ({ id: x.id, label: x.name, searchTerms: `${x.id} ${x.name}` })) ?? [];
+});
+const selectableCurrenciesOptions = computed(() =>
+{
+    const items = currencies.lastSuccessfulData?.rangeItems;
+    return items?.map(x => ({ id: x.id, label: x.name, searchTerms: `${x.id} ${x.name}` })) ?? [];
+});
+const selectedTransaction = ref(undefined) as Ref<undefined | ResettableObject<HydratedTransaction>>;
+const selectedTransactionWorkingCopy = computed(() => selectedTransaction.value?.currentData as unknown as Partial<HydratedTransaction> | undefined);
+const isEnteredDateValid = computed(() => !isNaN(new Date(`${(selectedTransaction.value?.currentData as any).creationDate}`).getTime()));
+const isEnteredFromAmountValid = computed(() => isNumeric(selectedTransactionWorkingCopy?.value?.fromAmount));
+const isEnteredToAmountValid = computed(() => isNumeric(selectedTransactionWorkingCopy?.value?.toAmount));
+const isTransactionDetailsValid = computed(() =>
+{
+    const txn = selectedTransaction.value?.currentData as unknown as HydratedTransaction;
+    if (!txn) return false;
+    if (!txn.fromAmount && !txn.toAmount) return false;
+    if (!isEnteredDateValid.value) return false;
+    if (!txn.title.trim()) return false;
+    return true;
+});
+const isResetButtonAvailable = computed(() =>
+{
+    if (!selectedTransaction.value?.isChanged) return false;
+    return true;
+});
+const isSaveButtonAvailable = computed(() =>
+{
+    if (!selectedTransaction.value?.isChanged) return false;
+    if (!isTransactionDetailsValid.value) return false;
+    if (!isEnteredFromAmountValid.value && selectedTransactionWorkingCopy.value?.fromContainer) return false;
+    if (!isEnteredFromAmountValid.value && selectedTransactionWorkingCopy.value?.fromCurrency) return false;
+    if (!isEnteredToAmountValid.value && selectedTransactionWorkingCopy.value?.toContainer) return false;
+    if (!isEnteredToAmountValid.value && selectedTransactionWorkingCopy.value?.toCurrency) return false;
+    if (!isTransactionDetailsValid.value) return false;
+    return true;
+});
+
+watch(selectedTransactionID, async () => // Load txn if selected
+{
+    if (selectedTransactionID.value === undefined) return;
+    const queryURL = API_TRANSACTIONS_PATH;
+    const txnObject = (await authGet(`${queryURL}?id=${selectedTransactionID.value}`))!.data.rangeItems[0];
+
+    if (!txnObject) return;
+
+    // Format received date to readable, instead of being epoch
+    txnObject.creationDate =
+            formatDate(new Date(txnObject.creationDate ?? ''), "YYYY-MM-DD hh:mm:ss.ms");
+
+    nextTick(() =>
+    {
+        selectedTransaction.value = new ResettableObject<HydratedTransaction>(txnObject);
+
+        // We want to treat the creationDate represented in ISO string, and epoch the same
+        selectedTransaction.value.dataComparator = (latest, safePoint) =>
+        {
+            const latestObj = structuredClone(toRaw(latest));
+            const safePointObj = structuredClone(toRaw(safePoint));
+            if (!latestObj || !safePointObj) return true;
+            latestObj.creationDate = `${new Date(latestObj.creationDate).getTime()}`;
+            safePointObj.creationDate = `${new Date(safePointObj.creationDate).getTime()}`;
+            return JSON.stringify(latestObj) === JSON.stringify(safePointObj);
+        };
+    });
+
+    await containers.updateData();
+}, { immediate: true });
+
+const autoFillCurrentDateTime = () =>
+{
+    if (!selectedTransactionWorkingCopy.value) return;
+    selectedTransactionWorkingCopy.value.creationDate = formatDate(new Date())
+};
+const resetForm = () => { if (selectedTransaction.value) selectedTransaction.value?.reset(); };
+const submitSave = () =>
+{
+    const transformedCopy = selectedTransactionWorkingCopy.value!;
+    if (transformedCopy.fromContainer === '')
+    {
+        transformedCopy.fromContainer = null;
+        transformedCopy.fromCurrency = null;
+        transformedCopy.fromAmount = null;
+    }
+    if (transformedCopy.toContainer === '')
+    {
+        transformedCopy.toContainer = null;
+        transformedCopy.toCurrency = null;
+        transformedCopy.toAmount = null;
+    }
+    console.log(selectedTransactionWorkingCopy.value);
+};
+// #endregion
+</script>
 
 <style lang="less" scoped>
 @import '@/modules/core/stylesheets/globalStyle.less';
@@ -153,7 +329,7 @@
         border: 1px solid @border;
         border-radius: 5px;
 
-        .size(20px, 20px);   
+        .size(20px, 20px);
         .center;
 
         &:after
@@ -169,15 +345,18 @@
     }
 }
 
+* :deep(.dropdownItem) { background: red; }
+
 .dropdown
 {
-    #root_custom_dropdown 
-    { 
-        width: 100%; 
+    #root_custom_dropdown
+    {
+        width: 100%;
         background:#191919;
         border: 1px solid #232323;
         border-radius: 5px;
         font-size:14px;
+        .debug;
     }
 }
 
@@ -207,6 +386,20 @@ textarea
     .consoleFont;
 }
 
+.nowButtonContainer
+{
+    .fullSize; .center;
+    padding-left: 5px; padding-right: 5px;
+
+    .nowButton
+    {
+        .defaultButton;
+        padding:5px;
+        font-size:12px;
+        font-weight: bold;
+    }
+}
+
 #panel
 {
     padding:0px; box-sizing:border-box; gap:15px;
@@ -215,10 +408,10 @@ textarea
 
     #searchInput { width: 50%; }
     .fullSize; box-sizing:border-box;
-    
-    .pageSelector  
+
+    .pageSelector
     {
-        color:gray !important; transform: translateY(-3px); 
+        color:gray !important; transform: translateY(-3px);
         display:grid;
         grid-template-columns: 1fr 1fr;
         grid-template-rows: 1fr;
@@ -228,11 +421,17 @@ textarea
     #currentPage { .horiMargin(15px); .vertMargin(5px); font-size:16px; min-width:15px; display:inline-block; text-align: center; }
     .disabled { pointer-events: none; opacity:0.2; }
 
-    @media only screen and (max-width: 1200px) 
+    @media only screen and (max-width: 1200px)
     {
         #summaryContainer { display:none; }
         #searchInput { width: 100%; }
         .pageSelector { grid-template-columns: 1fr auto; }
+    }
+
+    .uiRangeText
+    {
+        .tight;
+        font-size:14px; display:inline; padding-right:15px;
     }
 }
 
@@ -246,7 +445,8 @@ textarea
 
 .topDivTxn
 {
-    padding:50px; box-sizing: border-box;
+    padding: @desktopPagePadding;
+    box-sizing: border-box;
     overflow-x:hidden; .fullSize;
     font-family: 'Schibsted Grotesk', sans-serif;
 
@@ -262,7 +462,7 @@ textarea
     input[type='number']
     {
         color:white;
-        background:transparent; 
+        background:transparent;
         border:1px solid #252525;
         width:30px;
         padding:0px; .horiMargin(5px);
@@ -273,14 +473,14 @@ textarea
     {
         background:#050505; color:gray;
         box-sizing: border-box; border-bottom:1px solid #151515;
-        display:grid; 
+        display:grid;
 
         gap: 15px;
         grid-template-columns:  30px     150fr   100px  150fr   50fr          150fr   50px      150fr 100fr;
         grid-template-areas:   'checkbox txnName txnAge txnType txnValueChange txnFrom arrowIcon txnTo chips';
         grid-template-rows: 1fr; .horiPadding(15px); cursor:pointer;
 
-        &:hover 
+        &:hover
         {
             background: @focusDark;
             color: @focus;
@@ -290,19 +490,19 @@ textarea
         {
             display:grid; box-sizing: border-box;
             grid-template-columns: 1fr 1fr 1fr;
-            grid-template-rows: 1fr 1fr;   
+            grid-template-rows: 1fr 1fr;
         }
 
         @media only screen and (max-width: 1400px)
         {
-            & 
+            &
             {
                 grid-template-columns:  30px     150fr   100px  50fr           150fr   50px      150fr 100fr !important;
                 grid-template-areas:   'checkbox txnName txnAge txnValueChange txnFrom arrowIcon txnTo chips' !important;
 
                 & > div.txnType
-                { 
-                    overflow:hidden !important; 
+                {
+                    overflow:hidden !important;
                     display:none !important;
                 }
             }
@@ -310,14 +510,14 @@ textarea
 
         @media only screen and (max-width: 1200px)
         {
-            & 
+            &
             {
                 grid-template-columns:  25px     200fr   40fr  100px  100px            !important;
                 grid-template-areas:   'checkbox txnName chips txnAge txnValueChange ' !important;
 
                 & > div:not(.checkbox, .txnName, .chips, .txnAge, .txnValueChange)
-                { 
-                    overflow:hidden; 
+                {
+                    overflow:hidden;
                     display:none;
                 }
 
@@ -327,14 +527,14 @@ textarea
 
         @media only screen and (max-width: 900px)
         {
-            & 
+            &
             {
                 grid-template-columns:  25px     200fr   100px  100px            !important;
                 grid-template-areas:   'checkbox txnName txnAge txnValueChange ' !important;
 
                 & > div:not(.checkbox, .txnName, .txnAge, .txnValueChange)
-                { 
-                    overflow:hidden; 
+                {
+                    overflow:hidden;
                     display:none;
                 }
 
@@ -344,14 +544,14 @@ textarea
 
         @media only screen and (max-width: 600px)
         {
-            & 
+            &
             {
                 grid-template-columns:  1fr     auto   50px   !important;
                 grid-template-areas:   'txnName txnAge txnValueChange' !important;
 
                 & > div:not(.txnName, .txnAge, .txnValueChange)
-                { 
-                    overflow:hidden; 
+                {
+                    overflow:hidden;
                     display:none;
                 }
 
@@ -360,9 +560,9 @@ textarea
         }
     }
 
-    #mainCell 
-    { 
-        .fullSize; 
+    #mainCell
+    {
+        .fullSize;
         height: 700px;
 
         @media only screen and (min-height: 750px)
@@ -370,7 +570,7 @@ textarea
             height:calc(100svh - 190px);
         }
     }
-    
+
     #mainGrid
     {
         display:grid;
@@ -379,8 +579,8 @@ textarea
         grid-template-rows:100px 250px 1fr 1fr;
         height:2000px;
 
-        grid-template-areas: 
-        'expensesPanel incomesPanel totalValuePanel netChangePanel' 
+        grid-template-areas:
+        'expensesPanel incomesPanel totalValuePanel netChangePanel'
         '30dExpensesList 30dIncomesList ContainersList TotalValueGraph';
 
         .listItemTitle { color:gray; font-size:14px; overflow:hidden; white-space: nowrap; text-overflow: ellipsis; }
@@ -390,8 +590,17 @@ textarea
     {
         display:grid;
         gap: 15px;
-        grid-template-columns: 1fr;
-        grid-template-rows: auto auto auto auto 1fr;
+        grid-template:
+            'id id' 45px
+            'name name' 45px
+            'date date' 45px
+            'fromContainer fromContainer' minmax(0px, 45px)
+            'fromAmount fromCurrency' minmax(0px, 45px)
+            'toContainer toContainer' minmax(0px, 45px)
+            'toAmount toCurrency' minmax(0px, 45px)
+            'actions actions' 45px
+            / 1fr     200px;
+
         height: calc(100svh - 190px);
 
         .field
@@ -399,11 +608,12 @@ textarea
             display:grid;
             grid-template-columns: 150px 1fr;
             grid-template-rows: 1fr;
-            height:35px;
+            .fullSize;
         }
 
         #resetSaveContainer
         {
+            .fullSize; .xRight; .yBottom;
             button:nth-child(2)
             {
                 margin-left:5px;
@@ -412,146 +622,38 @@ textarea
     }
 }
 
-@media only screen and (max-width: 1400px) 
+@media only screen and (max-width: 1400px)
 {
     .row
     {
-        grid-template-columns:  150fr   100px  150fr   50fr           50fr  0px     0px       0px !important; 
+        grid-template-columns:  150fr   100px  150fr   50fr           50fr  0px     0px       0px !important;
         grid-template-areas:   'txnName txnAge txnType txnValueChange chips txnFrom arrowIcon txnTo' !important;
-        grid-template-rows: 1fr; .horiPadding(15px); cursor:pointer;    
+        grid-template-rows: 1fr; .horiPadding(15px); cursor:pointer;
+    }
+}
+
+@media only screen and (max-width: 500px)
+{
+    .topDivTxn
+    {
+        padding: @mobilePagePadding;
+    }
+
+    #viewTxnGrid
+    {
+        grid-template:
+            'id' 45px
+            'name' 45px
+            'date' 45px
+            'fromContainer' minmax(0px, 45px)
+            'fromCurrency' minmax(0px, 45px)
+            'fromAmount' minmax(0px, 45px)
+            'toContainer' minmax(0px, 45px)
+            'toCurrency' minmax(0px, 45px)
+            'toAmount' minmax(0px, 45px)
+            'actions' 45px
+            / 1fr  !important;
     }
 }
 
 </style>
-
-<script lang="ts" setup> 
-import { useMainStore } from "@/modules/core/stores/store";
-import vArea from "@/modules/core/directives/vArea";
-import { ref, onMounted, withDirectives, type Ref, computed, watch, nextTick, type UnwrapRef, unref } from 'vue';
-import router from "@/router";
-import useNetworkPagination, { type UpdatorReturnType } from "@/networkedPagination";
-import { ResettableObject } from "@/resettableObject";
-import { API_TRANSACTIONS_PATH } from "@/apiPaths";
-import type { HydratedTransaction, Transaction } from "@/types/dtos/transactionsDTO";
-import CustomDropdown from '@/modules/core/components/custom-dropdown.vue';
-import { getTxnTypeNameById } from '@/modules/txnTypes/utils/transactionTypes';
-import { getContainerNameById } from '@/modules/containers/utils/containers';
-import { formatDate } from '@/modules/core/utils/date';
-import numberPagination from '@/modules/core/components/numberPagination.vue';
-import type { TxnDTO } from '../../../../../api-types/txn';
-import { useContainersStore } from '../../containers/stores/useContainersStore';
-import { useTxnTypesStore } from '../../txnTypes/stores/useTxnTypesStore';
-
-// #region CONSTANTS:
-const itemsInPage = 15;
-const store = useMainStore();
-const containersStore = useContainersStore();
-const txnTypesStore = useTxnTypesStore();
-const moveToPageZero = () => { mainPagination.pageIndex.value = 0; };
-// #endregion
-
-// #region All transactions view:
-const searchText = ref("");
-const mainPagination = useNetworkPagination<TxnDTO>({ updater: updater, pageIndex: 0, pageSize: ref(itemsInPage) });
-const uiRangeText = computed(() => 
-{ 
-    let upperBound = Math.min(mainPagination.viewportUpperBoundIndex.value + 1, mainPagination.totalItems.value);
-
-    return `Showing ${mainPagination.viewportLowerBoundIndex.value + 1}` + ` - ` +
-    `${upperBound}` + ` of ` +
-    `${mainPagination.totalItems.value}`;
-});
-const selectedTransactionID = computed(() => { return router.currentRoute.value.params?.id });
-
-function onSearchTextChange()
-{
-    mainPagination.pageIndex.value = 0;
-    mainPagination.refetch();
-    moveToPageZero();
-}
-
-async function updater(start:number, count:number): Promise<UpdaterReturnType<TxnDTO>>
-{
-    let sendQuery = async (url:string) => await store.authGet(url);
-    let queryURL = API_TRANSACTIONS_PATH;
-
-    let fullQuery = `${queryURL}?start=${start}&end=${start+count}`;
-    if (searchText.value !== "") fullQuery = `${queryURL}?start=${start}&end=${start+count}&title=${searchText.value}`;
-    
-    let responseJSON = (await sendQuery(fullQuery)).data;
-
-    return {
-        totalItems: responseJSON.totalItems,
-        startingIndex: responseJSON.startingIndex,
-        endingIndex: responseJSON.endingIndex,
-        rangeItems: responseJSON.rangeItems
-    };
-}
-
-// #endregion
-
-// #region Advanced Filter View:
-const filteredViewItems = ref([]) as Ref<HydratedTransaction[]>;
-const isAdvancedViewLoading = ref(false);
-const advancedFilterViewExpress = ref("");
-
-// async function executeExpression()
-// {
-//     isAdvancedViewLoading.value = true;
-//     let allTxns:any[] = (await (store.authGet(`/api/v1/finance/transactions`))!)!.data;
-//     isAdvancedViewLoading.value = false;
-// }
-// #endregion
-
-// #region Single Transaction View
-const hasTxnModified = ref(false) as Ref<boolean>;
-const selectedItem = ref('All Transactions');
-const selectedTransaction = ref(undefined) as Ref<undefined | ResettableObject<HydratedTransaction>>;
-
-const mainStore = useMainStore();
-watch(selectedTransactionID, async () => 
-{
-    if (selectedTransactionID.value === undefined) return;
-
-    let queryURL = API_TRANSACTIONS_PATH;
-    let txnObject = (await store.authGet(`${queryURL}?id=${selectedTransactionID.value}`))!.data.rangeItems[0];
-
-    if (txnObject.to === undefined) txnObject.to = {};
-    if (txnObject.from === undefined) txnObject.from = {};
-
-    nextTick(() => 
-    { 
-        selectedTransaction.value = new ResettableObject<HydratedTransaction>(txnObject);
-        let currentData = selectedTransaction.value.currentData;
-    });
-    await containersStore.containers.updateData();
-    // await mainStore.updateContainers();
-
-}, { immediate: true, deep: true });
-
-watch(selectedTransaction, () => 
-{ 
-    nextTick(() => 
-    {
-        hasTxnModified.value = unref(selectedTransaction.value?.isChanged) ?? false; 
-    });
-}, { deep: true });
-
-function viewTransaction(txnId: string)
-{
-    router.push(
-    {
-        name: "transactions",
-        params: { id: txnId }
-    });
-}
-
-function resetForm() { if (selectedTransaction) selectedTransaction.value?.reset(); }
-// #endregion
-
-onMounted(async () => 
-{
-    await store.updateAll();
-});
-
-</script>

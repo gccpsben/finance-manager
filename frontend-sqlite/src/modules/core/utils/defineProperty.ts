@@ -1,40 +1,53 @@
 import { ref, type UnwrapRef } from "vue";
 
-export interface propDefinition<T, PropName extends string, Props extends { [K in PropName]: T }>
+export const Uncontrolled: unique symbol = Symbol('define-property-uncontrolled');
+
+export type PropDefinition<T, PropName extends string, Props extends { [K in PropName]: T | typeof Uncontrolled }> =
 {
-    withEmits?: boolean,
     emitFunc: ((event: `update:${PropName}`, ...args: any[]) => void) | undefined,
-    props: Props
+    props: Props,
+
+    /** Default must be provided if the property is "uncontrollable" (aka with `| typeof Uncontrolled` as type),
+     *  since the parent can change this component to uncontrolled at any moment. */
+    default: Exclude<T, typeof Uncontrolled>
 };
 
-
-/** Use null to tell this function to treat prop as uncontrolled */
-export function defineProperty<T, PropName extends string, Props extends { [K in PropName]: T }>
+export function defineProperty<
+    T,
+    PropName extends string,
+    Props extends { [K in PropName]: T | typeof Uncontrolled }
+>
 (
-    propName: PropName, 
-    config: propDefinition<T, PropName, Props>
+    propName: PropName, options: PropDefinition<T, PropName, Props>
 )
 {
-    // Controlled: State managed by parents
-    // Uncontrolled: State managed by component itself
+    const _isUncontrolled = ref(false);
 
-    const checkIsControlled = () => config.props[propName] !== null;
-    const uncontrolledRef = ref<T>(config.props[propName]);
-    const propEmit = (newVal: T) => 
+    /**
+     * It's possible that uncontrolled is allowed, but default is not provided.
+     * Normally this should yield an error in IDE and type-check, so we can assume it's not null here.
+     **/
+    const _uncontrolledRef = ref<T>(options.default!);
+    const get = (): T =>
     {
-        if (config.withEmits && config.emitFunc) config.emitFunc(`update:${propName}`, newVal);
-        uncontrolledRef.value = newVal as UnwrapRef<T>;
+        if ( options.props[propName] === Uncontrolled) return _uncontrolledRef.value as T;
+        else return options.props[propName] as T;
+    };
+    const set = (val: T | typeof Uncontrolled): void =>
+    {
+        _isUncontrolled.value = val === Uncontrolled;
+        if (val === Uncontrolled) return void((_uncontrolledRef.value as T) = options.default);
+        if (options.emitFunc)
+        {
+            options.emitFunc(`update:${propName}`, val);
+            _uncontrolledRef.value = val as UnwrapRef<T>;
+        }
     };
 
+    set(options.props[propName]);
+
     return {
-        checkIsControlled: checkIsControlled,
-        propEmit: propEmit,
-        get: () => { return checkIsControlled() ? config.props[propName] as T : uncontrolledRef.value as T },
-        set: (val: T) => 
-        {
-            if (checkIsControlled()) propEmit(val);
-            else uncontrolledRef.value = val as UnwrapRef<T>;
-        },
-        uncontrolledRef
-    }   
+        get,
+        set
+    }
 }

@@ -1,7 +1,5 @@
-export type BuildSearchParamsOptions =
-{
-    ignoreKey: "NONE" | "UNDEFINED" | "ALL" | "NULL"
-};
+export type IgnoreKeyPolicy = "NONE" | "UNDEFINED" | "ALL" | "NULL";
+export type BuildSearchParamsOptions = { ignoreKey: IgnoreKeyPolicy };
 
 /**
  * Example output: "a=1&b=123"
