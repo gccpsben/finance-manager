@@ -89,7 +89,7 @@
 
             <text-field v-area="'id'" :field-name="'ID'" :text="selectedTransaction.currentData.value.id ?? ''" readonly/>
 
-            <text-field v-area="'name'" :override-theme-color="selectedTransaction.currentData.value.title !== '' ? undefined : 'red'"
+            <text-field v-area="'name'" :override-theme-color="!!selectedTransaction.currentData.value.title.trim() ? undefined : 'red'"
                         :field-name="'Name'" v-model:text="selectedTransaction.currentData.value.title"/>
 
             <text-field v-area="'date'" :field-name="'Date'" v-model:text="selectedTransaction.currentData.value.creationDate"
@@ -132,8 +132,14 @@
                         @update:text="selectedTransaction.currentData.value.description = $event"/>
 
             <div id="resetSaveContainer" v-area="'actions'" v-if="selectedTransaction?.currentData">
-                <button class="defaultButton" :disabled="!isResetButtonAvailable" @click="resetForm()">Reset</button>
-                <button class="defaultButton" :disabled="!isSaveButtonAvailable" @click="submitSave()">Save</button>
+                <div>
+                    <button class="defaultButton" :disabled="!isResetButtonAvailable" @click="resetForm()">Reset</button>
+                    <button class="defaultButton" :disabled="!isSaveButtonAvailable" @click="submitSave()">Save</button>
+                </div>
+            </div>
+
+            <div v-area="'error'" id="formErrorMsg">
+                <div>{{ transactionDetailsErrors }}</div>
             </div>
 
         </div>
@@ -262,25 +268,25 @@ const selectedTransaction = useResettableObject<undefined | HydratedTransaction>
 const isEnteredDateValid = computed(() => !isNaN(new Date(`${(selectedTransaction.currentData?.value as any).creationDate}`).getTime()));
 const isEnteredFromAmountValid = computed(() => isNumeric(selectedTransaction.currentData?.value?.fromAmount));
 const isEnteredToAmountValid = computed(() => isNumeric(selectedTransaction.currentData?.value?.toAmount));
-const isTransactionDetailsValid = computed(() =>
+const transactionDetailsErrors = computed<string | undefined>(() =>
 {
     const txn = selectedTransaction.currentData.value;
-    if (!txn) return 1;
+    if (!txn) return 'Loading...';
 
     const toContainer = txn.toContainer;
     const toCurrency = txn.toCurrency;
     const fromContainer = txn.fromContainer;
     const fromCurrency = txn.fromCurrency;
 
-    if (!txn.fromAmount && !txn.toAmount) return false;
-    if (!isEnteredDateValid.value) return false;
-    if (!txn.title.trim()) return false;
-    if (!!toContainer && !toCurrency) return false;
-    if (!!fromContainer && !fromCurrency) return false;
-    if (!fromContainer && !toContainer) return false;
-    if (!!fromContainer && !isEnteredFromAmountValid.value) return false;
-    if (!!toContainer && !isEnteredToAmountValid.value) return false;
-    return true;
+    if (!txn.fromAmount && !txn.toAmount) return "At least one of 'From' or 'To' sections must be provided.";
+    if (!isEnteredDateValid.value) return 'The date provided is invalid.';
+    if (!txn.title.trim()) return 'A name must be provided.';
+    if (!!toContainer && !toCurrency) return "A currency must be selected in the 'To' section.";
+    if (!!fromContainer && !fromCurrency) return "A currency must be selected in the 'From' section.";
+    if (!fromContainer && !toContainer) return "Either container in 'From' or container in 'To' is missing.";
+    if (!!fromContainer && !isEnteredFromAmountValid.value) return "The value provided in section 'From' must be a number.";
+    if (!!toContainer && !isEnteredToAmountValid.value) return "The value provided in section 'to' must be a number.";
+    return undefined;
 });
 const isResetButtonAvailable = computed(() =>
 {
@@ -289,8 +295,8 @@ const isResetButtonAvailable = computed(() =>
 });
 const isSaveButtonAvailable = computed(() =>
 {
-    if (!selectedTransaction.isChanged.value) return false;
-    if (!isTransactionDetailsValid.value) return false;
+    if (!selectedTransaction.isChanged.value) return false;transactionDetailsErrors
+    if (transactionDetailsErrors.value) return false;
     return true;
 });
 
@@ -570,6 +576,7 @@ const submitSave = () =>
             'fromAmount    fromAmount    toAmount      toAmount      ' minmax(0px, 45px)
             '_             _             _             _             ' 5px
             'desc          desc          desc          desc          ' 100px
+            'error         error         error         error         ' auto
             'actions       actions       actions       actions       ' 45px
             / 1fr          1fr           1fr           1fr;
 
@@ -585,11 +592,27 @@ const submitSave = () =>
 
         #resetSaveContainer
         {
-            .fullSize; .xRight; .yBottom;
-            button:nth-child(2)
+            display: grid;
+            grid-template-columns: 1fr auto;
+            grid-template-rows: 1fr;
+            padding-bottom: 126px;
+
+            & > *
             {
-                margin-left:5px;
+                .fullSize; .xRight; .yBottom;
+                button:nth-child(2)
+                {
+                    margin-left:5px;
+                }
             }
+        }
+
+        #formErrorMsg
+        {
+            color: @error;
+            font-weight: 900;
+            .yCenter;
+            .xLeft;
         }
     }
 }
@@ -625,6 +648,7 @@ const submitSave = () =>
             'toAmount' minmax(0px, 45px)
             '_' 5px
             'desc' minmax(0px, 100px)
+            'error' auto
             'actions' 45px
             / 1fr  !important;
     }
