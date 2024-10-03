@@ -158,7 +158,7 @@ import { useCurrenciesStore } from '@/modules/currencies/stores/useCurrenciesSto
 import listCellVue from '@/modules/core/components/listCell.vue';
 import cell from '@/modules/core/components/cell.vue';
 import containerValuesGraphCell from '@/modules/containers/components/containerValuesGraphCell.vue';
-import { useMediaQuery } from "@vueuse/core";
+import router from "@/router";
 
 export default
 {
@@ -246,7 +246,7 @@ export default
         // },
         viewTxn(id:string)
         {
-            this.$router.push({name: 'transactions', params: { id: id }})
+            router.push({name: 'transactions', params: { id: id }})
         }
     }
 }

@@ -27,7 +27,7 @@ export type ViewTitleEmits =
 };
 
 const emit = defineEmits<ViewTitleEmits>();
-const props = withDefaults(defineProps<ViewTitleProps>(), { hasBackButton: true });
+const props = withDefaults(defineProps<ViewTitleProps>(), { hasBackButton: false });
 </script>
 
 <style lang="less" scoped>

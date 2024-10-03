@@ -303,7 +303,7 @@ watch(selectedTransactionID, async () => // Load txn if selected
 const autoFillCurrentDateTime = () =>
 {
     if (!selectedTransactionWorkingCopy.value) return;
-    selectedTransactionWorkingCopy.value.creationDate = formatDate(new Date())
+    selectedTransactionWorkingCopy.value.creationDate = formatDate(new Date(), "YYYY-MM-DD hh:mm:ss.ms")
 };
 const resetForm = () => { if (selectedTransaction.value) selectedTransaction.value?.reset(); };
 const submitSave = () =>
@@ -317,7 +317,6 @@ const submitSave = () =>
 <style lang="less" scoped>
 @import '@/modules/core/stylesheets/globalStyle.less';
 
-.debug2 { background:blue; border:1px solid black; }
 * { box-sizing: border-box }
 
 .disabled { opacity: 0.3; pointer-events: none; }
