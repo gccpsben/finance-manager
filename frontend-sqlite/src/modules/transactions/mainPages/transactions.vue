@@ -347,31 +347,9 @@ const submitSave = () =>
     }
 }
 
-* :deep(.dropdownItem) { background: red; }
-
-.dropdown
-{
-    #root_custom_dropdown
-    {
-        width: 100%;
-        background:#191919;
-        border: 1px solid #232323;
-        border-radius: 5px;
-        font-size:14px;
-        .debug;
-    }
-}
-
 .arrowHighlight
 {
     &:hover { background: @surfaceHigh; }
-}
-
-#executeExpression
-{
-    color: @foreground;
-    font-size:12px; cursor:pointer;
-    &:hover { background: @surface; }
 }
 
 #descriptionTextField:deep(textarea) { padding: 14px; }
@@ -449,15 +427,15 @@ const submitSave = () =>
         border-radius: 5px;
     }
 
-    input[type='number']
-    {
-        color:white;
-        background:transparent;
-        border:1px solid #252525;
-        width:30px;
-        padding:0px; .horiMargin(5px);
-        text-align: center;
-    }
+    // input[type='number']
+    // {
+    //     color:white;
+    //     background:transparent;
+    //     border:1px solid #252525;
+    //     width:30px;
+    //     padding:0px; .horiMargin(5px);
+    //     text-align: center;
+    // }
 
     .row
     {
@@ -474,13 +452,6 @@ const submitSave = () =>
         {
             background: @focusDark;
             color: @focus;
-        }
-
-        .rowContent
-        {
-            display:grid; box-sizing: border-box;
-            grid-template-columns: 1fr 1fr 1fr;
-            grid-template-rows: 1fr 1fr;
         }
 
         @media only screen and (max-width: 1400px)
