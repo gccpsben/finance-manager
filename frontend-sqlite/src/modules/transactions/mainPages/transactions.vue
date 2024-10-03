@@ -85,14 +85,14 @@
             </div>
         </div>
 
-        <div id="viewTxnGrid" v-else-if="selectedTransaction?.currentData != undefined">
+        <div id="viewTxnGrid" v-else-if="selectedTransaction?.currentData?.value != undefined">
 
-            <text-field v-area="'id'" :field-name="'ID'" :text="selectedTransactionWorkingCopy!.id!" readonly/>
+            <text-field v-area="'id'" :field-name="'ID'" :text="selectedTransaction.currentData.value.id ?? ''" readonly/>
 
-            <text-field v-area="'name'" :override-theme-color="selectedTransactionWorkingCopy!.title !== '' ? undefined : 'red'"
-                        :field-name="'Name'" v-model:text="selectedTransactionWorkingCopy!.title!"/>
+            <text-field v-area="'name'" :override-theme-color="selectedTransaction.currentData.value.title !== '' ? undefined : 'red'"
+                        :field-name="'Name'" v-model:text="selectedTransaction.currentData.value.title"/>
 
-            <text-field v-area="'date'" :field-name="'Date'" v-model:text="selectedTransactionWorkingCopy!.creationDate!"
+            <text-field v-area="'date'" :field-name="'Date'" v-model:text="selectedTransaction.currentData.value.creationDate"
                         :override-theme-color="isEnteredDateValid ? undefined : 'red'">
                 <template #fieldActions>
                     <div class="nowButtonContainer">
@@ -103,37 +103,40 @@
 
             <custom-dropdown :options="selectableContainerOptions"
                              class="fullSize" v-area="'fromContainer'" field-name="From Container"
-                             v-model:selected-option="selectedTransactionWorkingCopy!.fromContainer!" />
+                             v-model:selected-option="selectedTransaction.currentData.value.fromContainer!" />
             <custom-dropdown :options="selectableCurrenciesOptions"
-                             :class="{'disabled': !selectedTransactionWorkingCopy!.fromContainer}"
+                             :class="{'disabled': !selectedTransaction.currentData.value.fromContainer}"
                              class="fullSize" v-area="'fromCurrency'" field-name="From Currency"
-                             v-model:selected-option="selectedTransactionWorkingCopy!.fromCurrency!" />
-            <text-field v-area="'fromAmount'" :field-name="'From Amount'" input-type="number"
-                        :class="{'disabled': !selectedTransactionWorkingCopy!.fromContainer}"
+                             v-model:selected-option="selectedTransaction.currentData.value.fromCurrency!" />
+            <text-field v-area="'fromAmount'" field-name="From Amount" input-type="number"
+                        :class="{'disabled': !selectedTransaction.currentData.value.fromContainer}"
                         :override-theme-color="isEnteredFromAmountValid ? undefined : 'red'"
-                        v-model:text="selectedTransactionWorkingCopy!.fromAmount!"/>
+                        :text="selectedTransaction.currentData.value.fromAmount ?? ''"
+                        @update:text="selectedTransaction.currentData.value.fromAmount = $event"/>
 
             <custom-dropdown :options="selectableContainerOptions"
                              class="fullSize" v-area="'toContainer'" field-name="To Container"
-                             v-model:selected-option="selectedTransactionWorkingCopy!.toContainer!" />
+                             v-model:selected-option="selectedTransaction.currentData.value.toContainer!" />
             <custom-dropdown v-area="'toCurrency'" :options="selectableCurrenciesOptions"
-                             :class="{'disabled': !selectedTransactionWorkingCopy!.toContainer}"
+                             :class="{'disabled': !selectedTransaction.currentData.value.toContainer}"
                              class="fullSize" field-name="To Currency"
-                             v-model:selected-option="selectedTransactionWorkingCopy!.toCurrency!" />
-            <text-field v-area="'toAmount'" :field-name="'To Amount'" input-type="number"
-                        :class="{'disabled': !selectedTransactionWorkingCopy!.toContainer}"
+                             v-model:selected-option="selectedTransaction.currentData.value.toCurrency!" />
+            <text-field v-area="'toAmount'" field-name="To Amount" input-type="number"
+                        :class="{'disabled': !selectedTransaction.currentData.value.toContainer}"
                         :override-theme-color="isEnteredToAmountValid ? undefined : 'red'"
-                        v-model:text="selectedTransactionWorkingCopy!.toAmount!"/>
+                        :text="selectedTransaction.currentData.value.toAmount ?? ''"
+                        @update:text="selectedTransaction.currentData.value.toAmount = $event"/>
 
-            <text-field v-area="'desc'" id="descriptionTextField" :field-name="'Description'" input-type="text" always-float textarea-mode
-                        v-model:text="selectedTransactionWorkingCopy!.description!"/>
+            <text-field v-area="'desc'" id="descriptionTextField" field-name="Description" input-type="text"
+                        :text="selectedTransaction.currentData.value.description ?? ''" always-float textarea-mode
+                        @update:text="selectedTransaction.currentData.value.description = $event"/>
 
             <div id="resetSaveContainer" v-area="'actions'" v-if="selectedTransaction?.currentData">
                 <button class="defaultButton" :disabled="!isResetButtonAvailable" @click="resetForm()">Reset</button>
                 <button class="defaultButton" :disabled="!isSaveButtonAvailable" @click="submitSave()">Save</button>
             </div>
-        </div>
 
+        </div>
     </div>
 </template>
 
@@ -150,7 +153,7 @@ import { formatDate } from '@/modules/core/utils/date';
 import { isNullOrUndefined } from "@/modules/core/utils/equals";
 import { buildSearchParams } from "@/modules/core/utils/urlParams";
 import { getTxnTypeNameById } from '@/modules/txnTypes/utils/transactionTypes';
-import { ResettableObject } from "@/resettableObject";
+import { useResettableObject } from "@/resettableObject";
 import router from "@/router";
 import type { HydratedTransaction } from "@/types/dtos/transactionsDTO";
 import { computed, onMounted, ref, toRaw, watch, type Ref } from 'vue';
@@ -233,20 +236,42 @@ const selectableCurrenciesOptions = computed(() =>
     const items = currencies.lastSuccessfulData?.rangeItems;
     return items?.map(x => ({ id: x.id, label: x.name, searchTerms: `${x.id} ${x.name}` })) ?? [];
 });
-const selectedTransaction = ref(undefined) as Ref<undefined | ResettableObject<HydratedTransaction>>;
-const selectedTransactionWorkingCopy = computed(() => selectedTransaction.value?.currentData as unknown as Partial<HydratedTransaction> | undefined);
-const isEnteredDateValid = computed(() => !isNaN(new Date(`${(selectedTransaction.value?.currentData as any).creationDate}`).getTime()));
-const isEnteredFromAmountValid = computed(() => isNumeric(selectedTransactionWorkingCopy?.value?.fromAmount));
-const isEnteredToAmountValid = computed(() => isNumeric(selectedTransactionWorkingCopy?.value?.toAmount));
+const selectedTransaction = useResettableObject<undefined | HydratedTransaction>(undefined, (latest, safePoint) =>
+{
+    // Normalize JSON for comparison (null == '', date in epoch == date in string etc...)
+    const normalizedIsEqual = (txn1: HydratedTransaction, txn2: HydratedTransaction) =>
+    {
+        if (Object.keys(txn1).length !== Object.keys(txn2).length) return false;
+        for (const key of Object.keys(txn1) as (keyof HydratedTransaction)[])
+        {
+            const val1 = txn1[key];
+            const val2 = txn2[key];
+            if ((val1 === null && val2 === '') || val2 === null && val1 === '') continue;
+            if (val2 === val1) continue;
+            return false;
+        }
+        return true;
+    };
+
+    const latestObj = toRaw(latest);
+    const safePointObj = toRaw(safePoint);
+    if (!latestObj || !safePointObj) return false;
+
+    return normalizedIsEqual(latestObj, safePointObj);
+});
+const isEnteredDateValid = computed(() => !isNaN(new Date(`${(selectedTransaction.currentData?.value as any).creationDate}`).getTime()));
+const isEnteredFromAmountValid = computed(() => isNumeric(selectedTransaction.currentData?.value?.fromAmount));
+const isEnteredToAmountValid = computed(() => isNumeric(selectedTransaction.currentData?.value?.toAmount));
 const isTransactionDetailsValid = computed(() =>
 {
-    const txn = selectedTransaction.value?.currentData as unknown as HydratedTransaction;
-    const toContainer = selectedTransactionWorkingCopy.value?.toContainer;
-    const toCurrency = selectedTransactionWorkingCopy.value?.toCurrency;
-    const fromContainer = selectedTransactionWorkingCopy.value?.fromContainer;
-    const fromCurrency = selectedTransactionWorkingCopy.value?.fromCurrency;
+    const txn = selectedTransaction.currentData.value;
+    if (!txn) return 1;
 
-    if (!txn) return false;
+    const toContainer = txn.toContainer;
+    const toCurrency = txn.toCurrency;
+    const fromContainer = txn.fromContainer;
+    const fromCurrency = txn.fromCurrency;
+
     if (!txn.fromAmount && !txn.toAmount) return false;
     if (!isEnteredDateValid.value) return false;
     if (!txn.title.trim()) return false;
@@ -259,12 +284,12 @@ const isTransactionDetailsValid = computed(() =>
 });
 const isResetButtonAvailable = computed(() =>
 {
-    if (!selectedTransaction.value?.isChanged) return false;
+    if (!selectedTransaction.isChanged.value) return false;
     return true;
 });
 const isSaveButtonAvailable = computed(() =>
 {
-    if (!selectedTransaction.value?.isChanged) return false;
+    if (!selectedTransaction.isChanged.value) return false;
     if (!isTransactionDetailsValid.value) return false;
     return true;
 });
@@ -273,43 +298,29 @@ watch(selectedTransactionID, async () => // Load txn if selected
 {
     if (selectedTransactionID.value === undefined) return;
     const queryURL = API_TRANSACTIONS_PATH;
-    const txnObject = (await authGet(`${queryURL}?id=${selectedTransactionID.value}`))!.data.rangeItems[0];
+    const txnObject = (await authGet(`${queryURL}?id=${selectedTransactionID.value}`))!.data.rangeItems[0] as HydratedTransaction;
 
     if (!txnObject) return;
 
     // Format received date to readable, instead of being epoch
-    txnObject.creationDate =
-            formatDate(new Date(txnObject.creationDate ?? ''), "YYYY-MM-DD hh:mm:ss.ms");
+    txnObject.creationDate = formatDate(new Date(txnObject.creationDate ?? ''), "YYYY-MM-DD hh:mm:ss.ms");
 
-    nextTick(() =>
-    {
-        selectedTransaction.value = new ResettableObject<HydratedTransaction>(txnObject);
-
-        // We want to treat the creationDate represented in ISO string, and epoch the same
-        selectedTransaction.value.dataComparator = (latest, safePoint) =>
-        {
-            const latestObj = structuredClone(toRaw(latest));
-            const safePointObj = structuredClone(toRaw(safePoint));
-            if (!latestObj || !safePointObj) return true;
-            latestObj.creationDate = `${new Date(latestObj.creationDate).getTime()}`;
-            safePointObj.creationDate = `${new Date(safePointObj.creationDate).getTime()}`;
-            return JSON.stringify(latestObj) === JSON.stringify(safePointObj);
-        };
-    });
+    nextTick(() => { selectedTransaction.markSafePoint(txnObject); });
 
     await containers.updateData();
 }, { immediate: true });
 
 const autoFillCurrentDateTime = () =>
 {
-    if (!selectedTransactionWorkingCopy.value) return;
-    selectedTransactionWorkingCopy.value.creationDate = formatDate(new Date(), "YYYY-MM-DD hh:mm:ss.ms")
+    if (!selectedTransaction.currentData.value) return;
+    selectedTransaction.currentData.value.creationDate = formatDate(new Date(), "YYYY-MM-DD hh:mm:ss.ms")
 };
-const resetForm = () => { if (selectedTransaction.value) selectedTransaction.value?.reset(); };
+const resetForm = () => { selectedTransaction.reset(); };
 const submitSave = () =>
 {
-    const transformedCopy = selectedTransactionWorkingCopy.value!;
-    console.log(transformedCopy);
+    selectedTransaction.markSafePoint(selectedTransaction.currentData.value);
+    // const transformedCopy = selectedTransactionWorkingCopy.value!;
+    // console.log(transformedCopy);
 };
 // #endregion
 </script>
