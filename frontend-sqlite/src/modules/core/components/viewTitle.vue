@@ -1,6 +1,10 @@
 <template>
     <div ref="viewTitleRoot" id="viewTitleRoot">
         <div id="innerContainer">
+            <div id="backBtnContainer" :class="{'hidden': !hasBackButton}">
+                <ga-icon id="backBtn" icon="chevron_left"
+                         @click="emit('back')"/>
+            </div>
             <div class="titleContainer">
                 <h3 class="viewTitleH3">{{ title }}</h3>
             </div>
@@ -9,7 +13,21 @@
 </template>
 
 <script lang="ts" setup>
-const props = defineProps<{ title: string }>();
+import gaIcon from './gaIcon.vue';
+
+export type ViewTitleProps =
+{
+    title: string;
+    hasBackButton?: boolean;
+};
+
+export type ViewTitleEmits =
+{
+    (e: "back"): void
+};
+
+const emit = defineEmits<ViewTitleEmits>();
+const props = withDefaults(defineProps<ViewTitleProps>(), { hasBackButton: true });
 </script>
 
 <style lang="less" scoped>
@@ -22,6 +40,10 @@ const props = defineProps<{ title: string }>();
 
     #innerContainer
     {
+        display: grid;
+        grid-template-columns: auto 1fr;
+        grid-template-rows: 1fr;
+
         font-family: @font;
         font-size:24px;
 
@@ -35,17 +57,31 @@ const props = defineProps<{ title: string }>();
         }
 
         .titleContainer { .xLeft; }
-    }
-
-    &.stuck
-    {
-        background: @backgroundDark;
-        padding-top: 7px;
-        padding-bottom: 7px;
-
-        #innerContainer
+        #backBtnContainer
         {
-            font-size: 20px;
+            .center;
+            padding-right: 14px;
+            padding-top:2px;
+            transition: all 0.3s ease;
+            overflow: hidden;
+            opacity: 1;
+
+            &.hidden
+            {
+                max-width: 0px;
+                transition: all 0.3s ease;
+                opacity: 0;
+                .tight;
+            }
+
+            #backBtn
+            {
+                .center;
+                .optionIcon;
+                color: white;
+                .tight;
+                &:not(:hover) { background: transparent; }
+            }
         }
     }
 }

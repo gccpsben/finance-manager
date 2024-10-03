@@ -2,7 +2,8 @@
 
     <div class="topDivTxn">
 
-        <view-title :title="'Transactions'" />
+        <view-title :title="'Transactions'" @back="router.back()"
+                    :hasBackButton="!!selectedTransactionID"/>
         <br /><br />
 
         <div v-if="!selectedTransactionID">
