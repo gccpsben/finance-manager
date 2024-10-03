@@ -10,9 +10,9 @@ import { ExpressValidations } from '../validation.js';
 
 const router = new TypesafeRouter(express.Router());
 
-router.get<ResponseGetExpensesAndIncomesDTO>("/api/v1/calculations/expensesAndIncomes", 
+router.get<ResponseGetExpensesAndIncomesDTO>("/api/v1/calculations/expensesAndIncomes",
 {
-    handler: async (req:express.Request, res:express.Response) => 
+    handler: async (req:express.Request, res:express.Response) =>
     {
         const authResults = await AccessTokenService.ensureRequestTokenValidated(req);
         const calResults = await CalculationsService.getUserExpensesAndIncomes(authResults.ownerUserId);
@@ -27,9 +27,9 @@ router.get<ResponseGetExpensesAndIncomesDTO>("/api/v1/calculations/expensesAndIn
     }
 });
 
-router.get<GetUserNetworthHistoryAPI.ResponseDTO>(`/api/v1/calculations/networthHistory`, 
+router.get<GetUserNetworthHistoryAPI.ResponseDTO>(`/api/v1/calculations/networthHistory`,
 {
-    handler: async (req: express.Request, res: express.Response) => 
+    handler: async (req: express.Request, res: express.Response) =>
     {
         class query implements GetUserNetworthHistoryAPI.RequestQueryDTO
         {
@@ -38,13 +38,13 @@ router.get<GetUserNetworthHistoryAPI.ResponseDTO>(`/api/v1/calculations/networth
             @IsOptional() @IsPositiveIntString() division: string | undefined;
         }
         const parsedQuery = await ExpressValidations.validateBodyAgainstModel<query>(query, req.query);
-        const reqQuery = 
+        const reqQuery =
         {
             startDate: parsedQuery.startDate === undefined ? undefined : parseInt(parsedQuery.startDate),
             endDate: parsedQuery.endDate === undefined ? undefined : parseInt(parsedQuery.endDate),
             division: parsedQuery.division === undefined ? undefined : parseInt(parsedQuery.division),
         };
-        const input = 
+        const input =
         {
             startDate: reqQuery.startDate ?? Date.now() - 2.592e+9, // 30d
             endDate: reqQuery.endDate ?? Date.now(),
@@ -52,21 +52,21 @@ router.get<GetUserNetworthHistoryAPI.ResponseDTO>(`/api/v1/calculations/networth
         };
 
         const authResults = await AccessTokenService.ensureRequestTokenValidated(req);
-        return { 
+        return {
             map: await CalculationsService.getUserNetworthHistory
             (
-                authResults.ownerUserId, 
-                input.startDate, 
-                input.endDate, 
+                authResults.ownerUserId,
+                input.startDate,
+                input.endDate,
                 input.division
             )
         }
-    }   
+    }
 });
 
-router.get<GetUserBalanceHistoryAPI.ResponseDTO>(`/api/v1/calculations/balanceHistory`, 
+router.get<GetUserBalanceHistoryAPI.ResponseDTO>(`/api/v1/calculations/balanceHistory`,
 {
-    handler: async (req: express.Request, res: express.Response) => 
+    handler: async (req: express.Request, res: express.Response) =>
     {
         const authResults = await AccessTokenService.ensureRequestTokenValidated(req);
 
@@ -77,20 +77,20 @@ router.get<GetUserBalanceHistoryAPI.ResponseDTO>(`/api/v1/calculations/balanceHi
             @IsOptional() @IsPositiveIntString() division: string | undefined;
         }
         const parsedQuery = await ExpressValidations.validateBodyAgainstModel<query>(query, req.query);
-        const reqQuery = 
+        const reqQuery =
         {
             startDate: parsedQuery.startDate === undefined ? undefined : parseInt(parsedQuery.startDate),
             endDate: parsedQuery.endDate === undefined ? undefined : parseInt(parsedQuery.endDate),
             division: parsedQuery.division === undefined ? undefined : parseInt(parsedQuery.division),
         };
-        
-        const input = 
+
+        const input =
         {
             startDate: reqQuery.startDate ?? Date.now() - 2.592e+9, // 30d
             endDate: reqQuery.endDate ?? Date.now(),
             division: reqQuery.division ?? 100
         };
-        
+
         const calResults = await CalculationsService.getUserBalanceHistory
         (
             authResults.ownerUserId,
@@ -99,10 +99,10 @@ router.get<GetUserBalanceHistoryAPI.ResponseDTO>(`/api/v1/calculations/balanceHi
             input.division
         );
 
-        return (() => 
+        return (() =>
         {
             const outputMap = {};
-            for (const epoch of Object.keys(calResults.historyMap))   
+            for (const epoch of Object.keys(calResults.historyMap))
                 outputMap[epoch] = ServiceUtils.mapObjectValues(calResults.historyMap[epoch], decimal => decimal.toString());
             return {
                 map: outputMap

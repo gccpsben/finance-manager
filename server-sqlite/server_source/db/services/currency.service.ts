@@ -19,22 +19,22 @@ export class CurrencyCalculator
         return fromRate.dividedBy(toRate);
     }
 
-    /** 
+    /**
      * Get the rate of `<target_currency>` to `<base_currency>` at the given date using the rates of the currency stored in database. 
      * #### *if the rates at the given datetime are not available in the database, will use the fallback rate (`Currency.rateToBase`) instead.
     */
     public static async currencyToBaseRate
     (
-        ownerId: string, 
-        from: SQLitePrimitiveOnly<Currency>, 
+        ownerId: string,
+        from: SQLitePrimitiveOnly<Currency>,
         date: Date = new Date(),
         cache: CurrencyListCache | undefined = undefined
     ): Promise<Decimal>
-    { 
+    {
         if (cache === undefined) cache = new CurrencyListCache(ownerId);
         if (from.isBase) return new Decimal(`1`);
-    
-        const getCurrById = async (id: string) => 
+
+        const getCurrById = async (id: string) =>
         {
             // Find the requested currency in `knownCurrencies` first.
             const potentialCacheHit = cache?.getCurrenciesList()?.find(c => c.ownerId === ownerId && c.id === id);
@@ -53,32 +53,32 @@ export class CurrencyCalculator
 
         const nearestTwoDatums = await CurrencyRateDatumRepository.getInstance().findNearestTwoDatum
         (
-            ownerId, 
-            from.id, 
+            ownerId,
+            from.id,
             date
         );
         const d1 = nearestTwoDatums[0]; const d2 = nearestTwoDatums[1];
 
-        if (nearestTwoDatums.length === 0) 
+        if (nearestTwoDatums.length === 0)
         {
             const currencyBaseAmount = new Decimal(from.fallbackRateAmount);
             const currencyBaseAmountUnitToBaseRate = await CurrencyCalculator.currencyToBaseRate
             (
-                ownerId, 
-                await getCurrById(from.fallbackRateCurrencyId), 
+                ownerId,
+                await getCurrById(from.fallbackRateCurrencyId),
                 date,
                 cache
             )!;
             return currencyBaseAmount.mul(currencyBaseAmountUnitToBaseRate);
         }
 
-        if (nearestTwoDatums.length === 1) 
+        if (nearestTwoDatums.length === 1)
         {
             const datumAmount = new Decimal(d1.amount);
             const datumUnitToBaseRate = await CurrencyCalculator.currencyToBaseRate
             (
-                ownerId, 
-                await getCurrById(d1.refAmountCurrencyId), 
+                ownerId,
+                await getCurrById(d1.refAmountCurrencyId),
                 new Date(d1.date),
                 cache
             )!;
@@ -94,23 +94,23 @@ export class CurrencyCalculator
             const D1CurrBaseRate = await CurrencyCalculator.currencyToBaseRate
             (
                 ownerId,
-                D1Currency, 
+                D1Currency,
                 new Date(d1.date),
                 cache
             )!;
             const D2CurrBaseRate = await CurrencyCalculator.currencyToBaseRate
             (
-                ownerId, 
-                D2Currency, 
+                ownerId,
+                D2Currency,
                 new Date(d2.date),
                 cache
             )!;
-    
+
             let valLeft = new Decimal(d1.amount).mul(D1CurrBaseRate);
             let valRight = new Decimal(d2.amount).mul(D2CurrBaseRate);
             if (isDateBeforeD1D2 || isDateAfterD1D2) return valLeft;
             if (valLeft === valRight) return valLeft;
-    
+
             const midPt = LinearInterpolator.fromEntries
             (
                 [
@@ -126,28 +126,28 @@ export class CurrencyCalculator
 
     public static async getCurrencyToBaseRateInterpolator
     (
-        userId:string, 
+        userId:string,
         currencyId: string,
         startDate?: Date,
         endDate?: Date,
         cache: CurrencyListCache | undefined = undefined
     ): Promise<LinearInterpolator>
-    {   
+    {
         if (cache === undefined) cache = new CurrencyListCache(userId);
         await cache.ensureCurrenciesList();
 
         const datums = await CurrencyRateDatumRepository.getInstance().getCurrencyDatums(userId, currencyId, startDate, endDate);
-        const entries: { key:Decimal, value: Decimal }[] = await (async () => 
+        const entries: { key:Decimal, value: Decimal }[] = await (async () =>
         {
             const output: { key:Decimal, value: Decimal }[] = [];
-            for (const datum of datums) 
+            for (const datum of datums)
             {
                 const datumUnitCurrency = cache.getCurrenciesList().find(c => c.id === datum.refAmountCurrencyId);
                 output.push(
                 {
                     key: new Decimal(datum.date),
                     value: new Decimal(datum.amount).mul(await CurrencyCalculator.currencyToBaseRate(userId, datumUnitCurrency, new Date(datum.date), cache))
-                });   
+                });
             }
             return output;
         })();
@@ -161,15 +161,15 @@ export class CurrencyService
     {
         const user = await UserRepository.getInstance().findOne({where: { id: userId ?? null }});
         if (!user) throw createHttpError(404, `Cannot find user with id '${userId}'`);
-        
-        return await CurrencyRepository.getInstance().findOne( 
-        { 
-            where: 
-            { 
-                owner: { id: userId }, 
+
+        return await CurrencyRepository.getInstance().findOne(
+        {
+            where:
+            {
+                owner: { id: userId },
                 isBase: true,
             },
-            relations: { owner: true, fallbackRateCurrency: true } 
+            relations: { owner: true, fallbackRateCurrency: true }
         });
     }
 
@@ -187,9 +187,9 @@ export class CurrencyService
     }
 
     public static async getManyCurrencies
-    ( 
-        ownerId: string, 
-        query: 
+    (
+        ownerId: string,
+        query:
         {
             startIndex?: number | undefined, endIndex?: number | undefined,
             name?: string | undefined, id?: string | undefined
@@ -231,9 +231,9 @@ export class CurrencyService
         return result;
     }
 
-    public static async createCurrency(userId: string, 
-        name: string, 
-        amount: Decimal | undefined, 
+    public static async createCurrency(userId: string,
+        name: string,
+        amount: Decimal | undefined,
         refCurrencyId: string | undefined,
         ticker: string)
     {

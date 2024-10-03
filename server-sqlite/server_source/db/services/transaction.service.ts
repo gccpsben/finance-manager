@@ -17,7 +17,7 @@ export class TransactionService
     public static async createTransaction
     (
         userId: string,
-        obj: 
+        obj:
         {
             title: string,
             creationDate: number,
@@ -28,7 +28,7 @@ export class TransactionService
             toAmount?: string | undefined,
             toContainerId?: string | undefined,
             toCurrencyId?: string | undefined,
-            typeId: string 
+            typeId: string
         }
     )
     {
@@ -65,11 +65,11 @@ export class TransactionService
             newTxn.toCurrency = currency;
         }
 
-        if (!obj.fromAmount && !obj.toAmount) 
+        if (!obj.fromAmount && !obj.toAmount)
             throw createHttpError(400, `"${nameofT('fromAmount')}" and ${nameofT('toAmount')} cannot be both undefined.`);
-        if (obj.fromAmount && (!obj.fromContainerId || !obj.fromCurrencyId)) 
+        if (obj.fromAmount && (!obj.fromContainerId || !obj.fromCurrencyId))
             throw createHttpError(400, `If "${nameofT('fromAmount')}" is given, ${nameofT('fromContainerId')} and ${nameofT('fromCurrencyId')} must also be defined.`);
-        if (obj.toAmount && (!obj.toContainerId || !obj.toCurrencyId)) 
+        if (obj.toAmount && (!obj.toContainerId || !obj.toCurrencyId))
             throw createHttpError(400, `If ${nameofT('toAmount')} is given, ${nameofT('toContainerId')} and ${nameofT('toCurrencyId')} must also be defined.`);
 
         const owner = await UserService.getUserById(userId);

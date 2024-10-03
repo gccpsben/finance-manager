@@ -12,7 +12,7 @@ export class UserNameTakenError extends Error
     {
         super();
         this.message = `Username '${username}' is already taken`;
-        this.name = `UserNameTakenError`;    
+        this.name = `UserNameTakenError`;
         Object.setPrototypeOf(this, UserNameTakenError.prototype);
     }
 }
@@ -60,7 +60,7 @@ export class UserService
         return potentialUser === null ? false : true;
     }
 
-    public static async validatePassword(username: string, passwordRaw: string) 
+    public static async validatePassword(username: string, passwordRaw: string)
         : Promise<{success: boolean, userId: string | undefined, passwordHash: string | undefined}>
     {
         const user = await UserRepository.getInstance().findOne({where: {username: username}, select: { passwordHash: true, id: true }});

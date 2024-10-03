@@ -6,10 +6,10 @@ export namespace ServiceUtils
 {
     export function paginateQuery<T>
     (
-        dbQuery: SelectQueryBuilder<T>, 
+        dbQuery: SelectQueryBuilder<T>,
         query:
         {
-            startIndex?: number | undefined, 
+            startIndex?: number | undefined,
             endIndex?: number | undefined
         } | undefined
     )
@@ -22,11 +22,11 @@ export namespace ServiceUtils
         }
         else if (query?.startIndex !== undefined && query?.endIndex === undefined)
         {
-            dbQuery = dbQuery.skip(query.startIndex);  
+            dbQuery = dbQuery.skip(query.startIndex);
         }
         else if (query?.startIndex === undefined && query?.endIndex !== undefined)
         {
-            dbQuery = dbQuery.limit(query.startIndex);  
+            dbQuery = dbQuery.limit(query.startIndex);
         }
         return dbQuery;
     }
@@ -45,7 +45,7 @@ export namespace ServiceUtils
     {
         const output: { [key: string]: R } = {};
         for (const [key, value] of Object.entries(dict))
-            output[key] = mapper(value);   
+            output[key] = mapper(value);
         return output;
     }
 
@@ -69,8 +69,8 @@ export class MapReducer<K extends string | symbol, V>
     public reducer: (key: K, oldVal: V | undefined, newVal: V | undefined) => Promise<V> | V;
 
     public constructor(initialValue: Record<K, V>, reducer: (key: K, oldVal: V | undefined, newVal: V | undefined) => Promise<V> | V)
-    { 
-        this.currentValue = initialValue; 
+    {
+        this.currentValue = initialValue;
         this.reducer = reducer;
     }
 
@@ -83,7 +83,7 @@ export class MapReducer<K extends string | symbol, V>
 export class DecimalAdditionMapReducer<K extends string | symbol> extends MapReducer<K, Decimal>
 {
     public constructor(initialValue: Record<K, Decimal>)
-    { 
+    {
         super(initialValue, (key, oldVal, newVal) => !oldVal ? newVal : newVal.add(oldVal));
     }
 }

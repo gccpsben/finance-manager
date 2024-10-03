@@ -10,13 +10,13 @@ import { ExpressValidations } from '../validation.js';
 
 const router = new TypesafeRouter(express.Router());
 
-router.post<PostTxnAPI.ResponseDTO>("/api/v1/transactions", 
+router.post<PostTxnAPI.ResponseDTO>("/api/v1/transactions",
 {
-    handler: async (req: express.Request, res: express.Express) => 
+    handler: async (req: express.Request, res: express.Express) =>
     {
         class body implements PostTxnAPI.RequestDTO
-        { 
-            @IsString() @IsNotEmpty() title: string; 
+        {
+            @IsString() @IsNotEmpty() title: string;
             @IsOptional() @IsUTCDateInt() creationDate?: number | undefined;
             @IsOptional() @IsString() description?: string | undefined;
             @IsString() @IsNotEmpty() typeId: string;
@@ -27,10 +27,10 @@ router.post<PostTxnAPI.ResponseDTO>("/api/v1/transactions",
             @IsOptional() @IsString() toContainerId: string | undefined;
             @IsOptional() @IsString() toCurrencyId: string | undefined;
         }
-    
+
         const authResult = await AccessTokenService.ensureRequestTokenValidated(req);
         const parsedBody = await ExpressValidations.validateBodyAgainstModel<body>(body, req.body);
-        const transactionCreated = await TransactionService.createTransaction(authResult.ownerUserId, 
+        const transactionCreated = await TransactionService.createTransaction(authResult.ownerUserId,
         {
             creationDate: parsedBody.creationDate ? parsedBody.creationDate : Date.now(),
             title: parsedBody.title,
@@ -43,16 +43,16 @@ router.post<PostTxnAPI.ResponseDTO>("/api/v1/transactions",
             toContainerId: parsedBody.toContainerId,
             toCurrencyId: parsedBody.toCurrencyId
         });
-        
+
         return { id: transactionCreated.id };
-    }   
+    }
 });
 
-router.get<GetTxnAPI.ResponseDTO>(`/api/v1/transactions`, 
+router.get<GetTxnAPI.ResponseDTO>(`/api/v1/transactions`,
 {
-    handler: async (req: express.Request, res: express.Response) => 
+    handler: async (req: express.Request, res: express.Response) =>
     {
-        class query extends OptionalPaginationAPIQueryRequest 
+        class query extends OptionalPaginationAPIQueryRequest
         {
             @IsOptional() @IsString() title: string;
             @IsOptional() @IsString() id: string;
@@ -62,7 +62,7 @@ router.get<GetTxnAPI.ResponseDTO>(`/api/v1/transactions`,
 
         const authResult = await AccessTokenService.ensureRequestTokenValidated(req);
         const parsedQuery = await ExpressValidations.validateBodyAgainstModel<query>(query, req.query);
-        const userQuery = 
+        const userQuery =
         {
             start: parsedQuery.start ? parseInt(parsedQuery.start) : undefined,
             end: parsedQuery.end ? parseInt(parsedQuery.end) : undefined,
@@ -74,7 +74,7 @@ router.get<GetTxnAPI.ResponseDTO>(`/api/v1/transactions`,
 
         const response = await PaginationAPIResponseClass.prepareFromQueryItems
         (
-            await TransactionService.getTransactions(authResult.ownerUserId, 
+            await TransactionService.getTransactions(authResult.ownerUserId,
             {
                 startIndex: userQuery.start,
                 endIndex: userQuery.end,
