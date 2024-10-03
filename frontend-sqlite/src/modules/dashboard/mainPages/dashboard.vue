@@ -1,7 +1,8 @@
 <template>
     <div id="topDiv">
         <div id="topDivInner">
-            <view-title class="pageTitle" :title="'Dashboard'"></view-title>
+
+            <view-title class="pageTitle" :title="'Dashboard'" />
 
             <grid-shortcut id="mainGrid">
 
@@ -18,17 +19,17 @@
                 :value30d="userExpensesIncomes ? parseFloat(userExpensesIncomes.incomes30d) : 0"
                 :valueAll="userExpensesIncomes ? parseFloat(userExpensesIncomes.incomesTotal) : 0"
                 :isLoading="store.userExpensesIncomes.isLoading" :networkError="store.userExpensesIncomes.error"></number-cell>       
-                
+
                 <number-cell title="Total Value" v-area="'totalValuePanel'"
                 style="background: linear-gradient(-45deg, rgba(213, 180, 51, 0.09) 0%, rgba(218, 203, 81, 0.44) 100%); color:white;"
                 :valueAll="userTotalValue"
                 :isLoading="store.userExpensesIncomes.isLoading" :networkError="store.userExpensesIncomes.error"></number-cell>
-                
+
                 <number-cell title="Net Change" :noItemsText="'No Data'"
                 :value7d="netChange7d" :value30d="netChange30d" v-area="'netChangePanel'"
                 style="background: linear-gradient(-45deg, rgba(51, 213, 190, 0.09) 0%, rgba(81, 218, 218, 0.43) 100%); color:white;"
                 :isLoading="store.userExpensesIncomes.isLoading" :networkError="store.userExpensesIncomes.error"></number-cell>
-                
+
                 <list-cell v-area="'_30dExpensesList'" title="30d Expenses" :noItemsText="'No Expenses'"
                 :isLoading="store.txns30d.isLoading"
                 :error="store.txns30d.error"
@@ -259,6 +260,13 @@ export default
 {
     container-type: size;
     container-name: topDiv;
+    
+    .pageTitle
+    {
+        margin-top: @desktopPagePadding;
+        padding-left: @desktopPagePadding;
+        // &:deep(#innerContainer) { font-size: inherit }
+    }
 
     overflow-x:hidden; .fullSize; box-sizing: border-box;
     font-family: 'Schibsted Grotesk', sans-serif;
@@ -271,6 +279,7 @@ export default
 
     #mainGrid
     {
+        padding: @desktopPagePadding;
         box-sizing: border-box; gap:15px;
         .fullSize; .gridColumns_4;
         grid-template-rows:100px 220px 220px 220px 1fr;
@@ -316,7 +325,14 @@ export default
 
 @container topDiv (width <= 500px)
 {
-    #topDivInner { padding: @mobilePagePadding !important; }
+    #topDivInner > #mainGrid { padding: @mobilePagePadding !important; }
+
+    .pageTitle
+    {
+        margin-top: @mobilePagePadding !important;
+        padding-left: @mobilePagePadding !important;
+    }
+
     // #pageTitle { display: none; }
 
     #mainGrid

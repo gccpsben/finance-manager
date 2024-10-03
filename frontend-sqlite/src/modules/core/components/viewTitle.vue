@@ -1,90 +1,52 @@
 <template>
-    <div id="container">
+    <div ref="viewTitleRoot" id="viewTitleRoot">
         <div id="innerContainer">
             <div class="titleContainer">
-                <h3 id="title">{{ title }}</h3>
-            </div>
-            <div id="tabsContainer" :style="{'grid-template-columns': columns}" v-if="items.length > 0">
-                <div class="tab" :class="{'active': selectedItem == item}" 
-                v-for="item in items" @click="$emit('update:selectedItem', item)">
-                    {{ item }}
-                </div>
-                <div class="emptySpace"></div>
+                <h3 class="viewTitleH3">{{ title }}</h3>
             </div>
         </div>
     </div>
 </template>
 
-<script lang="ts">
-export default
-{
-    props: 
-    {
-        "title": { type: String },
-        "selectedItem": { type: String, default: '' },
-        "items": { type: Array<String>, default: [] }
-    },
-    emits: ["update:selectedItem", "update:items"],
-    computed:
-    {
-        columns() { return `repeat(${this.items.length}, auto) 1fr`; }
-    }
-}
+<script lang="ts" setup>
+const props = defineProps<{ title: string }>();
 </script>
 
 <style lang="less" scoped>
 @import '@/modules/core/stylesheets/globalStyle.less';
 
-#container
+#viewTitleRoot
 {
     container-type: inline-size;
     container-name: viewTitleContainer;
-}
 
-#innerContainer
-{
-    display:grid; gap:15px;
-    grid-template-columns: 1fr; grid-template-rows: auto 1fr;
-    .fullWidth; padding-bottom: 30px;
-    font-family: @font;
-    
-    #tabsContainer
-    {
-        .fg(@foreground); font-weight:100; box-sizing: content-box;
-        .fullWidth; position: relative; font-size:14px; display:grid;
-        grid-template-rows: 1fr;
-        
-        div { border-bottom: 2px solid @border; }
-        .emptySpace { .fullWidth; }
-
-        .tab
-        {
-            padding: 10px 15px 10px 15px; cursor: pointer;
-            width:max-content;
-            &.active { border-color: @focus; }
-            &:hover { background: @surfaceHigh; }
-        }
-    }
-
-    #title 
-    { 
-        color:white; 
-        font-size:24px; 
-        font-weight: 500; 
-        .tight;
-    }
-
-    .titleContainer { .xLeft; }
-}
-
-@container viewTitleContainer (width <= 400px)
-{
     #innerContainer
     {
-        position: sticky;
-        padding-top:14px;
-        padding-bottom:26px;
-        #title { font-weight: 500; }
+        font-family: @font;
+        font-size:24px;
+
+        .viewTitleH3
+        {
+            transition: all 0.5s ease;
+            color:white;
+            font-size: inherit;
+            font-weight: 500;
+            .tight;
+        }
+
+        .titleContainer { .xLeft; }
+    }
+
+    &.stuck
+    {
+        background: @backgroundDark;
+        padding-top: 7px;
+        padding-bottom: 7px;
+
+        #innerContainer
+        {
+            font-size: 20px;
+        }
     }
 }
 </style>
