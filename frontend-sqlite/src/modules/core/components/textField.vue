@@ -1,20 +1,17 @@
 <template>
     <div>
-        <fieldset class="rootFieldset" :class="{'float': shouldTextFloat, 'highlighted': shouldHighlight}" 
+        <fieldset class="rootFieldset" :class="{'float': shouldTextFloat, 'highlighted': shouldHighlight}"
                   :style="fieldsetRootStyleOverrideObj">
             <legend v-if="shouldTextFloat" ref="legend">{{ fieldName.get() }}</legend>
             <div ref="contentPanel" class="contentPanel fullSize">
                 <div class="contentPanelInner fullSize" v-area="'main'">
-                    <input :type="inputType.get()"
-                           ref="textFieldInput"
-                           class="textFieldInput"
-                           :value="text.get()"
-                           :readonly="readonly.get()"
-                           :disabled="disabled.get()"
-                           @focus="$emit('focus')"
-                           @blur="$emit('blur')"
-                           @keyup="text.set(($event.target as HTMLInputElement).value!)" 
-                           :placeholder="textFieldInputIsFocused ? placeholder.get() : ''"/>
+                    <component :is="textareaMode ? 'textarea' : 'input'"
+                               :type="inputType.get()" ref="textFieldInput"
+                               class="textFieldInput" :value="text.get()"
+                               :readonly="readonly.get()" :disabled="disabled.get()"
+                               @focus="$emit('focus')" @blur="$emit('blur')"
+                               @keyup="text.set(($event.target as HTMLInputElement).value!)"
+                               :placeholder="textFieldInputIsFocused ? placeholder.get() : ''"/>
                     <div class="center">
                         <slot name="fieldActions"></slot>
                     </div>
@@ -43,7 +40,9 @@ export type TextFieldProps =
     overrideThemeColor?: string | undefined,
     placeholder?: string | undefined,
     disabled?: boolean | undefined,
-    readonly?: boolean | undefined
+    readonly?: boolean | undefined,
+    alwaysFloat?: boolean,
+    textareaMode?: boolean
 };
 
 export type TextFieldEmits =
@@ -61,7 +60,9 @@ const props = withDefaults(defineProps<TextFieldProps>(),
     overrideThemeColor: undefined,
     placeholder: undefined,
     disabled: false,
-    readonly: false
+    readonly: false,
+    alwaysFloat: false,
+    textareaMode: false
 });
 const emit = defineEmits<TextFieldEmits>();
 const text = defineProperty<string, "text", typeof props>("text", { emitFunc: emit, props: props, default: '' });
@@ -71,6 +72,7 @@ const inputType = defineProperty<HTMLInputType, "inputType", typeof props>("inpu
 const overrideThemeColor = defineProperty<string | undefined, "overrideThemeColor", typeof props>("overrideThemeColor", { emitFunc: undefined, props: props, default: undefined });
 const disabled = defineProperty<boolean | undefined, "disabled", typeof props>("disabled", { emitFunc: undefined, props: props, default: false });
 const readonly = defineProperty<boolean | undefined, "readonly", typeof props>("readonly", { emitFunc: undefined, props: props, default: false });
+const alwaysFloat = defineProperty<boolean | undefined, "alwaysFloat", typeof props>("alwaysFloat", { emitFunc: undefined, props: props, default: false });
 
 const textFieldInput = ref(null);
 const placeholderText = ref(null);
@@ -108,6 +110,7 @@ const placeholderTextStyleOverrideObj = computed(() => // a style object overrid
 
 const shouldTextFloat = computed(() =>
 {
+    if (alwaysFloat.get()) return true;
     if (textFieldInputIsFocused.value || placeholderTextIsFocused.value) return true;
     if (text.get()) return true;
     return false;
@@ -177,6 +180,7 @@ const shouldHighlight = computed(() =>
             appearance: none;
             padding-left: @textFieldInputLeftPadding;
             padding-right: @textFieldInputRightPadding;
+            resize: none; // for textarea mode
             &:read-only { opacity: 0.4; }
         }
 

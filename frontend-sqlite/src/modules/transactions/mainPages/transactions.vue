@@ -103,26 +103,29 @@
             <custom-dropdown :options="selectableContainerOptions"
                              class="fullSize" v-area="'fromContainer'" field-name="From Container"
                              v-model:selected-option="selectedTransactionWorkingCopy!.fromContainer!" />
-            <template v-if="selectedTransactionWorkingCopy!.fromContainer">
-                <custom-dropdown :options="selectableCurrenciesOptions"
-                                class="fullSize" v-area="'fromCurrency'" field-name="From Currency"
-                                v-model:selected-option="selectedTransactionWorkingCopy!.fromCurrency!" />
-                <text-field v-area="'fromAmount'" :field-name="'From Amount'" input-type="number"
-                            :override-theme-color="isEnteredFromAmountValid ? undefined : 'red'"
-                            v-model:text="selectedTransactionWorkingCopy!.fromAmount!"/>
-            </template>
+            <custom-dropdown :options="selectableCurrenciesOptions"
+                             :class="{'disabled': !selectedTransactionWorkingCopy!.fromContainer}"
+                             class="fullSize" v-area="'fromCurrency'" field-name="From Currency"
+                             v-model:selected-option="selectedTransactionWorkingCopy!.fromCurrency!" />
+            <text-field v-area="'fromAmount'" :field-name="'From Amount'" input-type="number"
+                        :class="{'disabled': !selectedTransactionWorkingCopy!.fromContainer}"
+                        :override-theme-color="isEnteredFromAmountValid ? undefined : 'red'"
+                        v-model:text="selectedTransactionWorkingCopy!.fromAmount!"/>
 
             <custom-dropdown :options="selectableContainerOptions"
                              class="fullSize" v-area="'toContainer'" field-name="To Container"
                              v-model:selected-option="selectedTransactionWorkingCopy!.toContainer!" />
-            <template v-if="selectedTransactionWorkingCopy!.toContainer">
-                <custom-dropdown v-area="'toCurrency'" :options="selectableCurrenciesOptions"
+            <custom-dropdown v-area="'toCurrency'" :options="selectableCurrenciesOptions"
+                             :class="{'disabled': !selectedTransactionWorkingCopy!.toContainer}"
                              class="fullSize" field-name="To Currency"
                              v-model:selected-option="selectedTransactionWorkingCopy!.toCurrency!" />
-                <text-field v-area="'toAmount'" :field-name="'To Amount'" input-type="number"
-                            :override-theme-color="isEnteredToAmountValid ? undefined : 'red'"
-                            v-model:text="selectedTransactionWorkingCopy!.toAmount!"/>
-            </template>
+            <text-field v-area="'toAmount'" :field-name="'To Amount'" input-type="number"
+                        :class="{'disabled': !selectedTransactionWorkingCopy!.toContainer}"
+                        :override-theme-color="isEnteredToAmountValid ? undefined : 'red'"
+                        v-model:text="selectedTransactionWorkingCopy!.toAmount!"/>
+
+            <text-field v-area="'desc'" id="descriptionTextField" :field-name="'Description'" input-type="text" always-float textarea-mode
+                        v-model:text="selectedTransactionWorkingCopy!.description!"/>
 
             <div id="resetSaveContainer" v-area="'actions'" v-if="selectedTransaction?.currentData">
                 <button class="defaultButton" :disabled="!isResetButtonAvailable" @click="resetForm()">Reset</button>
@@ -316,6 +319,8 @@ const submitSave = () =>
 .debug2 { background:blue; border:1px solid black; }
 * { box-sizing: border-box }
 
+.disabled { opacity: 0.3; pointer-events: none; }
+
 .checkbox
 {
     .rel; .center;
@@ -369,19 +374,7 @@ const submitSave = () =>
     &:hover { background: @surface; }
 }
 
-textarea
-{
-    box-sizing: border-box;
-    background:@background;
-    border: 1px solid @border;
-    appearance: none;
-    outline: none;
-    padding:5px;
-    height:30px;
-    font-size:14px;
-    .fg(white);
-    .consoleFont;
-}
+#descriptionTextField:deep(textarea) { padding: 14px; }
 
 .nowButtonContainer
 {
@@ -588,17 +581,17 @@ textarea
         display:grid;
         gap: 15px;
         grid-template:
-            'id id' 45px
-            'name name' 45px
-            'date date' 45px
-            'fromContainer fromContainer' minmax(0px, 45px)
-            'fromAmount fromCurrency' minmax(0px, 45px)
-            'toContainer toContainer' minmax(0px, 45px)
-            'toAmount toCurrency' minmax(0px, 45px)
-            'actions actions' 45px
-            / 1fr     200px;
+            'id            id            id            id            ' 45px
+            'name          name          date          date          ' 45px
+            'fromContainer fromContainer toContainer   toContainer   ' minmax(0px, 45px)
+            'fromCurrency  fromCurrency  toCurrency    toCurrency    ' minmax(0px, 45px)
+            'fromAmount    fromAmount    toAmount      toAmount      ' minmax(0px, 45px)
+            '_             _             _             _             ' 5px
+            'desc          desc          desc          desc          ' 100px
+            'actions       actions       actions       actions       ' 45px
+            / 1fr          1fr           1fr           1fr;
 
-        height: calc(100svh - 190px);
+        max-height: calc(100svh - 190px);
 
         .field
         {
@@ -648,6 +641,8 @@ textarea
             'toContainer' minmax(0px, 45px)
             'toCurrency' minmax(0px, 45px)
             'toAmount' minmax(0px, 45px)
+            '_' 5px
+            'desc' minmax(0px, 100px)
             'actions' 45px
             / 1fr  !important;
     }
