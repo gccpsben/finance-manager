@@ -85,8 +85,12 @@
         </div>
 
         <div id="viewTxnGrid" v-else-if="selectedTransaction?.currentData != undefined">
+
             <text-field v-area="'id'" :field-name="'ID'" :text="selectedTransactionWorkingCopy!.id!" readonly/>
-            <text-field v-area="'name'" :field-name="'Name'" v-model:text="selectedTransactionWorkingCopy!.title!"/>
+
+            <text-field v-area="'name'" :override-theme-color="selectedTransactionWorkingCopy!.title !== '' ? undefined : 'red'"
+                        :field-name="'Name'" v-model:text="selectedTransactionWorkingCopy!.title!"/>
+
             <text-field v-area="'date'" :field-name="'Date'" v-model:text="selectedTransactionWorkingCopy!.creationDate!"
                         :override-theme-color="isEnteredDateValid ? undefined : 'red'">
                 <template #fieldActions>
@@ -233,10 +237,20 @@ const isEnteredToAmountValid = computed(() => isNumeric(selectedTransactionWorki
 const isTransactionDetailsValid = computed(() =>
 {
     const txn = selectedTransaction.value?.currentData as unknown as HydratedTransaction;
+    const toContainer = selectedTransactionWorkingCopy.value?.toContainer;
+    const toCurrency = selectedTransactionWorkingCopy.value?.toCurrency;
+    const fromContainer = selectedTransactionWorkingCopy.value?.fromContainer;
+    const fromCurrency = selectedTransactionWorkingCopy.value?.fromCurrency;
+
     if (!txn) return false;
     if (!txn.fromAmount && !txn.toAmount) return false;
     if (!isEnteredDateValid.value) return false;
     if (!txn.title.trim()) return false;
+    if (!!toContainer && !toCurrency) return false;
+    if (!!fromContainer && !fromCurrency) return false;
+    if (!fromContainer && !toContainer) return false;
+    if (!!fromContainer && !isEnteredFromAmountValid.value) return false;
+    if (!!toContainer && !isEnteredToAmountValid.value) return false;
     return true;
 });
 const isResetButtonAvailable = computed(() =>
@@ -247,11 +261,6 @@ const isResetButtonAvailable = computed(() =>
 const isSaveButtonAvailable = computed(() =>
 {
     if (!selectedTransaction.value?.isChanged) return false;
-    if (!isTransactionDetailsValid.value) return false;
-    if (!isEnteredFromAmountValid.value && selectedTransactionWorkingCopy.value?.fromContainer) return false;
-    if (!isEnteredFromAmountValid.value && selectedTransactionWorkingCopy.value?.fromCurrency) return false;
-    if (!isEnteredToAmountValid.value && selectedTransactionWorkingCopy.value?.toContainer) return false;
-    if (!isEnteredToAmountValid.value && selectedTransactionWorkingCopy.value?.toCurrency) return false;
     if (!isTransactionDetailsValid.value) return false;
     return true;
 });
@@ -296,19 +305,7 @@ const resetForm = () => { if (selectedTransaction.value) selectedTransaction.val
 const submitSave = () =>
 {
     const transformedCopy = selectedTransactionWorkingCopy.value!;
-    if (transformedCopy.fromContainer === '')
-    {
-        transformedCopy.fromContainer = null;
-        transformedCopy.fromCurrency = null;
-        transformedCopy.fromAmount = null;
-    }
-    if (transformedCopy.toContainer === '')
-    {
-        transformedCopy.toContainer = null;
-        transformedCopy.toCurrency = null;
-        transformedCopy.toAmount = null;
-    }
-    console.log(selectedTransactionWorkingCopy.value);
+    console.log(transformedCopy);
 };
 // #endregion
 </script>
