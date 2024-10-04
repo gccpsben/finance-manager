@@ -3,7 +3,7 @@
         <div class="dropdownFieldContainer fullSize">
             <text-field class="fullSize dropdownField"
                     :field-name="fieldName"
-                    :text="isInputFocused ? (searchText.get() === null ? '' : searchText.get()!) : (options.get()?.find(o => o.id === selectedOption)?.label ?? '')"
+                    :text="isInputFocused ? (unwrappedSearchText === null ? '' : unwrappedSearchText!) : (options.get()?.find(o => o.id === selectedOption)?.label ?? '')"
                     @update:text="searchText.set($event)"
                     @blur="onInputBlur()"
                     @focus="isInputFocused = true">
@@ -29,7 +29,7 @@
             </div>
             <slot v-if="filteredOptions.length === 0" name="noItemRow">
                 <div class="dropdownItemRow">
-                    <div>{{ searchText.get()?.trim() ? 'No items matched' : 'No items' }}</div>
+                    <div>{{ unwrappedSearchText?.trim() ? 'No items matched' : 'No items' }}</div>
                 </div>
             </slot>
         </div>
@@ -159,7 +159,7 @@
 
 <script lang="ts" setup>
 import textField from '@/modules/core/components/textField.vue';
-import { defineProperty } from '../utils/defineProperty';
+import { defineProperty, Uncontrolled } from '../utils/defineProperty';
 import { ref, computed, useTemplateRef } from 'vue';
 import faIcon from '@/modules/core/components/faIcon.vue';
 
@@ -180,7 +180,7 @@ const props = withDefaults(defineProps<
     placeholder?: string | undefined,
     disabled?: boolean | undefined,
     readonly?: boolean | undefined,
-    searchText?: string | null,
+    searchText?: string | typeof Uncontrolled,
     allowUnselect?: boolean
 }>(),
 {
@@ -189,7 +189,7 @@ const props = withDefaults(defineProps<
     placeholder: undefined,
     disabled: false,
     readonly: false,
-    searchText: null,
+    searchText: Uncontrolled,
     allowUnselect: true
 });
 
@@ -198,12 +198,18 @@ const emit = defineEmits<
     (e: 'update:selectedOption', v: string | null): void,
     (e: 'update:searchText', v: string): void
 }>();
-const searchText = defineProperty<string | null, "searchText", typeof props>("searchText", { emitFunc: emit, props: props, default: '' });
+const searchText = defineProperty<string | typeof Uncontrolled, "searchText", typeof props>("searchText", { emitFunc: emit, props: props, default: '' });
+/** A quick getter for search text that convert Uncontrolled values into empty string. */
+const unwrappedSearchText = computed(() => searchText.get() === Uncontrolled ? '' : searchText.get() as string);
 const options = defineProperty<DropdownItem[], "options", typeof props>("options", { emitFunc: undefined, props: props, default: [] });
 
 const filteredOptions = computed(() =>
 {
-    const normalizeText = (str: string) => str.trim().toLocaleLowerCase();
+    const normalizeText = (str: string | typeof Uncontrolled) =>
+    {
+        if (typeof str === 'symbol') return '';
+        return str.trim().toLocaleLowerCase();
+    };
 
     const searchQuery = !!searchText.get() ? normalizeText(searchText.get()!) : '';
     if (!searchQuery) return options.get();
