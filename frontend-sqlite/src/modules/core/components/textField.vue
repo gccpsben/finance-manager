@@ -10,7 +10,7 @@
                                class="textFieldInput" :value="text.get()"
                                :readonly="readonly.get()" :disabled="disabled.get()"
                                @focus="$emit('focus')" @blur="$emit('blur')"
-                               @keyup="text.set(($event.target as HTMLInputElement).value!)"
+                               @input="text.set(($event.target as HTMLInputElement).value!)"
                                :placeholder="textFieldInputIsFocused ? placeholder.get() : ''"/>
                     <div class="center">
                         <slot name="fieldActions"></slot>
