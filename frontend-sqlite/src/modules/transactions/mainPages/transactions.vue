@@ -694,20 +694,18 @@ const submitSave = async () =>
     #viewTxnGrid
     {
         grid-template:
-            'id' 45px
-            'name' 45px
-            'date' 45px
-            'fromContainer' minmax(0px, 45px)
-            'fromCurrency' minmax(0px, 45px)
-            'fromAmount' minmax(0px, 45px)
-            'toContainer' minmax(0px, 45px)
-            'toCurrency' minmax(0px, 45px)
-            'toAmount' minmax(0px, 45px)
-            '_' 5px
-            'desc' minmax(0px, 100px)
-            'error' auto
-            'actions' 45px
-            / 1fr  !important;
+            'id              id              ' 45px
+            'name            name            ' 45px
+            'date            date            ' 45px
+            'fromContainer   fromContainer   ' minmax(0px, 45px)
+            'fromAmount      fromCurrency    ' minmax(0px, 45px)
+            'toContainer     toContainer     ' minmax(0px, 45px)
+            'toAmount        toCurrency      ' minmax(0px, 45px)
+            '_               _               ' 5px
+            'desc            desc            ' minmax(0px, 100px)
+            'error           error           ' auto
+            'actions         actions         ' 45px
+            / 1fr            1fr !important;
     }
 }
 

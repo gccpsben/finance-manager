@@ -5,7 +5,7 @@ import vBasic from '@/modules/core/directives/vBasic';
 
 <script lang="ts">
 import { useMainStore, type PageDefinition } from "../stores/store";
-export default 
+export default
 {
     directives: {vArea},
     data()
@@ -52,7 +52,7 @@ export default
                 </div>
             </grid-shortcut>
 
-            <div v-area="'content'" class="rel" style="overflow:scroll">
+            <div v-area="'content'" class="rel" style="overflow:auto;">
                 <router-view v-area="'content'" v-slot="{ Component }">
                     <Transition name="page-transition">
                         <component :is="Component"/>
@@ -68,7 +68,7 @@ export default
                     </div>
                 </div>
             </div>
-            
+
         </grid-shortcut>
     </div>
 </template>
@@ -80,7 +80,7 @@ export default
 
 #topGrid { background: @pageBackground; }
 
-@media only screen and (max-width: 800px) 
+@media only screen and (max-width: 800px)
 {
     #topGrid
     {
@@ -89,8 +89,8 @@ export default
         grid-template-areas: 'content' 'leftBar' !important;
 
         & :deep(#mobileBar)
-        { 
-            display:unset; 
+        {
+            display:unset;
             .bg(#151515); .fg(gray);
             box-sizing: border-box;
             border-top: 1px solid @border;
@@ -113,7 +113,7 @@ export default
     box-sizing: border-box; box-shadow: 0px 0px 10px black;
     width: 200px;
     transition: all 0.2s ease-in-out;
-    
+
     &.hidden { width: 0px; }
 
     #userDiv
@@ -123,43 +123,43 @@ export default
 
     #leftButtonsContainer
     {
-        & > div 
+        & > div
         {
-            .center; .gridBase; 
+            .center; .gridBase;
             transition: all 0.3s ease;
-            .horiPadding(10px); 
+            .horiPadding(10px);
             font-size:14px;
-            grid-template-columns: 0.5fr 1fr; 
-            grid-template-rows: 1fr; 
-            grid-template-areas: 'icon header'; 
-            cursor:pointer; height:40px; 
+            grid-template-columns: 0.5fr 1fr;
+            grid-template-rows: 1fr;
+            grid-template-areas: 'icon header';
+            cursor:pointer; height:40px;
             color: white;
             font-family: @font;
 
             i { grid-area:icon; display:inline-block; color: inherit; }
-            &:hover 
-            { 
+            &:hover
+            {
                 .bg(@focusDark); transition: all 0.2s ease;
                 padding-left: 0px;
             }
             div { grid-area:header; text-align: justify; }
         }
 
-        .activeButton 
-        { 
+        .activeButton
+        {
             .bg(@backgroundDark); border-right:2px solid @focus; color: @focusLight; 
             i { color: @focusLight; }
         }
     }
-    
+
     .mainGridCell { border-radius: @gridCellBorderRadius; box-sizing: border-box; }
 }
 
 #sideBarButton
 {
     position:fixed;
-    height:25px; 
-    width:15px; 
+    height:25px;
+    width:15px;
     transform:translateX(100%);
     background: @background;
     border: 1px solid @border;
@@ -190,15 +190,15 @@ export default
 }
 
 .page-transition-enter-active
-{ 
+{
     transition: all 0.5s ease;
     position: absolute;
     opacity:1;
     transform: scale(1);
     & > * { overflow: hidden !important }
 }
-.page-transition-leave-active 
-{ 
+.page-transition-leave-active
+{
     transition: all 0.5s ease;
     position: absolute;
     opacity:0;
@@ -206,15 +206,15 @@ export default
     & > * { overflow: hidden !important }
 }
 .page-transition-enter-from
-{ 
+{
     transition: all 0.5s ease;
     position: absolute;
     transform: scale(0.9);
     opacity:0;
     & > * { overflow: hidden !important }
 }
-.page-transition-leave-to 
-{ 
+.page-transition-leave-to
+{
     transition: all 0.5s ease;
     position: absolute;
     transform: scale(0.9);

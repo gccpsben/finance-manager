@@ -158,6 +158,7 @@ const shouldHighlight = computed(() =>
         padding-left: @textFieldLegendLeftPadding;
         padding-right: @textFieldLegendRightPadding;
         z-index: 999;
+        text-align: left;
     }
 
     .contentPanel
