@@ -119,7 +119,7 @@
         left:0px;
         right:0px;
         clip-path: inset(100% 0 0 0);
-        max-height: calc(100svh - @expandedFieldHeight * 2);
+        max-height: calc(100vh - @expandedFieldHeight * 2);
 
         &.expanded
         {
@@ -219,10 +219,10 @@ const filteredOptions = computed(() =>
 const dropdownRoot = useTemplateRef<HTMLDivElement>('dropdownRoot');
 const fieldTransform = computed(() =>
 {
-    let yPixels = -1 * (dropdownRoot.value?.offsetTop ?? 0) + 25;
+    let yPixels = -1 * (dropdownRoot.value?.getBoundingClientRect().top ?? 0) + 25;
     if (!isInputFocused.value) yPixels = 0;
 
-    let xPixels = 25 + -1 * (dropdownRoot.value?.offsetLeft ?? 0);
+    let xPixels = 25 + -1 * (dropdownRoot.value?.getBoundingClientRect().left ?? 0);
     if (!isInputFocused.value) xPixels = 0;
 
     return `translateY(${yPixels}px) translateX(${xPixels}px)`;
