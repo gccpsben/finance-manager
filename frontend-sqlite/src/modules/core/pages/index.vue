@@ -5,6 +5,7 @@ import vBasic from '@/modules/core/directives/vBasic';
 
 <script lang="ts">
 import { useMainStore, type PageDefinition } from "../stores/store";
+import router from '@/router';
 export default
 {
     directives: {vArea},
@@ -16,13 +17,13 @@ export default
     },
     computed:
     {
-        currentPageName() { return this.$router.currentRoute.value.fullPath.split('/').pop(); },
+        currentPageName() { return router.currentRoute.value.fullPath.split('/').pop(); },
         topGridColumns() { return this.store.mainViewSidebarVisible ? `minmax(13vw, 225px) 1fr` : `0px 1fr` }
     },
     methods:
     {
-        goToPage(page: PageDefinition) { this.$router.push( { name: page.name }); },
-        isSelected(page: PageDefinition) { return this.$route.fullPath.startsWith(`/main/${page.name}`); }
+        goToPage(page: PageDefinition) { router.push( { name: page.name }); },
+        isSelected(page: PageDefinition) { return router.currentRoute.value.fullPath.startsWith(`/main/${page.name}`); }
     }
 }
 </script>

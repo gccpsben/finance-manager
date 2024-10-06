@@ -24,17 +24,17 @@
             </div>
             <div v-area.class="'BalanceHistoryGraph'">
                 <cell title="Balance Value History">
-                    
+
                     <NetworkCircularIndicator style="color:unset;" v-show="store.balanceValueHistory.isLoading || store.balanceValueHistory.error" 
                     :isLoading="store.balanceValueHistory.isLoading"
                     :error="store.balanceValueHistory.error"/>
 
                     <LineChart v-if="balanceValueHistoryGraphData" v-show="!store.balanceValueHistory.isLoading && !store.balanceValueHistory.error" 
                     :chartData="balanceValueHistoryGraphData" :options="balanceValueHistoryGraphOptions" style="max-height:100%;"></LineChart>
-                    
-                    <VRangeSlider v-show="!store.balanceValueHistory.isLoading && !store.balanceValueHistory.error" 
-                    color="#666666" density="compact" thumb-size="12" hide-details v-model="balanceValueHistoryRange" 
-                    :min="balanceValueHistoryStartDate?.getTime() ?? 0" 
+
+                    <VRangeSlider v-show="!store.balanceValueHistory.isLoading && !store.balanceValueHistory.error"
+                    color="#666666" density="compact" thumb-size="12" hide-details v-model="balanceValueHistoryRange"
+                    :min="balanceValueHistoryStartDate?.getTime() ?? 0"
                     :max="balanceValueHistoryEndDate?.getTime() ?? 1" />
 
                     <div v-show="!store.balanceValueHistory.isLoading && !store.balanceValueHistory.error"
@@ -105,7 +105,7 @@ import { VRangeSlider } from "vuetify/lib/components/index.mjs";
 import NetworkCircularIndicator from "@/modules/core/components/networkCircularIndicator.vue";
 Chart.register(...registerables);
 
-export default 
+export default
 
 {
     components: { BarChart, LineChart, VRangeSlider, NetworkCircularIndicator },
@@ -122,7 +122,7 @@ export default
     {
         let store = useMainStore();
 
-        let data = 
+        let data =
         {
             store: store,
             columns:
@@ -141,10 +141,10 @@ export default
     {
         expensesIncomesData()
         {
-            const data: ChartData<'bar'> = 
+            const data: ChartData<'bar'> =
             {
                 labels: this.store.graphsSummary.lastSuccessfulData?.expensesIncomesByDate?.labels ?? [],
-                datasets: 
+                datasets:
                 [
                     {
                         // Incomes
@@ -162,7 +162,7 @@ export default
         },
         expensesIncomesOptions()
         {
-            let options: ChartOptions<'bar'> = 
+            let options: ChartOptions<'bar'> =
             {
                 responsive: true,
                 maintainAspectRatio: false,
@@ -193,15 +193,15 @@ export default
                     else valuesByCurrency[currencySymbol] = c.balance[currencyPubID] * rate;
                 }
             }
-            
+
             let entries = Object.entries(valuesByCurrency).sort((a,b) => b[1] - a[1]);
             let labels = entries.map(x => x[0]);
             let values = entries.map(x => x[1]);
 
-            const data: ChartData<'bar'> = 
+            const data: ChartData<'bar'> =
             {
                 labels: labels,
-                datasets: 
+                datasets:
                 [
                     {
                         data: values,
@@ -213,7 +213,7 @@ export default
         },
         compositionCurrencyGraphOptions()
         {
-            let options: ChartOptions<'bar'> = 
+            let options: ChartOptions<'bar'> =
             {
                 responsive: true,
                 indexAxis: 'y',
@@ -255,7 +255,7 @@ export default
         },
         compositionContainerGraphOptions()
         {
-            let options: ChartOptions<'bar'> = 
+            let options: ChartOptions<'bar'> =
             {
                 responsive: true,
                 indexAxis: 'y',
@@ -291,10 +291,10 @@ export default
             let values: {[pubID:string]:number[]} = balances;
             let hue = 0;
 
-            const data: ChartData<'line'> = 
+            const data: ChartData<'line'> =
             {
                 labels: labels,
-                datasets: Object.entries(values).map(dataset => 
+                datasets: Object.entries(values).map(dataset =>
                 {
                     let color = `hsl(${hue},50%,50%)`;
                     hue += 40;
@@ -314,7 +314,7 @@ export default
         },
         balanceValueHistoryGraphOptions()
         {
-            let data: ChartOptions<'line'> = 
+            let data: ChartOptions<'line'> =
             {
                 responsive: true,
                 animation: false,

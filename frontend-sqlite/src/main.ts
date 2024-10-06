@@ -48,13 +48,7 @@ app.component('custom-dropdown', defineAsyncComponent(() => import("@/modules/co
 app.component('container-values-graph-cell', defineAsyncComponent(() => import("@/modules/containers/components/containerValuesGraphCell.vue")));
 app.component('view-title', viewTitle);
 
-// Since router isn't defined in the pinia type, add them manually.
-declare module 'pinia' 
-{
-    export interface PiniaCustomProperties { $router: Router; } 
-}
 const pinia = createPinia();
-pinia.use(({ store }) => { store.$router = markRaw(router) });
 app.use(pinia)
 app.use(vuetify)
 app.mount('#app')

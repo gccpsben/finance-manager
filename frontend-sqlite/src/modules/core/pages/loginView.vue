@@ -32,7 +32,7 @@
         {
            .center;
            margin-bottom:16px;
-           font-weight: bold; 
+           font-weight: bold;
         }
 
         gap: 15px;
@@ -63,7 +63,7 @@
         {
             .xRight;
 
-            button 
+            button
             {
                 .horiPadding(15px); border:0;
                 .bg(@backgroundDark); cursor:pointer;
@@ -80,6 +80,7 @@ import { useMainStore } from '@/modules/core/stores/store';
 import { useMeta } from 'vue-meta';
 import passwordField from '@/modules/core/components/passwordField.vue';
 import textField from '../components/textField.vue';
+import router from '@/router';
 
 export default
 {
@@ -88,7 +89,7 @@ export default
     {
         useMeta(
         {
-            meta: 
+            meta:
             {
                 "name":"viewport",
                 "content":"width=device-width, initial-scale=1, maximum-scale=1",
@@ -97,7 +98,7 @@ export default
     },
     data()
     {
-        let data = 
+        let data =
         {
             enteredUsername: "",
             enteredPassword: "",
@@ -111,18 +112,18 @@ export default
         login()
         {
             let self = this;
-            this.axios.post(API_LOGIN_PATH, 
+            this.axios.post(API_LOGIN_PATH,
             {
                 "username": self.enteredUsername,
                 "password": self.enteredPassword
             })
-            .then(response => 
+            .then(response =>
             {
                 let jwtToken = response.data.token; // "Bearer xxxxxx..."
                 this.store.setCookie("jwt", jwtToken, 30);
-                this.$router.push("/main/dashboard");
+                router.push("/main/dashboard");
             })
-            .catch(error => 
+            .catch(error =>
             {
                 if (error.response.status == 401) alert("Incorrect password/username pair.");
                 else alert("Unknown error occured, status code: " + error.response.status);

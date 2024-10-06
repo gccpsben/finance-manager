@@ -3,18 +3,18 @@
 
         <view-title :title="title"></view-title>
 
-        <pagination v-if="!selectedContainerID" 
-                    v-model:currentPage="currentPage" :itemsInPage="15" :items="containersStore.containers.lastSuccessfulData?.rangeItems ?? []" 
-                    v-slot="props" class="fullSize" style="height:calc(100svh - 170px);"> 
+        <pagination v-if="!selectedContainerID"
+                    v-model:currentPage="currentPage" :itemsInPage="15" :items="containersStore.containers.lastSuccessfulData?.rangeItems ?? []"
+                    v-slot="props" class="fullSize" style="height:calc(100svh - 170px);">
             <div id="panel">
                 <grid-shortcut rows="1fr" columns="1fr auto">
                     <h2 class="panelTitle">All Containers</h2>
                     <div class="pageSelector">
                         <fa-icon-btn :disabled="!props.isPreviousArrowAllowed" @click="props.previous()" id="previousArrow" class="optionIcon" icon="fa-solid fa-chevron-left"></fa-icon-btn>
-                        <input type="number" size="1" v-int-only v-model.lazy="pageReadable" min="1"> 
+                        <input type="number" size="1" v-int-only v-model.lazy="pageReadable" min="1">
                         <fa-icon-btn :disabled="!props.isNextArrowAllowed" @click="props.next()" id="nextArrow" class="optionIcon" icon="fa-solid fa-chevron-right"></fa-icon-btn>
                     </div>
-                </grid-shortcut> 
+                </grid-shortcut>
                 <grid-shortcut class="fullSize" rows="repeat(20, 1fr)" columns="1fr" style="padding-top:15px;">
 
                     <div class="row tight" style="font-size:14px;" @click="selectContainer(Container.id)"
@@ -36,7 +36,7 @@
                 </grid-shortcut>
             </div>
         </pagination>
-<!-- 
+<!--
         <div id="panel" v-if="selectedContainerID" >
             <grid-shortcut rows="300px 1fr" columns="300px 1fr auto">
                 <div class="panel center">
@@ -48,11 +48,11 @@
                             <h2 class="fsNumbers">{{ selectedContainer?.name }}</h2>
                         </div>
                         <div class="center">
-                            
+
                         </div>
-                    </grid-shortcut> 
+                    </grid-shortcut>
                 </div>
-            </grid-shortcut> 
+            </grid-shortcut>
         </div> -->
 
     </div>
@@ -68,9 +68,9 @@
     .center; .fg(white);
 }
 
-.panel 
-{ 
-    background:@background; 
+.panel
+{
+    background:@background;
     padding:25px;
     color:gray;
     & h2 { font-weight:100; }
@@ -84,10 +84,10 @@
     font-family: 'Schibsted Grotesk', sans-serif;
     .gradBackground;
 
-    input 
+    input
     {
         color:white;
-        background:transparent; 
+        background:transparent;
         border:1px solid #252525;
         width:30px;
         padding:0px; .horiMargin(5px);
@@ -112,13 +112,13 @@
 
             gap: 15px;
 
-            grid-template: 
+            grid-template:
               "name value valueActual dataSource arrow" 1fr
             / 175px 75px   100px 1fr        50px;
 
             cursor:pointer;
 
-            &:hover 
+            &:hover
             {
                 background: @focusDark;
                 color: @focus;
@@ -145,13 +145,14 @@ import { useMainStore } from '@/modules/core/stores/store';
 import type { Container, ValueHydratedContainer } from '@/types/dtos/containersDTO';
 import paginationVue from '@/modules/core/components/pagination.vue';
 import { useContainersStore } from '../stores/useContainersStore';
+import router from '@/router';
 
 export default
 {
     components: {'pagination':paginationVue},
     data()
     {
-        let data = 
+        let data =
         {
             store: useMainStore(),
             containersStore: useContainersStore(),
@@ -159,11 +160,11 @@ export default
         };
         return data;
     },
-    computed:   
+    computed:
     {
-        selectedContainerID() 
-        { 
-            return this.$route.params.pubID as string;
+        selectedContainerID()
+        {
+            return router.currentRoute.value.params.pubID as string;
         },
         pageReadable:
         {
@@ -186,7 +187,7 @@ export default
     {
         selectContainer(pubID: string)
         {
-            this.$router.push(
+            router.push(
             {
                 name: "containers",
                 params: { pubID: pubID }

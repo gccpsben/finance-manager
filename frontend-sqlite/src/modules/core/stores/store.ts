@@ -1,18 +1,18 @@
-import { API_BAL_VAL_PATH, API_CONTAINERS_PATH, API_GRAPHS_PATH, API_NET_WORTH_GRAPH_PATH, API_SUMMARY_PATH, API_TRANSACTIONS_PATH, API_TXN_TYPES_PATH, API_USER_INCOMES_EXPENSES_PATH } from '@/apiPaths';
+import { API_BAL_VAL_PATH, API_GRAPHS_PATH, API_NET_WORTH_GRAPH_PATH, API_SUMMARY_PATH, API_TRANSACTIONS_PATH, API_TXN_TYPES_PATH, API_USER_INCOMES_EXPENSES_PATH } from '@/apiPaths';
 import { useNetworkRequest } from '../composables/useNetworkRequest';
 import type { DashboardSummary } from '@/types/dtos/dashboardSummaryDTO';
 import axios, { AxiosError } from 'axios';
 import { defineStore } from 'pinia';
 import type { GraphsSummary } from '@/types/dtos/graphsSummaryDTO';
 import type { ResponseGetExpensesAndIncomesDTO } from "@/../../api-types/calculations";
-import type { GetTxnTypesAPI } from '@/../../api-types/txnType';
 import type { GetTxnAPI } from '../../../../../api-types/txn';
+import router from '@/router';
 
 export type Subpage = { name: string; }
 
 export type PageDefinition =
 {
-    name:string; 
+    name:string;
     displayName:string;
     iconClass:string;
     isExpanded: boolean;
@@ -21,13 +21,13 @@ export type PageDefinition =
 
 export class NavBarItem { type: string = "folder"; }
 
-export type NetWorthAPIResponse = 
+export type NetWorthAPIResponse =
 {
     "netWorthHistory": {[timestamp:string]:number},
     "netWorthActualHistory": {[timestamp:string]:number}
 };
 
-export type BalanceValueHistoryAPIResponse = 
+export type BalanceValueHistoryAPIResponse =
 {
     timestamps: string[],
     balance: {[currencyPubID:string]: number[]},
@@ -37,7 +37,7 @@ export type BalanceValueHistoryAPIResponse =
 export const useMainStore = defineStore(
 {
     id: 'mainStore',
-    state: () => 
+    state: () =>
     (
         {
             availablePages:
@@ -81,11 +81,11 @@ export const useMainStore = defineStore(
             mainViewSidebarVisible: true
         }
     ),
-    getters: 
+    getters:
     {
-    
+
     },
-    actions: 
+    actions:
     {
         /** A batch endpoint is available at backend. The endpoint combines dashboardSummary, containers, currencies and netWorth into a single endpoint. */
         async updateDashboardBatch()
@@ -128,7 +128,7 @@ export const useMainStore = defineStore(
         resetAuth()
         {
             this.clearCookie("jwt");
-            this.$router.push("/login");
+            router.push("/login");
         },
         async authGet(url:string, extraHeaders:{[key: string]: string}={})
         {
@@ -171,7 +171,7 @@ export const useMainStore = defineStore(
         {
             let name = cname + "=";
             let ca = document.cookie.split(';');
-            for (let i = 0; i < ca.length; i++) 
+            for (let i = 0; i < ca.length; i++)
             {
                 let c = ca[i];
                 while (c.charAt(0) == ' ') c = c.substring(1);
@@ -201,13 +201,11 @@ export const useMainStore = defineStore(
             let newArray = [...array];
             return newArray.sort(func);
         },
-        
+
         toReversed<T>(array:Array<T>)
         {
             let newArray = [...array];
             return newArray.reverse();
         },
-    
-
     }
 })

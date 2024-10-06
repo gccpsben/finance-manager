@@ -13,7 +13,7 @@
                         <input type="number" size="1" v-int-only v-model.lazy="pageReadable"> 
                         <fa-icon @click="props.next()" id="nextArrow" icon="fa-solid fa-chevron-right"></fa-icon>
                     </div>
-                </grid-shortcut> 
+                </grid-shortcut>
                 <grid-shortcut class="fullSize" rows="repeat(20, 1fr)" columns="1fr" style="padding-top:15px;">
 
                     <div class="row tight" style="font-size:14px;" @click="selectCurrency(currency.id)"
@@ -49,10 +49,10 @@
                         <div class="center">
                             <h2 class="fsSecondary tight">{{ selectedCurrency?.rateToBase }} HKD</h2>
                         </div>
-                    </grid-shortcut> 
+                    </grid-shortcut>
                 </div>
                 <currencyRatesHistoryCell :currency-id="selectedCurrencyID"></currencyRatesHistoryCell>
-            </grid-shortcut> 
+            </grid-shortcut>
         </div>
 
     </div>
@@ -68,9 +68,9 @@
     .center; .fg(white);
 }
 
-.panel 
-{ 
-    background:@cellBackground; 
+.panel
+{
+    background:@cellBackground;
     padding:25px;
     color:gray;
     & h2 { font-weight:100; }
@@ -85,10 +85,10 @@
     .gradBackground;
     padding:50px;
 
-    input 
+    input
     {
         color:white;
-        background:transparent; 
+        background:transparent;
         border:1px solid #252525;
         width:30px;
         padding:0px; .horiMargin(5px);
@@ -113,13 +113,13 @@
 
             gap: 15px;
 
-            grid-template: 
+            grid-template:
               "name symbol rate  dataSource arrow" 1fr
             / 175px 75px   100px 1fr        50px;
 
             cursor:pointer;
 
-            &:hover 
+            &:hover
             {
                 background: @focusDark;
                 color: @focus;
@@ -149,13 +149,14 @@ import cell from '@/modules/core/components/cell.vue';
 import WrappedLineChart from '@/modules/core/components/wrappedLineChart.vue';
 import currencyRatesHistoryCell from '@/modules/currencies/components/currencyRatesHistoryCell.vue';
 import { useCurrenciesStore } from '../stores/useCurrenciesStore';
+import router from '@/router';
 
 export default
 {
     components: { 'pagination': paginationVue, "cell": cell, "wrappedLineChart": WrappedLineChart, 'currencyRatesHistoryCell': currencyRatesHistoryCell },
     data()
     {
-        let data = 
+        let data =
         {
             store: useMainStore(),
             currentPage: 0,
@@ -165,7 +166,7 @@ export default
     },
     computed:
     {
-        selectedCurrencyID() { return this.$route.params.cid as string },
+        selectedCurrencyID() { return router.currentRoute.value.params.cid as string },
         pageReadable:
         {
             get() { return this.currentPage + 1; },
@@ -182,14 +183,14 @@ export default
         title()
         {
             if (this.selectedCurrency) return `Currencies - ${this.selectedCurrency.name}`;
-            return `Currencies` 
+            return `Currencies`
         }
     },
     methods:
     {
         selectCurrency(id: string)
         {
-            this.$router.push(
+            router.push(
             {
                 name: "currencies",
                 params: { cid: id }

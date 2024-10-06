@@ -45,15 +45,15 @@
             <text-field class="fullSize" field-name="Transaction Title" v-model:text="txnTitle"/>
 
             <custom-dropdown :field-name="'Type'" :options="txnTypesOptions" v-model:selected-option="selectedTxnTypeId" />
-            
+
             <custom-dropdown v-if="selectedMode == 'transfer' || selectedMode == 'spending'"
-                             :field-name="'From'" 
-                             :options="containersOptions" 
+                             :field-name="'From'"
+                             :options="containersOptions"
                              v-model:selected-option="selectedFromContainerId" />
 
             <custom-dropdown v-if="selectedMode == 'transfer' || selectedMode == 'earning'"
-                             :field-name="'To'" 
-                             :options="containersOptions" 
+                             :field-name="'To'"
+                             :options="containersOptions"
                              v-model:selected-option="selectedToContainerId" />
 
             <grid-shortcut v-if="selectedFromContainerId" columns="1fr 150px" class="fullWidth field">
@@ -90,7 +90,7 @@
                 </div>
             </grid-shortcut>
 
-            <text-field class="fullSize" field-name="Date" placeholder="YYYY-MM-DD HH:MM:SS" 
+            <text-field class="fullSize" field-name="Date" placeholder="YYYY-MM-DD HH:MM:SS"
                         v-model:text="txnDateInput" :override-theme-color="isEnteredDateValid ? undefined : 'red'">
                 <template #fieldActions>
                     <div class="nowButtonContainer">
@@ -101,14 +101,14 @@
 
             <grid-shortcut columns="1fr auto auto" style="gap: 5px;">
                 <div class="middleLeft"><button @click="reset">Reset</button></div>
-                <div class="middleRight"><button @click="$router.push('./resolve')">Resolve</button></div>
+                <div class="middleRight"><button @click="navigate('./resolve')">Resolve</button></div>
                 <div class="middleRight">
                     <button @click="upload" :disabled="!isFormValid">Upload</button>
                 </div>
             </grid-shortcut>
 
         </div>
-        
+
     </div>
 </template>
 
@@ -123,23 +123,24 @@ import vNumberOnly from '@/modules/core/directives/vNumberOnly';
 import { VProgressCircular } from "vuetify/components";
 import textField from '@/modules/core/components/textField.vue';
 import customDropdown, { type DropdownItem } from "@/modules/core/components/custom-dropdown.vue";
+import router from "@/router";
 
 export default
 {
     directives: { "number-only": vNumberOnly },
     components: { VProgressCircular, "text-field": textField, customDropdown },
-    setup () 
+    setup ()
     {
         useMeta(
         {
             title: 'Add Txns',
             htmlAttrs: { lang: 'en', },
-            link: 
+            link:
             [
                 { rel: 'icon', href: "/addTxnIcon.png" },
                 { rel: 'shortcut icon', type: "image/jpeg", href:"/addTxnIcon.png" },
                 { rel: 'apple-touch-icon', href:"/addTxnIcon.png" }
-            ] 
+            ]
         });
 
         return {
@@ -149,15 +150,15 @@ export default
             txnTypesStore: useTxnTypesStore()
         }
     },
-    async mounted() 
-    { 
+    async mounted()
+    {
         this.isLoading = true;
         await this.store.updateDashboardBatch();
         this.isLoading = false;
     },
     data()
     {
-        return { 
+        return {
             isLoading: true,
             selectedFromContainerId: undefined as undefined | string,
             selectedToContainerId: undefined as undefined | string,
@@ -190,7 +191,7 @@ export default
             else
             {
                 let self = this;
-                let body: Partial<PostTxnAPI.RequestDTO> = 
+                let body: Partial<PostTxnAPI.RequestDTO> =
                 {
                     "title": this.txnTitle,
                     "typeId": this.selectedTxnTypeId,
@@ -198,7 +199,7 @@ export default
                     "description": "testing desc"
                 };
 
-                if (this.enteredDate != undefined) 
+                if (this.enteredDate != undefined)
                     body['creationDate'] = this.enteredDate.getTime();
 
                 if (this.selectedFromContainerId)
@@ -213,7 +214,7 @@ export default
                     body.toContainerId = this.selectedToContainerId;
                     body.toCurrencyId = this.selectedReceivingCurrencyId;
                 }
-                
+
                 this.isFormUploading = true;
                 this.store.authPost(`/api/v1/transactions`, body)
                 .then(() => { alert("Successfully Added Transaction."); self.reset(); })
@@ -229,6 +230,10 @@ export default
             const dateSegment = `${pad(now.getFullYear(), 4)}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`;
             const timeSegment = `${pad(now.getHours())}:${pad(now.getMinutes())}:${pad(now.getSeconds())}`;
             this.txnDateInput = `${dateSegment} ${timeSegment}`;
+        },
+        navigate(targetUrl: string)
+        {
+            router.push(targetUrl);
         }
     },
     computed:
@@ -245,10 +250,10 @@ export default
             if (!this.isAmountsValid) return false;
             if (this.selectedMode == "earning") return this.selectedReceivingCurrencyId !== undefined && this.selectedToContainerId !== undefined;
             else if (this.selectedMode == "spending") return this.selectedSpendingCurrencyId !== undefined && this.selectedFromContainerId !== undefined;
-            else if (this.selectedMode == "transfer") 
-                return this.selectedSpendingCurrencyId !== undefined && 
-                this.selectedReceivingCurrencyId !== undefined && 
-                this.selectedFromContainerId !== undefined && 
+            else if (this.selectedMode == "transfer")
+                return this.selectedSpendingCurrencyId !== undefined &&
+                this.selectedReceivingCurrencyId !== undefined &&
+                this.selectedFromContainerId !== undefined &&
                 this.selectedToContainerId !== undefined;
             else return false;
         },
@@ -266,7 +271,7 @@ export default
                 else if (!/^\d{4}-\d{2}-\d{2}[ ]\d{2}:\d{2}:\d{2}$/.test(this.txnDateInput)) return undefined;
                 // else if (this.txnDateInput.split('-').length != 3 ||  this.txnDateInput.split(':').length != 3) return false;
                 // else if (this.txnDateInput.split(' ').length != 2) return false;
-                else 
+                else
                 {
                     let segments = this.txnDateInput.split(' ');
                     let years = Number.parseInt(segments[0].split("-")[0]);
@@ -328,9 +333,9 @@ export default
 
 #topDiv
 {
-    #containersSelectDiv 
-    { 
-        .size(500px, auto); 
+    #containersSelectDiv
+    {
+        .size(500px, auto);
         display:grid;
         grid-template-columns: 1fr;
         grid-auto-rows: minmax(45px, auto);
@@ -444,9 +449,9 @@ export default
     color:gray;
     font-family: Consolas;
 }
-div.grayText { opacity: 0.2; } 
+div.grayText { opacity: 0.2; }
 
-@media only screen and (max-width: 600px) 
+@media only screen and (max-width: 600px)
 {
     #topDiv { height: 100svh; }
 
