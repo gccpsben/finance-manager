@@ -132,9 +132,14 @@
                         @update:text="selectedTransaction.currentData.value.description = $event"/>
 
             <div id="resetSaveContainer" v-area="'actions'" v-if="selectedTransaction?.currentData">
-                <div>
-                    <button class="defaultButton" :disabled="!isResetButtonAvailable" @click="resetForm()">Reset</button>
-                    <button class="defaultButton" :disabled="!isSaveButtonAvailable" @click="submitSave()">Save</button>
+                <div class="dummy"></div>
+                <button class="defaultButton" :disabled="!isResetButtonAvailable" @click="resetForm()">Reset</button>
+                <div class="center">
+                    <button class="defaultButton fullSize" :disabled="!isSaveButtonAvailable || isTxnSaving" @click="submitSave()">
+                        <NetworkCircularIndicator v-if="isTxnSaving || txnSavingError" style="width:23px; height:23px;"
+                                                  :is-loading="isTxnSaving" :error="txnSavingError"/>
+                        <div v-if="!isTxnSaving && !txnSavingError">Save</div>
+                    </button>
                 </div>
             </div>
 
@@ -147,7 +152,7 @@
 </template>
 
 <script lang="ts" setup>
-import { API_TRANSACTIONS_PATH } from "@/apiPaths";
+import { API_PUT_TRANSACTIONS_PATH, API_TRANSACTIONS_PATH } from "@/apiPaths";
 import { getContainerNameById } from '@/modules/containers/utils/containers';
 import CustomDropdown from '@/modules/core/components/custom-dropdown.vue';
 import numberPagination from '@/modules/core/components/numberPagination.vue';
@@ -163,12 +168,14 @@ import { useResettableObject } from "@/resettableObject";
 import router from "@/router";
 import type { HydratedTransaction } from "@/types/dtos/transactionsDTO";
 import { computed, onMounted, ref, toRaw, watch, type Ref } from 'vue';
-import type { TxnDTO } from '../../../../../api-types/txn';
+import { type PutTxnAPI, type TxnDTO } from '../../../../../api-types/txn';
 import { useContainersStore } from '../../containers/stores/useContainersStore';
 import { useTxnTypesStore } from '../../txnTypes/stores/useTxnTypesStore';
 import { nextTick } from "vue";
 import { useCurrenciesStore } from "@/modules/currencies/stores/useCurrenciesStore";
 import { isNumeric } from "@/modules/core/utils/numbers";
+import { useNetworkRequest } from "@/modules/core/composables/useNetworkRequest";
+import NetworkCircularIndicator from "@/modules/core/components/networkCircularIndicator.vue";
 
 const { authGet, getDateAge, updateAll: mainStoreUpdateAll } = useMainStore();
 const { currencies } = useCurrenciesStore();
@@ -295,10 +302,12 @@ const isResetButtonAvailable = computed(() =>
 });
 const isSaveButtonAvailable = computed(() =>
 {
-    if (!selectedTransaction.isChanged.value) return false;transactionDetailsErrors
+    if (!selectedTransaction.isChanged.value) return false;
     if (transactionDetailsErrors.value) return false;
     return true;
 });
+const isTxnSaving = ref(false);
+const txnSavingError = ref(undefined);
 
 watch(selectedTransactionID, async () => // Load txn if selected
 {
@@ -322,11 +331,62 @@ const autoFillCurrentDateTime = () =>
     selectedTransaction.currentData.value.creationDate = formatDate(new Date(), "YYYY-MM-DD hh:mm:ss.ms")
 };
 const resetForm = () => { selectedTransaction.reset(); };
-const submitSave = () =>
+const submitSave = async () =>
 {
-    selectedTransaction.markSafePoint(selectedTransaction.currentData.value);
-    // const transformedCopy = selectedTransactionWorkingCopy.value!;
-    // console.log(transformedCopy);
+    if (!selectedTransaction.currentData.value) throw new Error(`Cannot save when current data is not defined.`);
+
+    const transformedTxn = structuredClone(toRaw(selectedTransaction.currentData.value));
+
+    // Transform txn body to fit validation:
+    (() =>
+    {
+        if (transformedTxn.toContainer === null)
+        {
+            transformedTxn.toCurrency = null;
+            transformedTxn.toAmount = null;
+        }
+        if (transformedTxn.fromContainer === null)
+        {
+            transformedTxn.fromCurrency = null;
+            transformedTxn.fromAmount = null;
+        }
+    })();
+
+    // TODO: Finish txn PUT request
+    const test = useNetworkRequest<PutTxnAPI.ResponseDTO>
+    (
+        {
+            query: { "targetTxnId": `${selectedTransactionID.value}` },
+            url: `${API_PUT_TRANSACTIONS_PATH}`,
+            method: "PUT",
+            body:
+            {
+                title: transformedTxn.title,
+                txnTypeId: transformedTxn.txnType,
+                creationDate: new Date(transformedTxn.creationDate).getTime(),
+                description: transformedTxn.description ?? undefined,
+                fromAmount: transformedTxn.fromAmount ?? undefined,
+                fromContainerId: transformedTxn.fromContainer ?? undefined,
+                fromCurrencyId: transformedTxn.fromCurrency ?? undefined,
+                toAmount: transformedTxn.toAmount ?? undefined,
+                toContainerId: transformedTxn.toContainer ?? undefined,
+                toCurrencyId: transformedTxn.toCurrency ?? undefined
+            } satisfies PutTxnAPI.RequestBodyDTO
+        },
+        {
+            updateOnMount: false,
+            autoResetOnUnauthorized: true,
+            includeAuthHeaders: true
+        },
+    );
+
+    isTxnSaving.value = true;
+    await test.updateData();
+    txnSavingError.value = test.error.value;
+    console.log(test.error.value);
+    isTxnSaving.value = false;
+    if (!test.error.value) selectedTransaction.markSafePoint(selectedTransaction.currentData.value);
+    else alert(`${test.error.value}`);
 };
 // #endregion
 </script>
@@ -593,17 +653,14 @@ const submitSave = () =>
         #resetSaveContainer
         {
             display: grid;
-            grid-template-columns: 1fr auto;
+            grid-template-columns: 1fr auto auto;
             grid-template-rows: 1fr;
             padding-bottom: 126px;
+            gap: 8px;
 
             & > *
             {
                 .fullSize; .xRight; .yBottom;
-                button:nth-child(2)
-                {
-                    margin-left:5px;
-                }
             }
         }
 

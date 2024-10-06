@@ -13,11 +13,11 @@ import { PostCurrencyAPIClass } from "./currency.test.js";
 export namespace PostTxnAPIClass
 {
     export class RequestDTOClass implements PostTxnAPI.RequestDTO
-    { 
-        @IsString() @IsNotEmpty() title: string; 
+    {
+        @IsString() @IsNotEmpty() title: string;
         @IsOptional() @IsUTCDateInt() creationDate?: number | undefined;
         @IsOptional() @IsString() description?: string | undefined;
-        @IsString() typeId: string;
+        @IsString() txnTypeId: string;
         @IsOptional() @IsDecimalJSString() fromAmount?: string | undefined;
         @IsOptional() @IsString() fromContainerId?: string | undefined;
         @IsOptional() @IsString() fromCurrencyId?: string | undefined;
@@ -132,7 +132,7 @@ export default async function(this: Context)
                     fromAmount: "200",
                     fromContainerId: testContext.containerId,
                     fromCurrencyId: testContext.baseCurrId,
-                    typeId: testContext.txnTypeId
+                    txnTypeId: testContext.txnTypeId
                 } satisfies PostTxnAPIClass.RequestDTOClass;
         
                 for (const testCase of BodyGenerator.enumerateMissingField(baseObj, ["description", "creationDate"]))
@@ -185,7 +185,7 @@ export default async function(this: Context)
                         expectedCode: 200
                     });
                 });
-            })
+            });
         });
     });
 }

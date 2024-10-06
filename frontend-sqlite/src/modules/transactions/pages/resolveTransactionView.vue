@@ -76,7 +76,7 @@ export default
 
             if (this.selectedTransaction == undefined) { alert("Please select a target!"); return; }
 
-            let body = { "resolveID": this.selectedTransaction.pubID, };
+            let body = { "resolveID": this.selectedTransaction.id };
 
             this.isFormUploading = true;
             this.store.authPost(`/api/finance/transactions/resolve`, body)

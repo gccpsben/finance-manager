@@ -272,8 +272,8 @@ export default async function(this: Context)
     
                         await HookShortcuts.postCreateTransaction(
                         {
-                            body: 
-                            { 
+                            body:
+                            {
                                 title: randomUUID(),
                                 creationDate: Date.now() - txnToPost.txnAgeDays * 8.64e+7,
                                 description: simpleFaker.string.sample(100),
@@ -283,13 +283,13 @@ export default async function(this: Context)
                                 toAmount: isTo ? txnToPost.toAmount.toString() : undefined, 
                                 toContainerId: isTo ? txnToPost.toContainerId : undefined,
                                 toCurrencyId: isTo ? txnToPost.toCurrencyID : undefined,
-                                typeId: choice(txnTypes).txnId
+                                txnTypeId: choice(txnTypes).txnId
                             },
                             serverURL: serverURL,
                             token: userObj.token,
                             assertBody: true,
                             expectedCode: 200
-                        });   
+                        });
                     }
 
                     await this.test(`Test for correctness of balances and values (1)`, async function()

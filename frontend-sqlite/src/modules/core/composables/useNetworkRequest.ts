@@ -2,10 +2,12 @@ import router from '@/router';
 import axios from 'axios';
 import { ref, watchEffect, toValue } from 'vue';
 
-export type NetworkQuery = 
+export type NetworkQuery =
 {
     url: string,
-    query: Record<string, string>
+    query: Record<string, string>,
+    method?: "PUT" | "POST" | "GET" | "DELETE" | "PATCH",
+    body?: unknown
 };
 
 function setCookie(cname:string, cvalue:string, exdays:number): void
@@ -19,7 +21,7 @@ function getCookie(cname: string): string
 {
     let name = cname + "=";
     let ca = document.cookie.split(';');
-    for (let i = 0; i < ca.length; i++) 
+    for (let i = 0; i < ca.length; i++)
     {
         let c = ca[i];
         while (c.charAt(0) == ' ') c = c.substring(1);
@@ -35,7 +37,11 @@ type UseNetworkRequestInterface = {
     updateOnMount?: boolean;
 };
 
-export function useNetworkRequest<T>(queryObj: NetworkQuery|string|undefined, config: UseNetworkRequestInterface | undefined)
+export function useNetworkRequest<T>
+(
+    queryObj: NetworkQuery|string|undefined,
+    config: UseNetworkRequestInterface | undefined
+)
 {
     const queryObjInner = ref(queryObj);
     const shouldAutoResetOnUnauthorized = config?.autoResetOnUnauthorized ?? false;
@@ -53,38 +59,66 @@ export function useNetworkRequest<T>(queryObj: NetworkQuery|string|undefined, co
         router.push("/login");
     };
 
-    const authGet = async (queryObj:NetworkQuery|string, extraHeaders:Record<string,string> = {}) =>
+    const get = async (queryObj:NetworkQuery|string, extraHeaders:Record<string,string> = {}) =>
     {
         const url = typeof queryObj === 'string' ? queryObj : `${queryObj.url}?${new URLSearchParams(queryObj.query).toString()}`;
-        let headers = { headers: { ...extraHeaders } };
-        if (shouldIncludeAuthHeaders) headers.headers["Authorization"] = getCookie("jwt");
-        return axios.get(url, headers);
+        const config = { headers: { ...extraHeaders } };
+        if (shouldIncludeAuthHeaders) config.headers["Authorization"] = getCookie("jwt");
+        return axios.get(url, config);
     };
 
-    const updateData: () => Promise<undefined|T> = async () => 
+    const post = async (queryObj:NetworkQuery|string, extraHeaders:Record<string,string> = {}) =>
     {
+        const body = typeof queryObj === 'string' ? queryObj : queryObj.body;
+        const url = typeof queryObj === 'string' ? queryObj : `${queryObj.url}?${new URLSearchParams(queryObj.query).toString()}`;
+        const config = { headers: { ...extraHeaders } };
+        if (shouldIncludeAuthHeaders) config.headers["Authorization"] = getCookie("jwt");
+        return axios.post(url, body, config);
+    };
+
+    const put = async (queryObj:NetworkQuery|string, extraHeaders:Record<string,string> = {}) =>
+    {
+        const body = typeof queryObj === 'string' ? queryObj : queryObj.body;
+        const url = typeof queryObj === 'string' ? queryObj : `${queryObj.url}?${new URLSearchParams(queryObj.query).toString()}`;
+        const config = { headers: { ...extraHeaders } };
+        if (shouldIncludeAuthHeaders) config.headers["Authorization"] = getCookie("jwt");
+        return axios.put(url, body, config);
+    };
+
+    const updateData: () => Promise<undefined|T> = async () =>
+    {
+        const queryMethod = typeof queryObj === 'string' ? 'GET' : queryObj?.method ?? 'GET';
+
         isLoading.value = true;
         error.value = null;
 
         if (!queryObjInner.value) return Promise.resolve(undefined);
 
-        try 
+        try
         {
-            let response = await authGet(toValue(queryObjInner.value), { });
+            const methodToUse = (() =>
+            {
+                // if (queryMethod === 'DELETE') return () => {};
+                if (queryMethod === 'GET') return get;
+                // else if (queryMethod === 'PATCH') return () => {};
+                else if (queryMethod === 'POST') return post;
+                else return put;
+            })();
+            let response = await methodToUse(toValue(queryObjInner.value), { });
             lastAxiosStatusCode.value = response.status;
             lastSuccessfulData.value = response.data;
             Promise.resolve<T>(lastSuccessfulData.value as T);
             isLoading.value = false;
         }
-        catch(err) 
-        { 
+        catch(err)
+        {
             if (axios.isAxiosError(err))
             {
                 error.value = err.response?.statusText;
                 if (err.response?.status === 401 && shouldAutoResetOnUnauthorized)
                     resetAuth();
             }
-            else error.value = err; 
+            else error.value = err;
             Promise.resolve(undefined);
             isLoading.value = false;
         }

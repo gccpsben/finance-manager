@@ -19,9 +19,25 @@ export class TypesafeRouter
             catch(e) { next(e); }
         });
     }
+    public patch<BodyType>(endpoint: string, config: TypesafeRouteConfig<BodyType>)
+    {
+        this._router.patch(endpoint, async (req:express.Request, res:express.Response, next: NextFunction) =>
+        {
+            try { res.json(await config.handler(req, res)); }
+            catch(e) { next(e); }
+        });
+    }
     public post<BodyType>(endpoint: string, config: TypesafeRouteConfig<BodyType>)
     {
         this._router.post(endpoint, async (req:express.Request, res:express.Response, next: NextFunction) =>
+        {
+            try { res.json(await config.handler(req, res)); }
+            catch(e) { next(e); }
+        });
+    }
+    public put<BodyType>(endpoint: string, config: TypesafeRouteConfig<BodyType>)
+    {
+        this._router.put(endpoint, async (req:express.Request, res:express.Response, next: NextFunction) =>
         {
             try { res.json(await config.handler(req, res)); }
             catch(e) { next(e); }

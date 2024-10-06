@@ -92,24 +92,24 @@ export class HookShortcuts
         }
     }
 
-    public static async postCreateTransaction(config: 
+    public static async postCreateTransaction(config:
     {
-        serverURL: string, 
-        token:string, 
-        body: Partial<PostTxnAPIClass.RequestDTOClass>, 
+        serverURL: string,
+        token:string,
+        body: Partial<PostTxnAPIClass.RequestDTOClass>,
         assertBody?: boolean,
         expectedCode?: number
     })
     {
         const assertBody = config.assertBody === undefined ? true : config.assertBody;
-        const response = await HTTPAssert.assertFetch(UnitTestEndpoints.transactionsEndpoints['post'], 
+        const response = await HTTPAssert.assertFetch(UnitTestEndpoints.transactionsEndpoints['post'],
         {
             baseURL: config.serverURL, expectedStatus: config.expectedCode, method: "POST",
             body: config.body,
             headers: { "authorization": config.token },
             expectedBodyType: assertBody ? PostTxnAPIClass.ResponseDTOClass : undefined
         });
-        const output = 
+        const output =
         {
             ...response,
             txnId: response.parsedBody?.id as string | undefined
@@ -127,7 +127,7 @@ export class HookShortcuts
     })
     {
         const assertBody = config.assertBody === undefined ? true : config.assertBody;
-        const response = await HTTPAssert.assertFetch(UnitTestEndpoints.transactionTypesEndpoints['post'], 
+        const response = await HTTPAssert.assertFetch(UnitTestEndpoints.transactionTypesEndpoints['post'],
         {
             baseURL: config.serverURL, expectedStatus: config.expectedCode, method: "POST",
             body: config.body,

@@ -1,6 +1,6 @@
 import { IsNotEmpty, IsOptional, IsString } from 'class-validator';
 import express from 'express';
-import type { GetTxnAPI, PostTxnAPI } from '../../../../api-types/txn.js';
+import { type PutTxnAPI, type GetTxnAPI, type PostTxnAPI } from '../../../../api-types/txn.js';
 import { AccessTokenService } from '../../db/services/accessToken.service.js';
 import { TransactionService } from '../../db/services/transaction.service.js';
 import { IsDecimalJSString, IsIntString, IsUTCDateInt } from '../../db/validators.js';
@@ -19,7 +19,7 @@ router.post<PostTxnAPI.ResponseDTO>("/api/v1/transactions",
             @IsString() @IsNotEmpty() title: string;
             @IsOptional() @IsUTCDateInt() creationDate?: number | undefined;
             @IsOptional() @IsString() description?: string | undefined;
-            @IsString() @IsNotEmpty() typeId: string;
+            @IsString() @IsNotEmpty() txnTypeId: string;
             @IsOptional() @IsDecimalJSString() fromAmount: string | undefined;
             @IsOptional() @IsString() fromContainerId: string | undefined;
             @IsOptional() @IsString() fromCurrencyId: string | undefined;
@@ -35,7 +35,7 @@ router.post<PostTxnAPI.ResponseDTO>("/api/v1/transactions",
             creationDate: parsedBody.creationDate ? parsedBody.creationDate : Date.now(),
             title: parsedBody.title,
             description: parsedBody.description,
-            typeId: parsedBody.typeId,
+            txnTypeId: parsedBody.txnTypeId,
             fromAmount: parsedBody.fromAmount,
             fromContainerId: parsedBody.fromContainerId,
             fromCurrencyId: parsedBody.fromCurrencyId,
@@ -45,6 +45,51 @@ router.post<PostTxnAPI.ResponseDTO>("/api/v1/transactions",
         });
 
         return { id: transactionCreated.id };
+    }
+});
+
+router.put<PutTxnAPI.ResponseDTO>("/api/v1/transactions",
+{
+    handler: async (req: express.Request, res: express.Express) =>
+    {
+        class body implements PutTxnAPI.RequestBodyDTO
+        {
+            @IsString() @IsNotEmpty() title: string;
+            @IsOptional() @IsUTCDateInt() creationDate?: number | undefined;
+            @IsOptional() @IsString() description?: string | undefined;
+            @IsString() @IsNotEmpty() txnTypeId: string;
+            @IsOptional() @IsDecimalJSString() fromAmount: string | undefined;
+            @IsOptional() @IsString() fromContainerId: string | undefined;
+            @IsOptional() @IsString() fromCurrencyId: string | undefined;
+            @IsOptional() @IsDecimalJSString() toAmount: string | undefined;
+            @IsOptional() @IsString() toContainerId: string | undefined;
+            @IsOptional() @IsString() toCurrencyId: string | undefined;
+        }
+
+        class query implements PutTxnAPI.RequestQueryDTO
+        {
+            @IsString() @IsNotEmpty() targetTxnId: string;
+        }
+
+        const authResult = await AccessTokenService.ensureRequestTokenValidated(req);
+        const parsedBody = await ExpressValidations.validateBodyAgainstModel<body>(body, req.body);
+        const parsedQuery = await ExpressValidations.validateBodyAgainstModel<query>(query, req.query);
+
+        const updatedTxn = await TransactionService.updateTransaction(authResult.ownerUserId, parsedQuery.targetTxnId,
+        {
+            creationDate: parsedBody.creationDate ? parsedBody.creationDate : Date.now(),
+            title: parsedBody.title,
+            description: parsedBody.description,
+            txnTypeId: parsedBody.txnTypeId,
+            fromAmount: parsedBody.fromAmount,
+            fromContainerId: parsedBody.fromContainerId,
+            fromCurrencyId: parsedBody.fromCurrencyId,
+            toAmount: parsedBody.toAmount,
+            toContainerId: parsedBody.toContainerId,
+            toCurrencyId: parsedBody.toCurrencyId
+        });
+
+        return {};
     }
 });
 

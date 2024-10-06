@@ -17,12 +17,12 @@ export type TxnDTO =
 }
 export namespace PostTxnAPI
 {
-    export type RequestDTO =  
+    export type RequestDTO =
     {
         title: string;
         creationDate?: number | undefined;
         description?: string | undefined;
-        typeId: string;
+        txnTypeId: string;
         fromAmount?: string | undefined;
         fromContainerId?: string | undefined;
         fromCurrencyId?: string | undefined;
@@ -32,6 +32,13 @@ export namespace PostTxnAPI
     };
 
     export type ResponseDTO = { id: string; };
+}
+
+export namespace PutTxnAPI
+{
+    export type RequestQueryDTO = { targetTxnId: string; };
+    export type RequestBodyDTO = PostTxnAPI.RequestDTO;
+    export type ResponseDTO = { };
 }
 
 export namespace GetTxnAPI

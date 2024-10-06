@@ -124,7 +124,7 @@ export default async function(this: Context)
                                     toAmount: isTo ? txnToPost.toAmount.toString() : undefined, 
                                     toContainerId: isTo ? choice(containers).containerId : undefined,
                                     toCurrencyId: isTo ? baseCurrency.currencyId : undefined,
-                                    typeId: choice(txnTypes).txnId
+                                    txnTypeId: choice(txnTypes).txnId
                                 },
                                 ...baseConfig
                             });
@@ -194,7 +194,7 @@ export default async function(this: Context)
                             toAmount: isTo ? txnToPost.toAmount : undefined,
                             toContainerId: isTo ? txnToPost.conId : undefined,
                             toCurrencyId: isTo ? txnToPost.currId : undefined,
-                            typeId: choice(txnTypes).txnId
+                            txnTypeId: choice(txnTypes).txnId
                         },
                         serverURL: serverURL, token: firstUserObj.token, assertBody: true, expectedCode: 200
                     }
@@ -380,7 +380,7 @@ export default async function(this: Context)
                             toAmount: isTo ? txnToPost.toAmount : undefined,
                             toContainerId: isTo ? txnToPost.conId : undefined,
                             toCurrencyId: isTo ? txnToPost.currId : undefined,
-                            typeId: choice(txnTypes).txnId
+                            txnTypeId: choice(txnTypes).txnId
                         },
                         serverURL: serverURL, token: firstUserObj.token, assertBody: true, expectedCode: 200
                     }
