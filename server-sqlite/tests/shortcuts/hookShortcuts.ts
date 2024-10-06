@@ -11,8 +11,9 @@ import { GetContainerAPIClass, PostContainerAPIClass } from '../container.test.j
 import { PostCurrencyAPIClass } from '../currency.test.js';
 import { TestUserDict, TestUserEntry, UnitTestEndpoints } from '../index.test.js';
 import { AssertFetchReturns, HTTPAssert } from '../lib/assert.js';
-import { PostTxnAPIClass } from '../transaction.test.js';
+import { GetTxnAPIClass, PostTxnAPIClass } from '../transaction.test.js';
 import { ResponsePostTransactionTypesDTOBody } from '../txnType.test.js';
+import { GetTxnAPI, PutTxnAPI } from '../../../api-types/txn.js';
 
 function choice<T> (list: T[]) { return list[Math.floor((Math.random()*list.length))]; }
 
@@ -92,13 +93,66 @@ export class HookShortcuts
         }
     }
 
+    public static async getTransaction(config:
+    {
+        serverURL: string,
+        token:string,
+        assertBody?: boolean,
+        expectedCode?: number,
+        start?: number,
+        end?: number,
+        id?: string
+    })
+    {
+        const searchParams: Record<any,any> = {  };
+        if (config.start !== undefined && config.start !== null) searchParams['start'] = config.start;
+        if (config.end !== undefined && config.end !== null) searchParams['end'] = config.end;
+        if (config.id !== undefined && config.id !== null) searchParams['id'] = config.id;
+
+        const assertBody = config.assertBody === undefined ? true : config.assertBody;
+        const response = await HTTPAssert.assertFetch
+        (
+            `${UnitTestEndpoints.transactionsEndpoints['get']}?${new URLSearchParams(searchParams).toString()}`,
+            {
+                baseURL: `${config.serverURL}`,
+                expectedStatus: config.expectedCode, method: "GET",
+                headers: { "authorization": config.token },
+                expectedBodyType: assertBody ? GetTxnAPIClass.ResponseDTOClass : undefined
+            }
+        );
+        const output = response;
+        return output as AssertFetchReturns<GetTxnAPI.ResponseDTO>;
+    }
+
+    public static async putTransaction(config:
+    {
+        serverURL: string,
+        token:string,
+        body: Partial<PutTxnAPI.RequestBodyDTO>,
+        targetTxnId: string,
+        expectedCode?: number,
+    })
+    {
+        const queryObj = { targetTxnId: config.targetTxnId } satisfies PutTxnAPI.RequestQueryDTO;
+        const response = await HTTPAssert.assertFetch
+        (
+            `${UnitTestEndpoints.transactionsEndpoints['put']}?${new URLSearchParams(queryObj).toString()}`,
+            {
+                baseURL: config.serverURL, expectedStatus: config.expectedCode, method: "PUT",
+                body: config.body,
+                headers: { "authorization": config.token },
+            }
+        );
+        return response as AssertFetchReturns<{}>;
+    }
+
     public static async postCreateTransaction(config:
     {
         serverURL: string,
         token:string,
         body: Partial<PostTxnAPIClass.RequestDTOClass>,
         assertBody?: boolean,
-        expectedCode?: number
+        expectedCode?: number,
     })
     {
         const assertBody = config.assertBody === undefined ? true : config.assertBody;
@@ -173,7 +227,7 @@ export class HookShortcuts
     })
     {
         const assertBody = config.assertBody === undefined ? true : config.assertBody;
-        const response = await HTTPAssert.assertFetch(UnitTestEndpoints.currenciesEndpoints['post'], 
+        const response = await HTTPAssert.assertFetch(UnitTestEndpoints.currenciesEndpoints['post'],
         {
             baseURL: config.serverURL, expectedStatus: config.expectedCode, method: "POST",
             body: config.body,
@@ -187,7 +241,7 @@ export class HookShortcuts
     }
 
     /** Random tnx types with unique names */
-    public static async postRandomTxnTypes(config: 
+    public static async postRandomTxnTypes(config:
     {
         serverURL:string,
         token:string,

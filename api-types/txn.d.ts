@@ -1,20 +1,4 @@
 import { PaginationAPIResponse } from "./lib"
-
-export type TxnDTO = 
-{
-    id: string;
-    title: string;
-    description: string | undefined;
-    owner: string;
-    creationDate: number;
-    txnType: string;
-    fromAmount: string | undefined;
-    fromCurrency: string | undefined;
-    fromContainer: string | undefined;
-    toAmount: string | undefined;
-    toCurrency: string | undefined;
-    toContainer: string | undefined;
-}
 export namespace PostTxnAPI
 {
     export type RequestDTO =
@@ -43,6 +27,21 @@ export namespace PutTxnAPI
 
 export namespace GetTxnAPI
 {
+    export type TxnDTO =
+    {
+        id: string;
+        title: string;
+        description: string | undefined;
+        owner: string;
+        creationDate: number;
+        txnType: string;
+        fromAmount: string | undefined;
+        fromCurrency: string | undefined;
+        fromContainer: string | undefined;
+        toAmount: string | undefined;
+        toCurrency: string | undefined;
+        toContainer: string | undefined;
+    }
     export type RequestDTO = {};
     export type ResponseDTO = PaginationAPIResponse<TxnDTO>;
 }

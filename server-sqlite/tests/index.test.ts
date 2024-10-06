@@ -63,6 +63,7 @@ export class UnitTestEndpoints
     {
         "post": `/api/v1/transactions`,
         "get": `/api/v1/transactions`,
+        "put": `/api/v1/transactions`
     };
 }
 

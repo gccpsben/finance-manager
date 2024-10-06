@@ -17,12 +17,12 @@ export class ContainerDTOClass implements ContainerDTO
     @IsString() id: string;
     @IsString() name: string;
     @IsUTCDateInt() creationDate: number;
-    @IsString() owner: string;   
+    @IsString() owner: string;
 }
 
 export class BalancesValueHydratedContainerDTOClass extends ContainerDTOClass implements ValueHydratedContainerDTO, BalancesHydratedContainerDTO
 {
-    @IsDecimalJSString() value: string;    
+    @IsDecimalJSString() value: string;
 
     @IsDefined()
     @IsStringToDecimalJSStringDict()
@@ -37,7 +37,7 @@ export namespace GetContainerAPIClass
         @IsNumber() rateCalculatedToEpoch: number;
         @IsNumber() totalItems: number;
         @IsNumber() startingIndex: number;
-        @IsNumber() endingIndex: number;;
+        @IsNumber() endingIndex: number;
 
         @IsArray()
         @ValidateNested({ each: true })
@@ -55,7 +55,7 @@ export namespace PostContainerAPIClass
 
     export class ResponseDTO implements PostContainerAPI.ResponseDTO
     {
-        @IsString() id: string;    
+        @IsString() id: string;
     }
 }
 
