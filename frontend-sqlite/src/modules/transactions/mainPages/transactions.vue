@@ -168,7 +168,7 @@ import { useResettableObject } from "@/resettableObject";
 import router from "@/router";
 import type { HydratedTransaction } from "@/types/dtos/transactionsDTO";
 import { computed, onMounted, ref, toRaw, watch, type Ref } from 'vue';
-import { type PutTxnAPI, type TxnDTO } from '../../../../../api-types/txn';
+import { type PutTxnAPI, type GetTxnAPI } from '../../../../../api-types/txn';
 import { useContainersStore } from '../../containers/stores/useContainersStore';
 import { useTxnTypesStore } from '../../txnTypes/stores/useTxnTypesStore';
 import { nextTick } from "vue";
@@ -186,9 +186,9 @@ const { txnTypes } = useTxnTypesStore();
 const currentPageIndex = ref(0);
 const itemsInPage = 15;
 const searchText = ref("");
-const mainPagination = useNetworkPaginationNew<TxnDTO>(
+const mainPagination = useNetworkPaginationNew<GetTxnAPI.TxnDTO>(
 {
-    updater: async (start:number, end:number): Promise<UpdaterReturnType<TxnDTO>> =>
+    updater: async (start:number, end:number): Promise<UpdaterReturnType<GetTxnAPI.TxnDTO>> =>
     {
         const sendQuery = async (url:string) => await authGet(url);
 
