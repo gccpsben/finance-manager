@@ -84,6 +84,8 @@
                     </template>
                 </list-cell>
 
+                <networthHistoryCell v-area="'NetworthGraph'" :currency-id="'bbeb05d4-d513-446a-9fcc-cfb393c29f42'"></networthHistoryCell>
+
                 <!--
                 <list-cell v-area="'_allPendingTransactionsList'" title="All Pending Txns" :noItemsText="'No Pending Txns'"
                 :isLoading="store.dashboardSummary.isLoading"
@@ -137,8 +139,6 @@
                     </template>
                 </list-cell>
 
-                <!-- <net-worth-graph-cell v-area="'TotalValueGraph'" title="Total Value"></net-worth-graph-cell> -->
-
                 <container-values-graph-cell v-area="'containerValuesGraph'"
                 title="Containers Value"></container-values-graph-cell>
 
@@ -159,11 +159,12 @@ import listCellVue from '@/modules/core/components/listCell.vue';
 import cell from '@/modules/core/components/cell.vue';
 import containerValuesGraphCell from '@/modules/containers/components/containerValuesGraphCell.vue';
 import router from "@/router";
+import networthHistoryCell from "../components/networthHistoryCell.vue";
 
 export default
 {
     directives: {'area':vArea},
-    components: { "list-cell": listCellVue, "cell": cell, containerValuesGraphCell },
+    components: { "list-cell": listCellVue, "cell": cell, containerValuesGraphCell, networthHistoryCell },
     data()
     {
         let data =
@@ -288,7 +289,7 @@ export default
         grid-template-areas:
         'expensesPanel incomesPanel totalValuePanel netChangePanel'
         '_30dExpensesList _30dExpensesList ContainersList ContainersList'
-        '_30dIncomesList _30dIncomesList TotalValueGraph TotalValueGraph'
+        '_30dIncomesList _30dIncomesList NetworthGraph NetworthGraph'
         '_30dTransfersList _30dTransfersList containerValuesGraph containerValuesGraph';
 
         .listItemTitle
@@ -317,7 +318,7 @@ export default
         '_30dExpensesList _30dExpensesList'
         'ContainersList ContainersList'
         '_30dIncomesList _30dIncomesList'
-        'TotalValueGraph TotalValueGraph'
+        'NetworthGraph NetworthGraph'
         '_30dTransfersList _30dTransfersList'
         'containerValuesGraph containerValuesGraph' !important;
     }
@@ -348,7 +349,7 @@ export default
         '_30dExpensesList'
         'ContainersList'
         '_30dIncomesList'
-        'TotalValueGraph'
+        'NetworthGraph'
         '_30dTransfersList'
         'containerValuesGraph' !important;
     }

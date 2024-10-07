@@ -1,5 +1,7 @@
 <template>
-    <LineChart :plugins="[createVertLinePlugin(lineColor ?? defaultLineColor)]" ref="mainChartRef" :chartData="chartData" :options="chartOptions"/>
+    <div class="wrappedLineChartRoot">
+        <LineChart :plugins="[createVertLinePlugin(lineColor ?? defaultLineColor)]" ref="mainChartRef" :chartData="chartData" :options="chartOptions"/>
+    </div>
 </template>
 
 <script lang="ts" setup>
@@ -91,3 +93,11 @@ const chartData = computed(() =>
     return data;
 });
 </script>
+
+<style lang="css" scoped>
+.wrappedLineChartRoot
+{
+    height: 100%;
+    & > div { height: 100%; }
+}
+</style>
