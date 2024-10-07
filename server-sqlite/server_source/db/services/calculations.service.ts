@@ -31,10 +31,8 @@ export class CalculationsService
             `txn.${nameof<Transaction>('ownerId')}`,
             `txn.${nameof<Transaction>('creationDate')}`,
             `txn.${nameof<Transaction>('toAmount')}`,
-            `txn.${nameof<Transaction>('toContainerId')}`,
             `txn.${nameof<Transaction>('toCurrencyId')}`,
             `txn.${nameof<Transaction>('fromAmount')}`,
-            `txn.${nameof<Transaction>('fromContainerId')}`,
             `txn.${nameof<Transaction>('fromCurrencyId')}`
         ])
         .where(`txn.${nameof<Transaction>('ownerId')} = :ownerId`, { ownerId: userId })
