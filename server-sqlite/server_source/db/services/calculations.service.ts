@@ -171,8 +171,8 @@ export class CalculationsService
                 (
                     userId,
                     cId,
-                    undefined,
-                    undefined,
+                    new Date(startDate),
+                    new Date(endDate),
                     currenciesListCache
                 );
             }
