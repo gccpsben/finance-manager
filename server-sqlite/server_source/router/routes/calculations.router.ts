@@ -18,10 +18,8 @@ router.get<ResponseGetExpensesAndIncomesDTO>("/api/v1/calculations/expensesAndIn
     handler: async (req:express.Request, res:express.Response) =>
     {
         const authResults = await AccessTokenService.ensureRequestTokenValidated(req);
-        const calResults = await CalculationsService.getUserExpensesAndIncomes(authResults.ownerUserId);
+        const calResults = await CalculationsService.getUserExpensesAndIncomes30d(authResults.ownerUserId);
         return {
-            expensesTotal: calResults.total.expenses.toString(),
-            incomesTotal: calResults.total.incomes.toString(),
             expenses30d: calResults.total30d.expenses.toString(),
             incomes30d: calResults.total30d.incomes.toString(),
             expenses7d: calResults.total7d.expenses.toString(),

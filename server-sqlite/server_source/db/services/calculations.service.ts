@@ -19,9 +19,9 @@ export type UserBalanceHistoryResults =
 
 export class CalculationsService
 {
-    public static async getUserExpensesAndIncomes(userId: string)
+    public static async getUserExpensesAndIncomes30d(userId: string)
     {
-        if (!userId) throw new Error(`getUserExpensesAndIncomes: userId cannot be null or undefined.`);
+        if (!userId) throw new Error(`getUserExpensesAndIncomes30d: userId cannot be null or undefined.`);
 
         const currenciesListCache = new CurrencyListCache(userId);
 
@@ -35,10 +35,10 @@ export class CalculationsService
             `txn.${nameof<Transaction>('toCurrencyId')}`,
             `txn.${nameof<Transaction>('fromAmount')}`,
             `txn.${nameof<Transaction>('fromContainerId')}`,
-            `txn.${nameof<Transaction>('fromCurrencyId')}`,
-            `txn.${nameof<Transaction>('creationDate')}`
+            `txn.${nameof<Transaction>('fromCurrencyId')}`
         ])
         .where(`txn.${nameof<Transaction>('ownerId')} = :ownerId`, { ownerId: userId })
+        .andWhere(`${nameof<Transaction>('creationDate')} >= :startDate`, { startDate: Date.now() - 2.592e+9 })
         .getMany() as SQLitePrimitiveOnly<Transaction>[];
 
         const now = new Date().getTime();

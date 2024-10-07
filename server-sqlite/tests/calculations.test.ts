@@ -48,8 +48,6 @@ export namespace GetUserNetworthHistoryAPIClass
 
 export class ResponseGetExpensesAndIncomesDTOClass implements ResponseGetExpensesAndIncomesDTO
 {
-    @IsDecimalJSString() expensesTotal: string;
-    @IsDecimalJSString() incomesTotal: string;
     @IsDecimalJSString() expenses30d: string;
     @IsDecimalJSString() incomes30d: string;
     @IsDecimalJSString() expenses7d: string;
@@ -98,8 +96,8 @@ export default async function(this: Context)
                         ];
                         const expectedResult =
                         {
-                            expensesTotal: new Decimal(`12769.3001`),
-                            incomesTotal: new Decimal(`164122.0001`),
+                            // expensesTotal: new Decimal(`12769.3001`),
+                            // incomesTotal: new Decimal(`164122.0001`),
                             expenses30d: new Decimal(`12769.3001`),
                             incomes30d: new Decimal(`164022`),
                             expenses7d: new Decimal(`12769.3`),
@@ -134,10 +132,8 @@ export default async function(this: Context)
 
                         assertStrictEqual(userExpensesAndIncomes.res.parsedBody.expenses30d.toString(), expectedResult.expenses30d.toString());
                         assertStrictEqual(userExpensesAndIncomes.res.parsedBody.expenses7d.toString(), expectedResult.expenses7d.toString());
-                        assertStrictEqual(userExpensesAndIncomes.res.parsedBody.expensesTotal.toString(), expectedResult.expensesTotal.toString());
                         assertStrictEqual(userExpensesAndIncomes.res.parsedBody.incomes30d.toString(), expectedResult.incomes30d.toString());
                         assertStrictEqual(userExpensesAndIncomes.res.parsedBody.incomes7d.toString(), expectedResult.incomes7d.toString());
-                        assertStrictEqual(userExpensesAndIncomes.res.parsedBody.incomesTotal.toString(), expectedResult.incomesTotal.toString());
                     }
                 }, { timeout: 60000 });
             })

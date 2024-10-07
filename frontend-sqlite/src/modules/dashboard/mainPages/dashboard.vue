@@ -10,15 +10,13 @@
                 style="background: linear-gradient(-45deg, rgba(213, 51, 105, 0.13) 0%, rgba(218, 81, 81, 0.42) 100%); color:white;"
                 :value7d="userExpensesIncomes ? parseFloat(userExpensesIncomes.expenses7d) : 0"
                 :value30d="userExpensesIncomes ? parseFloat(userExpensesIncomes.expenses30d) : 0"
-                :valueAll="userExpensesIncomes ? parseFloat(userExpensesIncomes.expensesTotal) : 0"
                 :isLoading="store.userExpensesIncomes.isLoading" :networkError="store.userExpensesIncomes.error"></number-cell>
 
                 <number-cell title="Incomes" :noItemsText="'No Data'" v-area="'incomesPanel'"
                 style="background: linear-gradient(-45deg, rgba(56, 213, 51, 0.09) 0%, rgba(81, 218, 90, 0.35) 100%); color:white;"
                 :value7d="userExpensesIncomes ? parseFloat(userExpensesIncomes.incomes7d) : 0"
                 :value30d="userExpensesIncomes ? parseFloat(userExpensesIncomes.incomes30d) : 0"
-                :valueAll="userExpensesIncomes ? parseFloat(userExpensesIncomes.incomesTotal) : 0"
-                :isLoading="store.userExpensesIncomes.isLoading" :networkError="store.userExpensesIncomes.error"></number-cell>       
+                :isLoading="store.userExpensesIncomes.isLoading" :networkError="store.userExpensesIncomes.error"></number-cell>
 
                 <number-cell title="Total Value" v-area="'totalValuePanel'"
                 style="background: linear-gradient(-45deg, rgba(213, 180, 51, 0.09) 0%, rgba(218, 203, 81, 0.44) 100%); color:white;"
