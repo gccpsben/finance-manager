@@ -8,9 +8,10 @@ import { LinearInterpolator } from "../../calculations/linearInterpolator.js";
 import createHttpError from "http-errors";
 import { CurrencyListCache } from "../caches/currencyListCache.cache.js";
 import { CurrencyCalculator } from "./currency.service.js";
+import { CurrencyRateDatumsCache } from "../repositories/currencyRateDatum.repository.js";
 
 export type UserBalanceHistoryMap = { [epoch: string]: { [currencyId: string]: Decimal } };
-export type UserBalanceHistoryResults = 
+export type UserBalanceHistoryResults =
 {
     historyMap: UserBalanceHistoryMap,
     currenciesEarliestPresentEpoch: { [currencyId: string]: number }
@@ -140,7 +141,15 @@ export class CalculationsService
         return output;
     }
 
-    public static async getUserNetworthHistory(userId: string, startDate: number, endDate: number, division: number): Promise<{[epoch: string]:string}>
+    public static async getUserNetworthHistory
+    (
+        userId: string,
+        startDate: number,
+        endDate: number,
+        division: number,
+        currenciesListCache: CurrencyListCache | undefined = undefined,
+        currenciesRateDatumsCache: CurrencyRateDatumsCache | undefined = undefined
+    ): Promise<{[epoch: string]:string}>
     {
         type cInterpolatorMap = { [currencyId: string]: LinearInterpolator };
 
@@ -151,7 +160,7 @@ export class CalculationsService
             throw createHttpError(400, `Division must be a positive integer higher than 1, received "${division}".`);
 
         const balanceHistory = await CalculationsService.getUserBalanceHistory(userId, startDate, endDate, division);
-        const currenciesListCache = new CurrencyListCache(userId);
+
         const currenciesIdsInvolved = Object.keys(balanceHistory.currenciesEarliestPresentEpoch);
         const currenciesInterpolators: cInterpolatorMap = await (async () =>
         {
@@ -189,7 +198,8 @@ export class CalculationsService
                         userId,
                         currencyObject,
                         new Date(parseInt(epoch)),
-                        currenciesListCache
+                        currenciesListCache,
+                        currenciesRateDatumsCache
                     );
                 }
                 const currencyValue = currencyRateToBase.mul(balanceHistory.historyMap[epoch][currencyID]);

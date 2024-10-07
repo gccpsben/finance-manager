@@ -4,7 +4,7 @@ import { UserRepository } from "../repositories/user.repository.js";
 import createHttpError from "http-errors";
 import { Currency, RateHydratedPrimitiveCurrency } from "../entities/currency.entity.js";
 import { FindOptionsWhere } from "typeorm";
-import { CurrencyRateDatumRepository } from "../repositories/currencyRateDatum.repository.js";
+import { CurrencyRateDatumRepository, CurrencyRateDatumsCache } from "../repositories/currencyRateDatum.repository.js";
 import { LinearInterpolator } from "../../calculations/linearInterpolator.js";
 import { SQLitePrimitiveOnly } from "../../index.d.js";
 import { nameof, ServiceUtils } from "../servicesUtils.js";
@@ -28,10 +28,10 @@ export class CurrencyCalculator
         ownerId: string,
         from: SQLitePrimitiveOnly<Currency>,
         date: Date = new Date(),
-        cache: CurrencyListCache | undefined = undefined
+        cache: CurrencyListCache | undefined = undefined,
+        currencyRateDatumsCache: CurrencyRateDatumsCache | undefined = undefined
     ): Promise<Decimal>
     {
-        if (cache === undefined) cache = new CurrencyListCache(ownerId);
         if (from.isBase) return new Decimal(`1`);
 
         const getCurrById = async (id: string) =>
@@ -55,7 +55,8 @@ export class CurrencyCalculator
         (
             ownerId,
             from.id,
-            date
+            date,
+            currencyRateDatumsCache
         );
         const d1 = nearestTwoDatums[0]; const d2 = nearestTwoDatums[1];
 
@@ -67,7 +68,8 @@ export class CurrencyCalculator
                 ownerId,
                 await getCurrById(from.fallbackRateCurrencyId),
                 date,
-                cache
+                cache,
+                currencyRateDatumsCache
             )!;
             return currencyBaseAmount.mul(currencyBaseAmountUnitToBaseRate);
         }
@@ -80,7 +82,8 @@ export class CurrencyCalculator
                 ownerId,
                 await getCurrById(d1.refAmountCurrencyId),
                 new Date(d1.date),
-                cache
+                cache,
+                currencyRateDatumsCache
             )!;
             return datumAmount.mul(datumUnitToBaseRate);
         }
@@ -96,14 +99,16 @@ export class CurrencyCalculator
                 ownerId,
                 D1Currency,
                 new Date(d1.date),
-                cache
+                cache,
+                currencyRateDatumsCache
             )!;
             const D2CurrBaseRate = await CurrencyCalculator.currencyToBaseRate
             (
                 ownerId,
                 D2Currency,
                 new Date(d2.date),
-                cache
+                cache,
+                currencyRateDatumsCache
             )!;
 
             let valLeft = new Decimal(d1.amount).mul(D1CurrBaseRate);
@@ -237,9 +242,6 @@ export class CurrencyService
         refCurrencyId: string | undefined,
         ticker: string)
     {
-        // if (!!refCurrencyId !== !!amount)
-        //     throw createHttpError(400, `If refCurrency is defined than amount must also be defined.`);
-
         // Check refCurrencyId exists if refCurrencyId is defined.
         if (refCurrencyId && !(await CurrencyRepository.getInstance().isCurrencyByIdExists(refCurrencyId, userId)))
             throw createHttpError(404, `Cannot find ref currency with id '${refCurrencyId}'`);

@@ -10,10 +10,6 @@ import { CurrencyListCache } from "../caches/currencyListCache.cache.js";
 import { CurrencyRateDatumsCache } from '../repositories/currencyRateDatum.repository.js';
 import { CurrencyCalculator, CurrencyService } from "./currency.service.js";
 import { Currency } from "../entities/currency.entity.js";
-
-
-const isStringsArray = (arr: any[]) => arr.every(i => typeof i === "string");
-
 export class ContainerService
 {
     public static async tryGetContainerByName(ownerId: string, name: string)
@@ -72,8 +68,8 @@ export class ContainerService
 
     public static async getManyContainers
     (
-        ownerId: string, 
-        query: 
+        ownerId: string,
+        query:
         {
             startIndex?: number | undefined, endIndex?: number | undefined,
             name?: string | undefined,
@@ -106,20 +102,20 @@ export class ContainerService
         if (currenciesCache === undefined) currenciesCache = new CurrencyListCache(ownerId);
         await currenciesCache.ensureCurrenciesList();
 
-        let relaventTxns = await TransactionService.getContainersTransactions(ownerId, containers);
-        const containersBalancesMapping = await (async () => 
+        let relevantTxns = await TransactionService.getContainersTransactions(ownerId, containers);
+        const containersBalancesMapping = await (async () =>
         {
             const output: { [containerId: string]: { [currencyId: string]: Decimal } } = {};
             const append = (containerId: string, currencyId:string, amount: string, isNegative = false) => 
             {
                 const deltaAmount = isNegative ? new Decimal(amount).neg() : new Decimal(amount);
                 if (output[containerId] === undefined) output[containerId] = {};
-                if (output[containerId][currencyId] === undefined) 
+                if (output[containerId][currencyId] === undefined)
                     return output[containerId][currencyId] = new Decimal(deltaAmount);
                 output[containerId][currencyId] = output[containerId][currencyId].add(new Decimal(deltaAmount));
             };
 
-            for (const txn of relaventTxns)
+            for (const txn of relevantTxns)
             {
                 if (txn.fromAmount) append(txn.fromContainerId, txn.fromCurrencyId, txn.fromAmount, true);
                 if (txn.toAmount) append(txn.toContainerId, txn.toCurrencyId, txn.toAmount);
@@ -135,35 +131,33 @@ export class ContainerService
     (
         ownerId: string,
         containers: SQLitePrimitiveOnly<Container>[] | string[],
-        currencyRateDateToUse: number | undefined = undefined, 
+        currencyRateDateToUse: number | undefined = undefined,
         currenciesCache: CurrencyListCache|undefined = undefined,
         currencyRatesCache: CurrencyRateDatumsCache|undefined = undefined
     )
-    {   
-        if (currenciesCache === undefined) currenciesCache = new CurrencyListCache(ownerId);
-        if (currencyRatesCache === undefined) currencyRatesCache = new CurrencyRateDatumsCache(ownerId);
-
+    {
         const innerRateEpoch = currencyRateDateToUse === undefined ? Date.now() : currencyRateDateToUse;
+        const innerRateDateObj = new Date(innerRateEpoch);
         const containerBalances = await ContainerService.getContainersBalance(ownerId, containers, currenciesCache);
 
         // The list of currency ids that are present in `containerBalances`
-        const relaventCurrencyIds = (() => 
+        const relevantCurrencyIds = Array.from((() =>
         {
             const currencyIds: string[] = [];
             for (const [_, balances] of Object.entries(containerBalances))
                 currencyIds.push(...Object.keys(balances));
             return new Set([...currencyIds]);
-        })();
+        })());
 
-        const relaventCurrencies = await (async () => 
+        const relevantCurrencies = await (async () =>
         {
             const output: { [currencyId: string]: SQLitePrimitiveOnly<Currency> } = {};
-            const getCurrById = async (id: string) => 
+            const getCurrById = async (id: string) =>
             {
                 // Find the requested currency in `knownCurrencies` first.
                 const potentialCacheHit = currenciesCache?.getCurrenciesList()?.find(c => c.ownerId === ownerId && c.id === id);
                 if (potentialCacheHit) return potentialCacheHit;
-    
+
                 if (currenciesCache) // if cache object exists but still cannot find the currency, we want to fetch all currencies and cache it
                 {
                     await currenciesCache.ensureCurrenciesList();
@@ -173,37 +167,38 @@ export class ContainerService
                 else return CurrencyService.getCurrencyById(ownerId, id);
             };
 
-            for (const cId of Array.from(relaventCurrencyIds))
+            for (const cId of relevantCurrencyIds)
                 output[cId] = await getCurrById(cId);
 
             return output;
         })();
 
         // The mapping between each currency and its rate at the given date.
-        const ratesAtGivenEpoch = await (async () => 
+        const ratesAtGivenEpoch = await (async () =>
         {
             const output: { [currencyId: string]: Decimal } = {};
-            for (const currencyId of Array.from(relaventCurrencyIds))
+            for (const currencyId of relevantCurrencyIds)
             {
                 output[currencyId] = await CurrencyCalculator.currencyToBaseRate
                 (
                     ownerId,
-                    relaventCurrencies[currencyId],
-                    new Date(innerRateEpoch),
-                    currenciesCache
+                    relevantCurrencies[currencyId],
+                    innerRateDateObj,
+                    currenciesCache,
+                    currencyRatesCache
                 );
             }
             return output;
         })();
 
-        const containerValues: { [containerId: string]: Decimal } = await (async () => 
+        const containerValues: { [containerId: string]: Decimal } = await (async () =>
         {
             const output: { [containerId:string]:Decimal } = {};
             for (const [containerId, balances] of Object.entries(containerBalances))
             {
                 let containerValue = new Decimal(0);
                 for (const [currencyId, amount] of Object.entries(balances))
-                    containerValue = containerValue.add(ratesAtGivenEpoch[currencyId].mul(amount));  
+                    containerValue = containerValue.add(ratesAtGivenEpoch[currencyId].mul(amount));
                 output[containerId] = containerValue;
             }
             return output;
