@@ -9,7 +9,9 @@
             </div>
         </template>
         <template v-else>
-            <WrappedLineChart :is-x-axis-epoch="true" :datums="parsedDatums"></WrappedLineChart>
+            <WrappedLineChart :is-x-axis-epoch="true"
+                              hideXAxisTimePart
+                              :datums="parsedDatums"></WrappedLineChart>
         </template>
         <template #cellOptions>
             <variants-selector :availableOptions="['All', '30d', '7d']" v-model:selectedOption="selectedOption"></variants-selector>

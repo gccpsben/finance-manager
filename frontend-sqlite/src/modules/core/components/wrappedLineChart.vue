@@ -1,6 +1,9 @@
 <template>
     <div class="wrappedLineChartRoot">
-        <LineChart :plugins="[createVertLinePlugin(lineColor ?? defaultLineColor)]" ref="mainChartRef" :chartData="chartData" :options="chartOptions"/>
+        <LineChart :plugins="[createVertLinePlugin(lineColor ?? defaultLineColor)]"
+                   ref="mainChartRef"
+                   :chartData="chartData"
+                   :options="chartOptions"/>
     </div>
 </template>
 
@@ -19,10 +22,11 @@ const props = defineProps<
 {
     lineColor?: string | undefined,
     datums: { x:number, y:number }[],
-    isXAxisEpoch?: boolean
+    isXAxisEpoch?: boolean,
+    hideXAxisTimePart?: boolean
 }>();
 
-const chartOptions = computed(() => 
+const chartOptions = computed(() =>
 {
     return (
         {
@@ -39,16 +43,16 @@ const chartOptions = computed(() =>
                     ticks: { autoSkip: true, maxTicksLimit: 5, maxRotation: 0, minRotation: 0 },
                     grid: { display: true, drawOnChartArea: true, drawTicks: true, color: '#222' },
                 },
-                y: 
-                { 
+                y:
+                {
                     beginAtZero: false,
                     border: { display: true, color: '#333', },
                     grid: { display: true, drawOnChartArea: true, drawTicks: true, color: '#222' },
                 }
             },
-            options: 
+            options:
             {
-                interaction: 
+                interaction:
                 {
                     mode: 'index',
                     intersect: false,
@@ -59,12 +63,15 @@ const chartOptions = computed(() =>
 });
 
 const mainChartRef = ref();
-const chartData = computed(() => 
+const chartData = computed(() =>
 {
-    const formatEpoch = (epoch: number) => 
+    const formatEpoch = (epoch: number) =>
     {
         const date = new Date(epoch);
-        return [extractDatePart(date), extractTimePart(date)];
+        return [
+            extractDatePart(date),
+            props.hideXAxisTimePart ? undefined : extractTimePart(date)
+        ].filter(x => x !== undefined);
     };
 
     let xAxisLabels: number[] | string[][] = (() => // nested array (string[][]) for multi-line labels
@@ -74,10 +81,10 @@ const chartData = computed(() =>
     })();
     let yAxisData: number[] = props.datums.map(k => k.y);
 
-    const data: ChartData<'line'> = 
+    const data: ChartData<'line'> =
     {
-        labels: xAxisLabels, 
-        datasets: 
+        labels: xAxisLabels,
+        datasets:
         [
             {
                 data: yAxisData,
