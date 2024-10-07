@@ -10,6 +10,8 @@ import type { SQLitePrimitiveOnly } from "../../index.d.js";
 import { nameof, ServiceUtils } from "../servicesUtils.js";
 import { Container } from "../entities/container.entity.js";
 import { isNullOrUndefined } from "../../router/validation.js";
+import { CurrencyListCache } from "../caches/currencyListCache.cache.js";
+import { CurrencyRateDatumsCache } from "../repositories/currencyRateDatum.repository.js";
 
 const nameofT = (x: keyof Transaction) => nameof<Transaction>(x);
 
@@ -201,7 +203,9 @@ export class TransactionService
         userId: string,
         transaction: { fromAmount: string, toAmount:string, fromCurrencyId: string, toCurrencyId: string, creationDate: number },
         /** A mapping mapping each currency ID to its rate to base value. Will fetch from database if not given, or the currency is not found */
-        currencyToBaseValueMappingCache: {[key:string]: Decimal} | undefined = undefined
+        currencyToBaseValueMappingCache: {[key:string]: Decimal} | undefined = undefined,
+        currenciesListCache: CurrencyListCache | undefined = undefined,
+        currenciesRateDatumsCache: CurrencyRateDatumsCache | undefined = undefined
     ): Promise<{ increaseInValue: Decimal, currencyBaseValMapping: {[key:string]: Decimal} }>
     {
         let mapping = !currencyToBaseValueMappingCache ? { } : { ...currencyToBaseValueMappingCache };
@@ -212,7 +216,17 @@ export class TransactionService
             if (!currencyRate)
             {
                 const currencyRefetched = await CurrencyService.getCurrency(userId, { id: currencyId });
-                const rate = (await CurrencyService.rateHydrateCurrency(userId, currencyRefetched, transaction.creationDate)).rateToBase;
+                const rate =
+                (
+                    await CurrencyService.rateHydrateCurrency
+                    (
+                        userId,
+                        currencyRefetched,
+                        transaction.creationDate,
+                        currenciesListCache,
+                        currenciesRateDatumsCache
+                    )
+                ).rateToBase;
                 currencyRate = new Decimal(rate);
                 mapping[currencyId] = currencyRate;
             }

@@ -23,6 +23,8 @@ export class CalculationsService
     {
         if (!userId) throw new Error(`getUserExpensesAndIncomes: userId cannot be null or undefined.`);
 
+        const currenciesListCache = new CurrencyListCache(userId);
+
         const allTxns = await TransactionRepository.getInstance().createQueryBuilder(`txn`)
         .select(
         [
@@ -48,7 +50,14 @@ export class CalculationsService
         for (let txn of allTxns)
         {
             const { increaseInValue, currencyBaseValMapping: newCurrencyBaseValueMapping } =
-                await TransactionService.getTxnIncreaseInValue(userId, txn, currencyBaseValueMapping);
+                await TransactionService.getTxnIncreaseInValue
+                (
+                    userId,
+                    txn,
+                    currencyBaseValueMapping,
+                    currenciesListCache,
+                    undefined // Not using cache here to stop fetching all datums
+                );
 
             currencyBaseValueMapping = newCurrencyBaseValueMapping;
             const isValueDecreased = increaseInValue.lessThanOrEqualTo(new Decimal('0'));
@@ -160,7 +169,6 @@ export class CalculationsService
             throw createHttpError(400, `Division must be a positive integer higher than 1, received "${division}".`);
 
         const balanceHistory = await CalculationsService.getUserBalanceHistory(userId, startDate, endDate, division);
-
         const currenciesIdsInvolved = Object.keys(balanceHistory.currenciesEarliestPresentEpoch);
         const currenciesInterpolators: cInterpolatorMap = await (async () =>
         {

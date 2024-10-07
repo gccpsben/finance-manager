@@ -15,25 +15,25 @@ export class Database
 
     /** Create a Database data source from the env file. */
     public static createAppDataSource()
-    {   
+    {
         if (!EnvManager.sqliteFilePath && !EnvManager.sqliteInMemory) 
             throw new Error(`createAppDataSource: EnvManager.sqliteFilePath is not defined.`);
-        
+
         Database.AppDataSource = new DataSource(
         {
             type: "sqlite",
             entities: [User, AccessToken, Currency, Container, Transaction, TransactionType, CurrencyRateDatum],
-            database: EnvManager.sqliteInMemory ? ":memory:" : EnvManager.sqliteFilePath, 
+            database: EnvManager.sqliteInMemory ? ":memory:" : EnvManager.sqliteFilePath,
             synchronize: true
-        }); 
-        
+        });
+
         return Database.AppDataSource;
     }
 
     public static async init()
     {
         if (!Database.AppDataSource) throw new Error(`Database.init: Database.AppDataSource is not defined. You might need to call Database.createAppDataSource before running this function.`);
-        
+
         try { await Database.AppDataSource.initialize(); }
         catch(e)
         {

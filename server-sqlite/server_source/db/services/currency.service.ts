@@ -264,13 +264,44 @@ export class CurrencyService
         return newCurrency;
     }
 
-    public static async rateHydrateCurrency(userId:string, currency: SQLitePrimitiveOnly<Currency>[], date: number | undefined): Promise<RateHydratedPrimitiveCurrency[]>
-    public static async rateHydrateCurrency(userId:string, currency: SQLitePrimitiveOnly<Currency>, date: number | undefined): Promise<RateHydratedPrimitiveCurrency>
-    public static async rateHydrateCurrency(userId:string, currencies: SQLitePrimitiveOnly<Currency>[] | SQLitePrimitiveOnly<Currency>, date: number | undefined = undefined)
+    public static async rateHydrateCurrency
+    (
+        userId:string,
+        currency: SQLitePrimitiveOnly<Currency>[],
+        date: number | undefined,
+        currenciesListCache?: CurrencyListCache | undefined,
+        currenciesRateDatumsCache?: CurrencyRateDatumsCache | undefined
+    ): Promise<RateHydratedPrimitiveCurrency[]>
+    public static async rateHydrateCurrency
+    (
+        userId:string,
+        currency: SQLitePrimitiveOnly<Currency>,
+        date: number | undefined,
+        currenciesListCache?: CurrencyListCache | undefined,
+        currenciesRateDatumsCache?: CurrencyRateDatumsCache | undefined
+    ): Promise<RateHydratedPrimitiveCurrency>
+    public static async rateHydrateCurrency
+    (
+        userId:string,
+        currencies: SQLitePrimitiveOnly<Currency>[] | SQLitePrimitiveOnly<Currency>,
+        date: number | undefined = undefined,
+        currenciesListCache: CurrencyListCache | undefined = undefined,
+        currenciesRateDatumsCache: CurrencyRateDatumsCache | undefined = undefined
+    )
         : Promise<RateHydratedPrimitiveCurrency | RateHydratedPrimitiveCurrency[]>
     {
         type outputType = { currency: SQLitePrimitiveOnly<Currency>, rateToBase: string };
-        const getRateToBase = async (c: SQLitePrimitiveOnly<Currency>) => (await CurrencyCalculator.currencyToBaseRate(userId, c, new Date(date))).toString();
+        const getRateToBase = async (c: SQLitePrimitiveOnly<Currency>) =>
+        (
+            await CurrencyCalculator.currencyToBaseRate
+            (
+                userId,
+                c,
+                new Date(date),
+                currenciesListCache,
+                currenciesRateDatumsCache
+            )
+        ).toString();
 
         if (Array.isArray(currencies))
         {
