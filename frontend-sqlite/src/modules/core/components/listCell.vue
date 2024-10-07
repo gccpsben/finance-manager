@@ -69,7 +69,7 @@ const currentViewItems = computed(() =>
     if (items.get()!.length <= itemsInPage.get()!) return items.get();
     let lowerBoundIndex = currentPageIndex.value * itemsInPage.get()!;
     let upperBoundIndex = lowerBoundIndex + itemsInPage.get()!;
-    if (upperBoundIndex >= items.get()!.length) upperBoundIndex = items.get()!.length - 1;
+    if (upperBoundIndex >= items.get()!.length) upperBoundIndex = items.get()!.length;
     return (items.get()).slice(lowerBoundIndex, upperBoundIndex);    
 });
 </script>
