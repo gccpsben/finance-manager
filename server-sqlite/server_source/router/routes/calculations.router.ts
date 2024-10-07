@@ -9,6 +9,7 @@ import { IsOptional } from 'class-validator';
 import { ExpressValidations } from '../validation.js';
 import { CurrencyListCache } from '../../db/caches/currencyListCache.cache.js';
 import { CurrencyRateDatumsCache } from '../../db/repositories/currencyRateDatum.repository.js';
+import { TransactionService } from '../../db/services/transaction.service.js';
 
 const router = new TypesafeRouter(express.Router());
 
@@ -46,16 +47,17 @@ router.get<GetUserNetworthHistoryAPI.ResponseDTO>(`/api/v1/calculations/networth
             endDate: parsedQuery.endDate === undefined ? undefined : parseInt(parsedQuery.endDate),
             division: parsedQuery.division === undefined ? undefined : parseInt(parsedQuery.division),
         };
-        const input =
-        {
-            startDate: reqQuery.startDate ?? Date.now() - 2.592e+9, // 30d
-            endDate: reqQuery.endDate ?? Date.now(),
-            division: reqQuery.division ?? 100
-        };
-
         const authResults = await AccessTokenService.ensureRequestTokenValidated(req);
         const currenciesListCache = new CurrencyListCache(authResults.ownerUserId);
         const currenciesRateDatumsCache = new CurrencyRateDatumsCache(authResults.ownerUserId);
+
+        const input =
+        {
+            // defaults to all
+            startDate: reqQuery.startDate ?? (await TransactionService.getUserEarliestTransaction(authResults.ownerUserId)).creationDate,
+            endDate: reqQuery.endDate ?? Date.now(),
+            division: reqQuery.division ?? 100
+        };
 
         const resultMap = await CalculationsService.getUserNetworthHistory
         (
