@@ -84,7 +84,7 @@
                     </template>
                 </list-cell>
 
-                <networthHistoryCell v-area="'NetworthGraph'" :currency-id="'bbeb05d4-d513-446a-9fcc-cfb393c29f42'"></networthHistoryCell>
+                <networthHistoryCell v-area="'NetworthGraph'"/>
 
                 <!--
                 <list-cell v-area="'_allPendingTransactionsList'" title="All Pending Txns" :noItemsText="'No Pending Txns'"
