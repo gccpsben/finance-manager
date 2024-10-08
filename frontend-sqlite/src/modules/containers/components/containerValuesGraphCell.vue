@@ -1,13 +1,17 @@
 <template>
-    <pagination id="pagination" :items="sortedContainers" :itemsInPage="1" v-model:currentPage="currentPage" v-slot="props" style="overflow:hidden; box-sizing:border-box;">
+    <pagination id="pagination" :items="sortedContainers" :itemsInPage="1" v-model:currentPage="currentPage" v-slot="props">
         <cell :title="title" id="graphPanel">
             <template #cellOptions>
-                <numberPagination v-model="props.currentPage" :min-page-readable="1" 
-                    :max-page-readable="containersStore.containers?.lastSuccessfulData?.rangeItems.length ?? 0 + 1"></numberPagination>
+                <numberPagination v-model:model-value="currentPage" :min-page-readable="1"
+                    :max-page-readable="containersStore.containers?.lastSuccessfulData?.rangeItems.length ?? 0 + 1" />
             </template>
-            <div style="gap:15px; display:grid; grid-template-rows: 1fr auto;">             
-                <div style="border-bottom:1px solid #303030; padding-bottom:15px;" v-if="props.pageItems[0] != undefined">
-                    <pagination style="display:grid; grid-template-rows: 1fr auto;" class="fullHeight" v-slot="props2" :items="getContainerBalances(props.pageItems[0].balances)" :itemsInPage="3">
+            <div style="gap:15px; grid-template-rows: 1fr auto;"
+                 class="fullSize gridBase">
+                <div style="border-bottom:1px solid #303030; padding-bottom:15px;"
+                     v-if="props.pageItems[0] != undefined">
+                    <pagination style="grid-template-rows: 1fr auto;" class="fullHeight gridBase"
+                                v-slot="props2"
+                                :items="getContainerBalances(props.pageItems[0].balances)" :itemsInPage="3">
                         <div>
                             <div class="currencyRow" v-for="entry in props2.pageItems">
                                 <div class="xLeft yCenter"> {{ entry[1] }} {{ currenciesStore.getCurrencySymbol(entry[0]) }}</div>
@@ -16,7 +20,7 @@
                         </div>
                         <div class="xRight" v-if="props2.totalPages != 1">
                             <div class="pageSelector">
-                                <fa-icon @click="props2.previous()" class="small" id="previousArrow" 
+                                <fa-icon @click="props2.previous()" class="small" id="previousArrow"
                                 :class="{'disabled': !props2.isPreviousArrowAllowed}" icon="fa-solid fa-chevron-left"></fa-icon>
                                 <h2 id="currentPageCurrency" class="graphPanelTitle variantTab">{{ props2.currentPage + 1 }}</h2>
                                 <fa-icon @click="props2.next()" id="nextArrow" class="small"
