@@ -22,7 +22,7 @@
                             <div class="pageSelector">
                                 <fa-icon @click="props2.previous()" class="small" id="previousArrow"
                                 :class="{'disabled': !props2.isPreviousArrowAllowed}" icon="fa-solid fa-chevron-left"></fa-icon>
-                                <h2 id="currentPageCurrency" class="graphPanelTitle variantTab">{{ props2.currentPage + 1 }}</h2>
+                                <h2 id="currentPageCurrency" class="variantTab">{{ props2.currentPage + 1 }}</h2>
                                 <fa-icon @click="props2.next()" id="nextArrow" class="small"
                                 :class="{'disabled': !props2.isNextArrowAllowed}" icon="fa-solid fa-chevron-right"></fa-icon>
                             </div>
@@ -43,15 +43,7 @@
 <style lang="less" scoped>
 @import '@/modules/core/stylesheets/globalStyle.less';
 
-#pagination
-{
-    .fullSize; .bg(@backgroundDark);
-}
-
-.separator 
-{
-    border-bottom: 1px solid gray;
-}
+#pagination { .fullSize; .bg(@backgroundDark); }
 
 #graphPanel
 {
@@ -59,18 +51,20 @@
     .pageSelector  { color:gray !important; transform: translateY(-3px); }
     #nextArrow, #previousArrow { margin:0px; display:inline; font-size:14px; cursor: pointer; }
     #nextArrow.small, #previousArrow.small { font-size:10px; }
-    #currentPage { .horiMargin(15px); font-size:16px; min-width:15px; display:inline-block; text-align: center; }
-    #currentPageCurrency { #currentPage; font-size:12px; .horiMargin(5px); }
+    #currentPageCurrency
+    {
+        min-width:15px;
+        display:inline-block;
+        text-align: center;
+        font-size:12px;
+        .horiMargin(5px);
+    }
     .disabled { pointer-events: none; opacity:0.2; }
-
-    .graphPanelTitle { text-align:start; color:gray; font-size:14px; .tight; display:inline; }
-
     .containerRow
     {
         .fullSize; .xLeft; .yCenter; .leftRightGrid;
         font-size:14px;
     }
-
     .currencyRow
     {
         .leftRightGrid;
@@ -83,8 +77,7 @@
 import paginationVue from '@/modules/core/components/pagination.vue';
 import numberPagination from '@/modules/core/components/numberPagination.vue';
 import { defineComponent } from 'vue';
-import { LineChart, type ExtractComponentData } from 'vue-chart-3';
-import { Chart, registerables, type ChartOptions, type ChartData } from "chart.js";
+import { Chart, registerables } from "chart.js";
 import { useMainStore } from '@/modules/core/stores/store';
 import { useContainersStore } from '../stores/useContainersStore';
 import { useCurrenciesStore } from '../../currencies/stores/useCurrenciesStore';
@@ -97,16 +90,18 @@ export default defineComponent(
     props: { "title": { default: "", type: String }, },
     setup()
     {
-        let data = {};
+        const data =
+        {
+            store: useMainStore(),
+            containersStore: useContainersStore(),
+            currenciesStore: useCurrenciesStore(),
+        };
         return data;
     },
     data()
     {
-        let data = 
-        { 
-            store: useMainStore(), 
-            containersStore: useContainersStore(),
-            currenciesStore: useCurrenciesStore(),
+        const data =
+        {
             currentPage: 0
         };
         return data;
@@ -121,14 +116,14 @@ export default defineComponent(
     methods:
     {
         getCurrencyValue(id:string, amount:string)
-        {   
+        {
             let currency = (this.currenciesStore.currencies.lastSuccessfulData?.rangeItems ?? []).find(x => x.id == id);
             if (currency == undefined) return 0;
             else return parseFloat(currency.rateToBase) * parseFloat(amount);
         },
         getContainerBalances(containerBalances: {[key: string]: string}): Array<[string, string]>
         {
-            let sortingFunction = (x: [string,string], y: [string,string]) => 
+            let sortingFunction = (x: [string,string], y: [string,string]) =>
             {
                 return this.getCurrencyValue(y[0], y[1]) - this.getCurrencyValue(x[0], x[1])
             };
