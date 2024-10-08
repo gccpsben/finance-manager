@@ -136,7 +136,7 @@
                     <template #row="props">
                         <grid-shortcut columns="1fr 1fr" class="fullSize">
                             <div class="listItemTitle middleLeft">{{ props.currentItem.name }}</div>
-                            <div class="listItemTitle middleRight">{{ props.currentItem.value }} {{ currenciesStore.getBaseCurrencySymbol() }}</div>
+                            <div class="listItemTitle middleRight">{{ parseFloat(props.currentItem.value).toFixed(2) }} {{ currenciesStore.getBaseCurrencySymbol() }}</div>
                         </grid-shortcut>
                     </template>
                 </list-cell>
