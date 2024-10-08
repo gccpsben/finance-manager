@@ -30,7 +30,7 @@ import { useNetworthHistoryStore } from '@/modules/charts/stores/networthHistory
 type AvailableOptions = "All" | "30d" | "7d";
 
 const networthHistoryStore = useNetworthHistoryStore();
-const selectedOption = ref<AvailableOptions>('7d');
+const selectedOption = ref<AvailableOptions>('30d');
 const targetRequestComposable = computed(() =>
 {
     if (selectedOption.value === '30d') return networthHistoryStore._30d;

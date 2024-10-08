@@ -183,7 +183,7 @@ export default
             selectedNetworthRange: 'now' as '30d' | '7d' | 'now',
             selectedNetworthChangeRange: '30d' as '30d' | '7d',
             uncontrolledSymbol: Uncontrolled as typeof Uncontrolled,
-            selectedOption: '7d'
+            selectedOption: '30d'
         };
         return data;
     },
@@ -221,7 +221,7 @@ export default
                 if (!!this.networthHistoryStore._7d.lastSuccessfulData || this.networthHistoryStore._7d.isLoading) return this.networthHistoryStore._7d;
                 if (!!this.networthHistoryStore._30d.lastSuccessfulData || this.networthHistoryStore._30d.isLoading) return this.networthHistoryStore._30d;
                 if (!!this.networthHistoryStore._all.lastSuccessfulData || this.networthHistoryStore._all.isLoading) return this.networthHistoryStore._all;
-                return this.networthHistoryStore._7d;
+                return this.networthHistoryStore._30d;
             })();
 
             if (!targetComposableToUse.lastSuccessfulData && !targetComposableToUse.isLoading)
@@ -282,7 +282,7 @@ export default
                 if (!!this.networthHistoryStore._7d.lastSuccessfulData || this.networthHistoryStore._7d.isLoading) return this.networthHistoryStore._7d;
                 if (!!this.networthHistoryStore._30d.lastSuccessfulData || this.networthHistoryStore._30d.isLoading) return this.networthHistoryStore._30d;
                 if (!!this.networthHistoryStore._all.lastSuccessfulData || this.networthHistoryStore._all.isLoading) return this.networthHistoryStore._all;
-                return this.networthHistoryStore._7d;
+                return this.networthHistoryStore._30d;
             })();
 
             if (!targetComposableToUse.lastSuccessfulData && !targetComposableToUse.isLoading)
@@ -324,18 +324,18 @@ export default
         },
         userExpenses()
         {
-            if (!this.store.userExpensesIncomes?.lastSuccessfulData) return { '7d': 0, '30d': 0 };
+            if (!this.store.userExpensesIncomes?.lastSuccessfulData) return { '30d': 0, '7d': 0 };
             return {
+                '30d': parseFloat(this.store.userExpensesIncomes.lastSuccessfulData.expenses30d),
                 '7d': parseFloat(this.store.userExpensesIncomes.lastSuccessfulData.expenses7d),
-                '30d': parseFloat(this.store.userExpensesIncomes.lastSuccessfulData.expenses30d)
             };
         },
         userIncomes()
         {
-            if (!this.store.userExpensesIncomes?.lastSuccessfulData) return { '7d': 0, '30d': 0 };
+            if (!this.store.userExpensesIncomes?.lastSuccessfulData) return { '30d': 0, '7d': 0 };
             return {
+                '30d': parseFloat(this.store.userExpensesIncomes.lastSuccessfulData.incomes30d),
                 '7d': parseFloat(this.store.userExpensesIncomes.lastSuccessfulData.incomes7d),
-                '30d': parseFloat(this.store.userExpensesIncomes.lastSuccessfulData.incomes30d)
             };
         },
         expenseTxns30d()
