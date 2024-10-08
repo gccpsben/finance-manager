@@ -1,6 +1,6 @@
 import router from '@/router';
 import axios from 'axios';
-import { ref, watchEffect, toValue } from 'vue';
+import { ref, watchEffect, toValue, readonly } from 'vue';
 
 export type NetworkQuery =
 {
@@ -134,6 +134,7 @@ export function useNetworkRequest<T>
         error,
         updateData,
         resetAuth,
-        setQueryObj: (query: NetworkQuery|string) => queryObjInner.value = query
+        setQueryObj: (query: NetworkQuery|string) => queryObjInner.value = query,
+        queryObj: readonly(queryObjInner)
     }
 }

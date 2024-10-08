@@ -2,6 +2,7 @@
     <div id="topDiv">
 
         <view-title :title="title"></view-title>
+        <br /><br />
 
         <pagination v-model:currentPage="currentPage" v-if="!selectedCurrencyID && !currenciesStore.currencies.isLoading" :itemsInPage="15" :items="currenciesStore.currencies.lastSuccessfulData!.rangeItems" 
                     v-slot="props" class="fullSize" style="height:calc(100svh - 170px);"> 
@@ -82,7 +83,7 @@
     box-sizing: border-box;
     overflow-x:hidden;
     font-family: 'Schibsted Grotesk', sans-serif;
-    .gradBackground;
+
     padding:50px;
 
     input

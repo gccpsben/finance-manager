@@ -8,25 +8,29 @@
 
                 <number-cell title="Expenses" :noItemsText="'No Data'" v-area="'expensesPanel'"
                 style="background: linear-gradient(-45deg, rgba(213, 51, 105, 0.13) 0%, rgba(218, 81, 81, 0.42) 100%); color:white;"
-                :value7d="userExpensesIncomes ? parseFloat(userExpensesIncomes.expenses7d) : 0"
-                :value30d="userExpensesIncomes ? parseFloat(userExpensesIncomes.expenses30d) : 0"
-                :isLoading="store.userExpensesIncomes.isLoading" :networkError="store.userExpensesIncomes.error"></number-cell>
+                :option-values="userExpenses"
+                :isLoading="store.userExpensesIncomes.isLoading"
+                :networkError="store.userExpensesIncomes.error" />
 
                 <number-cell title="Incomes" :noItemsText="'No Data'" v-area="'incomesPanel'"
                 style="background: linear-gradient(-45deg, rgba(56, 213, 51, 0.09) 0%, rgba(81, 218, 90, 0.35) 100%); color:white;"
-                :value7d="userExpensesIncomes ? parseFloat(userExpensesIncomes.incomes7d) : 0"
-                :value30d="userExpensesIncomes ? parseFloat(userExpensesIncomes.incomes30d) : 0"
-                :isLoading="store.userExpensesIncomes.isLoading" :networkError="store.userExpensesIncomes.error"></number-cell>
+                :option-values="userIncomes"
+                :isLoading="store.userExpensesIncomes.isLoading"
+                :networkError="store.userExpensesIncomes.error" />
 
-                <number-cell title="Total Value" v-area="'totalValuePanel'"
+                <number-cell title="Networth" :noItemsText="'No Data'" v-area="'networthPanel'"
+                v-model:selected-option="selectedNetworthRange"
                 style="background: linear-gradient(-45deg, rgba(213, 180, 51, 0.09) 0%, rgba(218, 203, 81, 0.44) 100%); color:white;"
-                :valueAll="userTotalValue"
-                :isLoading="store.userExpensesIncomes.isLoading" :networkError="store.userExpensesIncomes.error"></number-cell>
+                :option-values="userNetworth.networthOptionValues"
+                :isLoading="userNetworth.isLoading"
+                :networkError="userNetworth.error" />
 
-                <number-cell title="Net Change" :noItemsText="'No Data'"
-                :value7d="netChange7d" :value30d="netChange30d" v-area="'netChangePanel'"
+                <number-cell title="Networth Change" :noItemsText="'No Data'" v-area="'netChangePanel'"
+                v-model:selected-option="selectedNetworthChangeRange"
                 style="background: linear-gradient(-45deg, rgba(51, 213, 190, 0.09) 0%, rgba(81, 218, 218, 0.43) 100%); color:white;"
-                :isLoading="store.userExpensesIncomes.isLoading" :networkError="store.userExpensesIncomes.error"></number-cell>
+                :option-values="userNetworthChange.networthChangeOptionValues"
+                :isLoading="userNetworthChange.isLoading"
+                :networkError="userNetworthChange.error" />
 
                 <list-cell v-area="'_30dExpensesList'" title="30d Expenses" :noItemsText="'No Expenses'"
                 :isLoading="store.txns30d.isLoading"
@@ -157,12 +161,15 @@ import listCellVue from '@/modules/core/components/listCell.vue';
 import cell from '@/modules/core/components/cell.vue';
 import containerValuesGraphCell from '@/modules/containers/components/containerValuesGraphCell.vue';
 import router from "@/router";
+import numberCell from "@/modules/core/components/numberCell.vue";
 import networthHistoryCell from "../components/networthHistoryCell.vue";
+import { useNetworthHistoryStore } from "@/modules/charts/stores/networthHistoryStore";
+import { Uncontrolled } from "@/modules/core/utils/defineProperty";
 
 export default
 {
     directives: {'area':vArea},
-    components: { "list-cell": listCellVue, "cell": cell, containerValuesGraphCell, networthHistoryCell },
+    components: { "list-cell": listCellVue, "cell": cell, containerValuesGraphCell, networthHistoryCell, numberCell },
     data()
     {
         let data =
@@ -171,7 +178,12 @@ export default
             currenciesStore: useCurrenciesStore(),
             containersStore: useContainersStore(),
             txnTypesStore: useTxnTypesStore(),
-            selectedItem: 'Main'
+            networthHistoryStore: useNetworthHistoryStore(),
+            selectedItem: 'Main',
+            selectedNetworthRange: 'now' as '30d' | '7d' | 'now',
+            selectedNetworthChangeRange: '30d' as '30d' | '7d',
+            uncontrolledSymbol: Uncontrolled as typeof Uncontrolled,
+            selectedOption: '7d'
         };
         return data;
     },
@@ -187,27 +199,144 @@ export default
     },
     computed:
     {
-        netChange30d()
+        userNetworth()
         {
-            if (this.store.userExpensesIncomes.isLoading || this.store.userExpensesIncomes.error) return 0;
-            if (!this.userExpensesIncomes?.incomes30d || !this.userExpensesIncomes?.expenses30d) return 0;
-            return (parseFloat(this.userExpensesIncomes.incomes30d) - parseFloat(this.userExpensesIncomes.expenses30d));
+            const dateCutoff = (() =>
+            {
+                if (this.selectedNetworthRange === '30d') return Date.now() - 2_592_000_000;
+                else if (this.selectedNetworthRange === '7d') return Date.now() - 604_800_000;
+                return Date.now() - 0;
+            })();
+
+            const targetComposableToUse = (() =>
+            {
+                // If user selected 30d, use the hooks for 30d or all, whatever is loaded. Use 30d if both unloaded.
+                if (this.selectedNetworthRange === '30d')
+                {
+                    if (!!this.networthHistoryStore._30d.lastSuccessfulData || this.networthHistoryStore._30d.isLoading) return this.networthHistoryStore._30d;
+                    if (!!this.networthHistoryStore._all.lastSuccessfulData || this.networthHistoryStore._all.isLoading) return this.networthHistoryStore._all;
+                    return this.networthHistoryStore._30d;
+                }
+
+                if (!!this.networthHistoryStore._7d.lastSuccessfulData || this.networthHistoryStore._7d.isLoading) return this.networthHistoryStore._7d;
+                if (!!this.networthHistoryStore._30d.lastSuccessfulData || this.networthHistoryStore._30d.isLoading) return this.networthHistoryStore._30d;
+                if (!!this.networthHistoryStore._all.lastSuccessfulData || this.networthHistoryStore._all.isLoading) return this.networthHistoryStore._all;
+                return this.networthHistoryStore._7d;
+            })();
+
+            if (!targetComposableToUse.lastSuccessfulData && !targetComposableToUse.isLoading)
+                targetComposableToUse.updateData();
+
+
+            if (targetComposableToUse.error || targetComposableToUse.isLoading || !targetComposableToUse.lastSuccessfulData)
+            {
+                return {
+                    isLoading: targetComposableToUse.isLoading,
+                    networthOptionValues: { '30d': 0, '7d': 0, 'now': 0 },
+                    error: targetComposableToUse.error
+                };
+            }
+
+            const map = targetComposableToUse.lastSuccessfulData.map;
+
+            const networthAtRequestedEpoch = parseFloat
+            (
+                Object.keys(map)
+                .map(x =>
+                {
+                    return {
+                        timeDelta: Math.abs(parseInt(x) - dateCutoff),
+                        value: map[x]
+                    }
+                })
+                .sort((a,b) => (b.timeDelta - a.timeDelta))
+                .reverse()[0].value
+            );
+
+            const uniformNetworthValue = networthAtRequestedEpoch;
+
+            return {
+                isLoading: targetComposableToUse.isLoading,
+                networthOptionValues: { '30d': uniformNetworthValue, '7d': uniformNetworthValue, 'now': uniformNetworthValue },
+                error: targetComposableToUse.error
+            };
         },
-        netChange7d()
+        userNetworthChange()
         {
-            if (this.store.userExpensesIncomes.isLoading || this.store.userExpensesIncomes.error) return 0;
-            if (!this.userExpensesIncomes?.incomes7d || !this.userExpensesIncomes?.expenses7d) return 0;
-            return (parseFloat(this.userExpensesIncomes.incomes7d) - parseFloat(this.userExpensesIncomes.expenses7d));
+            const dateCutoff = (() =>
+            {
+                if (this.selectedNetworthChangeRange === '30d') return Date.now() - 2_592_000_000;
+                return Date.now() - 604_800_000;
+            })();
+
+            const targetComposableToUse = (() =>
+            {
+                // If user selected 30d, use the hooks for 30d or all, whatever is loaded. Use 30d if both unloaded.
+                if (this.selectedNetworthChangeRange === '30d')
+                {
+                    if (!!this.networthHistoryStore._30d.lastSuccessfulData || this.networthHistoryStore._30d.isLoading) return this.networthHistoryStore._30d;
+                    if (!!this.networthHistoryStore._all.lastSuccessfulData || this.networthHistoryStore._all.isLoading) return this.networthHistoryStore._all;
+                    return this.networthHistoryStore._30d;
+                }
+
+                if (!!this.networthHistoryStore._7d.lastSuccessfulData || this.networthHistoryStore._7d.isLoading) return this.networthHistoryStore._7d;
+                if (!!this.networthHistoryStore._30d.lastSuccessfulData || this.networthHistoryStore._30d.isLoading) return this.networthHistoryStore._30d;
+                if (!!this.networthHistoryStore._all.lastSuccessfulData || this.networthHistoryStore._all.isLoading) return this.networthHistoryStore._all;
+                return this.networthHistoryStore._7d;
+            })();
+
+            if (!targetComposableToUse.lastSuccessfulData && !targetComposableToUse.isLoading)
+                targetComposableToUse.updateData();
+
+            if (targetComposableToUse.error || targetComposableToUse.isLoading || !targetComposableToUse.lastSuccessfulData)
+            {
+                return {
+                    isLoading: targetComposableToUse.isLoading,
+                    networthChangeOptionValues: { '30d': 0, '7d': 0 },
+                    error: targetComposableToUse.error
+                };
+            }
+
+            const map = targetComposableToUse.lastSuccessfulData.map;
+
+            const networthNow = parseFloat(map[Object.keys(map).reverse()[0]]);
+            const networthAtRequestedEpoch = parseFloat
+            (
+                Object.keys(map)
+                .map(x =>
+                {
+                    return {
+                        timeDelta: Math.abs(parseInt(x) - dateCutoff),
+                        value: map[x]
+                    }
+                })
+                .sort((a,b) => (b.timeDelta - a.timeDelta))
+                .reverse()[0].value
+            );
+
+            const uniformNetworthValue = networthNow - networthAtRequestedEpoch;
+
+            return {
+                isLoading: targetComposableToUse.isLoading,
+                networthChangeOptionValues: { '30d': uniformNetworthValue, '7d': uniformNetworthValue },
+                error: targetComposableToUse.error
+            };
         },
-        userTotalValue()
+        userExpenses()
         {
-            if (this.store.userExpensesIncomes.isLoading || this.store.userExpensesIncomes.error) return 0;
-            if (!this.userExpensesIncomes?.incomes7d || !this.userExpensesIncomes?.expenses7d) return 0;
-            return (parseFloat(this.userExpensesIncomes.incomesTotal) - parseFloat(this.userExpensesIncomes.expensesTotal));
+            if (!this.store.userExpensesIncomes?.lastSuccessfulData) return { '7d': 0, '30d': 0 };
+            return {
+                '7d': parseFloat(this.store.userExpensesIncomes.lastSuccessfulData.expenses7d),
+                '30d': parseFloat(this.store.userExpensesIncomes.lastSuccessfulData.expenses30d)
+            };
         },
-        userExpensesIncomes()
+        userIncomes()
         {
-            return this.store.userExpensesIncomes?.lastSuccessfulData;
+            if (!this.store.userExpensesIncomes?.lastSuccessfulData) return { '7d': 0, '30d': 0 };
+            return {
+                '7d': parseFloat(this.store.userExpensesIncomes.lastSuccessfulData.incomes7d),
+                '30d': parseFloat(this.store.userExpensesIncomes.lastSuccessfulData.incomes30d)
+            };
         },
         expenseTxns30d()
         {
@@ -259,7 +388,7 @@ export default
 {
     container-type: size;
     container-name: topDiv;
-    
+
     .pageTitle
     {
         margin-top: @desktopPagePadding;
@@ -285,7 +414,7 @@ export default
         height:2000px; .fg(gray);
 
         grid-template-areas:
-        'expensesPanel incomesPanel totalValuePanel netChangePanel'
+        'expensesPanel incomesPanel networthPanel netChangePanel'
         '_30dExpensesList _30dExpensesList ContainersList ContainersList'
         '_30dIncomesList _30dIncomesList NetworthGraph NetworthGraph'
         '_30dTransfersList _30dTransfersList containerValuesGraph containerValuesGraph';
@@ -312,7 +441,7 @@ export default
         grid-template-rows: 100px 100px 250px 250px 250px 250px 250px 250px 1fr !important;
         grid-template-areas:
         'expensesPanel incomesPanel'
-        'totalValuePanel netChangePanel'
+        'networthPanel netChangePanel'
         '_30dExpensesList _30dExpensesList'
         'ContainersList ContainersList'
         '_30dIncomesList _30dIncomesList'
@@ -342,7 +471,7 @@ export default
         grid-template-areas:
         'expensesPanel'
         'incomesPanel'
-        'totalValuePanel'
+        'networthPanel'
         'netChangePanel'
         '_30dExpensesList'
         'ContainersList'

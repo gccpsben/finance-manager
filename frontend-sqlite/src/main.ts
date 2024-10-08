@@ -43,7 +43,6 @@ app.component('cell', cell);
 app.component('number-cell', numberCell);
 app.component('custom-table', customTable);
 app.component('list-cell', defineAsyncComponent(() => import("@/modules/core/components/listCell.vue")));
-app.component('net-worth-graph-cell', defineAsyncComponent(() => import("@/modules/charts/components/netWorthGraphCell.vue")));
 app.component('custom-dropdown', defineAsyncComponent(() => import("@/modules/core/components/custom-dropdown.vue")));
 app.component('container-values-graph-cell', defineAsyncComponent(() => import("@/modules/containers/components/containerValuesGraphCell.vue")));
 app.component('view-title', viewTitle);
