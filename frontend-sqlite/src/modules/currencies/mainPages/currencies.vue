@@ -12,8 +12,8 @@
                                     v-model:model-value="mainPagination.currentPage.value"></NumberPagination>
             </div>
             <OverlapArea class="fullSize">
-                <CustomTable rows="50px auto" columns="1fr" rowRows="1fr" :style="{opacity: containersStore.currencies.isLoading ? 0.3 : 1}"
-                                rowColumns="1fr 125px" rowAreas="'name rateToBase ticker'" bodyRows="40px">
+                <CustomTable class="allCurrenciesTable" rows="50px auto" columns="1fr" rowRows="1fr" :style="{opacity: containersStore.currencies.isLoading ? 0.3 : 1}"
+                             rowColumns="1fr auto" rowAreas="'name rateToBase ticker'" bodyRows="min-content">
                     <template #header>
                         <CustomTableRow class="headerRow fullSize" style="font-weight: bold;">
                             <CustomTableCell grid-area="name" class="yCenter xLeft">Name</CustomTableCell>
@@ -24,11 +24,13 @@
                     </template>
                     <template #body>
                         <CustomTableRow v-for="item in mainPagination.lastCallResult.value?.rangeItems" class="bodyRows">
-                            <CustomTableCell grid-area="name" class="">
-                                <div class="fullSize xLeft yCenter">
-                                    {{ item.name }}
-                                    <div style="opacity: 0.5; margin-left: 16px;">{{ item.ticker }}</div>
-                                    <div v-if="item.isBase" class="baseCurrencyChip">Base</div>
+                            <CustomTableCell grid-area="name">
+                                <div class="nameGridArea">
+                                    <div class="nameGridAreaName">{{ item.name }}</div>
+                                    <div class="nameGridAreaTicker">{{ item.ticker }}</div>
+                                    <div class="nameGridAreaChips" v-if="item.isBase">
+                                        <div class="baseCurrencyChip">Base</div>
+                                    </div>
                                 </div>
                             </CustomTableCell>
                             <CustomTableCell grid-area="rateToBase" class="yCenter xRight">
@@ -57,12 +59,12 @@ import NumberPagination from '@/modules/core/components/numberPagination.vue';
 import OverlapArea from '@/modules/core/components/overlapArea.vue';
 import NetworkCircularIndicator from '@/modules/core/components/networkCircularIndicator.vue';
 
-const mul = (arr: any[], amount: number) =>
-{
-    const output: any[] = [];
-    for (let i = 0; i < amount; i++) output.push(...arr);
-    return output;
-};
+// const mul = (arr: any[], amount: number) =>
+// {
+//     const output: any[] = [];
+//     for (let i = 0; i < amount; i++) output.push(...arr);
+//     return output;
+// };
 
 const containersStore = useCurrenciesStore();
 containersStore.currencies.updateData();
@@ -71,7 +73,7 @@ const mainPagination = useNetworkPaginationNew<CurrencyDTO>(
     updater: async (start:number, end:number): Promise<UpdaterReturnType<CurrencyDTO>> =>
     {
         await containersStore.currencies.updateData();
-        const currencies = mul(containersStore.currencies.lastSuccessfulData?.rangeItems ?? [], 40);
+        const currencies = containersStore.currencies.lastSuccessfulData?.rangeItems ?? [];
         const endIndex = Math.min(currencies.length - 1, end);
 
         return {
@@ -95,6 +97,9 @@ watch(mainPagination.currentPage, () => mainPagination.update());
 
 #currenciesTopDiv
 {
+    container-name: currenciesPage;
+    container-type: size;
+
     padding: @desktopPagePadding;
     box-sizing: border-box;
     overflow-x:hidden; .fullSize;
@@ -136,6 +141,41 @@ watch(mainPagination.currentPage, () => mainPagination.update());
     }
     cursor: pointer;
     user-select: none;
+    white-space: nowrap;
+    height: 40px;
+
+    .nameGridArea
+    {
+        .fullSize;
+        display: grid;
+        grid-template-columns: min-content min-content min-content;
+        grid-template-rows: 1fr;
+        grid-template-areas: 'name ticker chips';
+        gap: 15px;
+
+        .nameGridAreaName { grid-area: name; .center; }
+        .nameGridAreaTicker { grid-area: ticker; .center; opacity: 0.5; }
+        .nameGridAreaChips { grid-area: chips; .center; }
+    }
+}
+
+@container currenciesPage (width <= 450px)
+{
+    .nameGridArea
+    {
+        grid-template:
+            'padding_1 padding_1' 1fr
+            'name chips' min-content
+            'ticker ticker' min-content
+            'padding_2 padding_2' 1fr
+            / min-content min-content !important;
+        gap: 0px !important;
+    }
+
+    .bodyRows { height: 65px; }
+    .nameGridAreaName { grid-area: name; .yBottom; .xLeft !important; }
+    .nameGridAreaTicker { grid-area: ticker; .yTop !important; .xLeft !important; opacity: 0.5; }
+    .nameGridAreaChips { grid-area: chips; padding-left: 10px; .xLeft !important; }
 }
 
 .baseCurrencyChip
@@ -144,7 +184,6 @@ watch(mainPagination.currentPage, () => mainPagination.update());
     background: fade(cyan, 25%);
     .horiPadding(5px);
     border-radius: 5px;
-    margin-left: 15px;
     font-size: 12px;
 }
 </style>
