@@ -1,202 +1,150 @@
 <template>
-    <div id="topDiv">
-
-        <view-title :title="title"></view-title>
-        <br /><br />
-
-        <pagination v-model:currentPage="currentPage" v-if="!selectedCurrencyID && !currenciesStore.currencies.isLoading" :itemsInPage="15" :items="currenciesStore.currencies.lastSuccessfulData!.rangeItems" 
-                    v-slot="props" class="fullSize" style="height:calc(100svh - 170px);"> 
-            <div id="panel">
-                <grid-shortcut rows="1fr" columns="1fr auto">
-                    <h2 class="panelTitle">All Currencies</h2>
-                    <div class="pageSelector">
-                        <fa-icon @click="props.previous()" id="previousArrow" icon="fa-solid fa-chevron-left"></fa-icon>
-                        <input type="number" size="1" v-int-only v-model.lazy="pageReadable"> 
-                        <fa-icon @click="props.next()" id="nextArrow" icon="fa-solid fa-chevron-right"></fa-icon>
-                    </div>
-                </grid-shortcut>
-                <grid-shortcut class="fullSize" rows="repeat(20, 1fr)" columns="1fr" style="padding-top:15px;">
-
-                    <div class="row tight" style="font-size:14px;" @click="selectCurrency(currency.id)"
-                    v-for="currency in props.pageItems">
-                        <div v-area="'name'" class="tight yCenter ellipsisContainer">
-                            <div>{{ currency.name }}</div>
-                        </div>
-                        <div v-area="'symbol'" class="tight yCenter ellipsisContainer">
-                            <div>{{ currency.ticker }}</div>
-                        </div>
-                        <div v-area="'rate'" class="tight yCenter ellipsisContainer">
-                            <div>{{ currency.rateToBase }}</div>
-                        </div>
-                        <div v-area="'arrow'" class="tight yCenter xRight ellipsisContainer">
-                            <fa-icon icon="fa-solid fa-arrow-right"></fa-icon>
-                        </div>
-                    </div>
-
-                </grid-shortcut>
-            </div>
-        </pagination>
-
-        <div id="panel" v-if="selectedCurrencyID">
-            <grid-shortcut style="gap:6px;" rows="300px 1fr" columns="300px 1fr auto">
-                <div class="panel center">
-                    <grid-shortcut rows="auto auto auto" columns="1fr">
-                        <div class="center">
-                            <div id="coinIcon">?</div>
-                        </div>
-                        <div class="center">
-                            <h2 class="fsNumbers">{{ selectedCurrency?.name }}</h2>
-                        </div>
-                        <div class="center">
-                            <h2 class="fsSecondary tight">{{ selectedCurrency?.rateToBase }} HKD</h2>
-                        </div>
-                    </grid-shortcut>
-                </div>
-                <currencyRatesHistoryCell :currency-id="selectedCurrencyID"></currencyRatesHistoryCell>
-            </grid-shortcut>
+    <div id="currenciesTopDiv">
+        <div>
+            <view-title :title="'Currencies'"></view-title>
         </div>
-
+        <div>
+            <br /><br />
+        </div>
+        <div class="fullSize">
+            <div class="yCenter xRight" style="margin-bottom:14px;">
+                <NumberPagination :max-page-readable="mainPagination.lastCallMaxPageIndex.value"
+                                    v-model:model-value="mainPagination.currentPage.value"></NumberPagination>
+            </div>
+            <OverlapArea class="fullSize">
+                <CustomTable rows="50px auto" columns="1fr" rowRows="1fr" :style="{opacity: containersStore.currencies.isLoading ? 0.3 : 1}"
+                                rowColumns="1fr 125px" rowAreas="'name rateToBase ticker'" bodyRows="40px">
+                    <template #header>
+                        <CustomTableRow class="headerRow fullSize" style="font-weight: bold;">
+                            <CustomTableCell grid-area="name" class="yCenter xLeft">Name</CustomTableCell>
+                            <CustomTableCell grid-area="rateToBase" class="yCenter xRight">
+                                Rate to {{ containersStore.getBaseCurrencySymbol() }}
+                            </CustomTableCell>
+                        </CustomTableRow>
+                    </template>
+                    <template #body>
+                        <CustomTableRow v-for="item in mainPagination.lastCallResult.value?.rangeItems" class="bodyRows">
+                            <CustomTableCell grid-area="name" class="">
+                                <div class="fullSize xLeft yCenter">
+                                    {{ item.name }}
+                                    <div style="opacity: 0.5; margin-left: 16px;">{{ item.ticker }}</div>
+                                    <div v-if="item.isBase" class="baseCurrencyChip">Base</div>
+                                </div>
+                            </CustomTableCell>
+                            <CustomTableCell grid-area="rateToBase" class="yCenter xRight">
+                                {{ item.rateToBase }}
+                            </CustomTableCell>
+                        </CustomTableRow>
+                    </template>
+                </CustomTable>
+                <NetworkCircularIndicator :error="containersStore.currencies.error"
+                                          :is-loading="containersStore.currencies.isLoading"
+                                          style="pointer-events: none;"/>
+            </OverlapArea>
+        </div>
     </div>
 </template>
 
+<script setup lang="ts">
+import CustomTable from '@/modules/core/components/tables/customTable.vue';
+import CustomTableCell from '@/modules/core/components/tables/customTableCell.vue';
+import CustomTableRow from '@/modules/core/components/tables/customTableRow.vue';
+import {  watch } from 'vue';
+import { useCurrenciesStore } from '../stores/useCurrenciesStore';
+import useNetworkPaginationNew, { type UpdaterReturnType } from '@/modules/core/composables/useNetworkedPagination';
+import type { CurrencyDTO } from '../../../../../api-types/currencies';
+import NumberPagination from '@/modules/core/components/numberPagination.vue';
+import OverlapArea from '@/modules/core/components/overlapArea.vue';
+import NetworkCircularIndicator from '@/modules/core/components/networkCircularIndicator.vue';
+
+const mul = (arr: any[], amount: number) =>
+{
+    const output: any[] = [];
+    for (let i = 0; i < amount; i++) output.push(...arr);
+    return output;
+};
+
+const containersStore = useCurrenciesStore();
+containersStore.currencies.updateData();
+const mainPagination = useNetworkPaginationNew<CurrencyDTO>(
+{
+    updater: async (start:number, end:number): Promise<UpdaterReturnType<CurrencyDTO>> =>
+    {
+        await containersStore.currencies.updateData();
+        const currencies = mul(containersStore.currencies.lastSuccessfulData?.rangeItems ?? [], 40);
+        const endIndex = Math.min(currencies.length - 1, end);
+
+        return {
+            totalItems: currencies.length ?? 0,
+            startingIndex: start,
+            endingIndex: endIndex,
+            rangeItems: currencies.slice(start, endIndex)
+        };
+    },
+    pageIndex: 0,
+    pageSize: 15,
+    overflowResolutionHandler: (_, lastAvailablePageIndex) => mainPagination.currentPage.value = lastAvailablePageIndex,
+    updateOnMount: true
+});
+watch(mainPagination.currentPage, () => mainPagination.update());
+</script>
+
 <style lang="less" scoped>
 @import '@/modules/core/stylesheets/globalStyle.less';
-@import url('https://fonts.googleapis.com/css2?family=Lato:wght@300;400;700&family=Roboto:ital,wght@0,100;0,300;0,500;0,700;0,900;1,100;1,300;1,500;1,700;1,900&display=swap');
+* { box-sizing: border-box; };
 
-#coinIcon
+#currenciesTopDiv
 {
-    border-radius:100%; width:100px; height:100px; background:#222222;
-    .center; .fg(white);
-}
-
-.panel
-{
-    background:@cellBackground;
-    padding:25px;
-    color:gray;
-    & h2 { font-weight:100; }
-    & .fsNumbers { margin-top:35px; }
-}
-
-#topDiv
-{
+    padding: @desktopPagePadding;
     box-sizing: border-box;
-    overflow-x:hidden;
-    font-family: 'Schibsted Grotesk', sans-serif;
+    overflow-x:hidden; .fullSize;
+    font-family: @font;
+    display: grid;
+    grid-template-columns: 1fr;
+    grid-template-rows: auto auto 1fr;
+    grid-template-areas: 'title' 'margin' 'pageContent';
 
-    padding:50px;
-
-    input
+    .currenciesTopDiv
     {
-        color:white;
-        background:transparent;
-        border:1px solid #252525;
-        width:30px;
-        padding:0px; .horiMargin(5px);
-        text-align: center;
+        .debug;
+        height: 100%;
     }
 
-    #panel
+    .pageContent
     {
-        height: calc(100svh - 290px);
-        box-sizing:border-box;
-        .panelTitle { text-align:start; color:gray; font-size:14px; .tight; display:inline; }
-        .pageSelector  { color:gray !important; transform: translateY(-3px); }
-        #nextArrow, #previousArrow { margin:0px; display:inline; font-size:14px; cursor: pointer; }
-        #currentPage { .horiMargin(15px); .vertMargin(5px); font-size:16px; min-width:15px; display:inline-block; text-align: center; }
-        .disabled { pointer-events: none; opacity:0.2; }
-
-        .row
-        {
-            background:#050505; color:gray;
-            box-sizing: border-box; border:1px solid #101010;
-            display:grid; padding:15px; .vertMargin(5px);
-
-            gap: 15px;
-
-            grid-template:
-              "name symbol rate  dataSource arrow" 1fr
-            / 175px 75px   100px 1fr        50px;
-
-            cursor:pointer;
-
-            &:hover
-            {
-                background: @focusDark;
-                color: @focus;
-            }
-
-            .rowContent
-            {
-                display:grid; box-sizing: border-box;
-                grid-template-columns: 1fr 1fr 1fr;
-                grid-template-rows: 1fr 1fr;
-            }
-
-            .txnName
-            {
-                overflow:hidden !important;
-            }
-        }
+        display: grid;
+        grid-template:
+            'resetBtn searchField pagination' 35px
+            'content content content' 1fr
+            / 30px 1fr auto;
+        gap: 15px;
     }
+}
+
+#currenciesTopDiv .headerRow, #currenciesTopDiv .bodyRows
+{
+    & > * { .horiPadding(10px); };
+    border-bottom: 1px solid @border;
+}
+
+.bodyRows
+{
+    &:hover
+    {
+        background: @focusDark;
+        color: @focus;
+    }
+    cursor: pointer;
+    user-select: none;
+}
+
+.baseCurrencyChip
+{
+    color: cyan;
+    background: fade(cyan, 25%);
+    .horiPadding(5px);
+    border-radius: 5px;
+    margin-left: 15px;
+    font-size: 12px;
 }
 </style>
-
-<script lang="ts">
-import { useMainStore } from '@/modules/core/stores/store';
-import type { CurrencyDTO } from '@/../../api-types/currencies';
-import paginationVue from '@/modules/core/components/pagination.vue';
-import cell from '@/modules/core/components/cell.vue';
-import WrappedLineChart from '@/modules/core/components/wrappedLineChart.vue';
-import currencyRatesHistoryCell from '@/modules/currencies/components/currencyRatesHistoryCell.vue';
-import { useCurrenciesStore } from '../stores/useCurrenciesStore';
-import router from '@/router';
-
-export default
-{
-    components: { 'pagination': paginationVue, "cell": cell, "wrappedLineChart": WrappedLineChart, 'currencyRatesHistoryCell': currencyRatesHistoryCell },
-    data()
-    {
-        let data =
-        {
-            store: useMainStore(),
-            currentPage: 0,
-            currenciesStore: useCurrenciesStore()
-        };
-        return data;
-    },
-    computed:
-    {
-        selectedCurrencyID() { return router.currentRoute.value.params.cid as string },
-        pageReadable:
-        {
-            get() { return this.currentPage + 1; },
-            set(value:any) { this.currentPage = value - 1; }
-        },
-        selectedCurrency()
-        {
-            if (this.selectedCurrencyID == undefined) return undefined;
-            let currency = (this.currenciesStore.currencies.lastSuccessfulData?.rangeItems ?? [])
-                .find(x => x.id == this.selectedCurrencyID);
-
-            return currency as CurrencyDTO|undefined;
-        },
-        title()
-        {
-            if (this.selectedCurrency) return `Currencies - ${this.selectedCurrency.name}`;
-            return `Currencies`
-        }
-    },
-    methods:
-    {
-        selectCurrency(id: string)
-        {
-            router.push(
-            {
-                name: "currencies",
-                params: { cid: id }
-            });
-        }
-    }
-}
-</script>
