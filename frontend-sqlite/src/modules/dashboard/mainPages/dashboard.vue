@@ -132,6 +132,7 @@
                 <list-cell v-area="'ContainersList'" title="Containers" :noItemsText="'No Containers'"
                 :isLoading="containersStore.containers.isLoading"
                 :error="containersStore.containers.error"
+                :itemsInPage="6"
                 :items="store.toSorted(containersStore.containers.lastSuccessfulData?.rangeItems ?? [], (a,b) => parseFloat(b.value) - parseFloat(a.value))">
                     <template #row="props">
                         <grid-shortcut columns="1fr 1fr" class="fullSize">
