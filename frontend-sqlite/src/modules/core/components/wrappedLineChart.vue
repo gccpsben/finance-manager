@@ -18,13 +18,14 @@ const defaultLineColor = `rgb(75, 192, 192)`;
 
 Chart.register(...registerables);
 
-const props = defineProps<
+const props = withDefaults(defineProps<
 {
     lineColor?: string | undefined,
     datums: { x:number, y:number }[],
     isXAxisEpoch?: boolean,
-    hideXAxisTimePart?: boolean
-}>();
+    hideXAxisTimePart?: boolean,
+    showAxisLabels?: boolean
+}>(), { showAxisLabels: true });
 
 const chartOptions = computed(() =>
 {
@@ -40,7 +41,11 @@ const chartOptions = computed(() =>
                 x:
                 {
                     border: { display: true, color: '#333' },
-                    ticks: { autoSkip: true, maxTicksLimit: 5, maxRotation: 0, minRotation: 0 },
+                    ticks:
+                    {
+                        autoSkip: true, maxTicksLimit: 5, maxRotation: 0, minRotation: 0,
+                        display: props.showAxisLabels
+                    },
                     grid: { display: true, drawOnChartArea: true, drawTicks: true, color: '#222' },
                 },
                 y:
@@ -48,6 +53,7 @@ const chartOptions = computed(() =>
                     beginAtZero: false,
                     border: { display: true, color: '#333', },
                     grid: { display: true, drawOnChartArea: true, drawTicks: true, color: '#222' },
+                    ticks: { display: props.showAxisLabels }
                 }
             },
             options:
@@ -56,7 +62,7 @@ const chartOptions = computed(() =>
                 {
                     mode: 'index',
                     intersect: false,
-                },
+                }
             }
         } as ChartOptions<'line'>
     )

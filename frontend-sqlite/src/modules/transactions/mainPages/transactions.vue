@@ -35,15 +35,22 @@
                     <div class="rel">
                         <div class="fullSize abs" :class="{'darkened': mainPagination.isLoading.value}"
                         style="display:grid; grid-template-rows: repeat(15,1fr);">
-                            <div class="row tight"
-                                 @click="viewTransaction(item?.id)" style="font-size:14px;"
+                            <!-- <div class="row tight" style="position: sticky;">
+                                <div v-area.class="'txnName'">
+                                    <div>Name</div>
+                                </div>
+                                <div v-area.class="'txnAge'">
+                                    <div>Txn Age</div>
+                                </div>
+                            </div> -->
+                            <div class="row tight" style="font-size:14px;" @click="viewTransaction(item?.id)"
                                  v-for="item in mainPagination.lastCallResult.value?.rangeItems ?? []">
-                                <div v-area.class="'checkbox'" class="tight center">
+                                <div v-area.class="'checkbox'">
                                     <div class="checkbox">
                                         <input type="checkbox"/>
                                     </div>
                                 </div>
-                                <div v-area.class="'txnName'" class="tight yCenter ellipsisContainer">
+                                <div v-area.class="'txnName'">
                                     <div>
                                         {{ item?.title }}
                                     </div>
@@ -62,7 +69,7 @@
                                 :class="{'disabled': item?.changeInValue == 0}">
                                     <div>{{ formatChangeInValue(item?.changeInValue) }}</div>
                                 </div> -->
-                                <div v-area.class="'txnFrom'" class="tight yCenter xRight ellipsisContainer">
+                                <div v-area.class="'txnFrom'" class="xRight">
                                     <div v-if="item?.fromContainer">
                                         {{ getContainerNameById(item?.fromContainer, containers.lastSuccessfulData?.rangeItems ?? []) }}
                                     </div>
@@ -70,7 +77,7 @@
                                 <div v-area.class="'arrowIcon'" class="center">
                                     <fa-icon icon="fa-solid fa-arrow-right" />
                                 </div>
-                                <div v-area.class="'txnTo'" class="tight yCenter xLeft ellipsisContainer">
+                                <div v-area.class="'txnTo'" class="xLeft">
                                     <div v-if="item?.toContainer">
                                         {{ getContainerNameById(item?.toContainer, containers.lastSuccessfulData?.rangeItems ?? []) }}
                                     </div>
@@ -516,7 +523,8 @@ const submitSave = async () =>
 
     .row
     {
-        background:#050505; color:gray;
+        // background:#050505; 
+        color:gray;
         box-sizing: border-box; border-bottom:1px solid #151515;
         display:grid;
 
@@ -524,6 +532,8 @@ const submitSave = async () =>
         grid-template-columns:  30px     150fr   100px  150fr   50fr          150fr   50px      150fr 100fr;
         grid-template-areas:   'checkbox txnName txnAge txnType txnValueChange txnFrom arrowIcon txnTo chips';
         grid-template-rows: 1fr; .horiPadding(15px); cursor:pointer;
+
+        & > div { .tight; .yCenter; .ellipsisContainer; }
 
         &:hover
         {
