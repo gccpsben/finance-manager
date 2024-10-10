@@ -4,11 +4,12 @@ import { UserRepository } from "../repositories/user.repository.js";
 import createHttpError from "http-errors";
 import { Currency, RateHydratedPrimitiveCurrency } from "../entities/currency.entity.js";
 import { FindOptionsWhere } from "typeorm";
-import { CurrencyRateDatumRepository, CurrencyRateDatumsCache } from "../repositories/currencyRateDatum.repository.js";
+import { CurrencyRateDatumRepository } from "../repositories/currencyRateDatum.repository.js";
 import { LinearInterpolator } from "../../calculations/linearInterpolator.js";
 import { SQLitePrimitiveOnly } from "../../index.d.js";
 import { nameof, ServiceUtils } from "../servicesUtils.js";
-import { CurrencyListCache } from "../caches/currencyListCache.cache.js";
+import { GlobalCurrencyRateDatumsCache } from '../caches/currencyRateDatumsCache.cache.js';
+import { GlobalCurrencyCache } from "../caches/currencyListCache.cache.js";
 
 export class CurrencyCalculator
 {
@@ -27,36 +28,25 @@ export class CurrencyCalculator
     (
         ownerId: string,
         from: SQLitePrimitiveOnly<Currency>,
-        date: Date = new Date(),
-        cache: CurrencyListCache | undefined = undefined,
-        currencyRateDatumsCache: CurrencyRateDatumsCache | undefined = undefined
+        date: Date = new Date()
     ): Promise<Decimal>
     {
         if (from.isBase) return new Decimal(`1`);
 
         const getCurrById = async (id: string) =>
         {
-            // Find the requested currency in `knownCurrencies` first.
-            const potentialCacheHit = cache?.getCurrenciesList()?.find(c => c.ownerId === ownerId && c.id === id);
-            if (potentialCacheHit) return potentialCacheHit;
-
-            if (cache) // if cache object exists but still cannot find the currency, we want to fetch all currencies and cache it
-            {
-                await cache.ensureCurrenciesList();
-                return cache.getCurrenciesList().find(c => c.id === id);
-            }
-            else // if cache object doesnt exist, we just want to fetch the bare min
-            {
-                return CurrencyService.getCurrencyById(ownerId, id);
-            }
+            const cacheResult = GlobalCurrencyCache.queryCurrency(ownerId, id);
+            if (cacheResult) return cacheResult;
+            const fetchedResult = await CurrencyService.getCurrencyByIdWithoutCache(ownerId, id);
+            GlobalCurrencyCache.cacheCurrency(ownerId, id, fetchedResult);
+            return fetchedResult;
         };
 
         const nearestTwoDatums = await CurrencyRateDatumRepository.getInstance().findNearestTwoDatum
         (
             ownerId,
             from.id,
-            date,
-            currencyRateDatumsCache
+            date
         );
         const d1 = nearestTwoDatums[0]; const d2 = nearestTwoDatums[1];
 
@@ -67,9 +57,7 @@ export class CurrencyCalculator
             (
                 ownerId,
                 await getCurrById(from.fallbackRateCurrencyId),
-                date,
-                cache,
-                currencyRateDatumsCache
+                date
             )!;
             return currencyBaseAmount.mul(currencyBaseAmountUnitToBaseRate);
         }
@@ -81,9 +69,7 @@ export class CurrencyCalculator
             (
                 ownerId,
                 await getCurrById(d1.refAmountCurrencyId),
-                new Date(d1.date),
-                cache,
-                currencyRateDatumsCache
+                new Date(d1.date)
             )!;
             return datumAmount.mul(datumUnitToBaseRate);
         }
@@ -98,17 +84,13 @@ export class CurrencyCalculator
             (
                 ownerId,
                 D1Currency,
-                new Date(d1.date),
-                cache,
-                currencyRateDatumsCache
+                new Date(d1.date)
             )!;
             const D2CurrBaseRate = await CurrencyCalculator.currencyToBaseRate
             (
                 ownerId,
                 D2Currency,
-                new Date(d2.date),
-                cache,
-                currencyRateDatumsCache
+                new Date(d2.date)
             )!;
 
             let valLeft = new Decimal(d1.amount).mul(D1CurrBaseRate);
@@ -129,29 +111,45 @@ export class CurrencyCalculator
         }
     }
 
+
+    // TODO: Make startDate and endDate responsive to cache
     public static async getCurrencyToBaseRateInterpolator
     (
         userId:string,
         currencyId: string,
         startDate?: Date,
-        endDate?: Date,
-        cache: CurrencyListCache | undefined = undefined
+        endDate?: Date
     ): Promise<LinearInterpolator>
     {
-        if (cache === undefined) cache = new CurrencyListCache(userId);
-        await cache.ensureCurrenciesList();
+        const datums = await (async () =>
+        {
+            const cacheResult = GlobalCurrencyRateDatumsCache.queryRateDatums(userId, currencyId);
+            if (cacheResult) return cacheResult;
+            const fetchedResult = await CurrencyRateDatumRepository.getInstance().getCurrencyDatums(userId, currencyId);
+            GlobalCurrencyRateDatumsCache.cacheRateDatums(userId, currencyId, fetchedResult);
+            return fetchedResult;
+        })();
 
-        const datums = await CurrencyRateDatumRepository.getInstance().getCurrencyDatums(userId, currencyId, startDate, endDate);
+        const getCurrById = async (id: string) =>
+        {
+            const cacheResult = GlobalCurrencyCache.queryCurrency(userId, id);
+            if (cacheResult) return cacheResult;
+            const fetchedResult = await CurrencyService.getCurrencyByIdWithoutCache(userId, id);
+            GlobalCurrencyCache.cacheCurrency(userId, id, fetchedResult);
+            return fetchedResult;
+        };
+
         const entries: { key:Decimal, value: Decimal }[] = await (async () =>
         {
             const output: { key:Decimal, value: Decimal }[] = [];
             for (const datum of datums)
             {
-                const datumUnitCurrency = cache.getCurrenciesList().find(c => c.id === datum.refAmountCurrencyId);
+                const datumUnitCurrency = await getCurrById(datum.refAmountCurrencyId);
+
                 output.push(
                 {
                     key: new Decimal(datum.date),
-                    value: new Decimal(datum.amount).mul(await CurrencyCalculator.currencyToBaseRate(userId, datumUnitCurrency, new Date(datum.date), cache))
+                    value: new Decimal(datum.amount).mul(await CurrencyCalculator.currencyToBaseRate(userId, datumUnitCurrency, new Date(datum.date)))
                 });
             }
             return output;
@@ -216,12 +214,12 @@ export class CurrencyService
         }
     }
 
-    public static async getCurrencyById(userId:string, currencyId: string)
+    public static async getCurrencyByIdWithoutCache(userId:string, currencyId: string)
     {
-        return await this.getCurrency(userId, { id: currencyId ?? null });
+        return await this.getCurrencyWithoutCache(userId, { id: currencyId ?? null });
     }
 
-    public static async getCurrency(userId: string, where: Omit<FindOptionsWhere<Currency>, 'owner'>)
+    public static async getCurrencyWithoutCache(userId: string, where: Omit<FindOptionsWhere<Currency>, 'owner'>)
     {
         const user = await UserRepository.getInstance().findOne({where: { id: userId ?? null }});
         if (!user) throw createHttpError(404, `Cannot find user with id '${userId}'`);
@@ -268,25 +266,19 @@ export class CurrencyService
     (
         userId:string,
         currency: SQLitePrimitiveOnly<Currency>[],
-        date: number | undefined,
-        currenciesListCache?: CurrencyListCache | undefined,
-        currenciesRateDatumsCache?: CurrencyRateDatumsCache | undefined
+        date: number | undefined
     ): Promise<RateHydratedPrimitiveCurrency[]>
     public static async rateHydrateCurrency
     (
         userId:string,
         currency: SQLitePrimitiveOnly<Currency>,
-        date: number | undefined,
-        currenciesListCache?: CurrencyListCache | undefined,
-        currenciesRateDatumsCache?: CurrencyRateDatumsCache | undefined
+        date: number | undefined
     ): Promise<RateHydratedPrimitiveCurrency>
     public static async rateHydrateCurrency
     (
         userId:string,
         currencies: SQLitePrimitiveOnly<Currency>[] | SQLitePrimitiveOnly<Currency>,
-        date: number | undefined = undefined,
-        currenciesListCache: CurrencyListCache | undefined = undefined,
-        currenciesRateDatumsCache: CurrencyRateDatumsCache | undefined = undefined
+        date: number | undefined = undefined
     )
         : Promise<RateHydratedPrimitiveCurrency | RateHydratedPrimitiveCurrency[]>
     {
@@ -297,9 +289,7 @@ export class CurrencyService
             (
                 userId,
                 c,
-                new Date(date),
-                currenciesListCache,
-                currenciesRateDatumsCache
+                new Date(date)
             )
         ).toString();
 

@@ -10,8 +10,6 @@ import type { SQLitePrimitiveOnly } from "../../index.d.js";
 import { nameof, ServiceUtils } from "../servicesUtils.js";
 import { Container } from "../entities/container.entity.js";
 import { isNullOrUndefined } from "../../router/validation.js";
-import { CurrencyListCache } from "../caches/currencyListCache.cache.js";
-import { CurrencyRateDatumsCache } from "../repositories/currencyRateDatum.repository.js";
 
 const nameofT = (x: keyof Transaction) => nameof<Transaction>(x);
 
@@ -58,7 +56,7 @@ export class TransactionService
         }
         if (obj.fromCurrencyId)
         {
-            const currency = await CurrencyService.getCurrency(userId,{ id: obj.fromCurrencyId });
+            const currency = await CurrencyService.getCurrencyWithoutCache(userId,{ id: obj.fromCurrencyId });
             newTxn.fromCurrency = currency;
         }
 
@@ -75,7 +73,7 @@ export class TransactionService
         }
         if (obj.toCurrencyId)
         {
-            const currency = await CurrencyService.getCurrency(userId,{ id: obj.toCurrencyId });
+            const currency = await CurrencyService.getCurrencyWithoutCache(userId,{ id: obj.toCurrencyId });
             newTxn.toCurrency = currency;
         }
 
@@ -152,7 +150,7 @@ export class TransactionService
             oldTxn.fromContainer = !oldTxn.fromContainerId ? null : await ContainerService.getOneContainer(oldTxn.ownerId, { id: obj.fromContainerId });
 
             oldTxn.fromCurrencyId = obj.fromCurrencyId ?? null;
-            oldTxn.fromCurrency = !oldTxn.fromCurrencyId ? null : await CurrencyService.getCurrencyById(oldTxn.ownerId, oldTxn.fromCurrencyId);
+            oldTxn.fromCurrency = !oldTxn.fromCurrencyId ? null : await CurrencyService.getCurrencyByIdWithoutCache(oldTxn.ownerId, oldTxn.fromCurrencyId);
 
             oldTxn.toAmount = isNullOrUndefined(obj.toAmount) ? null : obj.toAmount;
 
@@ -160,7 +158,7 @@ export class TransactionService
             oldTxn.toContainer = !oldTxn.toContainerId ? null : await ContainerService.getOneContainer(oldTxn.ownerId, { id: obj.toContainerId });
 
             oldTxn.toCurrencyId = obj.toCurrencyId ?? null;
-            oldTxn.toCurrency = !oldTxn.toCurrencyId ? null : await CurrencyService.getCurrencyById(oldTxn.ownerId, oldTxn.toCurrencyId);
+            oldTxn.toCurrency = !oldTxn.toCurrencyId ? null : await CurrencyService.getCurrencyByIdWithoutCache(oldTxn.ownerId, oldTxn.toCurrencyId);
 
             oldTxn.txnTypeId = obj.txnTypeId ?? null;
             oldTxn.txnType = !oldTxn.txnTypeId ? null : await TransactionTypeService.getTransactionTypeById(oldTxn.ownerId, oldTxn.txnTypeId);
@@ -203,9 +201,7 @@ export class TransactionService
         userId: string,
         transaction: { fromAmount: string, toAmount:string, fromCurrencyId: string, toCurrencyId: string, creationDate: number },
         /** A mapping mapping each currency ID to its rate to base value. Will fetch from database if not given, or the currency is not found */
-        currencyToBaseValueMappingCache: {[key:string]: Decimal} | undefined = undefined,
-        currenciesListCache: CurrencyListCache | undefined = undefined,
-        currenciesRateDatumsCache: CurrencyRateDatumsCache | undefined = undefined
+        currencyToBaseValueMappingCache: {[key:string]: Decimal} | undefined = undefined
     ): Promise<{ increaseInValue: Decimal, currencyBaseValMapping: {[key:string]: Decimal} }>
     {
         let mapping = !currencyToBaseValueMappingCache ? { } : { ...currencyToBaseValueMappingCache };
@@ -215,16 +211,14 @@ export class TransactionService
             let currencyRate = mapping[currencyId];
             if (!currencyRate)
             {
-                const currencyRefetched = await CurrencyService.getCurrency(userId, { id: currencyId });
+                const currencyRefetched = await CurrencyService.getCurrencyWithoutCache(userId, { id: currencyId });
                 const rate =
                 (
                     await CurrencyService.rateHydrateCurrency
                     (
                         userId,
                         currencyRefetched,
-                        transaction.creationDate,
-                        currenciesListCache,
-                        currenciesRateDatumsCache
+                        transaction.creationDate
                     )
                 ).rateToBase;
                 currencyRate = new Decimal(rate);

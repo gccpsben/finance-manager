@@ -7,8 +7,6 @@ import { ServiceUtils } from '../../db/servicesUtils.js';
 import { IsPositiveIntString, IsUTCDateIntString } from '../../db/validators.js';
 import { IsOptional } from 'class-validator';
 import { ExpressValidations } from '../validation.js';
-import { CurrencyListCache } from '../../db/caches/currencyListCache.cache.js';
-import { CurrencyRateDatumsCache } from '../../db/repositories/currencyRateDatum.repository.js';
 import { TransactionService } from '../../db/services/transaction.service.js';
 
 const router = new TypesafeRouter(express.Router());
@@ -46,9 +44,6 @@ router.get<GetUserNetworthHistoryAPI.ResponseDTO>(`/api/v1/calculations/networth
             division: parsedQuery.division === undefined ? undefined : parseInt(parsedQuery.division),
         };
         const authResults = await AccessTokenService.ensureRequestTokenValidated(req);
-        const currenciesListCache = new CurrencyListCache(authResults.ownerUserId);
-        const currenciesRateDatumsCache = new CurrencyRateDatumsCache(authResults.ownerUserId);
-
         const input =
         {
             // defaults to all
@@ -62,9 +57,7 @@ router.get<GetUserNetworthHistoryAPI.ResponseDTO>(`/api/v1/calculations/networth
             authResults.ownerUserId,
             input.startDate,
             input.endDate,
-            input.division,
-            currenciesListCache,
-            currenciesRateDatumsCache
+            input.division
         );
 
         return {

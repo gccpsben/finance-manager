@@ -1,23 +1,42 @@
-import { SQLitePrimitiveOnly } from "../../index.d.js";
-import { RepositoryCache } from "../dataCache.js";
+import NodeCache from "node-cache";
 import { Currency } from "../entities/currency.entity.js";
-import { CurrencyService } from "../services/currency.service.js";
 
-export class CurrencyListCache extends RepositoryCache
+export class CurrencyCache
 {
-    private _currenciesList: SQLitePrimitiveOnly<Currency>[] | undefined = undefined;
-    public constructor(ownerId: string) { super(ownerId); }
+    #nodeCache = new NodeCache( { stdTTL: 50, checkperiod: 5, useClones: false } );
 
-    public getCurrenciesList(): SQLitePrimitiveOnly<Currency>[] | undefined { return this._currenciesList; }
-    public setCurrenciesList(list: SQLitePrimitiveOnly<Currency>[]) 
-    { 
-        if (list.find(x => x.ownerId !== this._ownerId))
-            throw new Error(`DataCache owner mismatch: Data inserted into DataCache must only belong to one user.`);
-        this._currenciesList = list;
+    public makeEntryKey(userId: string, currencyId: string)
+    {
+        return `${userId}-${currencyId}`;
     }
-    public async ensureCurrenciesList() 
-    {  
-        if (this._currenciesList !== undefined) return;
-        this.setCurrenciesList(await CurrencyService.getUserAllCurrencies(this._ownerId)); 
+
+    public cacheCurrency
+    (
+        userId: string,
+        currencyId: string,
+        datums: Currency
+    )
+    {
+        this.#nodeCache.set(this.makeEntryKey(userId, currencyId), datums);
+    }
+
+    public invalidateCurrency
+    (
+        userId: string,
+        currencyId: string
+    )
+    {
+        this.#nodeCache.del(this.makeEntryKey(userId, currencyId));
+    }
+
+    public queryCurrency
+    (
+        userId: string,
+        currencyId: string
+    ): Currency | undefined
+    {
+        return this.#nodeCache.get(this.makeEntryKey(userId, currencyId));
     }
 }
+
+export const GlobalCurrencyCache = new CurrencyCache();

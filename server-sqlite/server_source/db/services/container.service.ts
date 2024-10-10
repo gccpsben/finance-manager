@@ -6,10 +6,9 @@ import { Container } from "../entities/container.entity.js";
 import { nameof, ServiceUtils } from "../servicesUtils.js";
 import { TransactionService } from "./transaction.service.js";
 import { Decimal } from "decimal.js";
-import { CurrencyListCache } from "../caches/currencyListCache.cache.js";
-import { CurrencyRateDatumsCache } from '../repositories/currencyRateDatum.repository.js';
 import { CurrencyCalculator, CurrencyService } from "./currency.service.js";
 import { Currency } from "../entities/currency.entity.js";
+import { GlobalCurrencyCache } from "../caches/currencyListCache.cache.js";
 export class ContainerService
 {
     public static async tryGetContainerByName(ownerId: string, name: string)
@@ -95,18 +94,14 @@ export class ContainerService
     public static async getContainersBalance
     (
         ownerId: string,
-        containers: SQLitePrimitiveOnly<Container>[] | string[],
-        currenciesCache: CurrencyListCache|undefined = undefined
+        containers: SQLitePrimitiveOnly<Container>[] | string[]
     )
     {
-        if (currenciesCache === undefined) currenciesCache = new CurrencyListCache(ownerId);
-        await currenciesCache.ensureCurrenciesList();
-
         let relevantTxns = await TransactionService.getContainersTransactions(ownerId, containers);
         const containersBalancesMapping = await (async () =>
         {
             const output: { [containerId: string]: { [currencyId: string]: Decimal } } = {};
-            const append = (containerId: string, currencyId:string, amount: string, isNegative = false) => 
+            const append = (containerId: string, currencyId:string, amount: string, isNegative = false) =>
             {
                 const deltaAmount = isNegative ? new Decimal(amount).neg() : new Decimal(amount);
                 if (output[containerId] === undefined) output[containerId] = {};
@@ -131,14 +126,12 @@ export class ContainerService
     (
         ownerId: string,
         containers: SQLitePrimitiveOnly<Container>[] | string[],
-        currencyRateDateToUse: number | undefined = undefined,
-        currenciesCache: CurrencyListCache|undefined = undefined,
-        currencyRatesCache: CurrencyRateDatumsCache|undefined = undefined
+        currencyRateDateToUse: number | undefined = undefined
     )
     {
         const innerRateEpoch = currencyRateDateToUse === undefined ? Date.now() : currencyRateDateToUse;
         const innerRateDateObj = new Date(innerRateEpoch);
-        const containerBalances = await ContainerService.getContainersBalance(ownerId, containers, currenciesCache);
+        const containerBalances = await ContainerService.getContainersBalance(ownerId, containers);
 
         // The list of currency ids that are present in `containerBalances`
         const relevantCurrencyIds = Array.from((() =>
@@ -154,17 +147,11 @@ export class ContainerService
             const output: { [currencyId: string]: SQLitePrimitiveOnly<Currency> } = {};
             const getCurrById = async (id: string) =>
             {
-                // Find the requested currency in `knownCurrencies` first.
-                const potentialCacheHit = currenciesCache?.getCurrenciesList()?.find(c => c.ownerId === ownerId && c.id === id);
-                if (potentialCacheHit) return potentialCacheHit;
-
-                if (currenciesCache) // if cache object exists but still cannot find the currency, we want to fetch all currencies and cache it
-                {
-                    await currenciesCache.ensureCurrenciesList();
-                    return currenciesCache.getCurrenciesList().find(c => c.id === id);
-                }
-                // if cache object doesnt exist, we just want to fetch the bare min
-                else return CurrencyService.getCurrencyById(ownerId, id);
+                const cacheResult = GlobalCurrencyCache.queryCurrency(ownerId, id);
+                if (cacheResult) return cacheResult;
+                const fetchedResult = await CurrencyService.getCurrencyByIdWithoutCache(ownerId, id);
+                GlobalCurrencyCache.cacheCurrency(ownerId, id, fetchedResult);
+                return fetchedResult;
             };
 
             for (const cId of relevantCurrencyIds)
@@ -183,9 +170,7 @@ export class ContainerService
                 (
                     ownerId,
                     relevantCurrencies[currencyId],
-                    innerRateDateObj,
-                    currenciesCache,
-                    currencyRatesCache
+                    innerRateDateObj
                 );
             }
             return output;

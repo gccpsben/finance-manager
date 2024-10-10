@@ -4,6 +4,7 @@ import { Database } from "../db.js";
 import { SQLitePrimitiveOnly } from "../../index.d.js";
 import { isDate } from "class-validator";
 import { RepositoryCache } from "../dataCache.js";
+import { GlobalCurrencyRateDatumsCache } from "../caches/currencyRateDatumsCache.cache.js";
 
 export type DifferenceHydratedCurrencyRateDatum = SQLitePrimitiveOnly<CurrencyRateDatum> &
 { difference: number }
@@ -40,22 +41,14 @@ class CurrencyRateDatumRepositoryExtension
      */
     findNearestTwoDatum = async function
     (
-        this: Repository<CurrencyRateDatum>, userId: string,  currencyId: string, date: Date,
-        datumsCache: CurrencyRateDatumsCache | undefined = undefined
+        this: Repository<CurrencyRateDatum>,
+        userId: string,
+        currencyId: string, date: Date,
     ): Promise<DifferenceHydratedCurrencyRateDatum[]>
     {
         if (!date || !isDate(date)) throw new Error(`findNearestTwoDatum: The provided date is not a date object.`);
-        const currCache = datumsCache?.getCurrenciesRateDatumsList(currencyId);
-
-        if (currCache)
-        {
-            const results = datumsCache.getCurrenciesRateDatumsList(currencyId)
-            .filter(d => d.ownerId === userId && d.refCurrencyId === currencyId)
-            .map(d => ({ ...d, difference: Math.abs(d.date - date.getTime()) }))
-            .sort((a,b) => a.difference - b.difference)
-            .slice(0,2);
-            return results;
-        }
+        const cachedTwoDatums = GlobalCurrencyRateDatumsCache.findTwoNearestDatum(userId, currencyId, date);
+        if (cachedTwoDatums !== undefined) return cachedTwoDatums;
 
         let query = this.createQueryBuilder(`datum`);
         query = query.where(`ownerId = :ownerId`, { ownerId: userId ?? null });
@@ -63,12 +56,10 @@ class CurrencyRateDatumRepositoryExtension
         query = query.setParameter("_target_date_", date.getTime());
         query = query.select(`abs(datum.date - :_target_date_)`, `difference`);
         query = query.orderBy("difference", 'ASC');
-        if (!datumsCache) query = query.limit(2); // if there's no cache object provided, no need to fetch all of the datums
         query = query.addSelect("*");
 
         const results = await query.getRawMany() as (SQLitePrimitiveOnly<CurrencyRateDatum> & { difference: number })[];
-        if (datumsCache) datumsCache.setCurrenciesRateDatumsList(currencyId, results);
-
+        GlobalCurrencyRateDatumsCache.cacheRateDatums(userId, currencyId, results);
         return results.slice(0,2);
     }
 

@@ -8,7 +8,7 @@ import { CurrencyRepository } from "../repositories/currency.repository.js";
 import { EnsureNotPlainForeignKey, IsDecimalJSString } from "../validators.js";
 import { SQLitePrimitiveOnly } from "../../index.d.js";
 
-@Entity() 
+@Entity()
 @Unique("UniqueCurrencyNameWithinUser",["name", "owner"]) // For each user, no currencies with the same name is allowed
 @Unique("UniqueCurrencyTickerWithinUser",["ticker", "owner"]) // For each user, no currencies with the same ticker is allowed
 @Check(/*sql*/`CASE WHEN fallbackRateAmount IS NOT NULL THEN NOT isBase ELSE isBase END`) // If isBase then fallbackRateAmount must be null.
@@ -21,11 +21,11 @@ export class Currency extends EntityClass
 
     @Column({nullable: false})
     @IsNotEmpty()
-    @IsString() 
+    @IsString()
     @MaxLength(128)
     name: string;
 
-    @Column({nullable: true}) 
+    @Column({nullable: true})
     @IsOptional()
     @IsString()
     @IsDecimalJSString()
@@ -36,7 +36,7 @@ export class Currency extends EntityClass
 
     @ManyToOne(type => Currency, currency => currency.fallbackRateCurrency, { nullable: true })
     @JoinColumn()
-    @EnsureNotPlainForeignKey() 
+    @EnsureNotPlainForeignKey()
     fallbackRateCurrency: Omit<Omit<Relation<Currency>, 'owner'>, 'refCurrency'> | null;
 
     @Column( { nullable: false })
@@ -44,7 +44,7 @@ export class Currency extends EntityClass
 
     @ManyToOne(type => User, user => user.currencies, { nullable: false })
     @JoinColumn()
-    @EnsureNotPlainForeignKey() 
+    @EnsureNotPlainForeignKey()
     owner: Relation<User>;
 
     @Column()
@@ -62,22 +62,22 @@ export class Currency extends EntityClass
     {
         await super.validate();
 
-        if (!!this.fallbackRateCurrency !== (!!this.fallbackRateAmount)) 
-        { 
+        if (!!this.fallbackRateCurrency !== (!!this.fallbackRateAmount))
+        {
             const error = new ValidationError();
             error.target = this;
             error.constraints = { "AmountAndRefCurrency": `Amount and refCurrency must be defined along with each other if one of them is defined.` }
             throw error;
-        }       
+        }
 
         // Ensure only 1 base currency is for each user.
         if (this.isBase && await CurrencyRepository.getInstance().count
         (
             {
-                where: 
-                { 
-                    owner: { id: this.owner.id }, 
-                    isBase: true 
+                where:
+                {
+                    owner: { id: this.owner.id },
+                    isBase: true
                 },
                 relations: { owner: true }
             }
@@ -96,13 +96,13 @@ export class Currency extends EntityClass
     }
 }
 
-export type RateHydratedCurrency = 
+export type RateHydratedCurrency =
 {
     currency: Currency,
     rateToBase: string
 };
 
-export type RateHydratedPrimitiveCurrency = 
+export type RateHydratedPrimitiveCurrency =
 {
     currency: SQLitePrimitiveOnly<Currency>,
     rateToBase: string

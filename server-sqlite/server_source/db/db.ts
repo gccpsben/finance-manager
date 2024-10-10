@@ -16,7 +16,7 @@ export class Database
     /** Create a Database data source from the env file. */
     public static createAppDataSource()
     {
-        if (!EnvManager.sqliteFilePath && !EnvManager.sqliteInMemory) 
+        if (!EnvManager.sqliteFilePath && !EnvManager.sqliteInMemory)
             throw new Error(`createAppDataSource: EnvManager.sqliteFilePath is not defined.`);
 
         Database.AppDataSource = new DataSource(

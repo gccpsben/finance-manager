@@ -6,9 +6,8 @@ import { Transaction } from "../entities/transaction.entity.js";
 import { DecimalAdditionMapReducer, nameof, safeWhile, ServiceUtils } from "../servicesUtils.js";
 import { LinearInterpolator } from "../../calculations/linearInterpolator.js";
 import createHttpError from "http-errors";
-import { CurrencyListCache } from "../caches/currencyListCache.cache.js";
-import { CurrencyCalculator } from "./currency.service.js";
-import { CurrencyRateDatumsCache } from "../repositories/currencyRateDatum.repository.js";
+import { CurrencyCalculator, CurrencyService } from "./currency.service.js";
+import { GlobalCurrencyCache } from "../caches/currencyListCache.cache.js";
 
 export type UserBalanceHistoryMap = { [epoch: string]: { [currencyId: string]: Decimal } };
 export type UserBalanceHistoryResults =
@@ -22,8 +21,6 @@ export class CalculationsService
     public static async getUserExpensesAndIncomes30d(userId: string)
     {
         if (!userId) throw new Error(`getUserExpensesAndIncomes30d: userId cannot be null or undefined.`);
-
-        const currenciesListCache = new CurrencyListCache(userId);
 
         const allTxns = await TransactionRepository.getInstance().createQueryBuilder(`txn`)
         .select(
@@ -52,9 +49,7 @@ export class CalculationsService
                 (
                     userId,
                     txn,
-                    currencyBaseValueMapping,
-                    currenciesListCache,
-                    undefined // Not using cache here to stop fetching all datums
+                    currencyBaseValueMapping
                 );
 
             currencyBaseValueMapping = newCurrencyBaseValueMapping;
@@ -153,9 +148,7 @@ export class CalculationsService
         userId: string,
         startDate: number,
         endDate: number,
-        division: number,
-        currenciesListCache: CurrencyListCache | undefined = undefined,
-        currenciesRateDatumsCache: CurrencyRateDatumsCache | undefined = undefined
+        division: number
     ): Promise<{[epoch: string]:string}>
     {
         type cInterpolatorMap = { [currencyId: string]: LinearInterpolator };
@@ -167,7 +160,9 @@ export class CalculationsService
             throw createHttpError(400, `Division must be a positive integer higher than 1, received "${division}".`);
 
         const balanceHistory = await CalculationsService.getUserBalanceHistory(userId, startDate, endDate, division);
+
         const currenciesIdsInvolved = Object.keys(balanceHistory.currenciesEarliestPresentEpoch);
+
         const currenciesInterpolators: cInterpolatorMap = await (async () =>
         {
             const output: cInterpolatorMap = {};
@@ -178,8 +173,7 @@ export class CalculationsService
                     userId,
                     cId,
                     new Date(startDate),
-                    new Date(endDate),
-                    currenciesListCache
+                    new Date(endDate)
                 );
             }
             return output;
@@ -192,7 +186,15 @@ export class CalculationsService
             let valueOfAllCurrenciesSum = new Decimal(0);
             for (const currencyID of Object.keys(balanceHistory.historyMap[epoch]))
             {
-                const currencyObject = currenciesListCache.getCurrenciesList().find(x => x.id === currencyID)!;
+                const currencyObject = await (async () =>
+                {
+                    const cacheResult = GlobalCurrencyCache.queryCurrency(userId, currencyID);
+                    if (cacheResult) return cacheResult;
+                    const fetchedResult = await CurrencyService.getCurrencyByIdWithoutCache(userId, currencyID);
+                    GlobalCurrencyCache.cacheCurrency(userId, currencyID, fetchedResult);
+                    return fetchedResult;
+                })();
+
                 let currencyRateToBase = currenciesInterpolators[currencyID].getValue(new Decimal(epoch));
 
                 // Happens when the rate is unavailable at the given epoch (first rate is after the given epoch)
@@ -203,9 +205,7 @@ export class CalculationsService
                     (
                         userId,
                         currencyObject,
-                        new Date(parseInt(epoch)),
-                        currenciesListCache,
-                        currenciesRateDatumsCache
+                        new Date(parseInt(epoch))
                     );
                 }
                 const currencyValue = currencyRateToBase.mul(balanceHistory.historyMap[epoch][currencyID]);
