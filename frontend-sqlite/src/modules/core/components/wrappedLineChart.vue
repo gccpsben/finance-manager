@@ -24,8 +24,9 @@ const props = withDefaults(defineProps<
     datums: { x:number, y:number }[],
     isXAxisEpoch?: boolean,
     hideXAxisTimePart?: boolean,
-    showAxisLabels?: boolean
-}>(), { showAxisLabels: true });
+    showAxisLabels?: boolean,
+    showGridLines?: boolean
+}>(), { showAxisLabels: true, showGridLines: true });
 
 const chartOptions = computed(() =>
 {
@@ -46,13 +47,16 @@ const chartOptions = computed(() =>
                         autoSkip: true, maxTicksLimit: 5, maxRotation: 0, minRotation: 0,
                         display: props.showAxisLabels
                     },
-                    grid: { display: true, drawOnChartArea: true, drawTicks: true, color: '#222' },
+                    grid:
+                    {
+                        display: props.showGridLines, drawOnChartArea: true, drawTicks: true, color: '#222' 
+                    },
                 },
                 y:
                 {
                     beginAtZero: false,
                     border: { display: true, color: '#333', },
-                    grid: { display: true, drawOnChartArea: true, drawTicks: true, color: '#222' },
+                    grid: { display: props.showGridLines, drawOnChartArea: true, drawTicks: true, color: '#222' },
                     ticks: { display: props.showAxisLabels }
                 }
             },

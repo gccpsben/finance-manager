@@ -22,7 +22,7 @@
                                 <CustomTableCell grid-area="rateToBase" class="yCenter xRight">
                                     Rate to {{ currenciesStore.getBaseCurrencySymbol() }}
                                 </CustomTableCell>
-                                <CustomTableCell grid-area="rateHistory" class="center">
+                                <CustomTableCell grid-area="rateHistory" class="yCenter xRight">
                                     History 7d
                                 </CustomTableCell>
                             </CustomTableRow>
