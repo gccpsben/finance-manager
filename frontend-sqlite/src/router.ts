@@ -3,7 +3,7 @@ import { createRouter, createWebHistory } from 'vue-router'
 const router = createRouter(
 {
 	history: createWebHistory(import.meta.env.BASE_URL),
-	routes: 
+	routes:
 	[
         {
             path: '/',
@@ -21,10 +21,20 @@ const router = createRouter(
                     component: () => import("@/modules/dashboard/mainPages/dashboard.vue")
                 },
                 {
-                    path: 'currencies/:cid?',
-                    name: "currencies",
-                    component: () => import('@/modules/currencies/mainPages/currencies.vue'),
-                    props: true
+                    path: 'currencies',
+                    children:
+                    [
+                        {
+                            path: '',
+                            name: 'currencies',
+                            component: () => import('@/modules/currencies/mainPages/currencies.vue'),
+                        },
+                        {
+                            path: ":cid",
+                            name: 'singleCurrency',
+                            component: () => import(`@/modules/currencies/mainPages/singleCurrency.vue`),
+                        },
+                    ]
                 },
                 {
                     path: 'transactions/:id?',

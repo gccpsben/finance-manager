@@ -14,13 +14,13 @@ import { CurrencyRateDatumService } from '../../db/services/currencyRateDatum.se
 
 const router = new TypesafeRouter(express.Router());
 
-router.post<PostCurrencyAPI.ResponseDTO>(`/api/v1/currencies`, 
+router.post<PostCurrencyAPI.ResponseDTO>(`/api/v1/currencies`,
 {
-    handler: async (req: express.Request, res: express.Response) => 
+    handler: async (req: express.Request, res: express.Response) =>
     {
         class body implements PostCurrencyAPI.RequestDTO
         {
-            @IsString() name: string; 
+            @IsString() name: string;
             @IsOptional() @IsString() @IsDecimalJSString() fallbackRateAmount: string | undefined;
             @IsOptional() @IsString() fallbackRateCurrencyId: string | undefined;
             @IsString() ticker: string;
@@ -30,9 +30,9 @@ router.post<PostCurrencyAPI.ResponseDTO>(`/api/v1/currencies`,
         const parsedBody = await ExpressValidations.validateBodyAgainstModel<body>(body, req.body);
         const newCurrency = await CurrencyService.createCurrency
         (
-            authResult.ownerUserId, 
+            authResult.ownerUserId,
             parsedBody.name,
-            parsedBody.fallbackRateAmount ? new Decimal(parsedBody.fallbackRateAmount) : undefined, 
+            parsedBody.fallbackRateAmount ? new Decimal(parsedBody.fallbackRateAmount) : undefined,
             parsedBody.fallbackRateCurrencyId,
             parsedBody.ticker
         );
@@ -40,13 +40,13 @@ router.post<PostCurrencyAPI.ResponseDTO>(`/api/v1/currencies`,
     }
 });
 
-router.get<GetCurrencyAPI.ResponseDTO>(`/api/v1/currencies`, 
+router.get<GetCurrencyAPI.ResponseDTO>(`/api/v1/currencies`,
 {
-    handler: async (req: express.Request, res: express.Response) => 
+    handler: async (req: express.Request, res: express.Response) =>
     {
         class query extends OptionalPaginationAPIQueryRequest
         {
-            @IsOptional() @IsString() name: string; 
+            @IsOptional() @IsString() name: string;
             @IsOptional() @IsString() id: string;
             /** Which date should the rate of this currency be calculated against */
             @IsOptional() @IsNumberString() date: string;
@@ -68,10 +68,10 @@ router.get<GetCurrencyAPI.ResponseDTO>(`/api/v1/currencies`,
 
         const parsedQuery = await ExpressValidations.validateBodyAgainstModel<query>(query, req.query);
 
-        if (parsedQuery.id && parsedQuery.name) 
+        if (parsedQuery.id && parsedQuery.name)
             throw createHttpError(400, `Name and ID cannot be both provided at the same time.`);
 
-        const userQuery = 
+        const userQuery =
         {
             start: parsedQuery.start ? parseInt(parsedQuery.start) : undefined,
             end: parsedQuery.end ? parseInt(parsedQuery.end) : undefined,
@@ -79,10 +79,10 @@ router.get<GetCurrencyAPI.ResponseDTO>(`/api/v1/currencies`,
             id: parsedQuery.id,
             requestedRateDate: parsedQuery.date === undefined ? Date.now() : parseInt(parsedQuery.date)
         };
-    
+
         const sqlPrimitiveCurrencies = await PaginationAPIResponseClass.prepareFromQueryItems
         (
-            await CurrencyService.getManyCurrencies(authResult.ownerUserId, 
+            await CurrencyService.getManyCurrencies(authResult.ownerUserId,
             {
                 startIndex: userQuery.start,
                 endIndex: userQuery.end,
@@ -94,11 +94,11 @@ router.get<GetCurrencyAPI.ResponseDTO>(`/api/v1/currencies`,
 
         return {
             ...sqlPrimitiveCurrencies,
-            rangeItems: await (async () => 
+            rangeItems: await (async () =>
             {
                 const rateHydratedCurrencies = await CurrencyService.rateHydrateCurrency
                 (
-                    authResult.ownerUserId, 
+                    authResult.ownerUserId,
                     sqlPrimitiveCurrencies.rangeItems,
                     userQuery.requestedRateDate
                 );
@@ -118,9 +118,9 @@ router.get<GetCurrencyAPI.ResponseDTO>(`/api/v1/currencies`,
     }
 });
 
-router.get<GetCurrencyRateHistoryAPI.ResponseDTO>(`/api/v1/currencies/history`, 
+router.get<GetCurrencyRateHistoryAPI.ResponseDTO>(`/api/v1/currencies/history`,
 {
-    handler: async (req: express.Request, res: express.Response) => 
+    handler: async (req: express.Request, res: express.Response) =>
     {
         class query implements GetCurrencyRateHistoryAPI.RequestQueryDTO
         {
@@ -134,12 +134,12 @@ router.get<GetCurrencyRateHistoryAPI.ResponseDTO>(`/api/v1/currencies/history`,
         const parsedQuery = await ExpressValidations.validateBodyAgainstModel<query>(query, req.query);
         const datums = await CurrencyRateDatumService.getCurrencyRateHistory
         (
-            authResult.ownerUserId, 
+            authResult.ownerUserId,
             parsedQuery.id,
-            parsedQuery.startDate ? new Date(parseInt(parsedQuery.startDate)) : undefined, 
+            parsedQuery.startDate ? new Date(parseInt(parsedQuery.startDate)) : undefined,
             parsedQuery.endDate ? new Date(parseInt(parsedQuery.endDate)) : undefined,
             parsedQuery.division ? parseInt(parsedQuery.division) : 128
-        ); 
+        );
 
         return {
             datums: datums.datums.map(x => ({ date: x.date, value: x.rateToBase.toString() })),

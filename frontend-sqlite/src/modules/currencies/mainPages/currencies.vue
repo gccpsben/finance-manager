@@ -2,7 +2,7 @@
     <div id="currenciesTopDiv">
         <div id="currenciesTopDivInner">
             <div>
-                <view-title :title="'Currencies'"></view-title>
+                <view-title :title="'Currencies'"/>
             </div>
             <div>
                 <br /><br />
@@ -28,7 +28,8 @@
                             </CustomTableRow>
                         </template>
                         <template #body>
-                            <CustomTableRow v-for="item in mainPagination.lastCallResult.value?.rangeItems" class="bodyRows">
+                            <CustomTableRow v-for="item in mainPagination.lastCallResult.value?.rangeItems" class="bodyRows"
+                                            @click="viewCurrency(item.id)">
                                 <CustomTableCell grid-area="name">
                                     <div class="nameGridArea">
                                         <div class="nameGridAreaName">{{ item.name }}</div>
@@ -68,6 +69,7 @@ import NumberPagination from '@/modules/core/components/numberPagination.vue';
 import OverlapArea from '@/modules/core/components/overlapArea.vue';
 import NetworkCircularIndicator from '@/modules/core/components/networkCircularIndicator.vue';
 import CurrencyRateHistoryThumbnail from '../components/currencyRateHistoryThumbnail.vue';
+import router from '@/router';
 
 const currenciesStore = useCurrenciesStore();
 currenciesStore.currencies.updateData();
@@ -92,6 +94,15 @@ const mainPagination = useNetworkPaginationNew<CurrencyDTO>(
     updateOnMount: true
 });
 watch(mainPagination.currentPage, () => mainPagination.update());
+
+function viewCurrency(id: string)
+{
+    router.push(
+    {
+        name: "singleCurrency",
+        params: { cid: id }
+    });
+}
 </script>
 
 <style lang="less" scoped>
