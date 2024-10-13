@@ -13,7 +13,7 @@
                                   :error="error.get()"/>
             <grid-shortcut :style="{opacity: isLoading.get() ? 0.5 : 1}" columns="1fr"
                            style="overflow: hidden; grid-auto-rows: 1fr;" class="fullSize">
-                <div v-if="currentViewItems.length == 0" class="fullSize center">
+                <div v-if="currentViewItems.length == 0 && !isLoading.get() && !error.get()" class="fullSize center">
                     {{ noItemsText.get() }}
                 </div>
                 <div v-for="currentItem in currentViewItems">
