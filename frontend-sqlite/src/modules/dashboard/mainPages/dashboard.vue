@@ -375,7 +375,7 @@ export default
         // },
         viewTxn(id:string)
         {
-            router.push({name: 'transactions', params: { id: id }})
+            router.push({name: 'singleTransaction', params: { id: id }})
         }
     }
 }
