@@ -1,198 +1,126 @@
 <template>
-    <div id="topDiv">
-
-        <view-title :title="title"></view-title>
-
-        <pagination v-if="!selectedContainerID"
-                    v-model:currentPage="currentPage" :itemsInPage="15" :items="containersStore.containers.lastSuccessfulData?.rangeItems ?? []"
-                    v-slot="props" class="fullSize" style="height:calc(100svh - 170px);">
-            <div id="panel">
-                <grid-shortcut rows="1fr" columns="1fr auto">
-                    <h2 class="panelTitle">All Containers</h2>
-                    <div class="pageSelector">
-                        <fa-icon-btn :disabled="!props.isPreviousArrowAllowed" @click="props.previous()" id="previousArrow" class="optionIcon" icon="fa-solid fa-chevron-left"></fa-icon-btn>
-                        <input type="number" size="1" v-int-only v-model.lazy="pageReadable" min="1">
-                        <fa-icon-btn :disabled="!props.isNextArrowAllowed" @click="props.next()" id="nextArrow" class="optionIcon" icon="fa-solid fa-chevron-right"></fa-icon-btn>
-                    </div>
-                </grid-shortcut>
-                <grid-shortcut class="fullSize" rows="repeat(20, 1fr)" columns="1fr" style="padding-top:15px;">
-
-                    <div class="row tight" style="font-size:14px;" @click="selectContainer(Container.id)"
-                    v-for="Container in props.pageItems">
-                        <div v-area="'name'" class="tight yCenter ellipsisContainer">
-                            <div>{{ Container.name }}</div>
-                        </div>
-                        <!-- <div v-area="'value'" class="tight yCenter ellipsisContainer">
-                            <div>{{ Number(Number(Container.value).toPrecision(3)) }}</div>
-                        </div>
-                        <div v-area="'valueActual'" class="tight yCenter ellipsisContainer">
-                            <div>{{ Number(Number(Container.valueActual).toPrecision(3)) }}</div>
-                        </div> -->
-                        <div v-area="'arrow'" class="tight yCenter xRight ellipsisContainer">
-                            <fa-icon icon="fa-solid fa-arrow-right"></fa-icon>
-                        </div>
-                    </div>
-
-                </grid-shortcut>
+    <div id="containersTopDiv">
+        <div id="containersTopDivInner">
+            <div>
+                <view-title :title="'Containers'"></view-title>
             </div>
-        </pagination>
-<!--
-        <div id="panel" v-if="selectedContainerID" >
-            <grid-shortcut rows="300px 1fr" columns="300px 1fr auto">
-                <div class="panel center">
-                    <grid-shortcut rows="auto auto auto" columns="1fr">
-                        <div class="center">
-                            <div id="coinIcon">?</div>
-                        </div>
-                        <div class="center">
-                            <h2 class="fsNumbers">{{ selectedContainer?.name }}</h2>
-                        </div>
-                        <div class="center">
-
-                        </div>
-                    </grid-shortcut>
+            <div>
+                <br /><br />
+            </div>
+            <div class="fullSize">
+                <div class="fullSize">
+                <div class="yCenter xRight" style="margin-bottom:14px;">
+                    <NumberPagination :max-page-readable="mainPagination.lastCallMaxPageIndex.value"
+                                        v-model:model-value="mainPagination.currentPage.value"></NumberPagination>
                 </div>
-            </grid-shortcut>
-        </div> -->
-
+                <OverlapArea class="fullSize">
+                    <CustomTable class="allContainersTable" rows="50px auto" columns="1fr" rowRows="1fr" :style="{opacity: containersStore.containers.isLoading ? 0.3 : 1}"
+                                 rowColumns="1fr auto" rowAreas="'name value'" bodyRows="min-content">
+                        <template #header>
+                            <CustomTableRow class="headerRow fullSize" style="font-weight: bold;">
+                                <CustomTableCell grid-area="name" class="yCenter xLeft">Name</CustomTableCell>
+                                <CustomTableCell grid-area="value" class="yCenter xLeft">Value in {{ currenciesStore.getBaseCurrencySymbol() }}</CustomTableCell>
+                            </CustomTableRow>
+                        </template>
+                        <template #body>
+                            <CustomTableRow v-for="item in mainPagination.lastCallResult.value?.rangeItems" class="bodyRows">
+                                <CustomTableCell grid-area="name">
+                                    <div class="fullSize xLeft yCenter">{{ item.name }}</div>
+                                </CustomTableCell>
+                                <CustomTableCell grid-area="value">
+                                    <div class="fullSize xLeft yCenter">
+                                        {{ parseFloat(item.value).toFixed(2) }}
+                                    </div>
+                                </CustomTableCell>
+                            </CustomTableRow>
+                        </template>
+                    </CustomTable>
+                    <NetworkCircularIndicator :error="containersStore.containers.error"
+                                            :is-loading="containersStore.containers.isLoading"
+                                            style="pointer-events: none;"/>
+                </OverlapArea>
+            </div>
+            </div>
+        </div>
     </div>
 </template>
 
+<script lang="ts" setup>
+import CustomTable from '@/modules/core/components/tables/customTable.vue';
+import CustomTableCell from '@/modules/core/components/tables/customTableCell.vue';
+import CustomTableRow from '@/modules/core/components/tables/customTableRow.vue';
+import NumberPagination from '@/modules/core/components/numberPagination.vue';
+import NetworkCircularIndicator from '@/modules/core/components/networkCircularIndicator.vue';
+import { useContainersStore } from '../stores/useContainersStore';
+import useNetworkPaginationNew from '@/modules/core/composables/useNetworkedPagination';
+import { watch } from 'vue';
+import { useCurrenciesStore } from '@/modules/currencies/stores/useCurrenciesStore';
+
+const currenciesStore = useCurrenciesStore();
+const containersStore = useContainersStore();
+containersStore.containers.updateData();
+currenciesStore.currencies.updateData();
+const mainPagination = useNetworkPaginationNew(
+{
+    updater: async (start:number, end:number) =>
+    {
+        await containersStore.containers.updateData();
+        const containers = containersStore.containers.lastSuccessfulData?.rangeItems ?? [];
+        const endIndex = Math.min(containers.length, end);
+
+        return {
+            totalItems: containers.length ?? 0,
+            startingIndex: start,
+            endingIndex: endIndex,
+            rangeItems: containers.slice(start, endIndex)
+        };
+    },
+    pageIndex: 0,
+    pageSize: 10,
+    overflowResolutionHandler: (_, lastAvailablePageIndex) => mainPagination.currentPage.value = lastAvailablePageIndex,
+    updateOnMount: true
+});
+watch(mainPagination.currentPage, () => mainPagination.update());
+</script>
+
 <style lang="less" scoped>
 @import '@/modules/core/stylesheets/globalStyle.less';
-@import url('https://fonts.googleapis.com/css2?family=Lato:wght@300;400;700&family=Roboto:ital,wght@0,100;0,300;0,500;0,700;0,900;1,100;1,300;1,500;1,700;1,900&display=swap');
+* { box-sizing: border-box; };
 
-#coinIcon
+#containersTopDiv
 {
-    border-radius:100%; width:100px; height:100px; background:#222222;
-    .center; .fg(white);
+    container-name: containersPage;
+    container-type: size;
+
+    .fullSize;
+    #containersTopDivInner { padding: @desktopPagePadding; }
 }
 
-.panel
+#containersTopDiv .headerRow, #containersTopDiv .bodyRows
 {
-    background:@background;
-    padding:25px;
-    color:gray;
-    & h2 { font-weight:100; }
-    & .fsNumbers { margin-top:35px; }
+    & > * { .horiPadding(10px); };
+    border-bottom: 1px solid @border;
 }
 
-#topDiv
+@container containersPage (width <= 450px)
 {
-    padding:50px; box-sizing: border-box;
-    overflow-x:hidden;
-    font-family: 'Schibsted Grotesk', sans-serif;
-    .gradBackground;
+    #containersTopDivInner { padding: @mobilePagePadding !important; }
+}
 
-    input
+.headerRow, .bodyRows { font-family: @font; }
+.bodyRows
+{
+    font-family: @font;
+    &:hover
     {
-        color:white;
-        background:transparent;
-        border:1px solid #252525;
-        width:30px;
-        padding:0px; .horiMargin(5px);
-        text-align: center;
+        background: @focusDark;
+        color: @focus;
     }
-
-    #panel
-    {
-        height: calc(100svh - 290px);
-        box-sizing:border-box;
-        .panelTitle { text-align:start; color:gray; font-size:14px; .tight; display:inline; }
-        .pageSelector  { color:gray !important; transform: translateY(-3px); }
-
-        #currentPage { .horiMargin(15px); .vertMargin(5px); font-size:16px; min-width:15px; display:inline-block; text-align: center; }
-        .disabled { pointer-events: none; opacity:0.2; }
-
-        .row
-        {
-            background:#050505; color:gray;
-            box-sizing: border-box; border:1px solid #101010;
-            display:grid; padding:15px; .vertMargin(5px);
-
-            gap: 15px;
-
-            grid-template:
-              "name value valueActual dataSource arrow" 1fr
-            / 175px 75px   100px 1fr        50px;
-
-            cursor:pointer;
-
-            &:hover
-            {
-                background: @focusDark;
-                color: @focus;
-            }
-
-            .rowContent
-            {
-                display:grid; box-sizing: border-box;
-                grid-template-columns: 1fr 1fr 1fr;
-                grid-template-rows: 1fr 1fr;
-            }
-
-            .txnName
-            {
-                overflow:hidden !important;
-            }
-        }
-    }
+    cursor: pointer;
+    user-select: none;
+    white-space: nowrap;
+    height: 60px;
+    grid-template-columns: 1fr auto !important;
+    overflow: hidden;
 }
 </style>
-
-<script lang="ts">
-import { useMainStore } from '@/modules/core/stores/store';
-import type { Container, ValueHydratedContainer } from '@/types/dtos/containersDTO';
-import paginationVue from '@/modules/core/components/pagination.vue';
-import { useContainersStore } from '../stores/useContainersStore';
-import router from '@/router';
-
-export default
-{
-    components: {'pagination':paginationVue},
-    data()
-    {
-        let data =
-        {
-            store: useMainStore(),
-            containersStore: useContainersStore(),
-            currentPage: 0
-        };
-        return data;
-    },
-    computed:
-    {
-        selectedContainerID()
-        {
-            return router.currentRoute.value.params.pubID as string;
-        },
-        pageReadable:
-        {
-            get() { return this.currentPage + 1; },
-            set(value:number) { this.currentPage = value - 1;  }
-        },
-        selectedContainer()
-        {
-            if (this.selectedContainerID == undefined) return undefined;
-            let container = this.containersStore.findContainerById(this.selectedContainerID);
-            return container as Container|undefined;
-        },
-        title()
-        {
-            if (this.selectedContainer) return `Containers - ${this.selectedContainer.name}`;
-            return `Containers`;
-        }
-    },
-    methods:
-    {
-        selectContainer(pubID: string)
-        {
-            router.push(
-            {
-                name: "containers",
-                params: { pubID: pubID }
-            });
-        }
-    }
-}
-</script>
