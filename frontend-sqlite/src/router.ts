@@ -37,10 +37,20 @@ const router = createRouter(
                     ]
                 },
                 {
-                    path: 'transactions/:id?',
-                    name: 'transactions',
-                    component: () => import('@/modules/transactions/mainPages/transactions.vue'),
-                    props: true
+                    path: 'transactions',
+                    children:
+                    [
+                        {
+                            path: '',
+                            name: 'transactions',
+                            component: () => import('@/modules/transactions/mainPages/transactions.vue'),
+                        },
+                        {
+                            path: ":id",
+                            name: 'singleTransaction',
+                            component: () => import(`@/modules/transactions/mainPages/singleTransaction.vue`),
+                        },
+                    ]
                 },
                 {
                     path: 'charts',

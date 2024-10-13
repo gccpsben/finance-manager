@@ -4,15 +4,15 @@ export namespace PostTxnAPI
     export type RequestDTO =
     {
         title: string;
-        creationDate?: number | undefined;
-        description?: string | undefined;
+        creationDate?: number | null;
+        description?: string | null;
         txnTypeId: string;
-        fromAmount?: string | undefined;
-        fromContainerId?: string | undefined;
-        fromCurrencyId?: string | undefined;
-        toAmount?: string | undefined;
-        toContainerId?: string | undefined;
-        toCurrencyId?: string | undefined;
+        fromAmount?: string | null;
+        fromContainerId?: string | null;
+        fromCurrencyId?: string | null;
+        toAmount?: string | null;
+        toContainerId?: string | null;
+        toCurrencyId?: string | null;
     };
 
     export type ResponseDTO = { id: string; };
@@ -31,16 +31,16 @@ export namespace GetTxnAPI
     {
         id: string;
         title: string;
-        description: string | undefined;
+        description: string | null;
         owner: string;
         creationDate: number;
         txnType: string;
-        fromAmount: string | undefined;
-        fromCurrency: string | undefined;
-        fromContainer: string | undefined;
-        toAmount: string | undefined;
-        toCurrency: string | undefined;
-        toContainer: string | undefined;
+        fromAmount: string | null;
+        fromCurrency: string | null;
+        fromContainer: string | null;
+        toAmount: string | null;
+        toCurrency: string | null;
+        toContainer: string | null;
     }
     export type RequestDTO = {};
     export type ResponseDTO = PaginationAPIResponse<TxnDTO>;
