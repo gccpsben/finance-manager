@@ -5,7 +5,7 @@
                 <ga-icon id="backBtn" icon="chevron_left"
                          @click="emit('back')"/>
             </div>
-            <div class="titleContainer">
+            <div class="titleContainer ellipsis">
                 <h3 class="viewTitleH3">{{ title }}</h3>
             </div>
         </div>
@@ -53,6 +53,8 @@ const props = withDefaults(defineProps<ViewTitleProps>(), { hasBackButton: false
             color:white;
             font-size: inherit;
             font-weight: 500;
+            white-space: nowrap;
+            .ellipsis; // both the container and the h3 must have this class for ellipsis to work
             .tight;
         }
 
