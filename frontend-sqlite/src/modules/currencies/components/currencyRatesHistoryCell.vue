@@ -1,15 +1,18 @@
 <template>
-    <cell :title="'Rates History'" :available-options="['All', '30d', '7d']" v-model:selected-option="selectedOption">
+    <cell :title="'Rates History'" :available-options="['All', '30d', '7d']"
+          v-model:selected-option="selectedOption">
         <template v-if="datumResponse.isLoading.value || datumResponse.error.value">
-            <NetworkCircularIndicator :error="datumResponse.error.value" :is-loading="datumResponse.isLoading.value" class="fullSize center"/>
+            <NetworkCircularIndicator :error="datumResponse.error.value"
+                                      :is-loading="datumResponse.isLoading.value"
+                                      class="fullSize center"/>
         </template>
         <template v-else-if="parsedDatums?.length == 0">
             <div class="fullSize center">
-                <div>No Data Available</div>
+                <div style="color: white; font-size: 12px;">No Data Available</div>
             </div>
         </template>
         <template v-else>
-            <WrappedLineChart :is-x-axis-epoch="true" :datums="parsedDatums"></WrappedLineChart>
+            <WrappedLineChart :is-x-axis-epoch="true" :datums="parsedDatums" />
         </template>
     </cell>
 </template>
@@ -27,14 +30,14 @@ type AvailableOptions = "All" | "30d" | "7d";
 
 const selectedOption = ref<AvailableOptions>('All');
 const props = defineProps<{ currencyId: string }>();
-const baseQueryObj = 
+const baseQueryObj =
 {
     query: { id: props.currencyId },
     url: `${API_CURRENCY_RATE_HISTORY_PATH}`
 };
 const datumResponse = useNetworkRequest<GetCurrencyRateHistoryAPI.ResponseDTO>
 (
-    baseQueryObj, 
+    baseQueryObj,
     {
         autoResetOnUnauthorized: true,
         includeAuthHeaders: true,
@@ -42,25 +45,25 @@ const datumResponse = useNetworkRequest<GetCurrencyRateHistoryAPI.ResponseDTO>
     }
 );
 
-watch([() => props.currencyId, () => selectedOption.value], () => 
-{ 
+watch([() => props.currencyId, () => selectedOption.value], () =>
+{
     if (selectedOption.value === 'All')
     {
         datumResponse.setQueryObj(baseQueryObj);
-        return datumResponse.updateData(); 
+        return datumResponse.updateData();
     }
 
     const queryStartEpoch = Date.now() - (selectedOption.value === '30d' ? 2_592_000_000 : 604_800_000);
     datumResponse.setQueryObj(
     {
         ...baseQueryObj,
-        query: { ...baseQueryObj.query, startDate: `${queryStartEpoch}` }   
+        query: { ...baseQueryObj.query, startDate: `${queryStartEpoch}` }
     });
     return datumResponse.updateData();
 
 }, { immediate: true });
 
-const parsedDatums = computed(() => 
+const parsedDatums = computed(() =>
 {
     const apiResponse = datumResponse.lastSuccessfulData;
     const datums = apiResponse.value?.datums ?? [];
