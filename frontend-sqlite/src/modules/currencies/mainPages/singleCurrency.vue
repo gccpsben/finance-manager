@@ -61,4 +61,10 @@ const targetCurrency = computed(() => currency.lastSuccessfulData.value?.rangeIt
 
     #currencyTopDivInner { padding: @desktopPagePadding; }
 }
+
+
+@container currencyPage (width <= 500px)
+{
+    #currencyTopDivInner { padding: @mobilePagePadding !important; }
+}
 </style>
