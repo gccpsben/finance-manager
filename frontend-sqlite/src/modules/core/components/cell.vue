@@ -8,7 +8,7 @@
                 <template v-else-if="icon && icon.type === 'Google'">
                     <ga-icon style="font-size:12px; color:white; margin-right: 14px;" :icon="`${icon.name}`" />
                 </template>
-                <h2 class="panelTitle">{{ title.get() }}</h2>
+                <h2 class="panelTitle">{{ title }}</h2>
             </div>
             <div>
                 <slot name="cellOptions"></slot>
@@ -31,25 +31,25 @@
 {
     gap:15px;
     border-radius: @cellBorderRadius;
-    .fullSize; 
+    .fullSize;
     box-sizing:border-box;
     font-family: @font;
     font-weight: normal;
 
-    &:not(.insetMode) 
+    &:not(.insetMode)
     {
         padding:15px;
         .bg(@cellBackground);
         box-shadow: 0px 0px 15px #050505;
     }
 
-    .panelTitle 
-    { 
+    .panelTitle
+    {
         color: @cellHeaderColor;
-        text-align:start; 
-        font-size:14px; 
-        .tight; 
-        display:inline; 
+        text-align:start;
+        font-size:14px;
+        .tight;
+        display:inline;
         font-weight: inherit;
     }
     &.insetMode .panelTitle
@@ -78,13 +78,13 @@
         grid-auto-flow: column;
 
         .variantSelector
-        {        
-            .variantTab 
-            { 
-                cursor: pointer; 
-                color: gray; 
+        {
+            .variantTab
+            {
+                cursor: pointer;
+                color: gray;
                 display: inline-block;
-                font-size:14px; 
+                font-size:14px;
                 user-select: none;
                 .yTop;
             }
@@ -95,8 +95,6 @@
 </style>
 
 <script lang="ts" setup>
-import { defineProperty } from '../utils/defineProperty';
-
 export type IconType = "Google" | "FontAwesome";
 
 const props = withDefaults(defineProps<
@@ -104,12 +102,5 @@ const props = withDefaults(defineProps<
     title: string,
     icon?: { type: IconType, name: string } | undefined,
     insetMode?: boolean | undefined
-}>(), { title: "No Title", icon: undefined, insetMode: false });
-
-const title = defineProperty<string, "title", typeof props>("title", 
-{   
-    emitFunc: undefined,
-    props: props,
-    withEmits: false
-});
+}>(), { title: "<no title>", icon: undefined, insetMode: false });
 </script>
