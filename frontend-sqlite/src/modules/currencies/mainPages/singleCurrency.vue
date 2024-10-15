@@ -2,7 +2,7 @@
     <div id="currencyTopDiv">
         <div v-if="isCurrencyFound && targetCurrency" id="currencyTopDivInner">
             <div>
-                <ViewTitle :title="`Currency - ${targetCurrency!.name}`"
+                <ViewTitle :title="`${targetCurrency!.name}`"
                            hasBackButton @back="router.back()"/>
             </div>
             <div>
