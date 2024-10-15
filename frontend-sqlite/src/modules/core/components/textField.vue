@@ -16,8 +16,11 @@
                         <slot name="fieldActions"></slot>
                     </div>
                 </div>
-                <div ref="placeholderText" v-basic="'.placeholderText'" v-area="'main'" :style="placeholderTextStyleOverrideObj" >{{ fieldName.get() }}</div>
-                <div ref="unscaledPlaceholderText" v-basic="'.unscaledPlaceholderText'" v-area="'main'">{{ fieldName.get() }}</div>
+                <div ref="placeholderText" v-basic="'.placeholderText'" v-area="'main'"
+                     :style="placeholderTextStyleOverrideObj" >{{ fieldName.get() }}</div>
+                <div ref="unscaledPlaceholderText" v-basic="'.unscaledPlaceholderText'" v-area="'main'">
+                    {{ fieldName.get() }}
+                </div>
             </div>
         </fieldset>
     </div>
@@ -28,13 +31,13 @@ import vBasic from '@/modules/core/directives/vBasic';
 import vArea from '@/modules/core/directives/vArea';
 import { useElementSize, useFocus } from '@vueuse/core';
 import { ref, computed } from 'vue';
-import { defineProperty } from '../utils/defineProperty';
+import { defineProperty, Uncontrolled } from '../utils/defineProperty';
 import type { HTMLInputType } from '@/shims-vue';
 import tinycolor from "tinycolor2";
 
 export type TextFieldProps =
 {
-    text: string,
+    text?: string | typeof Uncontrolled,
     fieldName?: string,
     inputType?: HTMLInputType,
     overrideThemeColor?: string | undefined,
@@ -54,7 +57,7 @@ export type TextFieldEmits =
 
 const props = withDefaults(defineProps<TextFieldProps>(),
 {
-    text: '',
+    text: Uncontrolled,
     fieldName: 'Placeholder here',
     inputType: 'text',
     overrideThemeColor: undefined,
@@ -65,14 +68,38 @@ const props = withDefaults(defineProps<TextFieldProps>(),
     textareaMode: false
 });
 const emit = defineEmits<TextFieldEmits>();
-const text = defineProperty<string, "text", typeof props>("text", { emitFunc: emit, props: props, default: '' });
-const placeholder = defineProperty<undefined | string, "placeholder", typeof props>("placeholder", { emitFunc: undefined, props: props, default: '' });
-const fieldName = defineProperty<string, "fieldName", typeof props>("fieldName", { emitFunc: undefined, props: props, default: 'Placeholder here' });
-const inputType = defineProperty<HTMLInputType, "inputType", typeof props>("inputType", { emitFunc: undefined, props: props, default: 'text' });
-const overrideThemeColor = defineProperty<string | undefined, "overrideThemeColor", typeof props>("overrideThemeColor", { emitFunc: undefined, props: props, default: undefined });
-const disabled = defineProperty<boolean | undefined, "disabled", typeof props>("disabled", { emitFunc: undefined, props: props, default: false });
-const readonly = defineProperty<boolean | undefined, "readonly", typeof props>("readonly", { emitFunc: undefined, props: props, default: false });
-const alwaysFloat = defineProperty<boolean | undefined, "alwaysFloat", typeof props>("alwaysFloat", { emitFunc: undefined, props: props, default: false });
+const text = defineProperty<string | typeof Uncontrolled, "text", typeof props>(
+    "text",
+    { emitFunc: emit, props: props, default: '' }
+);
+const placeholder = defineProperty<undefined | string, "placeholder", typeof props>(
+    "placeholder",
+    { emitFunc: undefined, props: props, default: '' }
+);
+const fieldName = defineProperty<string, "fieldName", typeof props>(
+    "fieldName",
+    { emitFunc: undefined, props: props, default: 'Placeholder here' }
+);
+const inputType = defineProperty<HTMLInputType, "inputType", typeof props>(
+    "inputType",
+    { emitFunc: undefined, props: props, default: 'text' }
+);
+const overrideThemeColor = defineProperty<string | undefined, "overrideThemeColor", typeof props>(
+    "overrideThemeColor",
+    { emitFunc: undefined, props: props, default: undefined }
+);
+const disabled = defineProperty<boolean | undefined, "disabled", typeof props>(
+    "disabled",
+    { emitFunc: undefined, props: props, default: false }
+);
+const readonly = defineProperty<boolean | undefined, "readonly", typeof props>(
+    "readonly",
+    { emitFunc: undefined, props: props, default: false }
+);
+const alwaysFloat = defineProperty<boolean | undefined, "alwaysFloat", typeof props>(
+    "alwaysFloat",
+    { emitFunc: undefined, props: props, default: false }
+);
 
 const textFieldInput = ref(null);
 const placeholderText = ref(null);
