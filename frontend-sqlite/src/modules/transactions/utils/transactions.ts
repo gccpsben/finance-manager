@@ -1,10 +1,10 @@
-import type { TxnDTO } from "@/../../api-types/txn";
+import type { GetTxnAPI } from "@/../../api-types/txn";
 
-export function getTxnClassification(txn: TxnDTO)
-{ 
+export function getTxnClassification(txn: GetTxnAPI.TxnDTO)
+{
     if (txn.fromAmount && txn.toAmount) return "Transfer";
     else if (txn.fromAmount && !txn.toAmount) return "Expense";
-    else return "Income"; 
+    else return "Income";
 };
 
 export function formatChangeInValue(value:number)
