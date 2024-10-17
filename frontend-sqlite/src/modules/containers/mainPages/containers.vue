@@ -9,10 +9,17 @@
             </div>
             <div class="fullSize">
                 <div class="fullSize">
-                <div class="yCenter xRight" style="margin-bottom:14px;">
-                    <NumberPagination :max-page-readable="mainPagination.lastCallMaxPageIndex.value"
-                                        v-model:model-value="mainPagination.currentPage.value"></NumberPagination>
-                </div>
+                <LeftRightGrid style="margin-bottom:14px;" column-width-config="AUTO">
+                    <div class="xLeft">
+                        <BaseButton icon="add_circle" font-size="12px">
+                            Create New Container
+                        </BaseButton>
+                    </div>
+                    <div class="yCenter xRight">
+                        <NumberPagination :max-page-readable="mainPagination.lastCallMaxPageIndex.value"
+                                            v-model:model-value="mainPagination.currentPage.value"></NumberPagination>
+                    </div>
+                </LeftRightGrid>
                 <OverlapArea class="fullSize">
                     <CustomTable class="allContainersTable" rows="50px auto" columns="1fr" rowRows="1fr" :style="{opacity: containersStore.containers.isLoading ? 0.3 : 1}"
                                  rowColumns="1fr auto" rowAreas="'name value'" bodyRows="min-content">
@@ -55,6 +62,9 @@ import { useContainersStore } from '../stores/useContainersStore';
 import useNetworkPaginationNew from '@/modules/core/composables/useNetworkedPagination';
 import { watch } from 'vue';
 import { useCurrenciesStore } from '@/modules/currencies/stores/useCurrenciesStore';
+import LeftRightGrid from '@/modules/core/components/layout/LeftRightGrid.vue';
+import FaIconButton from '@/modules/core/components/faIconButton.vue';
+import BaseButton from '@/modules/core/components/controls/BaseButton.vue';
 
 const currenciesStore = useCurrenciesStore();
 const containersStore = useContainersStore();

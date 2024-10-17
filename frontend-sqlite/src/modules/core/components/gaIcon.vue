@@ -1,6 +1,6 @@
 <template>
-    <div id="main">
-        <span class="material-symbols-outlined">{{ icon }}</span>
+    <div style="line-height: 0;">
+        <span style="font-size: inherit" class="material-symbols-outlined">{{ icon }}</span>
     </div>
 </template>
 
