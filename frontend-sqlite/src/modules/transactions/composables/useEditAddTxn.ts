@@ -1,4 +1,4 @@
-import type { GetTxnAPI, PutTxnAPI } from "@/../../api-types/txn";
+import type { GetTxnAPI, PostTxnAPI, PutTxnAPI } from "@/../../api-types/txn";
 import { API_PUT_TRANSACTIONS_PATH, API_TRANSACTIONS_PATH } from "@/apiPaths";
 import { useContainersStore } from "@/modules/containers/stores/useContainersStore";
 import { useNetworkRequest } from "@/modules/core/composables/useNetworkRequest";
@@ -6,11 +6,13 @@ import { formatDate } from "@/modules/core/utils/date";
 import { isNumeric } from "@/modules/core/utils/numbers";
 import { waitUntil } from "@/modules/core/utils/wait";
 import { useCurrenciesStore } from "@/modules/currencies/stores/useCurrenciesStore";
+import { useTxnTypesStore } from "@/modules/txnTypes/stores/useTxnTypesStore";
 import { useResettableObject } from "@/resettableObject";
 import { computed, ref, toRaw } from "vue";
 
 type OmitFromTxnDTO<K extends keyof GetTxnAPI.TxnDTO> = Omit<GetTxnAPI.TxnDTO, K>;
-export type TxnWorkingEntity = OmitFromTxnDTO<'creationDate'> & { creationDate: string; };
+export type TxnWorkingEntity = OmitFromTxnDTO<'creationDate'|'txnType'|'owner'>
+                               & { creationDate: string; txnType: null | string; };
 export const DateFormatToShow = "YYYY-MM-DD hh:mm:ss.ms";
 
 /**
@@ -25,6 +27,7 @@ function useTxnWorkingCopy()
     const txnLoadingError = ref(undefined);
     const { currencies } = useCurrenciesStore();
     const { containers } = useContainersStore();
+    const { txnTypes } = useTxnTypesStore();
     const isEnteredDateValid = computed(() => !isNaN(new Date(`${txnToBeEdited.currentData.value?.creationDate}`).getTime()));
     const isEnteredFromAmountValid = computed(() => isNumeric(txnToBeEdited.currentData?.value?.fromAmount));
     const isEnteredToAmountValid = computed(() => isNumeric(txnToBeEdited.currentData?.value?.toAmount));
@@ -100,8 +103,10 @@ function useTxnWorkingCopy()
         targetTxn.updateData();
         currencies.updateData();
         containers.updateData();
+        txnTypes.updateData();
         await waitUntil(() => !currencies.isLoading, 100);
         await waitUntil(() => !containers.isLoading, 100);
+        await waitUntil(() => !txnTypes.isLoading, 100);
         await waitUntil(() => !targetTxn.isLoading.value, 100);
 
         if (targetTxn.error.value)
@@ -130,6 +135,7 @@ function useTxnWorkingCopy()
         txnLoadingState,
         currencies,
         containers,
+        txnTypes,
         isEnteredDateValid,
         isEnteredFromAmountValid,
         isEnteredToAmountValid,
@@ -177,7 +183,7 @@ export function useEditTxn()
                 body:
                 {
                     title: transformedTxn.title,
-                    txnTypeId: transformedTxn.txnType,
+                    txnTypeId: transformedTxn.txnType!,
                     creationDate: new Date(transformedTxn.creationDate).getTime(),
                     description: transformedTxn.description ?? undefined,
                     fromAmount: transformedTxn.fromAmount ?? undefined,
@@ -204,6 +210,99 @@ export function useEditTxn()
 
     return {
         submitSave,
+        txnSavingError,
+        isTxnSaving,
+        ...txnWorkingCopyHook
+    };
+};
+
+export function useAddTxn()
+{
+    const txnWorkingCopyHook = useTxnWorkingCopy();
+
+    const isTxnSaving = ref(false);
+    const txnSavingError = ref(undefined);
+
+    // Create an empty transaction for editing
+    const init = () =>
+    {
+        const emptyRawTxn: TxnWorkingEntity =
+        {
+            title: "A new transaction",
+            creationDate: '',
+            description: '',
+            fromAmount: null,
+            fromContainer: null,
+            fromCurrency: null,
+            id: "<default>",
+            toAmount: null,
+            toCurrency: null,
+            toContainer: null,
+            txnType: null
+        };
+
+        txnWorkingCopyHook.txnToBeEdited.markSafePoint(emptyRawTxn);
+    };
+
+    const save = async () =>
+    {
+        if (!txnWorkingCopyHook.txnToBeEdited.currentData.value)
+            throw new Error(`Cannot save when current data is not defined.`);
+
+        const transformedTxn = structuredClone(toRaw(txnWorkingCopyHook.txnToBeEdited.currentData.value));
+
+        // Transform txn body to fit validation:
+        (() =>
+        {
+            if (transformedTxn.toContainer === null)
+            {
+                transformedTxn.toCurrency = null;
+                transformedTxn.toAmount = null;
+            }
+            if (transformedTxn.fromContainer === null)
+            {
+                transformedTxn.fromCurrency = null;
+                transformedTxn.fromAmount = null;
+            }
+        })();
+
+        const postTxnRequest = useNetworkRequest<PostTxnAPI.ResponseDTO>
+        (
+            {
+                query: { "targetTxnId": `${txnWorkingCopyHook.txnToBeEdited.currentData.value.id}` },
+                url: `${API_PUT_TRANSACTIONS_PATH}`,
+                method: "POST",
+                body:
+                {
+                    title: transformedTxn.title,
+                    txnTypeId: transformedTxn.txnType!,
+                    creationDate: new Date(transformedTxn.creationDate).getTime(),
+                    description: transformedTxn.description ?? undefined,
+                    fromAmount: transformedTxn.fromAmount ?? undefined,
+                    fromContainerId: transformedTxn.fromContainer ?? undefined,
+                    fromCurrencyId: transformedTxn.fromCurrency ?? undefined,
+                    toAmount: transformedTxn.toAmount ?? undefined,
+                    toContainerId: transformedTxn.toContainer ?? undefined,
+                    toCurrencyId: transformedTxn.toCurrency ?? undefined
+                } satisfies PostTxnAPI.RequestDTO
+            },
+            {
+                updateOnMount: false,
+                autoResetOnUnauthorized: true,
+                includeAuthHeaders: true
+            },
+        );
+
+        isTxnSaving.value = true;
+        await postTxnRequest.updateData();
+        txnSavingError.value = postTxnRequest.error.value;
+        isTxnSaving.value = false;
+        txnWorkingCopyHook.txnToBeEdited.markSafePoint(txnWorkingCopyHook.txnToBeEdited.currentData.value);
+    };
+
+    return {
+        init,
+        save,
         txnSavingError,
         isTxnSaving,
         ...txnWorkingCopyHook

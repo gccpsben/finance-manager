@@ -1,5 +1,7 @@
 import { createRouter, createWebHistory } from 'vue-router'
 
+export const ROUTER_NAME_CREATE_NEW_TXN = `createNewTransaction`;
+
 const router = createRouter(
 {
 	history: createWebHistory(import.meta.env.BASE_URL),
@@ -46,6 +48,11 @@ const router = createRouter(
                             component: () => import('@/modules/transactions/mainPages/transactions.vue'),
                         },
                         {
+                            path: "new",
+                            name: ROUTER_NAME_CREATE_NEW_TXN,
+                            component: () => import(`@/modules/transactions/mainPages/singleTransaction.vue`),
+                        },
+                        {
                             path: ":id",
                             name: 'singleTransaction',
                             component: () => import(`@/modules/transactions/mainPages/singleTransaction.vue`),
@@ -68,11 +75,6 @@ const router = createRouter(
             path: '/login',
             name: 'login',
             component: () => import("@/modules/core/pages/loginView.vue")
-        },
-        {
-            path: '/transactions/add',
-            name: 'addTransaction',
-            component: () => import("@/modules/transactions/pages/addTransactionView.vue")
         },
         {
             path: '/containers/add',
