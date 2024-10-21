@@ -92,14 +92,14 @@
 
 <script setup lang="ts">
 import router from '@/router';
-import NetworkCircularIndicator from '@/modules/core/components/networkCircularIndicator.vue';
-import StaticNotice from '@/modules/core/components/staticNotice.vue';
-import ViewTitle from '@/modules/core/components/viewTitle.vue';import { computed, ref, toRaw, watch } from 'vue';
+import NetworkCircularIndicator from '@/modules/core/components/data-display/networkCircularIndicator.vue';
+import StaticNotice from '@/modules/core/components/data-display/staticNotice.vue';
+import ViewTitle from '@/modules/core/components/data-display/viewTitle.vue';import { computed, ref, toRaw, watch } from 'vue';
 import { useNetworkRequest } from '@/modules/core/composables/useNetworkRequest';
 import type { GetTxnAPI, PutTxnAPI } from '../../../../../api-types/txn';
 import { API_PUT_TRANSACTIONS_PATH, API_TRANSACTIONS_PATH } from '@/apiPaths';
-import textField from '@/modules/core/components/textField.vue';
-import customDropdown from '@/modules/core/components/custom-dropdown.vue';
+import textField from '@/modules/core/components/inputs/textField.vue';
+import customDropdown from '@/modules/core/components/inputs/custom-dropdown.vue';
 import { useResettableObject } from '@/resettableObject';
 import { useContainersStore } from '@/modules/containers/stores/useContainersStore';
 import { useCurrenciesStore } from '@/modules/currencies/stores/useCurrenciesStore';
@@ -267,7 +267,7 @@ const submitSave = async () =>
 </script>
 
 <style lang="less" scoped>
-@import '@/modules/core/stylesheets/globalStyle.less';
+@import url('@/modules/core/stylesheets/globalStyle.less');
 
 #txnTopDiv
 {

@@ -16,10 +16,10 @@
 
 <script lang="ts" setup>
 import { computed } from 'vue';
-import { defineProperty, Uncontrolled } from '../utils/defineProperty';
-import networkCircularIndicator from './networkCircularIndicator.vue';
-import variantsSelector from './variantsSelector.vue';
-import cell, { type IconType } from '@/modules/core/components/cell.vue';
+import { defineProperty, Uncontrolled } from '../../utils/defineProperty';
+import networkCircularIndicator from '@/modules/core/components/data-display/networkCircularIndicator.vue';
+import variantsSelector from '@/modules/core/components/inputs/variantsSelector.vue';
+import cell, { type IconType } from '@/modules/core/components/data-display/cell.vue';
 
 export type NumberCellProps =
 {
@@ -57,7 +57,7 @@ const currentValue = computed(() => props.optionValues[selectedOption.get()]);
 </script>
 
 <style lang="less" scoped>
-@import '../stylesheets/globalStyle.less';
+@import '@/modules/core/stylesheets/globalStyle.less';
 .variantSelectorTab
 {
     font-weight: normal;

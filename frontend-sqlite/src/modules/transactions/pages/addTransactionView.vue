@@ -121,8 +121,8 @@ import { useMeta } from 'vue-meta';
 import type { PostTxnAPI } from "@/../../api-types/txn";
 import vNumberOnly from '@/modules/core/directives/vNumberOnly';
 import { VProgressCircular } from "vuetify/components";
-import textField from '@/modules/core/components/textField.vue';
-import customDropdown, { type DropdownItem } from "@/modules/core/components/custom-dropdown.vue";
+import textField from '@/modules/core/components/inputs/textField.vue';
+import customDropdown, { type DropdownItem } from "@/modules/core/components/inputs/custom-dropdown.vue";
 import router from "@/router";
 
 export default

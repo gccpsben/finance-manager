@@ -18,7 +18,7 @@ export default
     props:
     {
         "options": { type: Array<string>, default: ['option1', 'option2'] },
-        "currentOption": { type:String } 
+        "currentOption": { type:String }
     },
     data()
     {
@@ -26,7 +26,7 @@ export default
     },
     mounted()
     {
-        if ((this.$attrs as any)["onUpdate:currentOption"] == undefined && this.currentOption != undefined) 
+        if ((this.$attrs as any)["onUpdate:currentOption"] == undefined && this.currentOption != undefined)
         console.warn(`Please use v-model:currentOptions to bind to options, changes coming from the component won't be reflected to original property otherwise.`);
     },
     methods:
@@ -56,13 +56,13 @@ export default
             handler: function(newValue, oldValue)
             {
                 if (newValue == undefined) return;
-                if (this.computedOption == undefined && newValue.length > 0) this.setCurrentOption(newValue[0]); 
-                if (this.computedOption == undefined) return;                
+                if (this.computedOption == undefined && newValue.length > 0) this.setCurrentOption(newValue[0]);
+                if (this.computedOption == undefined) return;
                 if (newValue.length == 0) this.setCurrentOption(undefined);
-                if (!newValue.includes(this.computedOption)) this.setCurrentOption(newValue[0]); 
+                if (!newValue.includes(this.computedOption)) this.setCurrentOption(newValue[0]);
             },
             immediate: true
-        } 
+        }
     }
 }
 </script>

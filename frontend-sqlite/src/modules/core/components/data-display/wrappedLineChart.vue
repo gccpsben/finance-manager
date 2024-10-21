@@ -11,8 +11,8 @@
 import { LineChart } from 'vue-chart-3';
 import { Chart, registerables, type ChartOptions, type ChartData } from "chart.js";
 import { computed, ref } from 'vue';
-import { extractDatePart, extractTimePart } from '../utils/date';
-import { createVertLinePlugin } from '../utils/chartJsVertLinePlugin';
+import { extractDatePart, extractTimePart } from '@/modules/core/utils/date';
+import { createVertLinePlugin } from '@/modules/core/utils/chartJsVertLinePlugin';
 
 const defaultLineColor = `rgb(75, 192, 192)`;
 

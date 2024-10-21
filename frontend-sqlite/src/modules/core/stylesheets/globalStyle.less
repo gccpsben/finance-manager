@@ -55,3 +55,8 @@
 .arrowButton { color:white; background:transparent; .minButtonBase; }
 .arrowButton.disabled { opacity: 0.4; cursor:none; }
 .arrowPageNavText { font-size:16px; font-family: Consolas; color:white; .horiMargin(9px); }
+.defaultButton
+{
+    .minButtonBase; background: transparent; border: 1px solid @border; color: @foreground; padding:10px; border-radius: 5px;
+    &:disabled { opacity: 0.5; user-select: none; cursor:not-allowed; }
+}

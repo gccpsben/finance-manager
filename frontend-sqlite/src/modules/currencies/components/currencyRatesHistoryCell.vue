@@ -18,13 +18,13 @@
 </template>
 
 <script lang="ts" setup>
-import WrappedLineChart from '@/modules/core/components/wrappedLineChart.vue';
-import cell from '@/modules/core/components/cell.vue';
+import WrappedLineChart from '@/modules/core/components/data-display/wrappedLineChart.vue';
+import cell from '@/modules/core/components/data-display/cell.vue';
 import { useNetworkRequest } from '@/modules/core/composables/useNetworkRequest';
 import type { GetCurrencyRateHistoryAPI } from '@/../../api-types/currencies';
 import { API_CURRENCY_RATE_HISTORY_PATH } from '@/apiPaths';
 import { computed, ref, watch } from 'vue';
-import NetworkCircularIndicator from '@/modules/core/components/networkCircularIndicator.vue';
+import NetworkCircularIndicator from '@/modules/core/components/data-display/networkCircularIndicator.vue';
 
 type AvailableOptions = "All" | "30d" | "7d";
 

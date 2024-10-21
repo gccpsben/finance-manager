@@ -1,11 +1,11 @@
 <template>
     <gridShortcut :columns="computedColumns" :rows="computedRows">
 
-        <div v-for="(column, columnIndex) in columns" :key="column.field" 
+        <div v-for="(column, columnIndex) in columns" :key="column.field"
         class="center cell start-row"
         :class="
         {
-            'end-column': columnIndex == columns.length - 1, 
+            'end-column': columnIndex == columns.length - 1,
             'start-column': columnIndex == 0
         }">
             <slot name="headercell" :currentColumn="column"></slot>
@@ -14,17 +14,17 @@
         <div v-for="cell in computedCells" class="center cell"
         :class="
         {
-            'end-column': cell.isCellInTheLastColumn, 
+            'end-column': cell.isCellInTheLastColumn,
             'start-column': cell.isCellInTheFirstColumn,
             'end-row': cell.isCellInTheLastRow
         }">
-            <slot name="cell" 
-            :currentColumn="cell.currentColumn" 
+            <slot name="cell"
+            :currentColumn="cell.currentColumn"
             :currentRow="cell.currentRow"
             :cellValueReadonly="cell.currentRow.data[cell.currentColumn.field]"></slot>
         </div>
 
-    </gridShortcut>    
+    </gridShortcut>
 </template>
 
 <style less="less">
@@ -35,7 +35,7 @@
 </style>
 
 <script lang="ts" setup>
-import gridShortcut from '../components/gridShortcut.vue';
+import gridShortcut from '@/modules/core/components/layout/gridShortcut.vue';
 </script>
 
 <script lang="ts">
@@ -44,7 +44,7 @@ export interface TableColumnDefinition
 {
     label: string;
     field: string;
-    width?: string; 
+    width?: string;
 }
 
 export interface TableRowDefinition
@@ -104,7 +104,7 @@ export default
         },
         computedCells()
         {
-            let result : 
+            let result :
             {
                 "currentRow":TableRowDefinition,
                 "currentColumn":TableColumnDefinition,
@@ -123,7 +123,7 @@ export default
                     let currentColumn = this.columns[columnIndex];
                     result.push(
                     {
-                        "currentRow": currentRow, 
+                        "currentRow": currentRow,
                         "currentColumn":currentColumn,
                         "isCellInTheLastColumn": columnIndex == this.columns.length - 1,
                         "isCellInTheFirstColumn": columnIndex == 0,

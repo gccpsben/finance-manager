@@ -3,18 +3,18 @@
         <div class="variantSelectorsContainer">
             <div class="variantSelector" v-for="option in availableOptions.get()">
                 <h2
-                    :class="{'selected': selectedOption.get() == option}" 
-                    @click="selectedOption.set(option)" 
+                    :class="{'selected': selectedOption.get() == option}"
+                    @click="selectedOption.set(option)"
                     class="graphPanelTitle variantTab">
                     {{ option }}
                 </h2>
             </div>
-        </div>        
+        </div>
     </div>
 </template>
 
 <style lang="less" scoped>
-@import '../stylesheets/globalStyle.less';
+@import '@/modules/core/stylesheets/globalStyle.less';
 .variantSelectorsContainer
 {
     display: grid;
@@ -41,7 +41,7 @@
 </style>
 
 <script lang="ts" setup>
-import { defineProperty } from '../utils/defineProperty';
+import { defineProperty } from '@/modules/core/utils/defineProperty';
 
 const emit = defineEmits<
 {
@@ -54,14 +54,14 @@ const props = withDefaults(defineProps<
     availableOptions: string[]
 }>(), {});
 
-const selectedOption = defineProperty<null | string, "selectedOption", typeof props>("selectedOption", 
+const selectedOption = defineProperty<null | string, "selectedOption", typeof props>("selectedOption",
 {
     emitFunc: emit,
     props: props,
     default: null
 });
 
-const availableOptions = defineProperty<string[], "availableOptions", typeof props>("availableOptions", 
+const availableOptions = defineProperty<string[], "availableOptions", typeof props>("availableOptions",
 {
     emitFunc: undefined,
     props: props,

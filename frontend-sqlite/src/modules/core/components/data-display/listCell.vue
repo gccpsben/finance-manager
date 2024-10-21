@@ -29,12 +29,12 @@
 </template>
 
 <script lang="ts" setup generic="T">
-import NetworkCircularIndicator from '@/modules/core/components/networkCircularIndicator.vue';
+import NetworkCircularIndicator from '@/modules/core/components/data-display/networkCircularIndicator.vue';
 import { computed, ref } from 'vue';
-import { defineProperty } from '../utils/defineProperty';
-import cell from '@/modules/core/components/cell.vue';
-import numberPagination from '@/modules/core/components/numberPagination.vue';
-import OverlapArea from './overlapArea.vue';
+import { defineProperty } from '@/modules/core/utils/defineProperty';
+import cell from '@/modules/core/components/data-display/cell.vue';
+import numberPagination from '@/modules/core/components/data-display/numberPagination.vue';
+import OverlapArea from '@/modules/core/components/layout/overlapArea.vue';
 
 const props = withDefaults(defineProps<
 {

@@ -1,18 +1,18 @@
 <template>
     <div>
         <!-- To bind to currentPage, use v-model:currentPage="..." instead. -->
-        <slot :pageItems="currentViewItems" 
+        <slot :pageItems="currentViewItems"
         :totalPages="totalPages"
         :next="next"
         :previous="previous"
         :currentPage="computedPage"
-        :isPreviousArrowAllowed="isPreviousArrowAllowed" 
+        :isPreviousArrowAllowed="isPreviousArrowAllowed"
         :isNextArrowAllowed="isNextArrowAllowed"></slot>
     </div>
 </template>
 
 <style lang="less" scoped>
-    
+
 </style>
 
 <script setup lang="ts" generic="T">
@@ -41,18 +41,18 @@ export default
     data() { return { innerPage: 0 } },
     methods:
     {
-        setPage(page:number) 
+        setPage(page:number)
         {
-            if (this.currentPage != undefined) this.$emit("update:currentPage", page); 
+            if (this.currentPage != undefined) this.$emit("update:currentPage", page);
             else { this.innerPage = page; }
         },
-        next() 
-        { 
-            if (this.isNextArrowAllowed) this.setPage(this.computedPage + 1); 
+        next()
+        {
+            if (this.isNextArrowAllowed) this.setPage(this.computedPage + 1);
         },
-        previous() 
-        { 
-            if (this.isPreviousArrowAllowed) this.setPage(this.computedPage - 1); 
+        previous()
+        {
+            if (this.isPreviousArrowAllowed) this.setPage(this.computedPage - 1);
         },
     },
     computed:
@@ -61,7 +61,7 @@ export default
         totalPages() { return Math.ceil(this.items.length / this.itemsInPage); },
         isPreviousArrowAllowed() { return this.computedPage > 0; },
         isNextArrowAllowed() { return this.itemsInPage == 0 ? false : this.computedPage < Math.floor((this.items.length - 1) / this.itemsInPage); },
-        currentViewItems() 
+        currentViewItems()
         {
             if (this.computedPage < 0) return [];
             if (this.items.length <= this.itemsInPage) return this.items;

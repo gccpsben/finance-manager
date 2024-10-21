@@ -1,22 +1,22 @@
 <template>
     <div rows="1fr" columns="1fr auto">
         <div class="pageSelector">
-            <fa-icon-btn id="previousArrow" 
+            <fa-icon-btn id="previousArrow"
                     :disabled="modelValue < minPageReadable"
                     @click="$emit('update:modelValue', modelValue - 1)"
                     icon="fa-solid fa-chevron-left" />
-            <input  id="currentPage" 
-                    ref="currentPage" 
-                    type="number" 
-                    :min="minPageReadable.toString()" 
-                    :max="maxPageReadable.toString()" 
-                    v-int-only size="1" v-model.lazy.number="pageReadable"> 
-            <fa-icon-btn id="nextArrow" 
+            <input  id="currentPage"
+                    ref="currentPage"
+                    type="number"
+                    :min="minPageReadable.toString()"
+                    :max="maxPageReadable.toString()"
+                    v-int-only size="1" v-model.lazy.number="pageReadable">
+            <fa-icon-btn id="nextArrow"
                     :disabled="modelValue >= maxPageReadable - 1"
                     @click="$emit('update:modelValue', modelValue + 1)"
                     icon="fa-solid fa-chevron-right" />
         </div>
-    </div> 
+    </div>
 </template>
 
 <script lang="ts" setup>
@@ -48,7 +48,7 @@ const props = defineProps
 const pageReadable = computed(
 {
     get() { return props.modelValue + 1; },
-    set(value:number) 
+    set(value:number)
     {
         if (value < props.minPageReadable)
         {
@@ -61,17 +61,17 @@ const pageReadable = computed(
             emit("update:modelValue", props.maxPageReadable - 1);
         }
         else emit("update:modelValue", value - 1);
-    } 
+    }
 });
 </script>
 
 <style lang="less">
 @import "@/modules/core/stylesheets/globalStyle.less";
 
-.pageSelector  
-{ 
-    color:gray !important; 
-    transform: translateY(-1px); 
+.pageSelector
+{
+    color:gray !important;
+    transform: translateY(-1px);
 }
 input
 {

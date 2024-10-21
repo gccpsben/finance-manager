@@ -27,15 +27,17 @@
 </template>
 
 <script lang="ts" setup>
-import WrappedLineChart from '@/modules/core/components/wrappedLineChart.vue';
+import WrappedLineChart from '@/modules/core/components/data-display/wrappedLineChart.vue';
 import { useNetworkRequest } from '@/modules/core/composables/useNetworkRequest';
 import type { GetCurrencyRateHistoryAPI } from '@/../../api-types/currencies';
 import { API_CURRENCY_RATE_HISTORY_PATH } from '@/apiPaths';
 import { computed, watch } from 'vue';
-import NetworkCircularIndicator from '@/modules/core/components/networkCircularIndicator.vue';
-import GaIcon from '@/modules/core/components/gaIcon.vue';
-import OverlapArea from '@/modules/core/components/overlapArea.vue';
-import AbsEnclosure from '@/modules/core/components/absEnclosure.vue';
+import NetworkCircularIndicator from '@/modules/core/components/data-display/networkCircularIndicator.vue';
+import GaIcon from '@/modules/core/components/decorations/gaIcon.vue';
+import OverlapArea from '@/modules/core/components/layout/overlapArea.vue';
+import AbsEnclosure from '@/modules/core/components/layout/absEnclosure.vue';
+
+const SEVEN_DAYS_AGO = Date.now() - 86400000 * 7;
 
 const props = withDefaults(defineProps<{ currencyId: string, rangeMs?: number }>(), { rangeMs: 604_800_000 });
 const baseQueryObj =
@@ -68,7 +70,11 @@ watch([() => props.currencyId, () => props.rangeMs], () =>
 const parsedDatums = computed(() =>
 {
     const apiResponse = datumResponse.lastSuccessfulData;
-    const datums = apiResponse.value?.datums ?? [];
+    let datums = apiResponse.value?.datums ?? [];
+    datums.sort((a,b) => a.date - b.date);
+    if (datums.length < 2) return [];
+    datums = datums.filter(x => x.date >= SEVEN_DAYS_AGO);
+
     return datums.map(d => (
     {
         x: d.date,
@@ -79,9 +85,7 @@ const parsedDatums = computed(() =>
 const isRateOutdated = computed(() =>
 {
     if (!datumResponse.lastSuccessfulData?.value?.datums?.length) return false;
-    const datums = datumResponse.lastSuccessfulData.value.datums.sort((a,b) => a.date - b.date);
-    const latestDatum = datums[datums.length - 1];
-    return latestDatum.date <= Date.now() - 86400000; // If is one day older
+    return datumResponse.lastSuccessfulData.value.endDate! <= Date.now() - 86400000;
 });
 </script>
 

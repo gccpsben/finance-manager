@@ -25,8 +25,8 @@
 @cellHeaderColor: white;
 @cellBackground: #0f0f0f;
 @cellBorderRadius: 7px;
+@import '@/modules/core/stylesheets/globalStyle.less';
 
-@import '../stylesheets/globalStyle.less';
 .panel
 {
     gap:15px;

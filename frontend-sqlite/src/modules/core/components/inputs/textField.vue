@@ -31,7 +31,7 @@ import vBasic from '@/modules/core/directives/vBasic';
 import vArea from '@/modules/core/directives/vArea';
 import { useElementSize, useFocus } from '@vueuse/core';
 import { ref, computed } from 'vue';
-import { defineProperty, Uncontrolled } from '../utils/defineProperty';
+import { defineProperty, Uncontrolled } from '../../utils/defineProperty';
 import type { HTMLInputType } from '@/shims-vue';
 import tinycolor from "tinycolor2";
 

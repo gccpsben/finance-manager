@@ -56,15 +56,14 @@
 import CustomTable from '@/modules/core/components/tables/customTable.vue';
 import CustomTableCell from '@/modules/core/components/tables/customTableCell.vue';
 import CustomTableRow from '@/modules/core/components/tables/customTableRow.vue';
-import NumberPagination from '@/modules/core/components/numberPagination.vue';
-import NetworkCircularIndicator from '@/modules/core/components/networkCircularIndicator.vue';
+import NumberPagination from '@/modules/core/components/data-display/numberPagination.vue';
+import NetworkCircularIndicator from '@/modules/core/components/data-display/networkCircularIndicator.vue';
 import { useContainersStore } from '../stores/useContainersStore';
 import useNetworkPaginationNew from '@/modules/core/composables/useNetworkedPagination';
 import { watch } from 'vue';
 import { useCurrenciesStore } from '@/modules/currencies/stores/useCurrenciesStore';
 import LeftRightGrid from '@/modules/core/components/layout/LeftRightGrid.vue';
-import FaIconButton from '@/modules/core/components/faIconButton.vue';
-import BaseButton from '@/modules/core/components/controls/BaseButton.vue';
+import BaseButton from '@/modules/core/components/inputs/BaseButton.vue';
 
 const currenciesStore = useCurrenciesStore();
 const containersStore = useContainersStore();

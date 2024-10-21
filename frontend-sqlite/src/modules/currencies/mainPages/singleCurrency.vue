@@ -27,12 +27,12 @@
 <script setup lang="ts">
 import { computed } from 'vue';
 import router from '@/router';
-import NetworkCircularIndicator from '@/modules/core/components/networkCircularIndicator.vue';
+import NetworkCircularIndicator from '@/modules/core/components/data-display/networkCircularIndicator.vue';
 import { useNetworkRequest } from '@/modules/core/composables/useNetworkRequest';
 import type { GetCurrencyAPI } from '../../../../../api-types/currencies';
 import { API_CURRENCIES_PATH } from '@/apiPaths';
-import StaticNotice from '@/modules/core/components/staticNotice.vue';
-import ViewTitle from '@/modules/core/components/viewTitle.vue';
+import StaticNotice from '@/modules/core/components/data-display/staticNotice.vue';
+import ViewTitle from '@/modules/core/components/data-display/viewTitle.vue';
 import CurrencyRatesHistoryCell from '../components/currencyRatesHistoryCell.vue';
 
 const cid = computed(() => router.currentRoute.value.params['cid']);

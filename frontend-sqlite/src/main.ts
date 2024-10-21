@@ -2,25 +2,23 @@ import { createApp, defineAsyncComponent } from 'vue'
 import { createPinia } from 'pinia'
 import axios from 'axios'
 import VueAxios from 'vue-axios'
-import { markRaw } from 'vue'
 import { createMetaManager } from 'vue-meta'
 import { createVuetify } from 'vuetify';
 
 import App from './App.vue'
 import router from './router.js'
-import type { Router } from 'vue-router';
-import gridShortcut from '@/modules/core/components/gridShortcut.vue';
-import faIcon from "@/modules/core/components/faIcon.vue";
-import faIconButton from "@/modules/core/components/faIconButton.vue";
-import gridArea from "@/modules/core/components/gridArea.vue";
-import cell from "@/modules/core/components/cell.vue";
-import numberCell from "@/modules/core/components/numberCell.vue";
-import customTable from "@/modules/core/components/custom-table.vue";
-import viewTitle from "@/modules/core/components/viewTitle.vue";
+import gridShortcut from '@/modules/core/components/layout/gridShortcut.vue';
+import faIcon from "@/modules/core/components/decorations/faIcon.vue";
+import faIconButton from "@/modules/core/components/inputs/faIconButton.vue";
+import gridArea from "@/modules/core/components/layout/gridArea.vue";
+import cell from "@/modules/core/components/data-display/cell.vue";
+import numberCell from "@/modules/core/components/data-display/numberCell.vue";
+import customTable from "@/modules/core/components/data-display/custom-table.vue";
+import viewTitle from "@/modules/core/components/data-display/viewTitle.vue";
 import vBasic from '@/modules/core/directives/vBasic';
 import vArea from '@/modules/core/directives/vArea';
 import vIntegerOnly from '@/modules/core/directives/vIntegerOnly'
-import GaIcon from './modules/core/components/gaIcon.vue'
+import GaIcon from './modules/core/components/decorations/gaIcon.vue'
 
 export const vuetify = createVuetify(
 {
@@ -42,8 +40,8 @@ app.component('grid-area', gridArea);
 app.component('cell', cell);
 app.component('number-cell', numberCell);
 app.component('custom-table', customTable);
-app.component('list-cell', defineAsyncComponent(() => import("@/modules/core/components/listCell.vue")));
-app.component('custom-dropdown', defineAsyncComponent(() => import("@/modules/core/components/custom-dropdown.vue")));
+app.component('list-cell', defineAsyncComponent(() => import("@/modules/core/components/data-display/listCell.vue")));
+app.component('custom-dropdown', defineAsyncComponent(() => import("@/modules/core/components/inputs/custom-dropdown.vue")));
 app.component('container-values-graph-cell', defineAsyncComponent(() => import("@/modules/containers/components/containerValuesGraphCell.vue")));
 app.component('view-title', viewTitle);
 

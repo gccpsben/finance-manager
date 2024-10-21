@@ -13,7 +13,7 @@
 </template>
 
 <script lang="ts" setup>
-import gaIcon from './gaIcon.vue';
+import gaIcon from '@/modules/core/components/decorations/gaIcon.vue';
 
 export type ViewTitleProps =
 {

@@ -102,7 +102,7 @@ import { useMainStore } from "@/modules/core/stores/store";
 import { BarChart, LineChart, type ExtractComponentData } from 'vue-chart-3';
 import { Chart, registerables, type ChartOptions, type ChartData } from "chart.js";
 import { VRangeSlider } from "vuetify/lib/components/index.mjs";
-import NetworkCircularIndicator from "@/modules/core/components/networkCircularIndicator.vue";
+import NetworkCircularIndicator from "@/modules/core/components/data-display/networkCircularIndicator.vue";
 Chart.register(...registerables);
 
 export default

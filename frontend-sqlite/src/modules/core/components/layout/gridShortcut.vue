@@ -5,16 +5,16 @@
 </template>
 
 <script>
-    
-export default 
+
+export default
 {
-	data() 
+	data()
 	{
 		return { currentPath: window.location, navHidden:false, documentObject:document }
 	},
-	props: 
+	props:
 	{
-		rows: { type: String }, 
+		rows: { type: String },
 		areas: { type: String },
 		columns: { type: String }
 	}

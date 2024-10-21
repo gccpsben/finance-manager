@@ -65,9 +65,9 @@ import { watch } from 'vue';
 import { useCurrenciesStore } from '../stores/useCurrenciesStore';
 import useNetworkPaginationNew, { type UpdaterReturnType } from '@/modules/core/composables/useNetworkedPagination';
 import type { CurrencyDTO } from '../../../../../api-types/currencies';
-import NumberPagination from '@/modules/core/components/numberPagination.vue';
-import OverlapArea from '@/modules/core/components/overlapArea.vue';
-import NetworkCircularIndicator from '@/modules/core/components/networkCircularIndicator.vue';
+import NumberPagination from '@/modules/core/components/data-display/numberPagination.vue';
+import OverlapArea from '@/modules/core/components/layout/overlapArea.vue';
+import NetworkCircularIndicator from '@/modules/core/components/data-display/networkCircularIndicator.vue';
 import CurrencyRateHistoryThumbnail from '../components/currencyRateHistoryThumbnail.vue';
 import router from '@/router';
 

@@ -23,14 +23,14 @@ export default
         isLoading: { required: true, type: Boolean, default: true },
         error: { default: undefined, type: Object as PropType<any> }
     },
-    data() 
-    { 
+    data()
+    {
         let data = { };
         return data;
     },
     methods:
     {
-        
+
     },
     mounted() { },
     watch:

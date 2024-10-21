@@ -15,8 +15,8 @@
 </template>
 
 <script lang="ts" setup>
-import { defineProperty, Uncontrolled } from '../utils/defineProperty';
-import textField from '@/modules/core/components/textField.vue';
+import { defineProperty, Uncontrolled } from '@/modules/core/utils/defineProperty';
+import textField from '@/modules/core/components/inputs/textField.vue';
 
 export type PasswordFieldProps =
 {
