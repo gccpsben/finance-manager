@@ -81,7 +81,6 @@ const props = withDefaults(defineProps<ViewTitleProps>(), { hasBackButton: false
                 .center;
                 .optionIcon;
                 color: white;
-                .tight;
                 &:not(:hover) { background: transparent; }
             }
         }
