@@ -4,7 +4,7 @@
             <div class="center fullSize" v-if="icon">
                 <GaIcon :style="{ fontSize: iconSize }" :icon="icon"/>
             </div>
-            <div class="center fullSize" style="transform: translateY(1px)">
+            <div class="center fullSize" :style="{transform: `translateY(${props.verticalOffset})`}">
                 <slot />
             </div>
         </div>
@@ -20,11 +20,12 @@ export type BaseButtonProps =
     gap?: string;
     icon?: string | undefined;
     fontSize?: string;
+    verticalOffset?: string | undefined;
 };
-withDefaults
+const props = withDefaults
 (
     defineProps<BaseButtonProps>(),
-    { iconSize: "16px", gap: "4px", fontSize: "12px" }
+    { iconSize: "16px", gap: "4px", fontSize: "12px", verticalOffset: '0px' }
 )
 </script>
 
@@ -43,6 +44,7 @@ button
     &:disabled { opacity: 0.5; user-select: none; cursor:not-allowed; }
 
     padding:5px;
+    font-family: @font;
     font-size:v-bind(fontSize);
     font-weight: bold;
 
@@ -53,6 +55,7 @@ button
         grid-template-rows: 1fr;
         gap: v-bind(gap);
         &.noIcon { gap: 0px; }
+        .fullSize;
     }
 }
 </style>

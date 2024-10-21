@@ -21,7 +21,9 @@
                                     :override-theme-color="isEnteredDateValid ? undefined : 'red'">
                             <template #fieldActions>
                                 <div class="nowButtonContainer">
-                                    <button class="nowButton" @click="autoFillCurrentDateTime">Now</button>
+                                    <BaseButton class="nowButton" @click="autoFillCurrentDateTime">
+                                        Now
+                                    </BaseButton>
                                 </div>
                             </template>
                         </text-field>
@@ -58,13 +60,16 @@
 
                         <div id="resetSaveContainer" v-area="'actions'" v-if="selectedTransaction?.currentData">
                             <div class="dummy"></div>
-                            <button class="defaultButton" :disabled="!isResetButtonAvailable" @click="resetForm()">Reset</button>
+                            <BaseButton @click="resetForm()" :disabled="!isResetButtonAvailable">
+                                Reset
+                            </BaseButton>
                             <div class="center">
-                                <button class="defaultButton fullSize" :disabled="!isSaveButtonAvailable || isTxnSaving" @click="submitSave()">
+                                <BaseButton :disabled="!isSaveButtonAvailable || isTxnSaving" class="fullSize"
+                                            @click="submitSave()">
                                     <NetworkCircularIndicator v-if="isTxnSaving || txnSavingError" style="width:23px; height:23px;"
-                                                            :is-loading="isTxnSaving" :error="txnSavingError"/>
+                                                              :is-loading="isTxnSaving" :error="txnSavingError"/>
                                     <div v-if="!isTxnSaving && !txnSavingError">Save</div>
-                                </button>
+                                </BaseButton>
                             </div>
                         </div>
 
@@ -105,6 +110,7 @@ import { useContainersStore } from '@/modules/containers/stores/useContainersSto
 import { useCurrenciesStore } from '@/modules/currencies/stores/useCurrenciesStore';
 import { isNumeric } from '@/modules/core/utils/numbers';
 import { formatDate } from '@/modules/core/utils/date';
+import BaseButton from '@/modules/core/components/inputs/BaseButton.vue';
 
 const dateFormatToShow = "YYYY-MM-DD hh:mm:ss.ms";
 type TxnWorkingEntity = Omit<GetTxnAPI.TxnDTO, 'creationDate'> &
@@ -295,7 +301,7 @@ const submitSave = async () =>
         '_             _             _             _             ' 5px
         'desc          desc          desc          desc          ' 100px
         'error         error         error         error         ' auto
-        'actions       actions       actions       actions       ' 45px
+        'actions       actions       actions       actions       ' 35px
         / 1fr          1fr           1fr           1fr;
 
     max-height: calc(100svh - 190px);
@@ -313,12 +319,14 @@ const submitSave = async () =>
         display: grid;
         grid-template-columns: 1fr auto auto;
         grid-template-rows: 1fr;
-        padding-bottom: 126px;
+        height: 100%;
         gap: 8px;
 
         & > *
         {
-            .fullSize; .xRight; .yBottom;
+            .fullSize;
+            .xRight;
+            .yBottom;
         }
     }
 
@@ -336,13 +344,7 @@ const submitSave = async () =>
     .fullSize; .center;
     padding-left: 5px; padding-right: 5px;
 
-    .nowButton
-    {
-        .defaultButton;
-        padding:5px;
-        font-size:12px;
-        font-weight: bold;
-    }
+    .nowButton { color: @foreground; }
 }
 
 .disabled { opacity: 0.3; pointer-events: none; }
