@@ -9,20 +9,58 @@ import { useCurrenciesStore } from "@/modules/currencies/stores/useCurrenciesSto
 import { useResettableObject } from "@/resettableObject";
 import { computed, ref, toRaw } from "vue";
 
-export const DateFormatToShow = "YYYY-MM-DD hh:mm:ss.ms";
 type OmitFromTxnDTO<K extends keyof GetTxnAPI.TxnDTO> = Omit<GetTxnAPI.TxnDTO, K>;
 export type TxnWorkingEntity = OmitFromTxnDTO<'creationDate'> & { creationDate: string; };
+export const DateFormatToShow = "YYYY-MM-DD hh:mm:ss.ms";
 
-export function useEditTxn()
+/**
+ * A hook for internal use.
+ * This controls how the txn is loaded, but not how it's saved / edited.
+ * This also controls the validation logics for the txn.
+ * Saving / Editing is not handled because it's different for "Editing" and "Creating" transactions.
+ */
+function useTxnWorkingCopy()
 {
-    const isTxnSaving = ref(false);
-    const txnSavingError = ref(undefined);
-
     const txnLoadingState = ref<'LOADING' | "LOADED" | "NOT_FOUND" | "NOT_INITIALIZED" | "ERROR">("NOT_INITIALIZED");
     const txnLoadingError = ref(undefined);
-
     const { currencies } = useCurrenciesStore();
     const { containers } = useContainersStore();
+    const isEnteredDateValid = computed(() => !isNaN(new Date(`${txnToBeEdited.currentData.value?.creationDate}`).getTime()));
+    const isEnteredFromAmountValid = computed(() => isNumeric(txnToBeEdited.currentData?.value?.fromAmount));
+    const isEnteredToAmountValid = computed(() => isNumeric(txnToBeEdited.currentData?.value?.toAmount));
+
+    const txnErrors = computed<string | undefined>(() =>
+    {
+        const txn = txnToBeEdited.currentData.value;
+        if (!txn) return 'Loading...';
+
+        const toContainer = txn.toContainer;
+        const toCurrency = txn.toCurrency;
+        const fromContainer = txn.fromContainer;
+        const fromCurrency = txn.fromCurrency;
+
+        if (!txn.fromAmount && !txn.toAmount) return "At least one of 'From' or 'To' sections must be provided.";
+        if (!isEnteredDateValid.value) return 'The date provided is invalid.';
+        if (!txn.title.trim()) return 'A name must be provided.';
+        if (!!toContainer && !toCurrency) return "A currency must be selected in the 'To' section.";
+        if (!!fromContainer && !fromCurrency) return "A currency must be selected in the 'From' section.";
+        if (!fromContainer && !toContainer) return "Either container in 'From' or container in 'To' is missing.";
+        if (!!fromContainer && !isEnteredFromAmountValid.value) return "The value provided in section 'From' must be a number.";
+        if (!!toContainer && !isEnteredToAmountValid.value) return "The value provided in section 'to' must be a number.";
+        return undefined;
+    });
+
+    const readyToReset = computed(() =>
+    {
+        if (!txnToBeEdited.isChanged.value) return false;
+        return true;
+    });
+    const readyToSave = computed(() =>
+    {
+        if (!txnToBeEdited.isChanged.value) return false;
+        if (txnErrors.value) return false;
+        return true;
+    });
 
     const txnToBeEdited = useResettableObject<undefined | TxnWorkingEntity>(undefined, (latest, safePoint) =>
     {
@@ -47,7 +85,7 @@ export function useEditTxn()
         return normalizedIsEqual(latestObj, safePointObj);
     });
 
-    const init = async (txnID: string) =>
+    const loadTxn = async (txnID: string) =>
     {
         const targetTxn = useNetworkRequest<GetTxnAPI.ResponseDTO>
         (
@@ -86,10 +124,34 @@ export function useEditTxn()
         else txnLoadingState.value = 'NOT_FOUND';
     };
 
+    return {
+        loadTxn,
+        txnLoadingError,
+        txnLoadingState,
+        currencies,
+        containers,
+        isEnteredDateValid,
+        isEnteredFromAmountValid,
+        isEnteredToAmountValid,
+        txnErrors,
+        readyToReset,
+        readyToSave,
+        txnToBeEdited
+    };
+}
+
+export function useEditTxn()
+{
+    const txnWorkingCopyHook = useTxnWorkingCopy();
+
+    const isTxnSaving = ref(false);
+    const txnSavingError = ref(undefined);
+
     const submitSave = async () =>
     {
-        if (!txnToBeEdited.currentData.value) throw new Error(`Cannot save when current data is not defined.`);
-        const transformedTxn = structuredClone(toRaw(txnToBeEdited.currentData.value));
+        if (!txnWorkingCopyHook.txnToBeEdited.currentData.value)
+            throw new Error(`Cannot save when current data is not defined.`);
+        const transformedTxn = structuredClone(toRaw(txnWorkingCopyHook.txnToBeEdited.currentData.value));
 
         // Transform txn body to fit validation:
         (() =>
@@ -109,7 +171,7 @@ export function useEditTxn()
         const putTxnRequest = useNetworkRequest<PutTxnAPI.ResponseDTO>
         (
             {
-                query: { "targetTxnId": `${txnToBeEdited.currentData.value.id}` },
+                query: { "targetTxnId": `${txnWorkingCopyHook.txnToBeEdited.currentData.value.id}` },
                 url: `${API_PUT_TRANSACTIONS_PATH}`,
                 method: "PUT",
                 body:
@@ -137,59 +199,13 @@ export function useEditTxn()
         await putTxnRequest.updateData();
         txnSavingError.value = putTxnRequest.error.value;
         isTxnSaving.value = false;
-        txnToBeEdited.markSafePoint(txnToBeEdited.currentData.value);
+        txnWorkingCopyHook.txnToBeEdited.markSafePoint(txnWorkingCopyHook.txnToBeEdited.currentData.value);
     };
 
-    const isEnteredDateValid = computed(() => !isNaN(new Date(`${txnToBeEdited.currentData.value?.creationDate}`).getTime()));
-    const isEnteredFromAmountValid = computed(() => isNumeric(txnToBeEdited.currentData?.value?.fromAmount));
-    const isEnteredToAmountValid = computed(() => isNumeric(txnToBeEdited.currentData?.value?.toAmount));
-
-    const txnErrors = computed<string | undefined>(() =>
-    {
-        const txn = txnToBeEdited.currentData.value;
-        if (!txn) return 'Loading...';
-
-        const toContainer = txn.toContainer;
-        const toCurrency = txn.toCurrency;
-        const fromContainer = txn.fromContainer;
-        const fromCurrency = txn.fromCurrency;
-
-        if (!txn.fromAmount && !txn.toAmount) return "At least one of 'From' or 'To' sections must be provided.";
-        if (!isEnteredDateValid.value) return 'The date provided is invalid.';
-        if (!txn.title.trim()) return 'A name must be provided.';
-        if (!!toContainer && !toCurrency) return "A currency must be selected in the 'To' section.";
-        if (!!fromContainer && !fromCurrency) return "A currency must be selected in the 'From' section.";
-        if (!fromContainer && !toContainer) return "Either container in 'From' or container in 'To' is missing.";
-        if (!!fromContainer && !isEnteredFromAmountValid.value) return "The value provided in section 'From' must be a number.";
-        if (!!toContainer && !isEnteredToAmountValid.value) return "The value provided in section 'to' must be a number.";
-        return undefined;
-    });
-
-    const readyToReset = computed(() =>
-    {
-        if (!txnToBeEdited.isChanged.value) return false;
-        return true;
-    });
-    const readyToSave = computed(() =>
-    {
-        if (!txnToBeEdited.isChanged.value) return false;
-        if (txnErrors.value) return false;
-        return true;
-    });
-
     return {
-        init,
-        txnToBeEdited,
         submitSave,
-        isEnteredDateValid,
-        isEnteredFromAmountValid,
-        isEnteredToAmountValid,
-        txnErrors,
-        readyToReset,
-        readyToSave,
         txnSavingError,
         isTxnSaving,
-        txnLoadingState,
-        txnLoadingError
+        ...txnWorkingCopyHook
     };
 };

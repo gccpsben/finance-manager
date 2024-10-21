@@ -122,7 +122,7 @@ const txnWorkingCopy = computed(() => editTxnHook.txnToBeEdited);
 watch
 (
     txnId,
-    () => editTxnHook.init(`${router.currentRoute.value.params['id']}`),
+    () => editTxnHook.loadTxn(`${router.currentRoute.value.params['id']}`),
     { immediate: true }
 );
 
