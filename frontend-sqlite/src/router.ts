@@ -1,6 +1,10 @@
 import { createRouter, createWebHistory } from 'vue-router'
 
 export const ROUTER_NAME_CREATE_NEW_TXN = `createNewTransaction`;
+export const ROUTER_NAME_CREATE_NEW_CONTAINER = `createNewContainer`;
+export const ROUTER_NAME_ALL_TRANSACTIONS = `transactions`;
+export const ROUTER_NAME_ALL_CONTAINERS = `containers`;
+export const ROUTER_NAME_SINGLE_CONTAINER = `singleContainer`;
 
 const router = createRouter(
 {
@@ -44,7 +48,7 @@ const router = createRouter(
                     [
                         {
                             path: '',
-                            name: 'transactions',
+                            name: ROUTER_NAME_ALL_TRANSACTIONS,
                             component: () => import('@/modules/transactions/mainPages/transactions.vue'),
                         },
                         {
@@ -66,8 +70,24 @@ const router = createRouter(
                 },
                 {
                     path: 'containers',
-                    name: 'containers',
-                    component: () => import('@/modules/containers/mainPages/containers.vue'),
+                    children:
+                    [
+                        {
+                            path: '',
+                            name: ROUTER_NAME_ALL_CONTAINERS,
+                            component: () => import('@/modules/containers/mainPages/containers.vue'),
+                        },
+                        {
+                            path: "new",
+                            name: ROUTER_NAME_CREATE_NEW_CONTAINER,
+                            component: () => import(`@/modules/containers/mainPages/SingleContainer.vue`),
+                        },
+                        {
+                            path: ":id",
+                            name: ROUTER_NAME_SINGLE_CONTAINER,
+                            component: () => import(`@/modules/containers/mainPages/SingleContainer.vue`),
+                        },
+                    ]
                 }
             ]
 		},

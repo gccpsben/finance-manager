@@ -11,17 +11,19 @@
                 <div class="fullSize">
                 <LeftRightGrid style="margin-bottom:14px;" column-width-config="AUTO">
                     <div class="xLeft">
-                        <BaseButton icon="add_circle" font-size="12px">
+                        <BaseButton icon="add_circle" font-size="12px" @click="handleNewContainerBtn">
                             Create New Container
                         </BaseButton>
                     </div>
                     <div class="yCenter xRight">
-                        <NumberPagination :max-page-readable="mainPagination.lastCallMaxPageIndex.value"
-                                            v-model:model-value="mainPagination.currentPage.value"></NumberPagination>
+                        <NumberPagination :min-page-readable="1"
+                                          :max-page-readable="mainPagination.lastCallMaxPageIndex.value + 1"
+                                          v-model="currentPageIndex" />
                     </div>
                 </LeftRightGrid>
                 <OverlapArea class="fullSize">
-                    <CustomTable class="allContainersTable" rows="50px auto" columns="1fr" rowRows="1fr" :style="{opacity: containersStore.containers.isLoading ? 0.3 : 1}"
+                    <CustomTable class="allContainersTable" rows="50px auto" columns="1fr" rowRows="1fr"
+                                 :style="{opacity: mainPagination.isLoading.value ? 0.3 : 1}"
                                  rowColumns="1fr auto" rowAreas="'name value'" bodyRows="min-content">
                         <template #header>
                             <CustomTableRow class="headerRow fullSize" style="font-weight: bold;">
@@ -30,7 +32,8 @@
                             </CustomTableRow>
                         </template>
                         <template #body>
-                            <CustomTableRow v-for="item in mainPagination.lastCallResult.value?.rangeItems" class="bodyRows">
+                            <CustomTableRow v-for="item in mainPagination.lastCallResult.value?.rangeItems"
+                                            @click="viewContainer(item.id)" class="bodyRows">
                                 <CustomTableCell grid-area="name">
                                     <div class="fullSize xLeft yCenter">{{ item.name }}</div>
                                 </CustomTableCell>
@@ -42,9 +45,9 @@
                             </CustomTableRow>
                         </template>
                     </CustomTable>
-                    <NetworkCircularIndicator :error="containersStore.containers.error"
-                                            :is-loading="containersStore.containers.isLoading"
-                                            style="pointer-events: none;"/>
+                    <NetworkCircularIndicator :error="containersFetchRequest.error.value"
+                                              :is-loading="containersFetchRequest.isLoading.value"
+                                              style="pointer-events: none;"/>
                 </OverlapArea>
             </div>
             </div>
@@ -60,36 +63,64 @@ import NumberPagination from '@/modules/core/components/data-display/numberPagin
 import NetworkCircularIndicator from '@/modules/core/components/data-display/networkCircularIndicator.vue';
 import { useContainersStore } from '../stores/useContainersStore';
 import useNetworkPaginationNew from '@/modules/core/composables/useNetworkedPagination';
-import { watch } from 'vue';
+import { ref, watch } from 'vue';
 import { useCurrenciesStore } from '@/modules/currencies/stores/useCurrenciesStore';
 import LeftRightGrid from '@/modules/core/components/layout/LeftRightGrid.vue';
 import BaseButton from '@/modules/core/components/inputs/BaseButton.vue';
+import router, { ROUTER_NAME_CREATE_NEW_CONTAINER, ROUTER_NAME_SINGLE_CONTAINER } from '@/router';
+import { API_CONTAINERS_PATH } from '@/apiPaths';
+import { useNetworkRequest } from '@/modules/core/composables/useNetworkRequest';
+import type { GetContainerAPI } from '../../../../../api-types/container';
+import OverlapArea from '@/modules/core/components/layout/overlapArea.vue';
 
 const currenciesStore = useCurrenciesStore();
-const containersStore = useContainersStore();
-containersStore.containers.updateData();
 currenciesStore.currencies.updateData();
+const containersFetchRequest = useNetworkRequest<GetContainerAPI.ResponseDTO>('', { includeAuthHeaders: true, updateOnMount: false } );
+const currentPageIndex = ref(0);
 const mainPagination = useNetworkPaginationNew(
 {
     updater: async (start:number, end:number) =>
     {
-        await containersStore.containers.updateData();
-        const containers = containersStore.containers.lastSuccessfulData?.rangeItems ?? [];
-        const endIndex = Math.min(containers.length, end);
+        containersFetchRequest.setQueryObj(
+        {
+            query: { start: `${start}`, end: `${end}` },
+            url: API_CONTAINERS_PATH
+        });
+
+        await containersFetchRequest.updateData();
+        const containers = containersFetchRequest.lastSuccessfulData.value?.rangeItems ?? [];
 
         return {
-            totalItems: containers.length ?? 0,
+            totalItems: containersFetchRequest.lastSuccessfulData.value?.totalItems ?? 0,
             startingIndex: start,
-            endingIndex: endIndex,
-            rangeItems: containers.slice(start, endIndex)
+            endingIndex: containersFetchRequest.lastSuccessfulData.value?.endingIndex ?? 0,
+            rangeItems: containers
         };
     },
-    pageIndex: 0,
+    pageIndex: currentPageIndex,
     pageSize: 10,
     overflowResolutionHandler: (_, lastAvailablePageIndex) => mainPagination.currentPage.value = lastAvailablePageIndex,
     updateOnMount: true
 });
 watch(mainPagination.currentPage, () => mainPagination.update());
+
+function viewContainer(conId: string)
+{
+    router.push(
+    {
+        name: ROUTER_NAME_SINGLE_CONTAINER,
+        params: { id: conId }
+    });
+}
+
+function handleNewContainerBtn()
+{
+    router.push(
+    {
+        name: ROUTER_NAME_CREATE_NEW_CONTAINER,
+        params: { }
+    });
+}
 </script>
 
 <style lang="less" scoped>

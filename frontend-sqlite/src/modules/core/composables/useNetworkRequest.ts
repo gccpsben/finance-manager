@@ -114,7 +114,11 @@ export function useNetworkRequest<T>
         {
             if (axios.isAxiosError(err))
             {
-                error.value = err.response?.statusText;
+                error.value = (() =>
+                {
+                    if (err.response?.data?.msg) return err.response.data.msg;
+                    return err.response?.data;
+                })();
                 if (err.response?.status === 401 && shouldAutoResetOnUnauthorized)
                     resetAuth();
             }

@@ -4,6 +4,7 @@ export const API_NET_WORTH_GRAPH_PATH = "/api/v1/calculations/networthHistory";
 export const API_TRANSACTIONS_PATH = "/api/v1/transactions";
 export const API_CURRENCIES_PATH = "/api/v1/currencies";
 export const API_CONTAINERS_PATH = "/api/v1/containers";
+export const API_POST_CONTAINERS_PATH = "/api/v1/containers";
 export const API_TXN_TYPES_PATH = "/api/v1/transactionTypes";
 export const API_GRAPHS_PATH = "/api/v1/graphs";
 export const API_BAL_VAL_PATH = "/api/v1/balanceHistory";
