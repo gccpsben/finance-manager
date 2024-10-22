@@ -112,8 +112,6 @@ import ViewTitle from '@/modules/core/components/data-display/viewTitle.vue';
 import { computed, watch } from 'vue';
 import textField from '@/modules/core/components/inputs/textField.vue';
 import customDropdown from '@/modules/core/components/inputs/custom-dropdown.vue';
-import { useContainersStore } from '@/modules/containers/stores/useContainersStore';
-import { useCurrenciesStore } from '@/modules/currencies/stores/useCurrenciesStore';
 import { formatDate } from '@/modules/core/utils/date';
 import BaseButton from '@/modules/core/components/inputs/BaseButton.vue';
 import { DateFormatToShow, useAddTxn, useEditTxn } from '../composables/useEditAddTxn';
@@ -250,6 +248,7 @@ function handleSaveBtn()
 
     #formErrorMsg
     {
+        font-family: @font;
         color: @error;
         font-weight: 900;
         .yCenter;
