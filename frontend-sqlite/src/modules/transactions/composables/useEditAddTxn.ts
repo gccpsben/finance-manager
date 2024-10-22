@@ -44,6 +44,7 @@ function useTxnWorkingCopy()
 
         if (!txn.fromAmount && !txn.toAmount) return "At least one of 'From' or 'To' sections must be provided.";
         if (!isEnteredDateValid.value) return 'The date provided is invalid.';
+        if (!txn.txnType) return 'A transaction type must be selected.';
         if (!txn.title.trim()) return 'A name must be provided.';
         if (!!toContainer && !toCurrency) return "A currency must be selected in the 'To' section.";
         if (!!fromContainer && !fromCurrency) return "A currency must be selected in the 'From' section.";
