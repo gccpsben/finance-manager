@@ -105,7 +105,7 @@
 </template>
 
 <script setup lang="ts">
-import router, { ROUTER_NAME_CREATE_NEW_TXN } from '@/router';
+import router, { ROUTER_NAME_ALL_TRANSACTIONS, ROUTER_NAME_CREATE_NEW_TXN } from '@/router';
 import NetworkCircularIndicator from '@/modules/core/components/data-display/networkCircularIndicator.vue';
 import StaticNotice from '@/modules/core/components/data-display/staticNotice.vue';
 import ViewTitle from '@/modules/core/components/data-display/viewTitle.vue';
@@ -181,9 +181,16 @@ if (ensureIsEditMode(editTxnHook))
     );
 }
 
-function handleSaveBtn()
+autoFillCurrentDateTime();
+
+async function handleSaveBtn()
 {
-    if (ensureIsAddMode(editTxnHook)) editTxnHook.save();
+    if (ensureIsAddMode(editTxnHook))
+    {
+        await editTxnHook.save();
+        router.push({name: ROUTER_NAME_ALL_TRANSACTIONS});
+        return;
+    }
     if (ensureIsEditMode(editTxnHook)) editTxnHook.submitSave();
 }
 </script>
