@@ -7,37 +7,28 @@
                 </div>
             </template>
         </VTooltip>
-        <v-progress-circular v-else-if="isLoading" indeterminate style="color:white"/>
+        <VProgressCircular v-else-if="isLoading" indeterminate style="color:white"/>
     </div>
 </template>
 
-<script lang="ts">
-import { VIcon, VProgressCircular, VTooltip, VBtn } from 'vuetify/lib/components/index.mjs';
-import type { PropType } from 'vue/dist/vue.js';
+<script lang="ts" setup>
+import { VProgressCircular, VTooltip } from 'vuetify/lib/components/index.mjs';
+import { defineProps } from 'vue';
 
-export default
+export type NetworkCircularIndicatorProps =
 {
-    components: { VProgressCircular, VIcon, VTooltip, VBtn },
-    props:
-    {
-        isLoading: { required: true, type: Boolean, default: true },
-        error: { default: undefined, type: Object as PropType<any> }
-    },
-    data()
-    {
-        let data = { };
-        return data;
-    },
-    methods:
-    {
+    isLoading: boolean;
+    error?: Record<string, any> | string;
+};
 
-    },
-    mounted() { },
-    watch:
+withDefaults
+(
+    defineProps<NetworkCircularIndicatorProps>(),
     {
-
+        isLoading: true,
+        error: undefined
     }
-}
+);
 </script>
 
 <style lang="less" scoped>
