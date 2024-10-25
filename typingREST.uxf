@@ -1,0 +1,17 @@
+<diagram program="umletino" version="15.1"><zoom_level>14</zoom_level><element><id>UMLClass</id><coordinates><x>252</x><y>57</y><w>378</w><h>168</h></coordinates><panel_attributes>/api-types
+Contains the typing for REST DTOs
+bg=yellow
+
+</panel_attributes><additional_attributes></additional_attributes></element><element><id>UMLClass</id><coordinates><x>336</x><y>141</y><w>210</w><h>70</h></coordinates><panel_attributes>/api-types/DTO1.d.ts
+bg=green</panel_attributes><additional_attributes></additional_attributes></element><element><id>UMLClass</id><coordinates><x>0</x><y>267</y><w>154</w><h>42</h></coordinates><panel_attributes>Frontend
+bg=yellow</panel_attributes><additional_attributes></additional_attributes></element><element><id>Relation</id><coordinates><x>70</x><y>155</y><w>294</w><h>140</h></coordinates><panel_attributes>lt=&lt;&lt;-
+imports</panel_attributes><additional_attributes>10;80;10;20;190;20</additional_attributes></element><element><id>UMLClass</id><coordinates><x>182</x><y>421</y><w>518</w><h>420</h></coordinates><panel_attributes>Backend
+bg=yellow</panel_attributes><additional_attributes></additional_attributes></element><element><id>Relation</id><coordinates><x>322</x><y>197</y><w>182</w><h>294</h></coordinates><panel_attributes>lt=&lt;&lt;-
+imports</panel_attributes><additional_attributes>10;190;10;90;110;90;110;10</additional_attributes></element><element><id>UMLClass</id><coordinates><x>224</x><y>463</y><w>434</w><h>56</h></coordinates><panel_attributes>Typesafe Router</panel_attributes><additional_attributes></additional_attributes></element><element><id>UMLClass</id><coordinates><x>826</x><y>225</y><w>448</w><h>140</h></coordinates><panel_attributes>Unit Test
+bg=yellow</panel_attributes><additional_attributes></additional_attributes></element><element><id>UMLClass</id><coordinates><x>868</x><y>281</y><w>364</w><h>56</h></coordinates><panel_attributes>class DTO1Body implements DTO1
+@validationDecorators fieldName...
+bg=cyan</panel_attributes><additional_attributes></additional_attributes></element><element><id>Relation</id><coordinates><x>532</x><y>169</y><w>364</w><h>182</h></coordinates><panel_attributes>lt=&lt;&lt;-
+implements</panel_attributes><additional_attributes>240;110;170;110;170;10;10;10</additional_attributes></element><element><id>UMLClass</id><coordinates><x>224</x><y>561</y><w>434</w><h>56</h></coordinates><panel_attributes>Service Layer</panel_attributes><additional_attributes></additional_attributes></element><element><id>Relation</id><coordinates><x>252</x><y>505</y><w>126</w><h>84</h></coordinates><panel_attributes>lt=&lt;&lt;-
+references</panel_attributes><additional_attributes>10;40;10;10</additional_attributes></element><element><id>UMLClass</id><coordinates><x>224</x><y>659</y><w>434</w><h>56</h></coordinates><panel_attributes>Repository Layer</panel_attributes><additional_attributes></additional_attributes></element><element><id>UMLClass</id><coordinates><x>224</x><y>757</y><w>434</w><h>56</h></coordinates><panel_attributes>Entity Layer</panel_attributes><additional_attributes></additional_attributes></element><element><id>Relation</id><coordinates><x>252</x><y>603</y><w>126</w><h>84</h></coordinates><panel_attributes>lt=&lt;&lt;-
+references</panel_attributes><additional_attributes>10;40;10;10</additional_attributes></element><element><id>Relation</id><coordinates><x>252</x><y>701</y><w>126</w><h>84</h></coordinates><panel_attributes>lt=&lt;&lt;-
+references</panel_attributes><additional_attributes>10;40;10;10</additional_attributes></element></diagram>
