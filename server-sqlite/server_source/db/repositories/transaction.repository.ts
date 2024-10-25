@@ -17,9 +17,9 @@ export class TransactionRepository
 
     public static getInstance()
     {
-        if (!TransactionRepository.extendedRepo) 
+        if (!TransactionRepository.extendedRepo)
             TransactionRepository.extendedRepo = Database.AppDataSource.getRepository(Transaction).extend(new TransactionRepositoryExtension());
-        
+
         return TransactionRepository.extendedRepo;
     }
 }

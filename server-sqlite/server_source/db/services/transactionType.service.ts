@@ -38,7 +38,7 @@ export class TransactionTypeService
     public static async getUserTransactionTypes
     (
         ownerId: string,
-        config: 
+        config:
         {
             startIndex?: number | undefined, endIndex?: number | undefined,
             name?: string,

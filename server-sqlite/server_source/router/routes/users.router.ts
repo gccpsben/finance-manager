@@ -8,16 +8,16 @@ import { TypesafeRouter } from '../typescriptRouter.js';
 
 const router = new TypesafeRouter(express.Router());
 
-router.post<PostUserAPI.ResponseDTO>(`/api/v1/users`, 
+router.post<PostUserAPI.ResponseDTO>(`/api/v1/users`,
 {
-    handler: async (req:express.Request, res:express.Response) => 
-    {   
+    handler: async (req:express.Request, res:express.Response) =>
+    {
         class body implements PostUserAPI.RequestDTO
         {
             @IsString() @IsNotEmpty() username: string;
             @IsString() @IsNotEmpty() password: string;
-        }; 
-        
+        };
+
         await ExpressValidations.validateBodyAgainstModel<body>(body, req.body);
         const newUser = await UserService.registerUser(req.body.username, req.body.password);
 
@@ -25,13 +25,13 @@ router.post<PostUserAPI.ResponseDTO>(`/api/v1/users`,
     }
 });
 
-router.delete<DeleteUserAPI.ResponseDTO>("/api/v1/users", 
+router.delete<DeleteUserAPI.ResponseDTO>("/api/v1/users",
 {
-    handler: async (req: express.Request, res:express.Response) => 
+    handler: async (req: express.Request, res:express.Response) =>
     {
         class body implements DeleteUserAPI.RequestDTO
-        { 
-            @IsNotEmpty() @IsString() userId: string; 
+        {
+            @IsNotEmpty() @IsString() userId: string;
         }
 
         const parsedBody = await ExpressValidations.validateBodyAgainstModel<body>(body, req.body);

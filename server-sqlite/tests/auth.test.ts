@@ -12,7 +12,7 @@ export namespace PostUserAPIClass
     export class RequestDTO implements PostUserAPI.RequestDTO
     {
         @IsString() username: string;
-        @IsString() password: string; 
+        @IsString() password: string;
     }
 
     export class ResponseDTO implements PostUserAPI.ResponseDTO
@@ -48,14 +48,14 @@ export default async function(this: Context)
             {
                 const correctUsername = "User 1";
                 const correctPassword = "password123";
-        
+
                 for (const { obj, fieldMissed } of BodyGenerator.enumerateMissingField( { username: correctUsername, password: correctPassword } ))
                 {
                     await this.test(`Forbid creating users without ${fieldMissed}`, async function()
                     {
                         await HTTPAssert.assertFetch
                         (
-                            `${UnitTestEndpoints.userEndpoints.post}`, 
+                            `${UnitTestEndpoints.userEndpoints.post}`,
                             {
                                 method: "POST",
                                 body: obj,
@@ -65,14 +65,14 @@ export default async function(this: Context)
                         );
                     });
                 }
-        
+
                 let firstUserID = undefined as undefined | string;
-        
+
                 await this.test(`Allow creating users with valid body`, async function()
-                {            
+                {
                     const response = await HTTPAssert.assertFetch
                     (
-                        `${UnitTestEndpoints.userEndpoints.post}`, 
+                        `${UnitTestEndpoints.userEndpoints.post}`,
                         {
                             method: "POST",
                             body: { username: correctUsername, password: correctPassword },

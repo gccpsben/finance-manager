@@ -14,7 +14,7 @@ export class ExtendedLog
     public static writeStream: RotatingFileStream;
 
     private static formatDateTime(time: Date)
-    {   
+    {
         let year = time.getFullYear().toString().padStart(4, '0');
         let month = (time.getMonth() + 1).toString().padStart(2, '0');
         let day = time.getDate().toString().padStart(2, '0');
@@ -26,7 +26,7 @@ export class ExtendedLog
     }
 
     public static generateLogFileName(time: Date, index: number)
-    {     
+    {
         const dateTime = time ?? new Date();
         const pad = num => (num > 9 ? "" : "0") + num;
         let year = dateTime.getFullYear();
@@ -43,16 +43,16 @@ export class ExtendedLog
         fse.mkdirs(EnvManager.logsFolderPath);
         ExtendedLog.writeStream = createStream
         (
-            (time: Date, index: number) => 
+            (time: Date, index: number) =>
             {
                 return path.join(EnvManager.logsFolderPath, ExtendedLog.generateLogFileName(time, index));
-            }, 
+            },
             {
                 interval: '1M'
             }
-        ); 
+        );
     }
- 
+
     private static async logToFile(msg: string)
     {
         await ExtendedLog.ensureWriteStream();
@@ -61,7 +61,7 @@ export class ExtendedLog
         const linePrefix = `[${ExtendedLog.formatDateTime(new Date())}]`;
         for (const line of lines) ExtendedLog.writeStream.write(`\n${linePrefix} ${line}`);
     }
- 
+
     public static async log(arg:any, logToFile=true, logToConsole=true)
     {
         if (logToFile) ExtendedLog.logToFile(`${arg}`);

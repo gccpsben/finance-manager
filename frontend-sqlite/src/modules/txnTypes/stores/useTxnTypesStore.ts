@@ -7,7 +7,7 @@ export const useTxnTypesStore = defineStore
 (
     {
         id: 'txnTypesStore',
-        state: () => 
+        state: () =>
         (
             {
                 txnTypes: useNetworkRequest<GetTxnTypesAPI.ResponseDTO>(API_TXN_TYPES_PATH, { includeAuthHeaders: true }),

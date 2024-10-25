@@ -7,7 +7,7 @@ export const useContainersStore = defineStore
 (
     {
         id: 'containersStore',
-        state: () => 
+        state: () =>
         (
             {
                 containers: useNetworkRequest<GetContainerAPI.ResponseDTO>(API_CONTAINERS_PATH, { includeAuthHeaders: true }),
@@ -15,13 +15,13 @@ export const useContainersStore = defineStore
         ),
         actions:
         {
-            findContainerById(id:string) 
+            findContainerById(id:string)
             {
                 if (this.containers.isLoading) return undefined;
                 if (!this.containers.lastSuccessfulData) return undefined;
-                return this.containers.lastSuccessfulData.rangeItems.find(x => x.id == id); 
+                return this.containers.lastSuccessfulData.rangeItems.find(x => x.id == id);
             },
-            
+
             isContainerExist(id:string) { return this.findContainerById(id) != undefined; }
         }
     }

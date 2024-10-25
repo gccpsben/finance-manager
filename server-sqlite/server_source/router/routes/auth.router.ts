@@ -9,16 +9,16 @@ import { TypesafeRouter } from '../typescriptRouter.js';
 
 const router = new TypesafeRouter(express.Router());
 
-router.post<PostLoginAPI.ResponseDTO>("/api/v1/auth/login", 
+router.post<PostLoginAPI.ResponseDTO>("/api/v1/auth/login",
 {
-    handler: async (req:express.Request, res:express.Response) => 
-    { 
+    handler: async (req:express.Request, res:express.Response) =>
+    {
         class body implements PostLoginAPI.RequestDTO
         {
             @IsString() @IsNotEmpty() username: string;
             @IsString() @IsNotEmpty() password: string;
-        }; 
-        
+        };
+
         await ExpressValidations.validateBodyAgainstModel<body>(body, req.body);
         const authResult = await UserService.validatePassword(req.body.username, req.body.password);
         if (!authResult.success) throw createHttpError(401);
@@ -29,7 +29,7 @@ router.post<PostLoginAPI.ResponseDTO>("/api/v1/auth/login",
             expiryDate: newToken.expiryDate,
             owner: newToken.owner.id
         }
-    }   
+    }
 });
 
 export default router.getRouter();

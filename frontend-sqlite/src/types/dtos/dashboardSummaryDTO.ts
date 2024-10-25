@@ -1,6 +1,6 @@
 import type { HydratedTransaction } from "./transactionsDTO";
 
-export type DashboardSummary = 
+export type DashboardSummary =
 {
     totalIncomes30d: number;
     totalExpenses30d: number;

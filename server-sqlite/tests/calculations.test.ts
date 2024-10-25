@@ -82,7 +82,7 @@ export default async function(this: Context)
                         const containers = await HookShortcuts.postRandomContainers({ ...baseConfig, containerCount: 3 });
                         const baseCurrency = await HookShortcuts.postCreateCurrency({ ...baseConfig, body: { name: "BASE", ticker: "BASE" } });
 
-                        const txnsToPost: { toAmount: Decimal|undefined, fromAmount: Decimal|undefined, txnAgeDays: number }[] = 
+                        const txnsToPost: { toAmount: Decimal|undefined, fromAmount: Decimal|undefined, txnAgeDays: number }[] =
                         [
                             { fromAmount: undefined              , toAmount: new Decimal(`100.0001`), txnAgeDays: 90  },
                             { fromAmount: new Decimal(`0.0001`)  , toAmount: new Decimal(`0.0001`)  , txnAgeDays: 50  },
@@ -116,10 +116,10 @@ export default async function(this: Context)
                                     title: randomUUID(),
                                     creationDate: transformOffsetDate(txnToPost.txnAgeDays),
                                     description: simpleFaker.string.sample(100),
-                                    fromAmount: isFrom ? txnToPost.fromAmount.toString() : undefined, 
+                                    fromAmount: isFrom ? txnToPost.fromAmount.toString() : undefined,
                                     fromContainerId: isFrom ? choice(containers).containerId : undefined,
                                     fromCurrencyId: isFrom ? baseCurrency.currencyId : undefined,
-                                    toAmount: isTo ? txnToPost.toAmount.toString() : undefined, 
+                                    toAmount: isTo ? txnToPost.toAmount.toString() : undefined,
                                     toContainerId: isTo ? choice(containers).containerId : undefined,
                                     toCurrencyId: isTo ? baseCurrency.currencyId : undefined,
                                     txnTypeId: choice(txnTypes).txnId

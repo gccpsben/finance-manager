@@ -1,6 +1,6 @@
 export namespace PostCurrencyRateAPI
 {
-    export type RequestDTO = 
+    export type RequestDTO =
     {
         amount: string;
         refCurrencyId: string;

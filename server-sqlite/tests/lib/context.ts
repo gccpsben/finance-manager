@@ -31,7 +31,7 @@ export class Context
     }
 
     public getLevelPadding(offset = 0)
-    { 
+    {
         if (this.level + offset === 0) return '';
         return new Array((this.level + offset)).fill('   ').join('');
     }
@@ -44,8 +44,8 @@ export class Context
 
     private constructBinding(this:this)
     {
-        return { 
-            describe: this.describe.bind(this), 
+        return {
+            describe: this.describe.bind(this),
             test: this.test.bind(this) ,
             log: this.log.bind(this),
             module: this.module.bind(this)
@@ -58,11 +58,11 @@ export class Context
     {
         this.log(colorFunc(`${name}:`));
         this.level++;
-        try 
+        try
         {
             await new Promise<void>((function (this: Context, resolve: () => any, reject: (err: Error) => any)
             {
-                (function () 
+                (function ()
                 {
                     fn.bind(this)().then(() => resolve()).catch(e =>
                     {
@@ -91,16 +91,16 @@ export class Context
     {
         const defaultTimeout = 2000;
         let self = this;
-        
+
         const startDate = new Date().getTime();
         this.level++;
         this.testsCount++;
         let isError = false;
-        try 
+        try
         {
             await new Promise<void>((function (this: Context, resolve: () => any, reject: (err: Error) => any)
             {
-                (function () 
+                (function ()
                 {
                     let timeoutTimer = config?.timeout === 0 ? undefined : setTimeout(function()
                     {
@@ -121,16 +121,16 @@ export class Context
             }).bind(this.constructBinding.bind(this)()));
             self.successfulCount++;
         }
-        catch(e) 
-        { 
+        catch(e)
+        {
             self.failedCount++;
-            this.errors.push({name: name, err: e}); isError = true; 
+            this.errors.push({name: name, err: e}); isError = true;
         }
         this.level--;
         const endDate = new Date().getTime();
 
         // Print test case result
-        (function () 
+        (function ()
         {
             let colorMethod = chalk[isError ? 'red' : 'green'];
             let tagContent = (chalk[isError ? "bgRed" : "bgGreen"]).black(isError ? ' FAIL ' : ' PASS ');

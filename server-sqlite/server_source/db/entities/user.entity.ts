@@ -10,7 +10,7 @@ import { EnsureNotPlainForeignKey } from "../validators.js";
 import { Transaction } from "./transaction.entity.js";
 import { TransactionType } from "./transactionType.entity.js";
 
-@Entity() 
+@Entity()
 export class User extends EntityClass
 {
     @PrimaryGeneratedColumn("uuid")
@@ -23,28 +23,28 @@ export class User extends EntityClass
     username: string;
 
     @Column({nullable: false, select: false})
-    @IsString() 
+    @IsString()
     @IsNotEmpty()
     @MaxLength(256)
     passwordHash: string;
 
     @OneToMany(type => AccessToken, accessToken => accessToken.owner)
-    @EnsureNotPlainForeignKey() 
+    @EnsureNotPlainForeignKey()
     accessTokens: AccessToken[];
 
     @OneToMany(type => Currency, currency => currency.owner)
-    @EnsureNotPlainForeignKey() 
+    @EnsureNotPlainForeignKey()
     currencies: Currency[];
 
     @OneToMany(type => Container, container => container.owner)
-    @EnsureNotPlainForeignKey() 
+    @EnsureNotPlainForeignKey()
     containers: Container[];
 
     @OneToMany(type => Transaction, transaction => transaction.owner)
-    @EnsureNotPlainForeignKey() 
+    @EnsureNotPlainForeignKey()
     transactions: Transaction[];
 
     @OneToMany(type => TransactionType, transactionType => transactionType.owner)
-    @EnsureNotPlainForeignKey() 
+    @EnsureNotPlainForeignKey()
     transactionTypes: TransactionType[];
 }

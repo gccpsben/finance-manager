@@ -68,7 +68,7 @@
                     </template>
                 </list-cell>
 
-                <list-cell v-area="'_30dTransfersList'" title="30d Transfers" :noItemsText="'No Transfers'" 
+                <list-cell v-area="'_30dTransfersList'" title="30d Transfers" :noItemsText="'No Transfers'"
                 :isLoading="store.txns30d.isLoading"
                 :error="store.txns30d.error"
                 :itemsInPage="6"
@@ -422,7 +422,7 @@ export default
 
         .listItemTitle
         {
-            .fg(inherit); font-size:14px; overflow:hidden; white-space: nowrap; text-overflow: ellipsis; 
+            .fg(inherit); font-size:14px; overflow:hidden; white-space: nowrap; text-overflow: ellipsis;
         }
 
         .highlightableRow

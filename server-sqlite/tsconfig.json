@@ -1,6 +1,6 @@
 {
-  "compilerOptions": 
-  { 
+  "compilerOptions":
+  {
     "outDir":"./server_build",
     "experimentalDecorators":true,
     "emitDecoratorMetadata": true,

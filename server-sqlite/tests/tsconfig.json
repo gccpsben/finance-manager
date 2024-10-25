@@ -1,6 +1,6 @@
 {
-  "compilerOptions": 
-  { 
+  "compilerOptions":
+  {
     "outDir":"../server_ut-build",
     "experimentalDecorators":true,
     "emitDecoratorMetadata": true,

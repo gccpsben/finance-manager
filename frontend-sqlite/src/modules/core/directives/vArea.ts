@@ -3,15 +3,15 @@
  */
 export default
 {
-    mounted(el:HTMLElement, binding: any) 
-    { 
-        el.style.gridArea = binding.value; 
+    mounted(el:HTMLElement, binding: any)
+    {
+        el.style.gridArea = binding.value;
         if (binding.arg == 'class' || binding.modifiers.class == true)
             el.classList.add(binding.value)
     },
-    updated(el:HTMLElement, binding: any) 
+    updated(el:HTMLElement, binding: any)
     {
-        el.style.gridArea = binding.value; 
+        el.style.gridArea = binding.value;
         if (binding.arg == 'class' || binding.modifiers.class == true)
             el.classList.add(binding.value);
     }

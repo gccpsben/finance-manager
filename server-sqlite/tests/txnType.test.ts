@@ -21,7 +21,7 @@ export namespace GetTxnTypesAPIClass
         @IsNumber() totalItems: number;
         @IsNumber() startingIndex: number;
         @IsNumber() endingIndex: number;
-        
+
         @IsArray()
         @ValidateNested({ each: true })
         @Type(() => TransactionTypesDTOClass)
@@ -48,21 +48,21 @@ export default async function(this: Context)
             let postedTxnType = undefined as undefined | ResponsePostTransactionTypesDTOBody;
 
             await this.describe(`post`, async function()
-            {   
+            {
                 await this.test(`Forbid creating txn types without token`, async function()
                 {
-                    await HTTPAssert.assertFetch(UnitTestEndpoints.transactionTypesEndpoints['post'], 
+                    await HTTPAssert.assertFetch(UnitTestEndpoints.transactionTypesEndpoints['post'],
                     {
                         baseURL: serverURL, expectedStatus: 401, method: "POST",
                         body: baseValidObj
                     });
                 });
-    
+
                 for (const testCase of BodyGenerator.enumerateMissingField(baseValidObj))
                 {
                     await this.test(`Forbid creating txn types without ${testCase.fieldMissed}`, async function()
                     {
-                        await HTTPAssert.assertFetch(UnitTestEndpoints.transactionTypesEndpoints['post'], 
+                        await HTTPAssert.assertFetch(UnitTestEndpoints.transactionTypesEndpoints['post'],
                         {
                             baseURL: serverURL, expectedStatus: 400, method: "POST",
                             body: testCase.obj,
@@ -70,10 +70,10 @@ export default async function(this: Context)
                         });
                     });
                 }
-    
+
                 await this.test(`Allow creating txn types with valid body`, async function()
                 {
-                    const response = await HTTPAssert.assertFetch(UnitTestEndpoints.transactionTypesEndpoints['post'], 
+                    const response = await HTTPAssert.assertFetch(UnitTestEndpoints.transactionTypesEndpoints['post'],
                     {
                         baseURL: serverURL, expectedStatus: 200, method: "POST",
                         headers: { "authorization": firstUserToken },
@@ -81,14 +81,14 @@ export default async function(this: Context)
                         expectedBodyType: ResponsePostTransactionTypesDTOBody
                     });
                     postedTxnType = response.parsedBody;
-                });    
+                });
             });
 
             await this.describe(`get`, async function()
             {
                 await this.test(`Check for missing props on posted types`, async function()
                 {
-                    const response = await HTTPAssert.assertFetch(UnitTestEndpoints.transactionTypesEndpoints['get'], 
+                    const response = await HTTPAssert.assertFetch(UnitTestEndpoints.transactionTypesEndpoints['get'],
                     {
                         baseURL: serverURL, expectedStatus: 200, method: "GET",
                         headers: { "authorization": firstUserToken },

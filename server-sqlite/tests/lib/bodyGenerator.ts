@@ -18,18 +18,18 @@ export class BodyGenerator
     /**
      * Generate test cases for relationships where each user should have only one unique item, but
      * allow repeated items within each user.
-     * 
+     *
      * For example, each user should only have 1 row with Name="1",
      * but the database should allow 2 rows with Name="1" where one belongs to user 1, and the other belongs to user 2.
-     * 
+     *
      * @example
      * primaryCount = 4
      * subValueCount = 2
-     * 
+     *
      * user1, user2, user3, user4
      * name1  name1  name1  name1
      * name2  name2  name2  name2
-     * 
+     *
      * insert user1-name1: true
      * insert user2-name1: true
      * insert user3-name1: true
@@ -52,15 +52,15 @@ export class BodyGenerator
         const generateIDs = (count: number) => new Array(count).fill(undefined).map(x => randomUUID());
         const userIDs = generateIDs(primaryCount);
         const subValueIDs = generateIDs(subValueCount);
-        const output: 
-        { 
-            primaryValue: string, 
-            subPrimaryValue: string, 
+        const output:
+        {
+            primaryValue: string,
+            subPrimaryValue: string,
             expectedPass: boolean,
             primaryValueIndex: number,
             subValueIndex: number
         }[] = [];
-        
+
         let count = 0;
         let subValueIndex = 0;
         for (let subValue of [...subValueIDs, ...subValueIDs])
@@ -71,8 +71,8 @@ export class BodyGenerator
                 count++;
                 output.push(
                 {
-                    primaryValue: primaryValue, 
-                    subPrimaryValue: subValue, 
+                    primaryValue: primaryValue,
+                    subPrimaryValue: subValue,
                     primaryValueIndex: primaryValueIndex,
                     subValueIndex: subValueIndex % (subValueCount),
                     expectedPass: count <= subValueCount * primaryCount

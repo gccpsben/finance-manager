@@ -1,9 +1,9 @@
 import { registerDecorator, ValidationOptions, ValidationArguments, isInt, isPositive, isNumber, isNumberString, IsNumberString, isString } from 'class-validator';
 import { Decimal } from 'decimal.js';
 
-export function EnsureNotPlainForeignKey(validationOptions?: ValidationOptions) 
+export function EnsureNotPlainForeignKey(validationOptions?: ValidationOptions)
 {
-    return function (object: Object, propertyName: string) 
+    return function (object: Object, propertyName: string)
     {
         registerDecorator(
         {
@@ -13,9 +13,9 @@ export function EnsureNotPlainForeignKey(validationOptions?: ValidationOptions)
             options: {
                 message: "Expected an object or array instead of a string. Do not use `<any>foreignKey` to save documents."
             },
-            validator: 
+            validator:
             {
-                validate(value: any, args: ValidationArguments) 
+                validate(value: any, args: ValidationArguments)
                 {
                     return typeof value !== 'string';
                 },
@@ -29,9 +29,9 @@ export function isDecimalJSString(value: any)
     try { const test = new Decimal(value); return true; }
     catch(e) { return false; }
 }
-export function IsDecimalJSString() 
+export function IsDecimalJSString()
 {
-    return function (object: Object, propertyName: string) 
+    return function (object: Object, propertyName: string)
     {
         registerDecorator(
         {
@@ -41,9 +41,9 @@ export function IsDecimalJSString()
             options: {
                 message: "Expected a Decimal.js compatible string."
             },
-            validator: 
+            validator:
             {
-                validate(value: any, args: ValidationArguments) 
+                validate(value: any, args: ValidationArguments)
                 {
                     if (!isDecimalJSString(value)) return false;
                     return true;
@@ -59,9 +59,9 @@ export function isEpochKeyedMap(value: any)
     if (Object.keys(value).some(key => !isUTCDateIntString(key))) return false;
     return true;
 }
-export function IsEpochKeyedMap() 
+export function IsEpochKeyedMap()
 {
-    return function (object: Object, propertyName: string) 
+    return function (object: Object, propertyName: string)
     {
         registerDecorator(
         {
@@ -71,9 +71,9 @@ export function IsEpochKeyedMap()
             options: {
                 message: "Expected a map where each key is a DateTime epoch."
             },
-            validator: 
+            validator:
             {
-                validate(value: any, args: ValidationArguments) 
+                validate(value: any, args: ValidationArguments)
                 {
                     if (!isEpochKeyedMap(value)) return false;
                     return true;
@@ -85,7 +85,7 @@ export function IsEpochKeyedMap()
 
 export function IsPassing(predicate: (value: any) => boolean)
 {
-    return function (object: Object, propertyName: string) 
+    return function (object: Object, propertyName: string)
     {
         registerDecorator(
         {
@@ -95,9 +95,9 @@ export function IsPassing(predicate: (value: any) => boolean)
             options: {
                 message: "Expected a value that passes the predicate provided."
             },
-            validator: 
+            validator:
             {
-                validate(value: any, args: ValidationArguments) 
+                validate(value: any, args: ValidationArguments)
                 {
                     if (!predicate(value)) return false;
                     return true;
@@ -119,9 +119,9 @@ export function isUTCDateIntString(value: any)
     }
     catch(e) { return false; }
 }
-export function IsUTCDateIntString() 
+export function IsUTCDateIntString()
 {
-    return function (object: Object, propertyName: string) 
+    return function (object: Object, propertyName: string)
     {
         registerDecorator(
         {
@@ -131,9 +131,9 @@ export function IsUTCDateIntString()
             options: {
                 message: "Expected an UTC int representing a datetime as a string."
             },
-            validator: 
+            validator:
             {
-                validate(value: any, args: ValidationArguments) 
+                validate(value: any, args: ValidationArguments)
                 {
                     if (!isUTCDateIntString(value)) return false;
                     return true;
@@ -154,9 +154,9 @@ export function isUTCDateInt(value: any)
     }
     catch(e) { return false; }
 }
-export function IsUTCDateInt() 
+export function IsUTCDateInt()
 {
-    return function (object: Object, propertyName: string) 
+    return function (object: Object, propertyName: string)
     {
         registerDecorator(
         {
@@ -166,9 +166,9 @@ export function IsUTCDateInt()
             options: {
                 message: "Expected an UTC int representing a datetime."
             },
-            validator: 
+            validator:
             {
-                validate(value: any, args: ValidationArguments) 
+                validate(value: any, args: ValidationArguments)
                 {
                     if (!isUTCDateInt(value)) return false;
                     return true;
@@ -189,9 +189,9 @@ export function isPositiveIntString(value: any)
     }
     catch(e) { return false; }
 }
-export function IsPositiveIntString() 
+export function IsPositiveIntString()
 {
-    return function (object: Object, propertyName: string) 
+    return function (object: Object, propertyName: string)
     {
         registerDecorator(
         {
@@ -201,9 +201,9 @@ export function IsPositiveIntString()
             options: {
                 message: "Expected string with a positive int value."
             },
-            validator: 
+            validator:
             {
-                validate(value: any, args: ValidationArguments) 
+                validate(value: any, args: ValidationArguments)
                 {
                     if (!isIntString(value)) return false;
                     return true;
@@ -223,9 +223,9 @@ export function isIntString(value: any)
     }
     catch(e) { return false; }
 }
-export function IsIntString() 
+export function IsIntString()
 {
-    return function (object: Object, propertyName: string) 
+    return function (object: Object, propertyName: string)
     {
         registerDecorator(
         {
@@ -235,9 +235,9 @@ export function IsIntString()
             options: {
                 message: "Expected string with int value."
             },
-            validator: 
+            validator:
             {
-                validate(value: any, args: ValidationArguments) 
+                validate(value: any, args: ValidationArguments)
                 {
                     if (!isIntString(value)) return false;
                     return true;
@@ -259,9 +259,9 @@ export function isStringToStringDict(value :any)
     }
     catch(e) { return false; }
 }
-export function IsStringToStringDict() 
+export function IsStringToStringDict()
 {
-    return function (object: Object, propertyName: string) 
+    return function (object: Object, propertyName: string)
     {
         registerDecorator(
         {
@@ -271,9 +271,9 @@ export function IsStringToStringDict()
             options: {
                 message: "Expected an object where key and value are both string."
             },
-            validator: 
+            validator:
             {
-                validate(value: any, args: ValidationArguments) 
+                validate(value: any, args: ValidationArguments)
                 {
                     if (!isStringToStringDict(value)) return false;
                     return true;
@@ -293,9 +293,9 @@ export function isStringToDecimalJSStringDict(value:any)
     }
     catch(e) { return false; }
 }
-export function IsStringToDecimalJSStringDict() 
+export function IsStringToDecimalJSStringDict()
 {
-    return function (object: Object, propertyName: string) 
+    return function (object: Object, propertyName: string)
     {
         registerDecorator(
         {
@@ -305,9 +305,9 @@ export function IsStringToDecimalJSStringDict()
             options: {
                 message: "Expected an object where keys are string, values are Decimal.js string"
             },
-            validator: 
+            validator:
             {
-                validate(value: any, args: ValidationArguments) 
+                validate(value: any, args: ValidationArguments)
                 {
                     if (!isStringToDecimalJSStringDict(value)) return false;
                     return true;

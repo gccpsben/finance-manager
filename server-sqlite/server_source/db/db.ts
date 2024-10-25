@@ -48,9 +48,9 @@ export class Database
         // accessToken.creationDate = new Date();
         // accessToken.owner = <any>"41d03dc4-e74e-4e44-8efa-ee50df4b1f1e";
         // await AccessTokenRepository.getInstance().insert(accessToken);
-        
+
         // let newUser = UserRepository.getInstance().create();
-        // newUser.username = ''; 
+        // newUser.username = '';
         // await UserRepository.getInstance().insert(newUser);
 
         // await TransactionRepository.getInstance().clear();
@@ -64,23 +64,23 @@ export class Database
 
         // const txn = TransactionRepository.getInstance().create();
         // txn.ownerUser = { id: "f6fd7709-d9b0-4e30-86bd-fa2a4b2785ba" } as User;
-        // txn.title = "TITLE"; 
+        // txn.title = "TITLE";
         // txn.toAmount = "1";
-        // txn.fromAmount = "2"; 
+        // txn.fromAmount = "2";
         // await TransactionRepository.getInstance().save(txn);
 
         // // Performance
-        // (async () => 
+        // (async () =>
         // {
         //     await UserRepository.getInstance().clear();
         //     await UserFieldRepository.getInstance().clear();
-    
+
         //     const rowsCount = 1790;
         //     const timeDiff1 = new TimeDiffer(`Creating ${rowsCount} rows: `);
         //     const postArray = [];
         //     for (let i = 0; i < rowsCount; i++)
         //     {
-        //         let newUser = UserRepository.getInstance().create(); 
+        //         let newUser = UserRepository.getInstance().create();
         //         newUser.id = "USER" + i;
         //         newUser.firstName = "firstname";
         //         newUser.lastName = "lastname";
@@ -89,16 +89,16 @@ export class Database
         //     }
         //     await UserRepository.getInstance().insert(postArray);
         //     timeDiff1.mark();
-        
+
         //     const timeDiff2 = new TimeDiffer(`Reading ${rowsCount} rows: `);
         //     await UserRepository.getInstance().customFind();
         //     timeDiff2.mark();
-    
+
         //     const timeDiff3 = new TimeDiffer(`Reading ${rowsCount} rows with conditions: `);
         //     console.log(await UserRepository.getInstance().createQueryBuilder()
         //     .where('id = "USER1705"')
         //     .getMany());
-        //     timeDiff3.mark();   
+        //     timeDiff3.mark();
         // })();
 
 

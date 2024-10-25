@@ -4,7 +4,7 @@ import { AccessToken } from "../entities/accessToken.entity.js";
 
 class AccessTokenRepositoryExtension
 {
-    customFind = async function(this: Repository<AccessToken>) 
+    customFind = async function(this: Repository<AccessToken>)
     {
         const result = await this.createQueryBuilder()
         .getMany();
@@ -18,8 +18,8 @@ export class AccessTokenRepository
 
     public static getInstance()
     {
-        if (!AccessTokenRepository.extendedRepo) 
-            AccessTokenRepository.extendedRepo = Database.AppDataSource.getRepository(AccessToken).extend(new AccessTokenRepositoryExtension())      
+        if (!AccessTokenRepository.extendedRepo)
+            AccessTokenRepository.extendedRepo = Database.AppDataSource.getRepository(AccessToken).extend(new AccessTokenRepositoryExtension())
         return AccessTokenRepository.extendedRepo;
     }
 }

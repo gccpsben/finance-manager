@@ -25,11 +25,11 @@
             <div v-area.class="'BalanceHistoryGraph'">
                 <cell title="Balance Value History">
 
-                    <NetworkCircularIndicator style="color:unset;" v-show="store.balanceValueHistory.isLoading || store.balanceValueHistory.error" 
+                    <NetworkCircularIndicator style="color:unset;" v-show="store.balanceValueHistory.isLoading || store.balanceValueHistory.error"
                     :isLoading="store.balanceValueHistory.isLoading"
                     :error="store.balanceValueHistory.error"/>
 
-                    <LineChart v-if="balanceValueHistoryGraphData" v-show="!store.balanceValueHistory.isLoading && !store.balanceValueHistory.error" 
+                    <LineChart v-if="balanceValueHistoryGraphData" v-show="!store.balanceValueHistory.isLoading && !store.balanceValueHistory.error"
                     :chartData="balanceValueHistoryGraphData" :options="balanceValueHistoryGraphOptions" style="max-height:100%;"></LineChart>
 
                     <VRangeSlider v-show="!store.balanceValueHistory.isLoading && !store.balanceValueHistory.error"
@@ -84,7 +84,7 @@
 
 .rangeSelectorDetail { text-align:start; color:gray; font-size:14px; .tight; display:inline; }
 
-@media only screen and (max-width: 600px) 
+@media only screen and (max-width: 600px)
 {
     #mainGrid
     {
@@ -235,15 +235,15 @@ export default
                 let c = container;
                 valuesByContainer[container.name] = c.value;
             }
-            
+
             let entries = Object.entries(valuesByContainer).sort((a,b) => b[1] - a[1]);
             let labels = entries.map(x => x[0]);
             let values = entries.map(x => x[1]);
 
-            const data: ChartData<'bar'> = 
+            const data: ChartData<'bar'> =
             {
                 labels: labels,
-                datasets: 
+                datasets:
                 [
                     {
                         data: values,

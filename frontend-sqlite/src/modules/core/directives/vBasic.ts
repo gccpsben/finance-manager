@@ -14,7 +14,7 @@ function apply(str:string, el: Element)
 
 function parse(str:string)
 {
-    try 
+    try
     {
         let val:string = str;
         let firstChar = val[0]; let lastChar = val[val.length - 1];
@@ -39,8 +39,8 @@ function parse(str:string)
         if (id == '') id = undefined;
 
         return {"classes":classes, id: id}
-    } 
-    catch(ex) 
+    }
+    catch(ex)
     {
         console.warn(`Invalid argument "${str}" passed in v-basic.`);
     }

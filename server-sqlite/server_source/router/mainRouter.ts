@@ -14,9 +14,9 @@ export function getMainRouter()
 {
     const router = express.Router();
 
-    if (EnvManager.envType === 'Development') 
+    if (EnvManager.envType === 'Development')
         router.use("/", devOnlyRouter);
-    
+
     router.use("/", userRouter);
     router.use("/", authRouter);
     router.use("/", currenciesRouter);

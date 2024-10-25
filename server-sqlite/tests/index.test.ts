@@ -14,14 +14,14 @@ import transactionTests from './transaction.test.js';
 import calculationsTest, { testForCalculationsInternals } from './calculations.test.js';
 export type HTTPMethod = "GET" | "PATCH" | "POST" | "DELETE";
 
-export type TestUserEntry = 
+export type TestUserEntry =
 {
     username: string,
     password: string,
     token?: string | undefined,
     baseCurrencyId?: string | undefined
 };
-export type TestUserDict = 
+export type TestUserDict =
 {
     [key: string]: TestUserEntry
 };
@@ -30,36 +30,36 @@ export class UnitTestEndpoints
 {
     public static userEndpoints = { "post": "/api/v1/users", };
     public static loginEndpoints = { "post": `/api/v1/auth/login` };
-    public static containersEndpoints = 
+    public static containersEndpoints =
     {
         "post": `/api/v1/containers`,
         "get": `/api/v1/containers`
     };
-    public static calculationsEndpoints = 
+    public static calculationsEndpoints =
     {
         "expensesAndIncomes": `/api/v1/calculations/expensesAndIncomes`,
         "balanceHistory":  `/api/v1/calculations/balanceHistory`,
         "networthHistory":  `/api/v1/calculations/networthHistory`
     };
-    public static currenciesEndpoints = 
+    public static currenciesEndpoints =
     {
         "post": `/api/v1/currencies`,
         "get": `/api/v1/currencies`
     };
-    public static currenciesRateHistoryEndpoints = 
+    public static currenciesRateHistoryEndpoints =
     {
         "get": "/api/v1/currencies/history"
     };
-    public static currencyRateDatumsEndpoints = 
+    public static currencyRateDatumsEndpoints =
     {
         "post": `/api/v1/currencyRateDatums`
     };
-    public static transactionTypesEndpoints = 
+    public static transactionTypesEndpoints =
     {
         "post": `/api/v1/transactionTypes`,
         "get": `/api/v1/transactionTypes`,
     };
-    public static transactionsEndpoints = 
+    public static transactionsEndpoints =
     {
         "post": `/api/v1/transactions`,
         "get": `/api/v1/transactions`,
@@ -73,10 +73,10 @@ export async function resetDatabase()
     await Database.init();
 }
 
-export let serverPort = undefined as undefined | number; 
+export let serverPort = undefined as undefined | number;
 export let serverURL = undefined as undefined | string;
 
-await (async () => 
+await (async () =>
 {
     await main(".test.env");
     serverPort = EnvManager.serverPort;
@@ -102,7 +102,7 @@ await (async () =>
         await transactionTests.bind(this)();
         await calculationsTest.bind(this)();
     });
-    
+
     console.log(chalk.green(`\nPassing: ${topContext.successfulCount}`));
     console.log(chalk.red(`Failing: ${topContext.failedCount}\n`));
     for (let err of topContext.errors)

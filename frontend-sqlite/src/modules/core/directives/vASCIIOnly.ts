@@ -18,7 +18,7 @@ function validateIMEType(evt: Event)
     let tagName = (evt.target as HTMLElement).tagName;
     if (tagName != "INPUT" && tagName != "TEXTAREA") return;
     let element = evt.target as HTMLTextAreaElement|HTMLInputElement;
-    if (!isStringASCII(element.value)) 
+    if (!isStringASCII(element.value))
     {
         element.value = removeNonASCII(element.value);
         element.dispatchEvent(event);
@@ -36,7 +36,7 @@ function validatePaste(evt: ClipboardEvent): void
     else if (!isStringASCII(str)) evt.preventDefault();
 }
 
-function validateType (evt: KeyboardEvent): void 
+function validateType (evt: KeyboardEvent): void
 {
     const keyPressed: string = evt.key;
     if (!isStringASCII(keyPressed)) evt.preventDefault();

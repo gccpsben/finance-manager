@@ -6,7 +6,7 @@ export function createVertLinePlugin(lineColor: string)
     let lastNearestDatumIndex = undefined as undefined | number;
     let lastNearestDatasetIndex = undefined as undefined | number;
 
-    const vertLinePlugin: Plugin<'line', {}> = 
+    const vertLinePlugin: Plugin<'line', {}> =
     (
         {
             id: 'vertLine',
@@ -16,7 +16,7 @@ export function createVertLinePlugin(lineColor: string)
                 const chartBounds = chart.canvas.getBoundingClientRect();
 
                 // Check if mouse is within bound, return if not
-                const isMouseWithinChartArea = (() => 
+                const isMouseWithinChartArea = (() =>
                 {
                     const relativeX = lastMouseLocation.x - chartBounds.x - chart.chartArea.left;
                     const relativeY = lastMouseLocation.y - chartBounds.y - chart.chartArea.top;
@@ -51,20 +51,20 @@ export function createVertLinePlugin(lineColor: string)
                 context.closePath();
                 context.strokeStyle = beforeStrokeStyle;
             },
-            afterInit: function(chart, args, options) 
-            {           
-                chart.canvas.onmouseleave = (e:MouseEvent) => 
+            afterInit: function(chart, args, options)
+            {
+                chart.canvas.onmouseleave = (e:MouseEvent) =>
                 {
                     lastMouseLocation.x = -1;
                     lastMouseLocation.y = -1;
                 };
-                chart.canvas.onmousemove = (e: MouseEvent) => 
+                chart.canvas.onmousemove = (e: MouseEvent) =>
                 {
                     const nearestMouseItems = chart.getElementsAtEventForMode
                     (
-                        e, 
-                        'index', 
-                        { intersect: false }, 
+                        e,
+                        'index',
+                        { intersect: false },
                         true
                     );
 

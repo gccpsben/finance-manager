@@ -90,7 +90,7 @@ export const useMainStore = defineStore(
         /** A batch endpoint is available at backend. The endpoint combines dashboardSummary, containers, currencies and netWorth into a single endpoint. */
         async updateDashboardBatch()
         {
-            // const request = useNetworkRequest<DashboardBatchDTO>(API_DASHBOARD_BATCH_PATH, 
+            // const request = useNetworkRequest<DashboardBatchDTO>(API_DASHBOARD_BATCH_PATH,
             // {
             //     autoResetOnUnauthorized: true,
             //     includeAuthHeaders: true,
@@ -140,7 +140,7 @@ export const useMainStore = defineStore(
         async authPost(url:string, body:Object={}, extraHeaders:{[key: string]: string}={})
         {
             let headers = { headers: { "Authorization": this.getCookie("jwt"), ...extraHeaders } };
-            return axios.post(url, body, headers).catch((error: any) => 
+            return axios.post(url, body, headers).catch((error: any) =>
             {
                 if (error.response && error.response.status == 401 && axios.isAxiosError(error))
                 {

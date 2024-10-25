@@ -60,7 +60,7 @@
                 </div>
             </grid-shortcut>
         </div>
-        
+
     </div>
 </template>
 
@@ -70,26 +70,26 @@ import { useMeta } from 'vue-meta';
 
 export default
 {
-    setup () 
+    setup ()
     {
         useMeta(
         {
             title: 'Add Currency',
-            htmlAttrs: 
+            htmlAttrs:
             {
                 lang: 'en',
             }
         });
     },
-    async mounted() 
-    { 
+    async mounted()
+    {
         this.isLoading = true;
-        await this.store.updateAll(); 
+        await this.store.updateAll();
         this.isLoading = false;
     },
     data()
     {
-        return { 
+        return {
             isLoading: true,
             store: useMainStore(),
             currencyName: "",
@@ -107,7 +107,7 @@ export default
         async upload()
         {
             let self = this;
-            let body = 
+            let body =
             {
                 "name": this.currencyName,
                 "symbol": this.currencySymbol,
@@ -115,7 +115,7 @@ export default
 
             if (this.isDynamic)
             {
-                body.dataSource = 
+                body.dataSource =
                 {
                     jsonURLHost: this.sourceHostname,
                     jsonURLPath: this.sourcePath,
@@ -123,7 +123,7 @@ export default
                 }
             }
             else { body.rate = this.staticRate }
-            
+
             this.isFormUploading = true;
             this.store.authPost(`/api/finance/currencies/add`, body)
             .then(() => { alert("Successfully Added currency."); })
@@ -205,9 +205,9 @@ export default
     color:gray;
     font-family: Consolas;
 }
-div.grayText { opacity: 0.2; } 
+div.grayText { opacity: 0.2; }
 
-@media only screen and (max-width: 600px) 
+@media only screen and (max-width: 600px)
 {
     #topDiv { height: 100svh; }
 

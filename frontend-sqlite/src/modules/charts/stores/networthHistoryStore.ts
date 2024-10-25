@@ -4,7 +4,7 @@ import { defineStore } from "pinia"
 import type { GetUserNetworthHistoryAPI } from "../../../../../api-types/calculations";
 import { ref } from "vue";
 
-export const useNetworthHistoryStore = defineStore('networthHistory', () => 
+export const useNetworthHistoryStore = defineStore('networthHistory', () =>
 {
     const _30d = ref(useNetworkRequest<GetUserNetworthHistoryAPI.ResponseDTO>
     (

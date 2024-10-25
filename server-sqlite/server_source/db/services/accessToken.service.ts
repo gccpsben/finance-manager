@@ -33,7 +33,7 @@ export class AccessTokenService
                 isTokenValid: false,
                 tokenFound: true,
                 ownerUserId: tokenInDatabase.owner.id
-            }   
+            }
         }
         return {
             isTokenValid: true,
@@ -47,7 +47,7 @@ export class AccessTokenService
         return (await AccessTokenRepository
         .getInstance()
         .find( { where: { owner: { id: userId } } }))
-        .map(incompleteRow => 
+        .map(incompleteRow =>
         {
             return {
                 expiryDate: incompleteRow.expiryDate,

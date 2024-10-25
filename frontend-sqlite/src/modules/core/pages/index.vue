@@ -148,7 +148,7 @@ export default
 
         .activeButton
         {
-            .bg(@backgroundDark); border-right:2px solid @focus; color: @focusLight; 
+            .bg(@backgroundDark); border-right:2px solid @focus; color: @focusLight;
             i { color: @focusLight; }
         }
     }

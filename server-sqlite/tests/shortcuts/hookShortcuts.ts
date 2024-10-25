@@ -204,7 +204,7 @@ export class HookShortcuts
     })
     {
         const assertBody = config.assertBody === undefined ? true : config.assertBody;
-        const response = await HTTPAssert.assertFetch(UnitTestEndpoints.containersEndpoints['post'], 
+        const response = await HTTPAssert.assertFetch(UnitTestEndpoints.containersEndpoints['post'],
         {
             baseURL: config.serverURL, expectedStatus: config.expectedCode, method: "POST",
             body: config.body,
@@ -273,7 +273,7 @@ export class HookShortcuts
     }
 
     /** Random tnx types with unique names */
-    public static async postRandomContainers(config: 
+    public static async postRandomContainers(config:
     {
         serverURL:string,
         token:string,
@@ -317,13 +317,13 @@ export class HookShortcuts
     {
         function choice<T> (list: T[]) { return list[Math.floor((Math.random()*list.length))]; }
 
-        const output: 
-        { 
-            id: string, 
-            name: string, 
+        const output:
+        {
+            id: string,
+            name: string,
             amount: Decimal,
             refCurrencyId: string
-        }[] = []; 
+        }[] = [];
 
         const usedNames: string[] = [ ...(config.usedNames ?? []) ];
         for (let i = 0; i < config.currenciesCount; i++)
@@ -338,8 +338,8 @@ export class HookShortcuts
             {
                 id: (await HookShortcuts.postCreateCurrency(
                 {
-                    body: 
-                    { 
+                    body:
+                    {
                         name                   : randomName,
                         fallbackRateAmount     : amount.toString(),
                         fallbackRateCurrencyId : refCurrencyId,
@@ -369,7 +369,7 @@ export class HookShortcuts
         const assertBody = config.assertBody === undefined ? true : config.assertBody;
         const response = await HTTPAssert.assertFetch
         (
-            UnitTestEndpoints.calculationsEndpoints['expensesAndIncomes'], 
+            UnitTestEndpoints.calculationsEndpoints['expensesAndIncomes'],
             {
                 baseURL: config.serverURL, expectedStatus: config.expectedCode, method: "GET",
                 headers: { "authorization": config.token },
@@ -382,7 +382,7 @@ export class HookShortcuts
         };
     }
 
-    public static async getUserBalanceHistory(config: 
+    public static async getUserBalanceHistory(config:
     {
         serverURL:string,
         token:string,
@@ -409,7 +409,7 @@ export class HookShortcuts
         };
     }
 
-    public static async getUserNetworthHistory(config: 
+    public static async getUserNetworthHistory(config:
     {
         serverURL:string,
         token:string,
@@ -446,13 +446,13 @@ export class HookShortcuts
     })
     {
         const assertBody = config.assertBody === undefined ? true : config.assertBody;
-        const url = config.dateEpoch !== undefined ? 
-            `${UnitTestEndpoints.containersEndpoints['get']}?currencyRateDate=${config.dateEpoch}` : 
+        const url = config.dateEpoch !== undefined ?
+            `${UnitTestEndpoints.containersEndpoints['get']}?currencyRateDate=${config.dateEpoch}` :
             UnitTestEndpoints.containersEndpoints['get'];
-            
+
         const response = await HTTPAssert.assertFetch
         (
-            url, 
+            url,
             {
                 baseURL: config.serverURL, expectedStatus: config.expectedCode, method: "GET",
                 headers: { "authorization": config.token },
@@ -471,10 +471,10 @@ export class Generator
     public static randUniqueName(usedNames: string[] = [])
     {
         let currentName = "";
-        do 
-        { 
+        do
+        {
             const faker = new Faker({ locale: [choice([zh_CN, zh_TW, ja]), en, base], });
-            currentName = 
+            currentName =
             [
                 faker.string.sample({min: 5, max: 100}),
                 faker.person.middleName(),
@@ -482,8 +482,8 @@ export class Generator
                 faker.person.lastName(),
                 faker.person.bio(),
                 faker.finance.accountName()
-            ].join(''); 
-        } 
+            ].join('');
+        }
         while(usedNames.includes(currentName));
         return currentName;
     }

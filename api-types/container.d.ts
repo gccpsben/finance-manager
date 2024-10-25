@@ -14,7 +14,7 @@ export type BalancesHydratedContainerDTO = ContainerDTO & { balances: { [currenc
 export namespace GetContainerAPI
 {
     export type RequestDTO = { };
-    export type ResponseDTO = 
+    export type ResponseDTO =
     {
         /** What date will the currency rate be calculated against. */
         rateCalculatedToEpoch: number

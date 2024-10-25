@@ -9,7 +9,7 @@ class CurrencyRepositoryExtension
         const currency = await this.findOne(
         {
             where: { id: currencyId, owner: { id: userId } },
-            relations: { owner: true } 
+            relations: { owner: true }
         });
         return !!currency;
     }
@@ -19,7 +19,7 @@ class CurrencyRepositoryExtension
         const currency = await this.findOne(
         {
             where: { name: name, owner: { id: userId } },
-            relations: { owner: true } 
+            relations: { owner: true }
         });
         return !!currency;
     }
@@ -37,7 +37,7 @@ export class CurrencyRepository
 
     public static getInstance()
     {
-        if (!CurrencyRepository.extendedRepo) 
+        if (!CurrencyRepository.extendedRepo)
             CurrencyRepository.extendedRepo = Database.AppDataSource.getRepository(Currency).extend(new CurrencyRepositoryExtension());
 
         return CurrencyRepository.extendedRepo;

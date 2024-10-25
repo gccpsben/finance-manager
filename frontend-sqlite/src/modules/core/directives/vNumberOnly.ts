@@ -20,16 +20,16 @@ function validateChange(evt: Event)
     if (tagName != "INPUT" && tagName != "TEXTAREA") return;
     let element = evt.target as HTMLTextAreaElement|HTMLInputElement;
 
-    if (!isNumeric(element.value)) 
-    { 
+    if (!isNumeric(element.value))
+    {
         element.value = "0";
         element.dispatchEvent(event);
     }
 }
 
-function isNumeric(str:string) 
+function isNumeric(str:string)
 {
-    if (typeof str != "string") return false // we only process strings!  
+    if (typeof str != "string") return false // we only process strings!
     return !isNaN(str as any) && // use type coercion to parse the _entirety_ of the string (`parseFloat` alone does not do this)...
         !isNaN(parseFloat(str)) // ...and ensure strings of whitespace fail
 }
@@ -51,13 +51,13 @@ function validatePaste(evt: ClipboardEvent): void
     if (hasDot(str) && hasDot((target as HTMLTextAreaElement | HTMLInputElement).value)) evt.preventDefault();
 }
 
-function validateType (evt: KeyboardEvent): void 
+function validateType (evt: KeyboardEvent): void
 {
     const keyPressed: string = evt.key;
     let charIsDot = keyPressed == '.';
     let target: HTMLElement = evt.target as HTMLElement;
     let checkForMultipleDots = (str:string) => { if (countChar(str, '.') >= 1 && charIsDot) evt.preventDefault(); };
-    if (target.tagName == "TEXTAREA" || target.tagName == "INPUT") checkForMultipleDots((target as HTMLTextAreaElement).value);    
+    if (target.tagName == "TEXTAREA" || target.tagName == "INPUT") checkForMultipleDots((target as HTMLTextAreaElement).value);
     if (!keysAllowed.includes(keyPressed)) evt.preventDefault();
 }
 

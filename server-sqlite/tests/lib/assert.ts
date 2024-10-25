@@ -70,7 +70,7 @@ export async function assertArrayAgainstModel<T extends object>
 
 export async function assertBodyConfirmToModel<T extends object>
 (
-    modelClass: ClassConstructor<T>, 
+    modelClass: ClassConstructor<T>,
     bodyObject: object,
     options?: ValidationOptions
 )
@@ -78,9 +78,9 @@ export async function assertBodyConfirmToModel<T extends object>
     const results = await validateBodyAgainstModel(modelClass, bodyObject, options);
     if (results.errors[0]) throw results.errors[0];
     return results.transformedObject;
-} 
+}
 
-export type AssertFetchConfig<ExpectedBodyType extends object> = 
+export type AssertFetchConfig<ExpectedBodyType extends object> =
 {
     expectedStatus?: number;
     init?: RequestInit;
@@ -108,14 +108,14 @@ export class HTTPAssert
 
     public static async assertFetch<ExpectedBodyType extends Object>
     (
-        input: string | URL | globalThis.Request, 
+        input: string | URL | globalThis.Request,
         config: AssertFetchConfig<ExpectedBodyType>
     ): Promise<AssertFetchReturns<ExpectedBodyType>>
     {
-        const init: RequestInit = 
+        const init: RequestInit =
         {
             method: config.method ?? 'GET',
-            headers: 
+            headers:
             {
                 'Accept': 'application/json',
                 'Content-Type': 'application/json',
@@ -124,10 +124,10 @@ export class HTTPAssert
             ...config.init
         };
 
-        if (config.body) 
+        if (config.body)
             init.body = JSON.stringify(config.body);
 
-        const url = (() => 
+        const url = (() =>
         {
             let output = '';
             if (config.baseURL) output = path.join(output, config.baseURL);
@@ -142,7 +142,7 @@ export class HTTPAssert
         if (config.expectedStatus) HTTPAssert.assertStatus(config.expectedStatus, response);
         if (config.expectedBodyType)
             parsedBody = await assertBodyConfirmToModel(config.expectedBodyType, rawBody);
-        
+
         return {
             res: response,
             parsedBody: parsedBody,

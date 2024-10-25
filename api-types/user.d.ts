@@ -4,7 +4,7 @@ export namespace PostUserAPI
     export type ResponseDTO = { userid: string; };
 }
 
-export namespace DeleteUserAPI 
+export namespace DeleteUserAPI
 {
     export type RequestDTO = { userId: string; };
     export type ResponseDTO = {  };

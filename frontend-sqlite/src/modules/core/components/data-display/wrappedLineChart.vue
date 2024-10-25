@@ -49,7 +49,7 @@ const chartOptions = computed(() =>
                     },
                     grid:
                     {
-                        display: props.showGridLines, drawOnChartArea: true, drawTicks: true, color: '#222' 
+                        display: props.showGridLines, drawOnChartArea: true, drawTicks: true, color: '#222'
                     },
                 },
                 y:

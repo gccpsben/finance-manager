@@ -9,9 +9,9 @@ import { OptionalPaginationAPIQueryRequest, PaginationAPIResponseClass } from '.
 
 const router = new TypesafeRouter(express.Router());
 
-router.get<GetTxnTypesAPI.ResponseDTO>(`/api/v1/transactionTypes`, 
+router.get<GetTxnTypesAPI.ResponseDTO>(`/api/v1/transactionTypes`,
 {
-    handler: async (req: express.Request, res: express.Response) => 
+    handler: async (req: express.Request, res: express.Response) =>
     {
         const authResult = await AccessTokenService.ensureRequestTokenValidated(req);
         class query extends OptionalPaginationAPIQueryRequest
@@ -19,9 +19,9 @@ router.get<GetTxnTypesAPI.ResponseDTO>(`/api/v1/transactionTypes`,
             @IsOptional() @IsString() id: string;
             @IsOptional() @IsString() name: string;
         }
-        
+
         const parsedQuery = await ExpressValidations.validateBodyAgainstModel<query>(query, req.query);
-        const userQuery = 
+        const userQuery =
         {
             start: parsedQuery.start ? parseInt(parsedQuery.start) : undefined,
             end: parsedQuery.end ? parseInt(parsedQuery.end) : undefined,
@@ -31,7 +31,7 @@ router.get<GetTxnTypesAPI.ResponseDTO>(`/api/v1/transactionTypes`,
 
         const response = await PaginationAPIResponseClass.prepareFromQueryItems
         (
-            await TransactionTypeService.getUserTransactionTypes(authResult.ownerUserId, 
+            await TransactionTypeService.getUserTransactionTypes(authResult.ownerUserId,
             {
                 startIndex: userQuery.start,
                 endIndex: userQuery.end,
@@ -54,13 +54,13 @@ router.get<GetTxnTypesAPI.ResponseDTO>(`/api/v1/transactionTypes`,
     }
 });
 
-router.post<PostTxnTypesAPI.ResponseDTO>(`/api/v1/transactionTypes`, 
+router.post<PostTxnTypesAPI.ResponseDTO>(`/api/v1/transactionTypes`,
 {
-    handler: async (req: express.Request, res: express.Response) => 
+    handler: async (req: express.Request, res: express.Response) =>
     {
         class body implements PostTxnTypesAPI.RequestDTO
-        { 
-            @IsString() @IsNotEmpty() name: string; 
+        {
+            @IsString() @IsNotEmpty() name: string;
         }
 
         const authResult = await AccessTokenService.ensureRequestTokenValidated(req);

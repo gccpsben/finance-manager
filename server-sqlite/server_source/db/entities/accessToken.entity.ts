@@ -21,6 +21,6 @@ export class AccessToken extends EntityClass
     expiryDate: number;
 
     @ManyToOne(type => User, user => user.accessTokens, { nullable: false })
-    @EnsureNotPlainForeignKey() 
+    @EnsureNotPlainForeignKey()
     owner: Relation<User>;
 }

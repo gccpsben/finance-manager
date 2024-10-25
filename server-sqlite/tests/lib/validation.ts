@@ -10,7 +10,7 @@ export async function validateBodyAgainstModel<T extends object>
 )
 {
     const transformedObject = plainToInstance(modelClass, bodyObject);
-    const validationErrors = await validate(transformedObject, 
+    const validationErrors = await validate(transformedObject,
     {
         forbidNonWhitelisted: true,
         whitelist: true,

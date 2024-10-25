@@ -12,9 +12,9 @@ import { Decimal } from 'decimal.js';
 
 const router = new TypesafeRouter(express.Router());
 
-router.get<GetContainerAPI.ResponseDTO>(`/api/v1/containers`, 
+router.get<GetContainerAPI.ResponseDTO>(`/api/v1/containers`,
 {
-    handler: async (req: express.Request, res: express.Response) => 
+    handler: async (req: express.Request, res: express.Response) =>
     {
         const authResult = await AccessTokenService.ensureRequestTokenValidated(req);
         class query extends OptionalPaginationAPIQueryRequest
@@ -27,7 +27,7 @@ router.get<GetContainerAPI.ResponseDTO>(`/api/v1/containers`,
         }
 
         const parsedQuery = await ExpressValidations.validateBodyAgainstModel<query>(query, req.query);
-        const userQuery = 
+        const userQuery =
         {
             start: parsedQuery.start ? parseInt(parsedQuery.start) : undefined,
             end: parsedQuery.end ? parseInt(parsedQuery.end) : undefined,
@@ -35,10 +35,10 @@ router.get<GetContainerAPI.ResponseDTO>(`/api/v1/containers`,
             id: parsedQuery.id,
             currencyRateDate: parsedQuery.currencyRateDate ? parseInt(parsedQuery.currencyRateDate) : Date.now()
         };
-        
+
         const response = await PaginationAPIResponseClass.prepareFromQueryItems
         (
-            await ContainerService.getManyContainers(authResult.ownerUserId, 
+            await ContainerService.getManyContainers(authResult.ownerUserId,
             {
                 startIndex: userQuery.start,
                 endIndex: userQuery.end,
@@ -47,14 +47,14 @@ router.get<GetContainerAPI.ResponseDTO>(`/api/v1/containers`,
             }),
             userQuery.start
         );
-        
+
         const containerValues = await ContainerService.valueHydrateContainers
         (
             authResult.ownerUserId,
             response.rangeItems.map(container => container.id),
             userQuery.currencyRateDate
         );
-        
+
         return {
             rateCalculatedToEpoch: userQuery.currencyRateDate,
             totalItems: response.totalItems,
@@ -69,7 +69,7 @@ router.get<GetContainerAPI.ResponseDTO>(`/api/v1/containers`,
                 value: (containerValues.values[item.id] ?? new Decimal(`0`)).toString(),
                 balances: containerValues.balances[item.id] ? ServiceUtils.mapObjectValues
                 (
-                    containerValues.balances[item.id], 
+                    containerValues.balances[item.id],
                     x => x.toString()
                 ) : {}
             }))
@@ -77,9 +77,9 @@ router.get<GetContainerAPI.ResponseDTO>(`/api/v1/containers`,
     }
 });
 
-router.post<PostContainerAPI.ResponseDTO>(`/api/v1/containers`, 
+router.post<PostContainerAPI.ResponseDTO>(`/api/v1/containers`,
 {
-    handler: async (req: express.Request, res: express.Response) => 
+    handler: async (req: express.Request, res: express.Response) =>
     {
         class body implements PostContainerAPI.RequestDTO { @IsString() name: string; }
         const authResult = await AccessTokenService.ensureRequestTokenValidated(req);

@@ -1,6 +1,6 @@
 import { PaginationAPIResponse } from "./lib";
 
-export type CurrencyDTO = 
+export type CurrencyDTO =
 {
     id: string;
     name: string;
@@ -12,10 +12,10 @@ export type CurrencyDTO =
     rateToBase: string; // a DecimalJS string
 };
 
-export namespace PostCurrencyAPI 
+export namespace PostCurrencyAPI
 {
     export type ResponseDTO = { id: string; };
-    export type RequestDTO = 
+    export type RequestDTO =
     {
         name: string;
         fallbackRateAmount: string | undefined;
@@ -35,17 +35,17 @@ export namespace GetCurrencyRateHistoryAPI
     export type RateDatum =
     {
         date: number;
-        value: string;    
+        value: string;
     }
 
-    export type RequestQueryDTO = 
+    export type RequestQueryDTO =
     {
         id: string;
         startDate?: string | undefined;
         endDate?: string | undefined;
     };
 
-    export type ResponseDTO = 
+    export type ResponseDTO =
     {
         startDate: number | undefined;
         endDate: number | undefined;

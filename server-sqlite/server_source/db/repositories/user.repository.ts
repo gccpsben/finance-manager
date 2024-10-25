@@ -4,7 +4,7 @@ import { Database } from "../db.js";
 
 class UserRepositoryExtension
 {
-    customFind = async function (this: Repository<User>) 
+    customFind = async function (this: Repository<User>)
     {
         const result = await this.createQueryBuilder()
         .getMany();
@@ -18,9 +18,9 @@ export class UserRepository
 
     public static getInstance()
     {
-        if (!UserRepository.extendedRepo) 
+        if (!UserRepository.extendedRepo)
             UserRepository.extendedRepo = Database.AppDataSource.getRepository(User).extend(new UserRepositoryExtension());
-        
+
         return UserRepository.extendedRepo;
     }
 }

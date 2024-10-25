@@ -26,6 +26,6 @@ export class Container extends EntityClass
 
     @ManyToOne(type => User, user => user.containers, { nullable: false })
     @JoinColumn()
-    @EnsureNotPlainForeignKey() 
+    @EnsureNotPlainForeignKey()
     owner: Relation<User>;
-}   
+}

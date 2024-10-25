@@ -4,7 +4,7 @@ import { readonly } from "vue";
 import type { MaybeRefOrGetter } from "vue";
 import { ref, watch, computed, toValue, toRef  } from "vue";
 
-export type UpdaterReturnType<T> = 
+export type UpdaterReturnType<T> =
 {
     totalItems: number,
     startingIndex: number,
@@ -14,7 +14,7 @@ export type UpdaterReturnType<T> =
 
 export type Updater<T> = (start:number, count:number) => Promise<UpdaterReturnType<T>>
 
-export type PaginationOverflowHandler = (currentInvalidPageIndex: number, lastAvailablePageIndex: number) => void; 
+export type PaginationOverflowHandler = (currentInvalidPageIndex: number, lastAvailablePageIndex: number) => void;
 
 export default function useNetworkPaginationNew<T>
 (
@@ -28,7 +28,7 @@ export default function useNetworkPaginationNew<T>
 
         /**
          * Overflow occurs when the external collection of items changes.
-         * For example the amount of items in the database decreases to max page 2 and this composable is still on page 5. 
+         * For example the amount of items in the database decreases to max page 2 and this composable is still on page 5.
          */
         overflowResolutionHandler?: PaginationOverflowHandler
     }

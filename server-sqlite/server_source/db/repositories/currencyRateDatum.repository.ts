@@ -17,7 +17,7 @@ export class CurrencyRateDatumsCache extends RepositoryCache
     public constructor(ownerId: string) { super(ownerId); }
 
     public getCurrenciesRateDatumsList(currId: string) { return this._datumsList[currId]; }
-    public setCurrenciesRateDatumsList(currId: string, list: SQLitePrimitiveOnly<CurrencyRateDatum>[]) 
+    public setCurrenciesRateDatumsList(currId: string, list: SQLitePrimitiveOnly<CurrencyRateDatum>[])
     {
         if (list.find(x => x.ownerId !== this._ownerId))
             throw new Error(`DataCache owner mismatch: Data inserted into DataCache must only belong to one user.`);
@@ -92,7 +92,7 @@ export class CurrencyRateDatumRepository
     public static getInstance()
     {
         if (!CurrencyRateDatumRepository.extendedRepo)
-            CurrencyRateDatumRepository.extendedRepo = Database.AppDataSource.getRepository(CurrencyRateDatum).extend(new CurrencyRateDatumRepositoryExtension())      
+            CurrencyRateDatumRepository.extendedRepo = Database.AppDataSource.getRepository(CurrencyRateDatum).extend(new CurrencyRateDatumRepositoryExtension())
         return CurrencyRateDatumRepository.extendedRepo;
     }
 }

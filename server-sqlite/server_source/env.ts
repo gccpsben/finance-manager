@@ -37,35 +37,35 @@ export class EnvManager
     {
         const buildNotDefinedMsg = (keyName:string) => `${keyName} is not defined in env file. (Received "${process.env[keyName]}")`;
 
-        (() => 
+        (() =>
         {
             if (!process.env.NODE_ENV) throw new Error(buildNotDefinedMsg(`NODE_ENV`));
             this.envType = EnvManager.getEnvType();
         })();
- 
-        (() => 
+
+        (() =>
         {
             const sqliteInMemory = process.env.SQLITE_IN_MEMORY === 'true';
             const sqliteFilePath = process.env.SQLITE_FILE_PATH;
 
-            if (!sqliteInMemory && !sqliteFilePath) 
+            if (!sqliteInMemory && !sqliteFilePath)
                 throw new Error(`SQLITE_FILE_PATH is not defined in env file and SQLITE_IN_MEMORY is not set to true.`);
             if (sqliteFilePath && sqliteInMemory)
                 throw new Error(`SQLITE_FILE_PATH cannot be defined if SQLITE_IN_MEMORY is set to true.`);
 
-            if (!sqliteInMemory) EnvManager.sqliteFilePath = path.resolve(process.env.SQLITE_FILE_PATH); 
+            if (!sqliteInMemory) EnvManager.sqliteFilePath = path.resolve(process.env.SQLITE_FILE_PATH);
             else EnvManager.sqliteInMemory = true;
         })();
 
-        (() =>  
+        (() =>
         {
             if (!process.env.SERVER_PORT) throw new Error(buildNotDefinedMsg(`SERVER_PORT`));
             if (!isNumberString(process.env.SERVER_PORT)) throw new Error(`SERVER_PORT must be a number. (Received "${process.env.SERVER_PORT}")`);
-            if (!isInt(parseFloat(process.env.SERVER_PORT))) throw new Error(`SERVER_PORT must be an int. (Received "${process.env.SERVER_PORT}")`);      
+            if (!isInt(parseFloat(process.env.SERVER_PORT))) throw new Error(`SERVER_PORT must be an int. (Received "${process.env.SERVER_PORT}")`);
             EnvManager.serverPort = parseInt(process.env.SERVER_PORT);
         })();
 
-        (() => 
+        (() =>
         {
             if (!process.env.LOGS_FOLDER_PATH) throw new Error(buildNotDefinedMsg(`LOGS_FOLDER_PATH`));
             const parsedPath = path.resolve(process.env.LOGS_FOLDER_PATH);
@@ -75,8 +75,8 @@ export class EnvManager
             EnvManager.logsFolderPath = parsedPath;
         })();
 
-        (() => 
-        { 
+        (() =>
+        {
             const keyName = `DIST_FOLDER_PATH`;
             if (!process.env[keyName]) throw new Error(buildNotDefinedMsg(keyName));
             const parsedPath = path.resolve(process.env[keyName]);
@@ -86,7 +86,7 @@ export class EnvManager
             EnvManager.distFolderLocation = parsedPath;
         })();
 
-        (() => 
+        (() =>
         {
             const keyName = `TOKEN_EXPIRE_MS`;
             if (!process.env[keyName]) throw new Error(buildNotDefinedMsg(keyName));
@@ -95,7 +95,7 @@ export class EnvManager
             EnvManager.tokenExpiryMs = parseInt(process.env[keyName]);
         })();
 
-        (() => 
+        (() =>
         {
             const sslKeyPathKeyName = `SSL_KEY_PATH`;
             const sslPemPathKeyName = `SSL_PEM_PATH`;
@@ -106,7 +106,7 @@ export class EnvManager
             EnvManager.sslPemFullPath = path.resolve(path.join(process.cwd(), process.env[sslPemPathKeyName]));
         })();
 
-        (() => 
+        (() =>
         {
             const keyName = `RESTFUL_LOG_MODE`;
             const keyValue = process.env[keyName];

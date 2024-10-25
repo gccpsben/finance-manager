@@ -6,7 +6,7 @@
         :next="next" :pageItems="pageItems"
         :previous="previous" :bounds="currentBounds"
         :currentPage="computedPage" :totalItems="totalItems"
-        :isPreviousArrowAllowed="isPreviousArrowAllowed" 
+        :isPreviousArrowAllowed="isPreviousArrowAllowed"
         :isNextArrowAllowed="isNextArrowAllowed"
         :isLoading="isLoading"></slot>
 
@@ -24,22 +24,22 @@ export default
         "currentPage": { default: undefined, type: Number },
         "updater": Function
     },
-    data() 
-    { 
-        let data = 
-        { 
-            innerPage: 0, 
-            allItems: [] as Array<any>, 
+    data()
+    {
+        let data =
+        {
+            innerPage: 0,
+            allItems: [] as Array<any>,
             pageItems: [] as Array<any>,
             isLoading: false
-        } 
+        }
         return data;
     },
     methods:
     {
-        setPage(page:number) 
+        setPage(page:number)
         {
-            if (this.currentPage != undefined) this.$emit("update:currentPage", page); 
+            if (this.currentPage != undefined) this.$emit("update:currentPage", page);
             else { this.innerPage = page; }
         },
         next() { if (this.isNextArrowAllowed) this.setPage(this.computedPage + 1); },
@@ -79,10 +79,10 @@ export default
     },
     watch:
     {
-        totalItems: 
+        totalItems:
         {
             immediate: true,
-            handler: async function () 
+            handler: async function ()
             {
                 if (this.totalItems === undefined) return;
                 this.allItems = new Array(this.totalItems);
@@ -91,13 +91,13 @@ export default
                 this.switchPage(0);
             },
         },
-        computedPage: 
+        computedPage:
         {
             immediate: true,
-            handler: async function (newValue:number) 
+            handler: async function (newValue:number)
             {
 
-                this.switchPage(newValue); 
+                this.switchPage(newValue);
             },
         }
     },
@@ -121,7 +121,7 @@ function partition<T>(array:T[], itemsCount: number, skipLastBatch = false)
     for (let i = 0; i < array.length; i++)
     {
         temp.push(array[i]);
-        if (temp.length >= itemsCount) 
+        if (temp.length >= itemsCount)
         {
             output.push([...temp]);
             temp = [];

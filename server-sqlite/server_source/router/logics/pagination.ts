@@ -12,7 +12,7 @@ export class PaginationAPIResponseClass<T> implements PaginationAPIResponse<T>
 
     public static async prepareFromQueryItems<T extends object>
     (
-        queriedItems: 
+        queriedItems:
         {
             totalCount: number,
             rangeItems: SQLitePrimitiveOnly<T>[]
@@ -20,7 +20,7 @@ export class PaginationAPIResponseClass<T> implements PaginationAPIResponse<T>
         userQueryStartIndex: number | undefined
     )
     {
-        const response: PaginationAPIResponseClass<SQLitePrimitiveOnly<T>> = await (async () => 
+        const response: PaginationAPIResponseClass<SQLitePrimitiveOnly<T>> = await (async () =>
         {
             const output = new PaginationAPIResponseClass<SQLitePrimitiveOnly<T>>();
             output.startingIndex = userQueryStartIndex ?? 0;
@@ -35,12 +35,12 @@ export class PaginationAPIResponseClass<T> implements PaginationAPIResponse<T>
 
 export class PaginationAPIQueryRequest
 {
-    @IsNumberString() start?: string | undefined; 
-    @IsNumberString() end?: string | undefined; 
+    @IsNumberString() start?: string | undefined;
+    @IsNumberString() end?: string | undefined;
 }
 
 export class OptionalPaginationAPIQueryRequest
 {
-    @IsOptional() @IsNumberString() start?: string | undefined; 
-    @IsOptional() @IsNumberString() end?: string | undefined; 
+    @IsOptional() @IsNumberString() start?: string | undefined;
+    @IsOptional() @IsNumberString() end?: string | undefined;
 }

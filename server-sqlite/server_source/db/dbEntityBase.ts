@@ -8,10 +8,10 @@ export class EntityClass
 {
     @BeforeInsert()
     @BeforeUpdate()
-    public async validate() 
+    public async validate()
     {
         const errors = await validate(this);
-        if (errors?.length) 
+        if (errors?.length)
         {
             const internalValidationError = new InternalValidationError(errors[0]);
             const msgUUID = randomUUID();

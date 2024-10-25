@@ -1,4 +1,4 @@
-export type PaginationAPIResponse<T> = 
+export type PaginationAPIResponse<T> =
 {
     totalItems: number;
     startingIndex: number;

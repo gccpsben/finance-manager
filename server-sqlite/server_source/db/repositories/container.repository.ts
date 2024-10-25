@@ -4,7 +4,7 @@ import { Container } from "../entities/container.entity.js";
 
 class ContainerRepositoryExtension
 {
-    customFind = async function (this: Repository<Container>) 
+    customFind = async function (this: Repository<Container>)
     {
         const result = await this.createQueryBuilder()
         .getMany();
@@ -18,7 +18,7 @@ export class ContainerRepository
 
     public static getInstance()
     {
-        if (!ContainerRepository.extendedRepo) 
+        if (!ContainerRepository.extendedRepo)
             ContainerRepository.extendedRepo = Database.AppDataSource.getRepository(Container).extend(new ContainerRepositoryExtension());
 
         return ContainerRepository.extendedRepo;

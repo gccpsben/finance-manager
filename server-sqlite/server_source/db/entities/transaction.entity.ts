@@ -8,12 +8,12 @@ import { EnsureNotPlainForeignKey, IsDecimalJSString, IsUTCDateInt } from "../va
 import { User } from "./user.entity.js";
 import { TransactionType } from "./transactionType.entity.js";
 
-@Entity() 
-@Check 
+@Entity()
+@Check
 (
     "[fromAmount, fromCurrencyId, fromContainerId] must either be all defined, or not defined",
     /*sql*/`
-    CASE WHEN fromAmount IS NOT NULL 
+    CASE WHEN fromAmount IS NOT NULL
         THEN (fromCurrencyId IS NOT NULL) AND (fromContainerId IS NOT NULL)
         ELSE (fromCurrencyId IS NULL) AND (fromContainerId IS NULL)
     END`
@@ -22,32 +22,32 @@ import { TransactionType } from "./transactionType.entity.js";
 (
     "[toAmount, toCurrencyId, toContainerId] must either be all defined, or not defined",
     /*sql*/`
-    CASE WHEN toAmount IS NOT NULL 
+    CASE WHEN toAmount IS NOT NULL
         THEN toCurrencyId IS NOT NULL AND toContainerId IS NOT NULL
         ELSE toCurrencyId IS NULL AND toContainerId IS NULL
     END`
 )
-@Check  
-(   
+@Check
+(
     // For some reasons, using "(toAmount IS NOT NULL) OR (fromAmount IS NOT NULL)" will cause overflow if the
     // db is saved too many times. Have to use CASE to tame the TypeORM sync
     "[fromAmount] must be defined if [toAmount] is not defined.",
     /*sql*/`
-    CASE WHEN toAmount IS NULL 
+    CASE WHEN toAmount IS NULL
         THEN fromAmount IS NOT NULL
-    END` 
+    END`
 )
-@Check  
+@Check
 (
     // For some reasons, using "(toAmount IS NOT NULL) OR (fromAmount IS NOT NULL)" will cause overflow if the
     // db is saved too many times. Have to use CASE to tame the TypeORM sync
-    "[toAmount] must be defined if [fromAmount] is not defined.", 
-    /*sql*/` 
-    CASE WHEN fromAmount IS NULL 
+    "[toAmount] must be defined if [fromAmount] is not defined.",
+    /*sql*/`
+    CASE WHEN fromAmount IS NULL
         THEN toAmount IS NOT NULL
-    END` 
+    END`
 )
-export class Transaction extends EntityClass 
+export class Transaction extends EntityClass
 {
     @PrimaryGeneratedColumn("uuid")
     id: string;
@@ -61,7 +61,7 @@ export class Transaction extends EntityClass
 
     @Column({ nullable: true })
     @IsOptional()
-    @IsString() 
+    @IsString()
     @MaxLength(5128)
     @Index({fulltext: true})
     description: string | undefined;
@@ -71,7 +71,7 @@ export class Transaction extends EntityClass
 
     @ManyToOne(type => User, user => user.transactions, { nullable: false })
     @JoinColumn({ name: "ownerId" })
-    @EnsureNotPlainForeignKey()  
+    @EnsureNotPlainForeignKey()
     owner: Relation<User>;
 
     @Column({ type: "int", nullable: false })

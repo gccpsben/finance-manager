@@ -1,18 +1,18 @@
 import type { NamedObject, IDObject } from "../interfaces";
 
-export type Amount = 
+export type Amount =
 {
     currencyID: string;
     value: number;
 };
 
-export type ContainerBoundAmount = 
+export type ContainerBoundAmount =
 {
     containerID: string;
     amount: Amount;
 };
 
-export type Transaction = 
+export type Transaction =
 {
     title: string;
     description: string | null;
@@ -27,7 +27,7 @@ export type Transaction =
     toContainer: string | null;
 } & NamedObject & IDObject;
 
-export type HydratedTransaction = 
+export type HydratedTransaction =
 {
-    changeInValue: number;   
+    changeInValue: number;
 } & Transaction;

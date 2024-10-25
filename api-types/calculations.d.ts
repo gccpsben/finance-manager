@@ -1,5 +1,5 @@
 export type GetExpensesAndIncomesDTO = { };
-export type ResponseGetExpensesAndIncomesDTO = 
+export type ResponseGetExpensesAndIncomesDTO =
 {
     expenses30d: string;
     incomes30d: string;
@@ -9,34 +9,34 @@ export type ResponseGetExpensesAndIncomesDTO =
 
 export namespace GetUserBalanceHistoryAPI
 {
-    export type RequestQueryDTO = 
+    export type RequestQueryDTO =
     {
         startDate: string | undefined;
         endDate: string | undefined;
         division: string | undefined;
     };
 
-    export type ResponseDTO = 
-    { 
-        map: 
-        { 
-            [epoch: string]: { [currencyId: string]: string } 
+    export type ResponseDTO =
+    {
+        map:
+        {
+            [epoch: string]: { [currencyId: string]: string }
         };
     };
 }
 
 export namespace GetUserNetworthHistoryAPI
 {
-    export type RequestQueryDTO = 
+    export type RequestQueryDTO =
     {
         startDate: string | undefined;
         endDate: string | undefined;
         division: string | undefined;
     };
 
-    export type ResponseDTO = 
+    export type ResponseDTO =
     {
-        map: 
+        map:
         {
             [epoch: string]: string
         }

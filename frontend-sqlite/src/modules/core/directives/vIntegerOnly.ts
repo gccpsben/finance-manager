@@ -33,7 +33,7 @@ function validatePaste(evt: ClipboardEvent)
     else if (!charArray.every(x => keysAllowed.includes(x))) evt.preventDefault();
 }
 
-function validateType (evt: KeyboardEvent): void 
+function validateType (evt: KeyboardEvent): void
 {
     const keyPressed: string = evt.key;
     if (!keysAllowed.includes(keyPressed)) evt.preventDefault();

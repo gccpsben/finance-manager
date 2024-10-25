@@ -88,7 +88,7 @@ export namespace PutTxnAPIClass
 
 const createPostContainerBody = (name: string) => ({name: name});
 const createBaseCurrencyPostBody = (name: string, ticker: string) => ({ name: name, ticker: ticker });
-const createCurrencyPostBody = (name: string, ticker: string, fallbackRateCurrencyId: string, fallbackRateAmount: string) => 
+const createCurrencyPostBody = (name: string, ticker: string, fallbackRateCurrencyId: string, fallbackRateAmount: string) =>
 (
     {
         name: name,
@@ -129,7 +129,7 @@ export default async function(this: Context)
             // Register base currency for first user
             await (async function()
             {
-                const response = await HTTPAssert.assertFetch(UnitTestEndpoints.currenciesEndpoints['post'], 
+                const response = await HTTPAssert.assertFetch(UnitTestEndpoints.currenciesEndpoints['post'],
                 {
                     baseURL: serverURL, expectedStatus: 200, method: "POST",
                     body: createBaseCurrencyPostBody(`User-Currency`, `USER-TICKER`),
@@ -142,7 +142,7 @@ export default async function(this: Context)
             // Register secondary currency for first user
             await (async function()
             {
-                const response = await HTTPAssert.assertFetch(UnitTestEndpoints.currenciesEndpoints['post'], 
+                const response = await HTTPAssert.assertFetch(UnitTestEndpoints.currenciesEndpoints['post'],
                 {
                     baseURL: serverURL, expectedStatus: 200, method: "POST",
                     body: createCurrencyPostBody(`User-Currency2`, `USER-TICKER2`, testContext.baseCurrId, testContext.secCurrAmountToBase),
@@ -155,7 +155,7 @@ export default async function(this: Context)
             // Register container for first user
             await (async function()
             {
-                const response = await HTTPAssert.assertFetch(UnitTestEndpoints.containersEndpoints['post'], 
+                const response = await HTTPAssert.assertFetch(UnitTestEndpoints.containersEndpoints['post'],
                 {
                     baseURL: serverURL, expectedStatus: 200, method: "POST",
                     body: createPostContainerBody(`Container1`),

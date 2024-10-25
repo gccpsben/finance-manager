@@ -1,6 +1,6 @@
 <template>
     <div id="tabsContainerRoot" :style="{'grid-template-columns': columns}" v-if="items.length > 0">
-        <div class="tab" :class="{'active': selectedItem == item}" 
+        <div class="tab" :class="{'active': selectedItem == item}"
         v-for="item in items" @click="$emit('update:selectedItem', item)">
             {{ item }}
         </div>
@@ -11,7 +11,7 @@
 <script setup lang="ts">
 import { computed } from 'vue';
 
-const props = withDefaults(defineProps<{ selectedItem?: string, items?: string[] }>(), 
+const props = withDefaults(defineProps<{ selectedItem?: string, items?: string[] }>(),
 {
     items: () => [],
     selectedItem: ''

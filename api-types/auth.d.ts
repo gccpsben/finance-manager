@@ -6,7 +6,7 @@ export namespace PostLoginAPI
         password: string;
     }
 
-    export type ResponseDTO = 
+    export type ResponseDTO =
     {
         token: string;
         creationDate: number;

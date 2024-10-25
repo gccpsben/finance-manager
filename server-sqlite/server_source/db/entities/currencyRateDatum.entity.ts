@@ -6,7 +6,7 @@ import { EntityClass } from "../dbEntityBase.js";
 import { EnsureNotPlainForeignKey, IsDecimalJSString, IsUTCDateInt } from "../validators.js";
 import { Currency } from "./currency.entity.js";
 
-@Entity() 
+@Entity()
 @Unique("UniqueRateDateWithinUser", ["date", "owner", "refCurrency"])
 @Check(/*sql*/`refCurrencyId is NOT refAmountCurrencyId`) // This datum may not use itself as the unit of rate.
 export class CurrencyRateDatum extends EntityClass
@@ -14,7 +14,7 @@ export class CurrencyRateDatum extends EntityClass
     @PrimaryGeneratedColumn('uuid')
     id: string;
 
-    @Column({ nullable: false }) 
+    @Column({ nullable: false })
     @IsDecimalJSString()
     amount: string;
 
@@ -23,7 +23,7 @@ export class CurrencyRateDatum extends EntityClass
 
     @ManyToOne(type => Currency, currency => currency.fallbackRateCurrency, { nullable: false })
     @JoinColumn()
-    @EnsureNotPlainForeignKey() 
+    @EnsureNotPlainForeignKey()
     refCurrency: Currency;
 
     @Column( { nullable: false })
@@ -32,7 +32,7 @@ export class CurrencyRateDatum extends EntityClass
 
     @ManyToOne(type => Currency, currency => currency.fallbackRateCurrency, { nullable: false })
     @JoinColumn()
-    @EnsureNotPlainForeignKey() 
+    @EnsureNotPlainForeignKey()
     refAmountCurrency: Currency;
 
     @Column( { nullable: false })
@@ -41,7 +41,7 @@ export class CurrencyRateDatum extends EntityClass
 
     @ManyToOne(type => User, user => user.currencies, { nullable: false })
     @JoinColumn()
-    @EnsureNotPlainForeignKey() 
+    @EnsureNotPlainForeignKey()
     owner: User;
 
     @Column({ type: "int", nullable: false })
