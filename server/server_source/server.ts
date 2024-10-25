@@ -34,19 +34,27 @@ export function loadEnv(filePath?:string)
     isDevelopment = process.env.NODE_ENV == "development" || process.env.NODE_ENV == "dev";
     isUnitTest = process.env.NODE_ENV == "test" || process.env.NODE_ENV == "tests";
     if (isUnitTest) isDevelopment = true;
-    
+
     distFolderLocation = require('node:path').resolve(process.env.DIST_FOLDER ?? "./dist/")
 }
 
 export function attachMorganLogger(expressApp: Express.Express)
 {
-    expressApp.use(morgan((tokens, req, res) => 
+    expressApp.use(morgan((tokens, req, res) =>
     {
-        const msg = 
+        const ip = (req.headers['x-forwarded-for'] || req.connection.remoteAddress || '')
+                   .toString()
+                   .split(',')[0]
+                   .trim();
+
+        const status = tokens.status(req, res);
+
+        const msg =
         [
+            ip,
             tokens.method(req, res),
             tokens.url(req, res),
-            tokens.status(req, res),
+            status,
             tokens.res(req, res, 'content-length'), '-',
             tokens['response-time'](req, res), 'ms'
         ].join(' ');
@@ -57,7 +65,7 @@ export function attachMorganLogger(expressApp: Express.Express)
 
 export async function startServer()
 {
-    return new Promise<void>(async (resolve, reject) => 
+    return new Promise<void>(async (resolve, reject) =>
     {
         logBlue(`Static folder set to ${distFolderLocation}`);
         (isDevelopment ? logRed : logGreen)(`Running with isDevelopment=${isDevelopment}`);
@@ -83,13 +91,13 @@ export async function startServer()
         expressApp.use(require('express-useragent').express());
         expressApp.use("/", getMainRouter());
 
-        // Initialize periodically-ran functions. 
+        // Initialize periodically-ran functions.
         require("./scheduler").initialize();
 
-        server.listen(port, () => 
-        { 
+        server.listen(port, () =>
+        {
             resolve();
-            logGreen(`Started listening on ${port}`); 
+            logGreen(`Started listening on ${port}`);
         });
     });
 }
