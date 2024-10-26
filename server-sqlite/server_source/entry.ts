@@ -17,17 +17,21 @@ export async function main(envFilePath: string | undefined)
         Decimal.set({ precision: 32 });
 
         // Read env file from disk
-        (() =>
         {
             const envPath = path.resolve(envFilePath || process.argv[2] || ".env");
-            EnvManager.readEnv(envPath);
-            ExtendedLog.logGreen(`Successfully read env file from "${envPath}"`, false, true); // Log will not be saved to file before env is successfully read
-        })();
+            const envReadResult = EnvManager.readEnv(envPath);
+            if (!!envReadResult) envReadResult.panic();
+
+            // Log will not be saved to file before env is successfully read
+            ExtendedLog.logGreen(`Successfully read env file from "${envPath}"`, false, true);
+        }
 
         // Parse env file
         (() =>
         {
-            EnvManager.parseEnv();
+            const envParseResult = EnvManager.parseEnv();
+            if (!!envParseResult) envParseResult.panic();
+
             ExtendedLog.logGreen(`Successfully parsed env file.`, false, true); // Log will not be saved to file before env is successfully parsed
 
             if (EnvManager.envType === "Development") ExtendedLog.logRed(`EnvType determined to be "${EnvManager.envType}"`);
