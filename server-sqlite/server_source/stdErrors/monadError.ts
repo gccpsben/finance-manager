@@ -33,15 +33,23 @@ export class MonadError<T extends Symbol> extends Error
 
     public panic()
     {
-        console.error(`Server panic:\n ${chalk.red(this)}`);
+        let msg = ``;
+        msg += `\n${chalk.red(this)}`;
         const chain: (Error | MonadError<any>)[] = [this, ...this.unwrapErrorChain()];
         for (let chainItem of chain)
         {
-            if (chainItem instanceof MonadError) console.error(chalk.red(chainItem.#stackFrame.join("\n  > ")));
-            else if (chainItem instanceof Error) console.error(chalk.red(chainItem));
+            if (chainItem instanceof MonadError) msg += "\n" + chainItem.#stackFrame.join("\n  > ");
+            else if (chainItem instanceof Error) msg += "\n" + chalk.red(chainItem);
         }
-        process.exit(-1);
+        panic(msg);
     }
+}
+
+export function panic(msg: string)
+{
+    console.error(`Server panic:\n`);
+    console.error(chalk.red(msg));
+    process.exit(-1);
 }
 
 export const NestableErrorSymbol: unique symbol = Symbol();

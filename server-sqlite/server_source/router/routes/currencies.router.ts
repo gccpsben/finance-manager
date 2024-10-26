@@ -1,5 +1,5 @@
 import express from 'express';
-import { AccessTokenService } from '../../db/services/accessToken.service.js';
+import { AccessTokenService, InvalidLoginTokenError } from '../../db/services/accessToken.service.js';
 import { CurrencyService } from '../../db/services/currency.service.js';
 import { Decimal } from 'decimal.js';
 import { IsNumber, IsNumberString, IsOptional, IsString } from 'class-validator';
@@ -26,7 +26,8 @@ router.post<PostCurrencyAPI.ResponseDTO>(`/api/v1/currencies`,
             @IsString() ticker: string;
         }
 
-        const authResult = await AccessTokenService.ensureRequestTokenValidated(req);
+        const authResult = await AccessTokenService.validateRequestTokenValidated(req);
+        if (authResult instanceof InvalidLoginTokenError) throw createHttpError(401);
         const parsedBody = await ExpressValidations.validateBodyAgainstModel<body>(body, req.body);
         const newCurrency = await CurrencyService.createCurrency
         (
@@ -64,8 +65,8 @@ router.get<GetCurrencyAPI.ResponseDTO>(`/api/v1/currencies`,
             ticker: curr.currency.ticker
         });
 
-        const authResult = await AccessTokenService.ensureRequestTokenValidated(req);
-
+        const authResult = await AccessTokenService.validateRequestTokenValidated(req);
+        if (authResult instanceof InvalidLoginTokenError) throw createHttpError(401);
         const parsedQuery = await ExpressValidations.validateBodyAgainstModel<query>(query, req.query);
 
         if (parsedQuery.id && parsedQuery.name)
@@ -130,7 +131,9 @@ router.get<GetCurrencyRateHistoryAPI.ResponseDTO>(`/api/v1/currencies/history`,
             @IsOptional() @IsIntString() endDate?: string;
         }
 
-        const authResult = await AccessTokenService.ensureRequestTokenValidated(req);
+        const authResult = await AccessTokenService.validateRequestTokenValidated(req);
+        if (authResult instanceof InvalidLoginTokenError) throw createHttpError(401);
+
         const parsedQuery = await ExpressValidations.validateBodyAgainstModel<query>(query, req.query);
         const datums = await CurrencyRateDatumService.getCurrencyRateHistory
         (

@@ -8,6 +8,8 @@ import { IsPositiveIntString, IsUTCDateIntString } from '../../db/validators.js'
 import { IsOptional } from 'class-validator';
 import { ExpressValidations } from '../validation.js';
 import { TransactionService } from '../../db/services/transaction.service.js';
+import { InvalidLoginTokenError } from '../../db/services/accessToken.service.js';
+import createHttpError from 'http-errors';
 
 const router = new TypesafeRouter(express.Router());
 
@@ -15,7 +17,9 @@ router.get<ResponseGetExpensesAndIncomesDTO>("/api/v1/calculations/expensesAndIn
 {
     handler: async (req:express.Request, res:express.Response) =>
     {
-        const authResults = await AccessTokenService.ensureRequestTokenValidated(req);
+        const authResults = await AccessTokenService.validateRequestTokenValidated(req);
+        if (authResults instanceof InvalidLoginTokenError) throw createHttpError(401);
+
         const calResults = await CalculationsService.getUserExpensesAndIncomes30d(authResults.ownerUserId);
         return {
             expenses30d: calResults.total30d.expenses.toString(),
@@ -43,7 +47,10 @@ router.get<GetUserNetworthHistoryAPI.ResponseDTO>(`/api/v1/calculations/networth
             endDate: parsedQuery.endDate === undefined ? undefined : parseInt(parsedQuery.endDate),
             division: parsedQuery.division === undefined ? undefined : parseInt(parsedQuery.division),
         };
-        const authResults = await AccessTokenService.ensureRequestTokenValidated(req);
+
+        const authResults = await AccessTokenService.validateRequestTokenValidated(req);
+        if (authResults instanceof InvalidLoginTokenError) throw createHttpError(401);
+
         const input =
         {
             // defaults to all
@@ -70,7 +77,8 @@ router.get<GetUserBalanceHistoryAPI.ResponseDTO>(`/api/v1/calculations/balanceHi
 {
     handler: async (req: express.Request, res: express.Response) =>
     {
-        const authResults = await AccessTokenService.ensureRequestTokenValidated(req);
+        const authResults = await AccessTokenService.validateRequestTokenValidated(req);
+        if (authResults instanceof InvalidLoginTokenError) throw createHttpError(401);
 
         class query implements GetUserBalanceHistoryAPI.RequestQueryDTO
         {

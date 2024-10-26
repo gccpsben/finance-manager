@@ -1,5 +1,5 @@
 import express from 'express';
-import { AccessTokenService } from '../../db/services/accessToken.service.js';
+import { AccessTokenService, InvalidLoginTokenError } from '../../db/services/accessToken.service.js';
 import { IsOptional, IsString } from 'class-validator';
 import { ExpressValidations } from '../validation.js';
 import { ContainerService } from '../../db/services/container.service.js';
@@ -9,6 +9,7 @@ import { OptionalPaginationAPIQueryRequest, PaginationAPIResponseClass } from '.
 import { IsUTCDateIntString } from '../../db/validators.js';
 import { ServiceUtils } from '../../db/servicesUtils.js';
 import { Decimal } from 'decimal.js';
+import createHttpError from 'http-errors';
 
 const router = new TypesafeRouter(express.Router());
 
@@ -16,7 +17,9 @@ router.get<GetContainerAPI.ResponseDTO>(`/api/v1/containers`,
 {
     handler: async (req: express.Request, res: express.Response) =>
     {
-        const authResult = await AccessTokenService.ensureRequestTokenValidated(req);
+        const authResult = await AccessTokenService.validateRequestTokenValidated(req);
+        if (authResult instanceof InvalidLoginTokenError) throw createHttpError(401);
+
         class query extends OptionalPaginationAPIQueryRequest
         {
             @IsOptional() @IsString() id: string;
@@ -82,7 +85,9 @@ router.post<PostContainerAPI.ResponseDTO>(`/api/v1/containers`,
     handler: async (req: express.Request, res: express.Response) =>
     {
         class body implements PostContainerAPI.RequestDTO { @IsString() name: string; }
-        const authResult = await AccessTokenService.ensureRequestTokenValidated(req);
+        const authResult = await AccessTokenService.validateRequestTokenValidated(req);
+        if (authResult instanceof InvalidLoginTokenError) throw createHttpError(401);
+
         const parsedBody = await ExpressValidations.validateBodyAgainstModel<body>(body, req.body);
         const containerCreated = await ContainerService.createContainer(authResult.ownerUserId, parsedBody.name);
         return { id: containerCreated.id }

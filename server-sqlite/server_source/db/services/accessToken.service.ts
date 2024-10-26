@@ -3,15 +3,26 @@ import { AccessTokenRepository } from "../repositories/accessToken.repository.js
 import { EnvManager } from "../../env.js";
 import { AccessToken } from '../entities/accessToken.entity.js';
 import * as express from 'express';
-import createHttpError from "http-errors";
 import { UserRepository } from "../repositories/user.repository.js";
 import { SQLitePrimitiveOnly } from "../../index.d.js";
+import { MonadError, panic } from "../../stdErrors/monadError.js";
+
+export class InvalidLoginTokenError extends MonadError<typeof InvalidLoginTokenError.ERROR_SYMBOL>
+{
+    static readonly ERROR_SYMBOL: unique symbol;
+
+    constructor()
+    {
+        super(InvalidLoginTokenError.ERROR_SYMBOL, `The given token is either expired, or invalid.`);
+        this.name = this.constructor.name;
+    }
+}
 
 export class AccessTokenService
 {
     public static async generateTokenForUser(userId: string)
     {
-        if (!EnvManager.tokenExpiryMs) throw new Error(`AccessTokenService.generateTokenForUser: EnvManager.tokenExpiryMs is not defined.`);
+        if (!EnvManager.tokenExpiryMs) return void(panic(`AccessTokenService.generateTokenForUser: EnvManager.tokenExpiryMs is not defined.`));
         const newToken = AccessTokenRepository.getInstance().create();
         newToken.token = randomUUID();
         newToken.owner = await UserRepository.getInstance().findOne({where: {id: userId}});
@@ -57,12 +68,19 @@ export class AccessTokenService
         });
     }
 
-    /** Ensure an express request object has proper token in its header. If not, throw and return unauthorized error. */
-    public static async ensureRequestTokenValidated(request: express.Request)
+    /** Ensure an express request object has proper token in its header. */
+    public static async validateRequestTokenValidated(request: express.Request) : Promise<
+        InvalidLoginTokenError |
+        {
+            isTokenValid: boolean;
+            tokenFound: boolean;
+            ownerUserId: string | undefined;
+        }
+    >
     {
         const authorizationHeader = request.headers["authorization"];
         const validationResult = await AccessTokenService.validateToken(authorizationHeader);
-        if (!validationResult.isTokenValid) throw createHttpError(401);
+        if (!validationResult.isTokenValid) return new InvalidLoginTokenError();
         return validationResult;
     }
 

@@ -1,12 +1,13 @@
 import { IsNotEmpty, IsOptional, IsString } from 'class-validator';
 import express from 'express';
 import { type PutTxnAPI, type GetTxnAPI, type PostTxnAPI } from '../../../../api-types/txn.js';
-import { AccessTokenService } from '../../db/services/accessToken.service.js';
+import { AccessTokenService, InvalidLoginTokenError } from '../../db/services/accessToken.service.js';
 import { TransactionService } from '../../db/services/transaction.service.js';
 import { IsDecimalJSString, IsIntString, IsUTCDateInt } from '../../db/validators.js';
 import { OptionalPaginationAPIQueryRequest, PaginationAPIResponseClass } from '../logics/pagination.js';
 import { TypesafeRouter } from '../typescriptRouter.js';
 import { ExpressValidations } from '../validation.js';
+import createHttpError from 'http-errors';
 
 const router = new TypesafeRouter(express.Router());
 
@@ -28,7 +29,8 @@ router.post<PostTxnAPI.ResponseDTO>("/api/v1/transactions",
             @IsOptional() @IsString() toCurrencyId: string | undefined;
         }
 
-        const authResult = await AccessTokenService.ensureRequestTokenValidated(req);
+        const authResult = await AccessTokenService.validateRequestTokenValidated(req);
+        if (authResult instanceof InvalidLoginTokenError) throw createHttpError(401);
         const parsedBody = await ExpressValidations.validateBodyAgainstModel<body>(body, req.body);
         const transactionCreated = await TransactionService.createTransaction(authResult.ownerUserId,
         {
@@ -71,7 +73,8 @@ router.put<PutTxnAPI.ResponseDTO>("/api/v1/transactions",
             @IsString() @IsNotEmpty() targetTxnId: string;
         }
 
-        const authResult = await AccessTokenService.ensureRequestTokenValidated(req);
+        const authResult = await AccessTokenService.validateRequestTokenValidated(req);
+        if (authResult instanceof InvalidLoginTokenError) throw createHttpError(401);
         const parsedBody = await ExpressValidations.validateBodyAgainstModel<body>(body, req.body);
         const parsedQuery = await ExpressValidations.validateBodyAgainstModel<query>(query, req.query);
 
@@ -105,7 +108,8 @@ router.get<GetTxnAPI.ResponseDTO>(`/api/v1/transactions`,
             @IsOptional() @IsIntString() endDate?: string | undefined;
         }
 
-        const authResult = await AccessTokenService.ensureRequestTokenValidated(req);
+        const authResult = await AccessTokenService.validateRequestTokenValidated(req);
+        if (authResult instanceof InvalidLoginTokenError) throw createHttpError(401);
         const parsedQuery = await ExpressValidations.validateBodyAgainstModel<query>(query, req.query);
         const userQuery =
         {
