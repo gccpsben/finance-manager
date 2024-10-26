@@ -4,13 +4,14 @@ import dotenvExpand from 'dotenv-expand';
 import { isInt, isNumberString } from 'class-validator';
 import path from 'path';
 import fsExtra from 'fs-extra/esm';
-import { MonadError } from './stdErrors/monadError.js';
+import { MonadError, NestableError, NestableErrorSymbol } from './stdErrors/monadError.js';
 import { DirNotFoundError } from './stdErrors/fsErrors.js';
 export type EnvType = "Development" | "UnitTest" | "Production";
 export enum RESTfulLogType { "DISABLED","TO_FILE_ONLY","TO_CONSOLE_ONLY","TO_BOTH" };
 
-export class ReadEnvError<T extends Error> extends MonadError<typeof ReadEnvError.ERROR_SYMBOL>
+export class ReadEnvError<T extends Error> extends MonadError<typeof ReadEnvError.ERROR_SYMBOL> implements NestableError
 {
+    [NestableErrorSymbol]: true;
     static readonly ERROR_SYMBOL: unique symbol;
 
     error: T;
@@ -22,8 +23,9 @@ export class ReadEnvError<T extends Error> extends MonadError<typeof ReadEnvErro
     }
 }
 
-export class ParseEnvError<T extends Error> extends MonadError<typeof ParseEnvError.ERROR_SYMBOL>
+export class ParseEnvError<T extends Error> extends MonadError<typeof ParseEnvError.ERROR_SYMBOL> implements NestableError
 {
+    [NestableErrorSymbol]: true;
     static readonly ERROR_SYMBOL: unique symbol;
 
     error: T;

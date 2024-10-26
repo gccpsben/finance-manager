@@ -8,102 +8,95 @@ import { Container } from "./entities/container.entity.js";
 import { Transaction } from "./entities/transaction.entity.js";
 import { TransactionType } from "./entities/transactionType.entity.js";
 import { CurrencyRateDatum } from "./entities/currencyRateDatum.entity.js";
+import { CurrencyRateSource } from "./entities/currencyRateSource.entity.js";
+import { MonadError, NestableError, NestableErrorSymbol } from "../stdErrors/monadError.js";
+
+export class DatabaseInitError<T extends Error> extends MonadError<typeof DatabaseInitError.ERROR_SYMBOL> implements NestableError
+{
+    [NestableErrorSymbol]: true;
+    static readonly ERROR_SYMBOL: unique symbol;
+
+    error: T;
+    constructor(err: T)
+    {
+        super(DatabaseInitError.ERROR_SYMBOL, `Error initializing database.`);
+        this.name = this.constructor.name;
+        this.error = err;
+    }
+}
+
+export class DatabaseInitMissingDataSourceError extends MonadError<typeof DatabaseInitMissingDataSourceError.ERROR_SYMBOL>
+{
+    static readonly ERROR_SYMBOL: unique symbol;
+
+    constructor()
+    {
+        super(DatabaseInitMissingDataSourceError.ERROR_SYMBOL, `Database.AppDataSource is not defined. You might need to call Database.createAppDataSource before running this function.`);
+        this.name = this.constructor.name;
+    }
+}
+
+export class CreateAppDataSourceError<T extends Error> extends MonadError<typeof CreateAppDataSourceError.ERROR_SYMBOL> implements NestableError
+{
+    [NestableErrorSymbol]: true;
+    static readonly ERROR_SYMBOL: unique symbol;
+
+    error: T;
+    constructor(err: T)
+    {
+        super(CreateAppDataSourceError.ERROR_SYMBOL, `Error creating app data source: ${err}`);
+        this.name = this.constructor.name;
+        this.error = err;
+    }
+}
+
+export class SqliteFilePathMissingError extends MonadError<typeof SqliteFilePathMissingError.ERROR_SYMBOL>
+{
+    static readonly ERROR_SYMBOL: unique symbol;
+
+    constructor()
+    {
+        super(SqliteFilePathMissingError.ERROR_SYMBOL, `EnvManager.sqliteFilePath is not defined.`);
+        this.name = this.constructor.name;
+    }
+}
 
 export class Database
 {
     public static AppDataSource: DataSource | undefined = undefined;
 
     /** Create a Database data source from the env file. */
-    public static createAppDataSource()
+    public static createAppDataSource(): DataSource | CreateAppDataSourceError<SqliteFilePathMissingError>
     {
         if (!EnvManager.sqliteFilePath && !EnvManager.sqliteInMemory)
-            throw new Error(`createAppDataSource: EnvManager.sqliteFilePath is not defined.`);
+            return new CreateAppDataSourceError(new SqliteFilePathMissingError());
 
         Database.AppDataSource = new DataSource(
         {
             type: "sqlite",
-            entities: [User, AccessToken, Currency, Container, Transaction, TransactionType, CurrencyRateDatum],
+            entities: [User, AccessToken, Currency, Container, Transaction, TransactionType, CurrencyRateDatum, CurrencyRateSource],
             database: EnvManager.sqliteInMemory ? ":memory:" : EnvManager.sqliteFilePath,
-            synchronize: true
+            synchronize: true,
+            logging: ['warn'],
+            maxQueryExecutionTime: 100
         });
 
         return Database.AppDataSource;
     }
 
-    public static async init()
+    public static async init(): Promise<DataSource | DatabaseInitError<Error | DatabaseInitMissingDataSourceError>>
     {
-        if (!Database.AppDataSource) throw new Error(`Database.init: Database.AppDataSource is not defined. You might need to call Database.createAppDataSource before running this function.`);
+        if (!Database.AppDataSource)
+            return new DatabaseInitError(new DatabaseInitMissingDataSourceError());
 
-        try { await Database.AppDataSource.initialize(); }
+        try
+        {
+            return await Database.AppDataSource.initialize();
+        }
         catch(e)
         {
             ExtendedLog.logRed(`Error while initializing database. The database might contain entries violating database constrains.`);
-            throw e;
+            return new DatabaseInitError(e);
         }
-
-        // await UserRepository.getInstance().clear();
-        // await AccessTokenRepository.getInstance().clear();
-
-        // let accessToken = AccessTokenRepository.getInstance().create();
-        // accessToken.creationDate = new Date();
-        // accessToken.owner = <any>"41d03dc4-e74e-4e44-8efa-ee50df4b1f1e";
-        // await AccessTokenRepository.getInstance().insert(accessToken);
-
-        // let newUser = UserRepository.getInstance().create();
-        // newUser.username = '';
-        // await UserRepository.getInstance().insert(newUser);
-
-        // await TransactionRepository.getInstance().clear();
-        // await UserRepository.getInstance().clear();
-
-        // const newUser = UserRepository.getInstance().create();
-        // newUser.age = 727;
-        // newUser.firstName = "First name";
-        // newUser.lastName = "Last Name";
-        // await UserRepository.getInstance().save(newUser);
-
-        // const txn = TransactionRepository.getInstance().create();
-        // txn.ownerUser = { id: "f6fd7709-d9b0-4e30-86bd-fa2a4b2785ba" } as User;
-        // txn.title = "TITLE";
-        // txn.toAmount = "1";
-        // txn.fromAmount = "2";
-        // await TransactionRepository.getInstance().save(txn);
-
-        // // Performance
-        // (async () =>
-        // {
-        //     await UserRepository.getInstance().clear();
-        //     await UserFieldRepository.getInstance().clear();
-
-        //     const rowsCount = 1790;
-        //     const timeDiff1 = new TimeDiffer(`Creating ${rowsCount} rows: `);
-        //     const postArray = [];
-        //     for (let i = 0; i < rowsCount; i++)
-        //     {
-        //         let newUser = UserRepository.getInstance().create();
-        //         newUser.id = "USER" + i;
-        //         newUser.firstName = "firstname";
-        //         newUser.lastName = "lastname";
-        //         newUser.age = 1;
-        //         postArray.push(newUser);
-        //     }
-        //     await UserRepository.getInstance().insert(postArray);
-        //     timeDiff1.mark();
-
-        //     const timeDiff2 = new TimeDiffer(`Reading ${rowsCount} rows: `);
-        //     await UserRepository.getInstance().customFind();
-        //     timeDiff2.mark();
-
-        //     const timeDiff3 = new TimeDiffer(`Reading ${rowsCount} rows with conditions: `);
-        //     console.log(await UserRepository.getInstance().createQueryBuilder()
-        //     .where('id = "USER1705"')
-        //     .getMany());
-        //     timeDiff3.mark();
-        // })();
-
-
-        // await UserRepository.clear();
-
-
     }
 }

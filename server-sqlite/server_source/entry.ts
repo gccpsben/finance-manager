@@ -3,7 +3,7 @@ import path from "path";
 import { EnvManager, RESTfulLogType } from "./env.js";
 import { ExtendedLog } from "./logging/extendedLog.js";
 import { Server } from "./router/server.js";
-import { Database } from "./db/db.js";
+import { CreateAppDataSourceError, Database, DatabaseInitError } from "./db/db.js";
 import { Decimal } from 'decimal.js';
 
 // `main` should be called to initialize the app.
@@ -27,7 +27,6 @@ export async function main(envFilePath: string | undefined)
         }
 
         // Parse env file
-        (() =>
         {
             const envParseResult = EnvManager.parseEnv();
             if (!!envParseResult) envParseResult.panic();
@@ -53,19 +52,24 @@ export async function main(envFilePath: string | undefined)
             else if (EnvManager.restfulLogMode === RESTfulLogType.TO_BOTH) ExtendedLog.logGreen(`RESTFUL logging is enabled for file and console.`);
             else if (EnvManager.restfulLogMode === RESTfulLogType.TO_FILE_ONLY) ExtendedLog.logYellow(`RESTFUL logging is enabled only for file.`);
             else if (EnvManager.restfulLogMode === RESTfulLogType.TO_CONSOLE_ONLY) ExtendedLog.logYellow(`RESTFUL logging is enabled only for console.`);
-        })();
+        }
 
         // Initialize database
-        await (async () =>
         {
             ExtendedLog.logGray(`Initializing AppDataSource and database...`);
-            Database.createAppDataSource();
-            await Database.init();
+            const createAppDataSourceResults = Database.createAppDataSource();
+
+            if (createAppDataSourceResults instanceof CreateAppDataSourceError)
+                return createAppDataSourceResults.panic();
+
+            const databaseInitResults = await Database.init();
+            if (databaseInitResults instanceof DatabaseInitError)
+                return databaseInitResults.panic();
+
             ExtendedLog.logGreen(`AppDataSource and database successfully initialized.`);
-        })();
+        }
 
         // Start Server
-        await (async () =>
         {
             await Server.startServer
             (
@@ -74,7 +78,7 @@ export async function main(envFilePath: string | undefined)
                     attachMorgan: EnvManager.restfulLogMode !== RESTfulLogType.DISABLED
                 }
             );
-        })();
+        }
     }
     catch(e)
     {
