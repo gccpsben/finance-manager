@@ -19,14 +19,16 @@ export class UserNotFoundError extends MonadError<typeof UserNotFoundError.ERROR
     }
 }
 
-export class UserNameTakenError extends Error
+export class UserNameTakenError extends MonadError<typeof UserNotFoundError.ERROR_SYMBOL>
 {
-    public constructor(username: string)
+    static readonly ERROR_SYMBOL: unique symbol;
+    public username: string;
+
+    constructor(username: string)
     {
-        super();
-        this.message = `Username '${username}' is already taken`;
-        this.name = `UserNameTakenError`;
-        Object.setPrototypeOf(this, UserNameTakenError.prototype);
+        super(UserNotFoundError.ERROR_SYMBOL, `Username '${username}' is already taken`);
+        this.name = this.constructor.name;
+        this.username = username;
     }
 }
 
@@ -59,7 +61,7 @@ export class UserService
 
     public static async registerUser(username: string, passwordRaw: string)
     {
-        if (await UserService.checkUserNameTaken(username)) throw new UserNameTakenError(username);
+        if (await UserService.checkUserNameTaken(username)) return new UserNameTakenError(username);
         const newUser = UserRepository.getInstance().create();
         newUser.username = username;
         newUser.passwordHash = await argon2.hash(passwordRaw, { type: argon2.argon2id }); // salt is already included in the hash

@@ -1,5 +1,5 @@
 import { IsNotEmpty, IsString } from 'class-validator';
-import { UserService } from '../../db/services/user.service.js';
+import { UserNameTakenError, UserService } from '../../db/services/user.service.js';
 import express, { NextFunction } from 'express';
 import { ExpressValidations } from '../validation.js';
 import createHttpError from 'http-errors';
@@ -20,6 +20,7 @@ router.post<PostUserAPI.ResponseDTO>(`/api/v1/users`,
 
         await ExpressValidations.validateBodyAgainstModel<body>(body, req.body);
         const newUser = await UserService.registerUser(req.body.username, req.body.password);
+        if (newUser instanceof UserNameTakenError) throw createHttpError(400, newUser.message);
 
         return { userid: newUser.id };
     }
