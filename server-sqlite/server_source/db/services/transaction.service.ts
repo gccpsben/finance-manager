@@ -18,7 +18,6 @@ export class TransactionService
 {
     /**
      * Validate if a provided transaction is valid or not.
-     * If not, throw a application-level HTTP error (not panic).
      * This returns an unsaved version of the txn.
      */
     public static async validateTransaction
@@ -107,7 +106,7 @@ export class TransactionService
 
         newTxn.owner = owner;
 
-        const txnType = await TransactionTypeService.getTransactionTypeById(userId, obj.txnTypeId);
+        const txnType = unwrap(await TransactionTypeService.getTransactionTypeById(userId, obj.txnTypeId));
         newTxn.txnType = txnType;
 
         return { error: undefined, createdTxn: newTxn };
@@ -178,7 +177,7 @@ export class TransactionService
             ));
 
             oldTxn.txnTypeId = obj.txnTypeId ?? null;
-            oldTxn.txnType = !oldTxn.txnTypeId ? null : await TransactionTypeService.getTransactionTypeById(oldTxn.ownerId, oldTxn.txnTypeId);
+            oldTxn.txnType = !oldTxn.txnTypeId ? null : unwrap(await TransactionTypeService.getTransactionTypeById(oldTxn.ownerId, oldTxn.txnTypeId));
         })();
 
         const { error: error } = unwrap(await TransactionService.validateTransaction(userId, oldTxn));
