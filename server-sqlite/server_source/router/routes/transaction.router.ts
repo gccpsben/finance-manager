@@ -8,6 +8,7 @@ import { OptionalPaginationAPIQueryRequest, PaginationAPIResponseClass } from '.
 import { TypesafeRouter } from '../typescriptRouter.js';
 import { ExpressValidations } from '../validation.js';
 import createHttpError from 'http-errors';
+import { unwrap } from '../../stdErrors/monadError.js';
 
 const router = new TypesafeRouter(express.Router());
 
@@ -32,7 +33,7 @@ router.post<PostTxnAPI.ResponseDTO>("/api/v1/transactions",
         const authResult = await AccessTokenService.validateRequestTokenValidated(req);
         if (authResult instanceof InvalidLoginTokenError) throw createHttpError(401);
         const parsedBody = await ExpressValidations.validateBodyAgainstModel<body>(body, req.body);
-        const transactionCreated = await TransactionService.createTransaction(authResult.ownerUserId,
+        const transactionCreated = unwrap(await TransactionService.createTransaction(authResult.ownerUserId,
         {
             creationDate: parsedBody.creationDate ? parsedBody.creationDate : Date.now(),
             title: parsedBody.title,
@@ -44,7 +45,7 @@ router.post<PostTxnAPI.ResponseDTO>("/api/v1/transactions",
             toAmount: parsedBody.toAmount,
             toContainerId: parsedBody.toContainerId,
             toCurrencyId: parsedBody.toCurrencyId
-        });
+        }));
 
         return { id: transactionCreated.id };
     }

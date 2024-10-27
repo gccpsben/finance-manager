@@ -7,6 +7,7 @@ import type { PostCurrencyRateAPI } from "../../../../api-types/currencyRateDatu
 import { TypesafeRouter } from '../typescriptRouter.js';
 import { CurrencyRateDatumService } from '../../db/services/currencyRateDatum.service.js';
 import createHttpError from 'http-errors';
+import { unwrap } from '../../stdErrors/monadError.js';
 
 const router = new TypesafeRouter(express.Router());
 
@@ -26,14 +27,14 @@ router.post<PostCurrencyRateAPI.ResponseDTO>(`/api/v1/currencyRateDatums`,
         if (authResult instanceof InvalidLoginTokenError) throw createHttpError(401);
         const parsedBody = await ExpressValidations.validateBodyAgainstModel<body>(body, req.body);
 
-        const newRateDatum = await CurrencyRateDatumService.createCurrencyRateDatum
+        const newRateDatum = unwrap(await CurrencyRateDatumService.createCurrencyRateDatum
         (
             authResult.ownerUserId,
             parsedBody.amount,
             parsedBody.date,
             parsedBody.refCurrencyId,
             parsedBody.refAmountCurrencyId
-        );
+        ));
         return { id: newRateDatum.id };
     }
 });

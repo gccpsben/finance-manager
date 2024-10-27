@@ -10,6 +10,7 @@ import { ExpressValidations } from '../validation.js';
 import { TransactionService } from '../../db/services/transaction.service.js';
 import { InvalidLoginTokenError } from '../../db/services/accessToken.service.js';
 import createHttpError from 'http-errors';
+import { unwrap } from '../../stdErrors/monadError.js';
 
 const router = new TypesafeRouter(express.Router());
 
@@ -59,13 +60,13 @@ router.get<GetUserNetworthHistoryAPI.ResponseDTO>(`/api/v1/calculations/networth
             division: reqQuery.division ?? 100
         };
 
-        const resultMap = await CalculationsService.getUserNetworthHistory
+        const resultMap = unwrap(await CalculationsService.getUserNetworthHistory
         (
             authResults.ownerUserId,
             input.startDate,
             input.endDate,
             input.division
-        );
+        ));
 
         return {
             map: resultMap

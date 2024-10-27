@@ -3,13 +3,14 @@ import { TransactionRepository } from "../repositories/transaction.repository.js
 import { ContainerService } from "./container.service.js";
 import { CurrencyService } from "./currency.service.js";
 import { TransactionTypeService } from "./transactionType.service.js";
-import { UserService } from "./user.service.js";
+import { UserNotFoundError, UserService } from "./user.service.js";
 import { Transaction } from "../entities/transaction.entity.js";
 import { Decimal } from "decimal.js";
 import type { SQLitePrimitiveOnly } from "../../index.d.js";
 import { nameof, ServiceUtils } from "../servicesUtils.js";
 import { Container } from "../entities/container.entity.js";
 import { isNullOrUndefined } from "../../router/validation.js";
+import { unwrap } from "../../stdErrors/monadError.js";
 
 const nameofT = (x: keyof Transaction) => nameof<Transaction>(x);
 
@@ -36,8 +37,12 @@ export class TransactionService
             toCurrencyId?: string | undefined,
             txnTypeId: string
         } | Transaction
-    ): Promise<{error: createHttpError.HttpError | undefined, createdTxn: Transaction | undefined}>
+    ): Promise<{error: createHttpError.HttpError | undefined, createdTxn: Transaction | undefined} | UserNotFoundError>
     {
+        // Ensure user exists
+        const userFetchResult = await UserService.getUserById(userId);
+        if (userFetchResult === null) return new UserNotFoundError(userId);
+
         const newTxn = TransactionRepository.getInstance().create();
         newTxn.creationDate = obj.creationDate;
         newTxn.description = obj.description;
@@ -56,7 +61,7 @@ export class TransactionService
         }
         if (obj.fromCurrencyId)
         {
-            const currency = await CurrencyService.getCurrencyWithoutCache(userId,{ id: obj.fromCurrencyId });
+            const currency = unwrap(await CurrencyService.getCurrencyWithoutCache(userId,{ id: obj.fromCurrencyId }));
             newTxn.fromCurrency = currency;
         }
 
@@ -73,7 +78,7 @@ export class TransactionService
         }
         if (obj.toCurrencyId)
         {
-            const currency = await CurrencyService.getCurrencyWithoutCache(userId,{ id: obj.toCurrencyId });
+            const currency = unwrap(await CurrencyService.getCurrencyWithoutCache(userId,{ id: obj.toCurrencyId }));
             newTxn.toCurrency = currency;
         }
 
@@ -127,6 +132,10 @@ export class TransactionService
         }
     )
     {
+        // Ensure user exists
+        const userFetchResult = await UserService.getUserById(userId);
+        if (userFetchResult === null) return new UserNotFoundError(userId);
+
         const oldTxn = await TransactionRepository.getInstance().findOne(
         {
             where:
@@ -150,7 +159,11 @@ export class TransactionService
             oldTxn.fromContainer = !oldTxn.fromContainerId ? null : await ContainerService.getOneContainer(oldTxn.ownerId, { id: obj.fromContainerId });
 
             oldTxn.fromCurrencyId = obj.fromCurrencyId ?? null;
-            oldTxn.fromCurrency = !oldTxn.fromCurrencyId ? null : await CurrencyService.getCurrencyByIdWithoutCache(oldTxn.ownerId, oldTxn.fromCurrencyId);
+            oldTxn.fromCurrency = !oldTxn.fromCurrencyId ? null : unwrap(await CurrencyService.getCurrencyByIdWithoutCache
+            (
+                oldTxn.ownerId,
+                oldTxn.fromCurrencyId
+            ));
 
             oldTxn.toAmount = isNullOrUndefined(obj.toAmount) ? null : obj.toAmount;
 
@@ -158,13 +171,17 @@ export class TransactionService
             oldTxn.toContainer = !oldTxn.toContainerId ? null : await ContainerService.getOneContainer(oldTxn.ownerId, { id: obj.toContainerId });
 
             oldTxn.toCurrencyId = obj.toCurrencyId ?? null;
-            oldTxn.toCurrency = !oldTxn.toCurrencyId ? null : await CurrencyService.getCurrencyByIdWithoutCache(oldTxn.ownerId, oldTxn.toCurrencyId);
+            oldTxn.toCurrency = !oldTxn.toCurrencyId ? null : unwrap(await CurrencyService.getCurrencyByIdWithoutCache
+            (
+                oldTxn.ownerId,
+                oldTxn.toCurrencyId
+            ));
 
             oldTxn.txnTypeId = obj.txnTypeId ?? null;
             oldTxn.txnType = !oldTxn.txnTypeId ? null : await TransactionTypeService.getTransactionTypeById(oldTxn.ownerId, oldTxn.txnTypeId);
         })();
 
-        const { error: error } = await TransactionService.validateTransaction(userId, oldTxn);
+        const { error: error } = unwrap(await TransactionService.validateTransaction(userId, oldTxn));
         if (error) throw error;
 
         return await TransactionRepository.getInstance().save(oldTxn);
@@ -186,9 +203,10 @@ export class TransactionService
             toCurrencyId?: string | undefined,
             txnTypeId: string
         }
-    )
+    ): Promise<Transaction | UserNotFoundError>
     {
         const newTxn = await TransactionService.validateTransaction(userId, obj);
+        if (newTxn instanceof UserNotFoundError) return newTxn;
         if (newTxn.error) throw newTxn.error;
         return await TransactionRepository.getInstance().save(newTxn.createdTxn);
     }
@@ -202,8 +220,12 @@ export class TransactionService
         transaction: { fromAmount: string, toAmount:string, fromCurrencyId: string, toCurrencyId: string, creationDate: number },
         /** A mapping mapping each currency ID to its rate to base value. Will fetch from database if not given, or the currency is not found */
         currencyToBaseValueMappingCache: {[key:string]: Decimal} | undefined = undefined
-    ): Promise<{ increaseInValue: Decimal, currencyBaseValMapping: {[key:string]: Decimal} }>
+    ): Promise<{ increaseInValue: Decimal, currencyBaseValMapping: {[key:string]: Decimal} } | UserNotFoundError>
     {
+        // Ensure user exists
+        const userFetchResult = await UserService.getUserById(userId);
+        if (userFetchResult === null) return new UserNotFoundError(userId);
+
         let mapping = !currencyToBaseValueMappingCache ? { } : { ...currencyToBaseValueMappingCache };
 
         const amountToBaseValue = async (amount: string, currencyId: string) =>
@@ -211,7 +233,7 @@ export class TransactionService
             let currencyRate = mapping[currencyId];
             if (!currencyRate)
             {
-                const currencyRefetched = await CurrencyService.getCurrencyWithoutCache(userId, { id: currencyId });
+                const currencyRefetched = unwrap(await CurrencyService.getCurrencyWithoutCache(userId, { id: currencyId }));
                 const rate =
                 (
                     await CurrencyService.rateHydrateCurrency
@@ -297,7 +319,7 @@ export class TransactionService
         const nameofT = (x: keyof Transaction) => nameof<Transaction>(x);
 
         let query = await TransactionRepository.getInstance()
-        .createQueryBuilder(`txn`) 
+        .createQueryBuilder(`txn`)
         .where(`${nameofT('ownerId')} = :ownerId`, { ownerId: userId ?? null })
         .orderBy(`txn.${nameofT('creationDate')}`, "ASC")
         .limit(1)

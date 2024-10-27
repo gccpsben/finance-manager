@@ -10,18 +10,24 @@ import { SQLitePrimitiveOnly } from "../../index.d.js";
 import { nameof, ServiceUtils } from "../servicesUtils.js";
 import { GlobalCurrencyRateDatumsCache } from '../caches/currencyRateDatumsCache.cache.js';
 import { GlobalCurrencyCache } from "../caches/currencyListCache.cache.js";
+import { UserNotFoundError, UserService } from "./user.service.js";
+import { unwrap } from "../../stdErrors/monadError.js";
 
 export class CurrencyCalculator
 {
     public static async currencyToCurrencyRate(ownerId:string, from: Currency, to: Currency)
     {
-        const fromRate = await this.currencyToBaseRate(ownerId, from);
-        const toRate = await this.currencyToBaseRate(ownerId, to);
+        // Ensure user exists
+        const userFetchResult = await UserService.getUserById(ownerId);
+        if (userFetchResult === null) return new UserNotFoundError(ownerId);
+
+        const fromRate = unwrap(await this.currencyToBaseRate(ownerId, from));
+        const toRate = unwrap(await this.currencyToBaseRate(ownerId, to));
         return fromRate.dividedBy(toRate);
     }
 
     /**
-     * Get the rate of `<target_currency>` to `<base_currency>` at the given date using the rates of the currency stored in database. 
+     * Get the rate of `<target_currency>` to `<base_currency>` at the given date using the rates of the currency stored in database.
      * #### *if the rates at the given datetime are not available in the database, will use the fallback rate (`Currency.rateToBase`) instead.
     */
     public static async currencyToBaseRate
@@ -29,16 +35,20 @@ export class CurrencyCalculator
         ownerId: string,
         from: SQLitePrimitiveOnly<Currency>,
         date: Date = new Date()
-    ): Promise<Decimal>
+    ): Promise<Decimal | UserNotFoundError>
     {
         if (from.isBase) return new Decimal(`1`);
+
+        // Ensure user exists
+        const userFetchResult = await UserService.getUserById(ownerId);
+        if (userFetchResult === null) return new UserNotFoundError(ownerId);
 
         const getCurrById = async (id: string) =>
         {
             const cacheResult = GlobalCurrencyCache.queryCurrency(ownerId, id);
             if (cacheResult) return cacheResult;
             const fetchedResult = await CurrencyService.getCurrencyByIdWithoutCache(ownerId, id);
-            GlobalCurrencyCache.cacheCurrency(ownerId, id, fetchedResult);
+            GlobalCurrencyCache.cacheCurrency(ownerId, id, unwrap(fetchedResult));
             return fetchedResult;
         };
 
@@ -56,42 +66,42 @@ export class CurrencyCalculator
             const currencyBaseAmountUnitToBaseRate = await CurrencyCalculator.currencyToBaseRate
             (
                 ownerId,
-                await getCurrById(from.fallbackRateCurrencyId),
+                unwrap(await getCurrById(from.fallbackRateCurrencyId)),
                 date
             )!;
-            return currencyBaseAmount.mul(currencyBaseAmountUnitToBaseRate);
+            return currencyBaseAmount.mul(unwrap(currencyBaseAmountUnitToBaseRate));
         }
 
         if (nearestTwoDatums.length === 1)
         {
             const datumAmount = new Decimal(d1.amount);
-            const datumUnitToBaseRate = await CurrencyCalculator.currencyToBaseRate
+            const datumUnitToBaseRate = unwrap(await CurrencyCalculator.currencyToBaseRate
             (
                 ownerId,
-                await getCurrById(d1.refAmountCurrencyId),
+                unwrap(await getCurrById(d1.refAmountCurrencyId)),
                 new Date(d1.date)
-            )!;
-            return datumAmount.mul(datumUnitToBaseRate);
+            )!);
+            return unwrap(datumAmount.mul(datumUnitToBaseRate));
         }
 
         else // if (nearestTwoDatums.length === 2)
         {
             const isDateBeforeD1D2 = date.getTime() < d1.date && date.getTime() < d2.date; // ....^..|....|........
             const isDateAfterD1D2 = date.getTime() > d1.date && date.getTime() > d2.date;  // .......|....|...^....
-            const D1Currency = await getCurrById(d1.refAmountCurrencyId);
-            const D2Currency = d1.refAmountCurrencyId === d2.refAmountCurrencyId ? D1Currency : await getCurrById(d2.refAmountCurrencyId);
-            const D1CurrBaseRate = await CurrencyCalculator.currencyToBaseRate
+            const D1Currency = unwrap(await getCurrById(d1.refAmountCurrencyId));
+            const D2Currency = d1.refAmountCurrencyId === d2.refAmountCurrencyId ? D1Currency : unwrap(await getCurrById(d2.refAmountCurrencyId));
+            const D1CurrBaseRate = unwrap(await CurrencyCalculator.currencyToBaseRate
             (
                 ownerId,
                 D1Currency,
                 new Date(d1.date)
-            )!;
-            const D2CurrBaseRate = await CurrencyCalculator.currencyToBaseRate
+            )!);
+            const D2CurrBaseRate = unwrap(await CurrencyCalculator.currencyToBaseRate
             (
                 ownerId,
                 D2Currency,
                 new Date(d2.date)
-            )!;
+            ))!;
 
             let valLeft = new Decimal(d1.amount).mul(D1CurrBaseRate);
             let valRight = new Decimal(d2.amount).mul(D2CurrBaseRate);
@@ -119,8 +129,12 @@ export class CurrencyCalculator
         currencyId: string,
         startDate?: Date,
         endDate?: Date
-    ): Promise<LinearInterpolator>
+    ): Promise<LinearInterpolator | UserNotFoundError>
     {
+        // Ensure user exists
+        const userFetchResult = await UserService.getUserById(userId);
+        if (userFetchResult === null) return new UserNotFoundError(userId);
+
         const datums = await (async () =>
         {
             const cacheResult = GlobalCurrencyRateDatumsCache.queryRateDatums(userId, currencyId);
@@ -135,7 +149,7 @@ export class CurrencyCalculator
             const cacheResult = GlobalCurrencyCache.queryCurrency(userId, id);
             if (cacheResult) return cacheResult;
             const fetchedResult = await CurrencyService.getCurrencyByIdWithoutCache(userId, id);
-            GlobalCurrencyCache.cacheCurrency(userId, id, fetchedResult);
+            GlobalCurrencyCache.cacheCurrency(userId, id, unwrap(fetchedResult));
             return fetchedResult;
         };
 
@@ -144,12 +158,20 @@ export class CurrencyCalculator
             const output: { key:Decimal, value: Decimal }[] = [];
             for (const datum of datums)
             {
-                const datumUnitCurrency = await getCurrById(datum.refAmountCurrencyId);
+                const datumUnitCurrency = unwrap(await getCurrById(datum.refAmountCurrencyId));
 
                 output.push(
                 {
                     key: new Decimal(datum.date),
-                    value: new Decimal(datum.amount).mul(await CurrencyCalculator.currencyToBaseRate(userId, datumUnitCurrency, new Date(datum.date)))
+                    value: new Decimal(datum.amount).mul
+                    (
+                        unwrap(await CurrencyCalculator.currencyToBaseRate
+                        (
+                            userId,
+                            datumUnitCurrency,
+                            new Date(datum.date)
+                        ))
+                    )
                 });
             }
             return output;
@@ -214,15 +236,23 @@ export class CurrencyService
         }
     }
 
-    public static async getCurrencyByIdWithoutCache(userId:string, currencyId: string)
+    public static async getCurrencyByIdWithoutCache(userId:string, currencyId: string): Promise<
+        null |
+        UserNotFoundError |
+        Currency
+    >
     {
         return await this.getCurrencyWithoutCache(userId, { id: currencyId ?? null });
     }
 
-    public static async getCurrencyWithoutCache(userId: string, where: Omit<FindOptionsWhere<Currency>, 'owner'>)
+    public static async getCurrencyWithoutCache(userId: string, where: Omit<FindOptionsWhere<Currency>, 'owner'>): Promise<
+        null |
+        UserNotFoundError |
+        Currency
+    >
     {
         const user = await UserRepository.getInstance().findOne({where: { id: userId ?? null }});
-        if (!user) throw createHttpError(404, `Cannot find user with id '${userId}'`);
+        if (!user) return new UserNotFoundError(userId);
 
         const result = await CurrencyRepository.getInstance().findOne(
         {
@@ -230,7 +260,7 @@ export class CurrencyService
             relations: { owner: true, fallbackRateCurrency: true }
         });
 
-        if (!result) throw createHttpError(404, `Cannot find currency with query \"${JSON.stringify(where)}\"'`);
+        if (!result) return null;
         return result;
     }
 

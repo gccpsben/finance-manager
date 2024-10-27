@@ -1,5 +1,6 @@
 import chalk from "chalk";
 import { get, StackFrame } from "stack-trace";
+import type { NoUnion } from "../index.d.js";
 
 export class MonadError<T extends Symbol> extends Error
 {
@@ -43,6 +44,24 @@ export class MonadError<T extends Symbol> extends Error
         }
         panic(msg);
     }
+}
+
+/**
+ * Given a monad error, panic if it is an error, return the value as is if it is not.
+ * This function disallow using union as the generic parameter T.
+ * If you need to catch all errors, use ``unwrapAny``.
+ * */
+export function unwrap<T extends NoUnion<Symbol>, V>(errOrValue: MonadError<T> | V, msg?: string)
+{
+    if (errOrValue instanceof MonadError) return void(panic(msg));
+    return errOrValue;
+}
+
+/** Given a monad error, panic if it is an error, return the value as is if it is not. */
+export function unwrapAny<T extends Symbol, V>(errOrValue: MonadError<T> | V, msg?: string)
+{
+    if (errOrValue instanceof MonadError) return void(panic(msg));
+    return errOrValue;
 }
 
 export function panic(msg: string)

@@ -10,6 +10,7 @@ import { IsUTCDateIntString } from '../../db/validators.js';
 import { ServiceUtils } from '../../db/servicesUtils.js';
 import { Decimal } from 'decimal.js';
 import createHttpError from 'http-errors';
+import { unwrap } from '../../stdErrors/monadError.js';
 
 const router = new TypesafeRouter(express.Router());
 
@@ -25,7 +26,7 @@ router.get<GetContainerAPI.ResponseDTO>(`/api/v1/containers`,
             @IsOptional() @IsString() id: string;
             @IsOptional() @IsString() name: string;
 
-            /** If this is set, the value of each container will use the rate of each currency's rate at the given date. This defatuls to now. */
+            /** If this is set, the value of each container will use the rate of each currency's rate at the given date. This defaults to now. */
             @IsOptional() @IsUTCDateIntString() currencyRateDate: string;
         }
 
@@ -51,12 +52,12 @@ router.get<GetContainerAPI.ResponseDTO>(`/api/v1/containers`,
             userQuery.start
         );
 
-        const containerValues = await ContainerService.valueHydrateContainers
+        const containerValues = unwrap(await ContainerService.valueHydrateContainers
         (
             authResult.ownerUserId,
             response.rangeItems.map(container => container.id),
             userQuery.currencyRateDate
-        );
+        ));
 
         return {
             rateCalculatedToEpoch: userQuery.currencyRateDate,

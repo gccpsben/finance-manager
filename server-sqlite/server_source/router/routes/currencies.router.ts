@@ -11,6 +11,7 @@ import type { GetCurrencyAPI, GetCurrencyRateHistoryAPI, PostCurrencyAPI } from 
 import { TypesafeRouter } from '../typescriptRouter.js';
 import { OptionalPaginationAPIQueryRequest, PaginationAPIResponseClass } from '../logics/pagination.js';
 import { CurrencyRateDatumService } from '../../db/services/currencyRateDatum.service.js';
+import { unwrap } from '../../stdErrors/monadError.js';
 
 const router = new TypesafeRouter(express.Router());
 
@@ -135,14 +136,14 @@ router.get<GetCurrencyRateHistoryAPI.ResponseDTO>(`/api/v1/currencies/history`,
         if (authResult instanceof InvalidLoginTokenError) throw createHttpError(401);
 
         const parsedQuery = await ExpressValidations.validateBodyAgainstModel<query>(query, req.query);
-        const datums = await CurrencyRateDatumService.getCurrencyRateHistory
+        const datums = unwrap(await CurrencyRateDatumService.getCurrencyRateHistory
         (
             authResult.ownerUserId,
             parsedQuery.id,
             parsedQuery.startDate ? new Date(parseInt(parsedQuery.startDate)) : undefined,
             parsedQuery.endDate ? new Date(parseInt(parsedQuery.endDate)) : undefined,
             parsedQuery.division ? parseInt(parsedQuery.division) : 128
-        );
+        ));
 
         return {
             datums: datums.datums.map(x => ({ date: x.date, value: x.rateToBase.toString() })),

@@ -9,6 +9,8 @@ import { Decimal } from "decimal.js";
 import { CurrencyCalculator, CurrencyService } from "./currency.service.js";
 import { Currency } from "../entities/currency.entity.js";
 import { GlobalCurrencyCache } from "../caches/currencyListCache.cache.js";
+import { UserNotFoundError, UserService } from "./user.service.js";
+import { unwrap } from "../../stdErrors/monadError.js";
 export class ContainerService
 {
     public static async tryGetContainerByName(ownerId: string, name: string)
@@ -133,6 +135,10 @@ export class ContainerService
         const innerRateDateObj = new Date(innerRateEpoch);
         const containerBalances = await ContainerService.getContainersBalance(ownerId, containers);
 
+        // Ensure user exists
+        const userFetchResult = await UserService.getUserById(ownerId);
+        if (userFetchResult === null) return new UserNotFoundError(ownerId);
+
         // The list of currency ids that are present in `containerBalances`
         const relevantCurrencyIds = Array.from((() =>
         {
@@ -149,7 +155,7 @@ export class ContainerService
             {
                 const cacheResult = GlobalCurrencyCache.queryCurrency(ownerId, id);
                 if (cacheResult) return cacheResult;
-                const fetchedResult = await CurrencyService.getCurrencyByIdWithoutCache(ownerId, id);
+                const fetchedResult = unwrap(await CurrencyService.getCurrencyByIdWithoutCache(ownerId, id));
                 GlobalCurrencyCache.cacheCurrency(ownerId, id, fetchedResult);
                 return fetchedResult;
             };
@@ -166,12 +172,12 @@ export class ContainerService
             const output: { [currencyId: string]: Decimal } = {};
             for (const currencyId of relevantCurrencyIds)
             {
-                output[currencyId] = await CurrencyCalculator.currencyToBaseRate
+                output[currencyId] = unwrap(await CurrencyCalculator.currencyToBaseRate
                 (
                     ownerId,
                     relevantCurrencies[currencyId],
                     innerRateDateObj
-                );
+                ));
             }
             return output;
         })();

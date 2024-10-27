@@ -8,6 +8,8 @@ import { LinearInterpolator } from "../../calculations/linearInterpolator.js";
 import createHttpError from "http-errors";
 import { CurrencyCalculator, CurrencyService } from "./currency.service.js";
 import { GlobalCurrencyCache } from "../caches/currencyListCache.cache.js";
+import { UserNotFoundError, UserService } from "./user.service.js";
+import { unwrap } from "../../stdErrors/monadError.js";
 
 export type UserBalanceHistoryMap = { [epoch: string]: { [currencyId: string]: Decimal } };
 export type UserBalanceHistoryResults =
@@ -45,12 +47,12 @@ export class CalculationsService
         for (let txn of allTxns)
         {
             const { increaseInValue, currencyBaseValMapping: newCurrencyBaseValueMapping } =
-                await TransactionService.getTxnIncreaseInValue
+                unwrap(await TransactionService.getTxnIncreaseInValue
                 (
                     userId,
                     txn,
                     currencyBaseValueMapping
-                );
+                ));
 
             currencyBaseValueMapping = newCurrencyBaseValueMapping;
             const isValueDecreased = increaseInValue.lessThanOrEqualTo(new Decimal('0'));
@@ -149,7 +151,7 @@ export class CalculationsService
         startDate: number,
         endDate: number,
         division: number
-    ): Promise<{[epoch: string]:string}>
+    ): Promise<{[epoch: string]:string} | UserNotFoundError>
     {
         type cInterpolatorMap = { [currencyId: string]: LinearInterpolator };
 
@@ -158,6 +160,10 @@ export class CalculationsService
 
         if (division <= 1)
             throw createHttpError(400, `Division must be a positive integer higher than 1, received "${division}".`);
+
+        // Ensure user exists
+        const userFetchResult = await UserService.getUserById(userId);
+        if (userFetchResult === null) return new UserNotFoundError(userId);
 
         const balanceHistory = await CalculationsService.getUserBalanceHistory(userId, startDate, endDate, division);
 
@@ -168,13 +174,14 @@ export class CalculationsService
             const output: cInterpolatorMap = {};
             for (const cId of currenciesIdsInvolved)
             {
-                output[cId] = await CurrencyCalculator.getCurrencyToBaseRateInterpolator
+                const interpolator = unwrap(await CurrencyCalculator.getCurrencyToBaseRateInterpolator
                 (
                     userId,
                     cId,
                     new Date(startDate),
                     new Date(endDate)
-                );
+                ));
+                output[cId] = interpolator;
             }
             return output;
         })();
@@ -190,7 +197,7 @@ export class CalculationsService
                 {
                     const cacheResult = GlobalCurrencyCache.queryCurrency(userId, currencyID);
                     if (cacheResult) return cacheResult;
-                    const fetchedResult = await CurrencyService.getCurrencyByIdWithoutCache(userId, currencyID);
+                    const fetchedResult = unwrap(await CurrencyService.getCurrencyByIdWithoutCache(userId, currencyID));
                     GlobalCurrencyCache.cacheCurrency(userId, currencyID, fetchedResult);
                     return fetchedResult;
                 })();
@@ -201,12 +208,12 @@ export class CalculationsService
                 // when this happen, use base rate instead.
                 if (currencyRateToBase === undefined)
                 {
-                    currencyRateToBase = await CurrencyCalculator.currencyToBaseRate
+                    currencyRateToBase = unwrap(await CurrencyCalculator.currencyToBaseRate
                     (
                         userId,
                         currencyObject,
                         new Date(parseInt(epoch))
-                    );
+                    ));
                 }
                 const currencyValue = currencyRateToBase.mul(balanceHistory.historyMap[epoch][currencyID]);
                 valueOfAllCurrenciesSum = valueOfAllCurrenciesSum.add(currencyValue);

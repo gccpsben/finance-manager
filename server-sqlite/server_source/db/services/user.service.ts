@@ -1,10 +1,23 @@
 import argon2 from "argon2";
 import { UserRepository } from "../repositories/user.repository.js";
 import { User } from "../entities/user.entity.js";
-import { FindOptionsWhere } from "typeorm";
 import { AccessTokenService } from "./accessToken.service.js";
+import { MonadError } from "../../stdErrors/monadError.js";
 
 const nameofU = (x: keyof User) => x;
+
+export class UserNotFoundError extends MonadError<typeof UserNotFoundError.ERROR_SYMBOL>
+{
+    static readonly ERROR_SYMBOL: unique symbol;
+    public userId: string;
+
+    constructor(userId: string)
+    {
+        super(UserNotFoundError.ERROR_SYMBOL, `The given user id \"${userId}\" is not found.`);
+        this.name = this.constructor.name;
+        this.userId = userId;
+    }
+}
 
 export class UserNameTakenError extends Error
 {
@@ -19,13 +32,13 @@ export class UserNameTakenError extends Error
 
 export class UserService
 {
-    public static async getUserById(userId: string)
+    public static async getUserById(userId: string): Promise<User | null>
     {
         return await UserRepository
         .getInstance()
         .createQueryBuilder('user')
         .where(`user.${nameofU('id')} = :id`, { id: userId })
-        .getOne();
+        .getOne() ?? null;
     }
 
     public static async findAllUsers()

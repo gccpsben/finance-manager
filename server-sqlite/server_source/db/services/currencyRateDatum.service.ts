@@ -1,7 +1,9 @@
-import { UserService } from "./user.service.js";
+import { UserNotFoundError, UserService } from "./user.service.js";
 import { CurrencyRateDatumRepository, CurrencyRateDatumsCache } from "../repositories/currencyRateDatum.repository.js";
 import { CurrencyCalculator, CurrencyService } from "./currency.service.js";
 import { Decimal } from "decimal.js";
+import { CurrencyRateDatum } from "../entities/currencyRateDatum.entity.js";
+import { unwrap } from "../../stdErrors/monadError.js";
 
 
 function minAndMax<T> (array: T[], getter: (obj:T) => number)
@@ -39,14 +41,19 @@ export class CurrencyRateDatumService
         date: number,
         currencyId: string,
         amountCurrencyId: string
-    )
+    ): Promise<CurrencyRateDatum | UserNotFoundError>
     {
         const newRate = CurrencyRateDatumRepository.getInstance().create();
         newRate.amount = amount.toString();
         newRate.date = date;
         newRate.owner = await UserService.getUserById(userId);
-        newRate.refCurrency = await CurrencyService.getCurrencyWithoutCache(userId, { id: currencyId });
-        newRate.refAmountCurrency = await CurrencyService.getCurrencyWithoutCache(userId, { id: amountCurrencyId })
+        const refCurrency = await CurrencyService.getCurrencyWithoutCache(userId, { id: currencyId });
+        const refAmountCurrency = await CurrencyService.getCurrencyWithoutCache(userId, { id: amountCurrencyId });
+        if (refAmountCurrency instanceof UserNotFoundError) return refAmountCurrency;
+        if (refCurrency instanceof UserNotFoundError) return refCurrency;
+
+        newRate.refCurrency = refCurrency;
+        newRate.refAmountCurrency = refAmountCurrency;
         return CurrencyRateDatumRepository.getInstance().save(newRate);
     }
 
@@ -58,6 +65,10 @@ export class CurrencyRateDatumService
         division: number = 10
     )
     {
+        // Ensure user exists
+        const userFetchResult = await UserService.getUserById(ownerId);
+        if (userFetchResult === null) return new UserNotFoundError(ownerId);
+
         const datumsWithinRange = await CurrencyRateDatumRepository.getInstance().getCurrencyDatums(ownerId, currencyId, startDate, endDate);
 
         if (datumsWithinRange.length <= 1)
@@ -70,7 +81,7 @@ export class CurrencyRateDatumService
         }
 
         const datumsStat = minAndMax(datumsWithinRange, x => x.date);
-        const interpolator = await CurrencyCalculator.getCurrencyToBaseRateInterpolator(ownerId, currencyId, undefined, undefined);
+        const interpolator = unwrap(await CurrencyCalculator.getCurrencyToBaseRateInterpolator(ownerId, currencyId, undefined, undefined));
 
         const output: {date: number, rateToBase: Decimal}[] = [];
         const minDate = new Decimal(datumsStat.min);
