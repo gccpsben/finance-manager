@@ -22,8 +22,6 @@ export class CalculationsService
 {
     public static async getUserExpensesAndIncomes30d(userId: string)
     {
-        if (!userId) throw new Error(`getUserExpensesAndIncomes30d: userId cannot be null or undefined.`);
-
         const allTxns = await TransactionRepository.getInstance().createQueryBuilder(`txn`)
         .select(
         [

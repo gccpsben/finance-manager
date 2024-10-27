@@ -12,6 +12,20 @@ import { GlobalCurrencyCache } from "../caches/currencyListCache.cache.js";
 import { UserNotFoundError, UserService } from "./user.service.js";
 import { MonadError, unwrap } from "../../stdErrors/monadError.js";
 
+export class ContainerNotFoundError extends MonadError<typeof ContainerNotFoundError.ERROR_SYMBOL>
+{
+    static readonly ERROR_SYMBOL: unique symbol;
+    public containerId: string;
+    public userId: string;
+
+    constructor(containerId: string, userId: string)
+    {
+        super(ContainerNotFoundError.ERROR_SYMBOL, `Cannot find the given container with id = ${containerId}`);
+        this.name = this.constructor.name;
+        this.containerId = containerId;
+        this.userId = userId;
+    }
+}
 export class ContainerExistsError extends MonadError<typeof ContainerExistsError.ERROR_SYMBOL>
 {
     static readonly ERROR_SYMBOL: unique symbol;

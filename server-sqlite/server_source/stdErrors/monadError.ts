@@ -48,7 +48,7 @@ export class MonadError<T extends Symbol> extends Error
 
 /**
  * Given a monad error, panic if it is an error, return the value as is if it is not.
- * This function disallow using union as the generic parameter T.
+ * This function disallows using union as the generic parameter T.
  * If you need to catch all errors, use ``unwrapAny``.
  * */
 export function unwrap<T extends NoUnion<Symbol>, V>(errOrValue: MonadError<T> | V, msg?: string)

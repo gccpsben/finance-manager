@@ -1,8 +1,8 @@
 import createHttpError from "http-errors";
 import { TransactionRepository } from "../repositories/transaction.repository.js";
-import { ContainerService } from "./container.service.js";
+import { ContainerNotFoundError, ContainerService } from "./container.service.js";
 import { CurrencyService } from "./currency.service.js";
-import { TransactionTypeService } from "./transactionType.service.js";
+import { TransactionTypeService, TxnTypeNotFoundError } from "./transactionType.service.js";
 import { UserNotFoundError, UserService } from "./user.service.js";
 import { Transaction } from "../entities/transaction.entity.js";
 import { Decimal } from "decimal.js";
@@ -10,7 +10,48 @@ import type { SQLitePrimitiveOnly } from "../../index.d.js";
 import { nameof, ServiceUtils } from "../servicesUtils.js";
 import { Container } from "../entities/container.entity.js";
 import { isNullOrUndefined } from "../../router/validation.js";
-import { unwrap } from "../../stdErrors/monadError.js";
+import { MonadError, unwrap } from "../../stdErrors/monadError.js";
+
+export class TxnMissingContainerOrCurrency extends MonadError<typeof TxnMissingFromToAmountError.ERROR_SYMBOL>
+{
+    static readonly ERROR_SYMBOL: unique symbol;
+
+    constructor()
+    {
+        super
+        (
+            TxnMissingFromToAmountError.ERROR_SYMBOL,
+            `If "${nameofT('fromAmount')}" is given, ${nameofT('fromContainerId')} and ${nameofT('fromCurrencyId')} must also be defined, same for to variant.`
+        );
+        this.name = this.constructor.name;
+    }
+}
+
+export class TxnMissingFromToAmountError extends MonadError<typeof TxnMissingFromToAmountError.ERROR_SYMBOL>
+{
+    static readonly ERROR_SYMBOL: unique symbol;
+
+    constructor()
+    {
+        super(TxnMissingFromToAmountError.ERROR_SYMBOL, `"${nameofT('fromAmount')}" and ${nameofT('toAmount')} cannot be both undefined.`);
+        this.name = this.constructor.name;
+    }
+}
+
+export class TxnNotFoundError extends MonadError<typeof TxnNotFoundError.ERROR_SYMBOL>
+{
+    static readonly ERROR_SYMBOL: unique symbol;
+    public txnId: string;
+    public userId: string;
+
+    constructor(txnId: string, userId: string)
+    {
+        super(TxnNotFoundError.ERROR_SYMBOL, `Cannot find the given txn with id = ${txnId}`);
+        this.name = this.constructor.name;
+        this.txnId = txnId;
+        this.userId = userId;
+    }
+}
 
 const nameofT = (x: keyof Transaction) => nameof<Transaction>(x);
 
@@ -36,7 +77,14 @@ export class TransactionService
             toCurrencyId?: string | undefined,
             txnTypeId: string
         } | Transaction
-    ): Promise<{error: createHttpError.HttpError | undefined, createdTxn: Transaction | undefined} | UserNotFoundError>
+    ): Promise<
+        Transaction |
+        UserNotFoundError |
+        TxnTypeNotFoundError |
+        ContainerNotFoundError |
+        TxnMissingFromToAmountError |
+        TxnMissingContainerOrCurrency
+    >
     {
         // Ensure user exists
         const userFetchResult = await UserService.getUserById(userId);
@@ -51,11 +99,7 @@ export class TransactionService
         if (obj.fromContainerId)
         {
             const container = await ContainerService.tryGetContainerById(userId, obj.fromContainerId);
-            if (!container.containerFound)
-                return {
-                    error: createHttpError(404, `Cannot find container with id ${obj.fromContainerId}`),
-                    createdTxn: undefined
-                };
+            if (!container.containerFound) return new ContainerNotFoundError(obj.fromCurrencyId, userId);
             newTxn.fromContainer = container.container;
         }
         if (obj.fromCurrencyId)
@@ -68,11 +112,7 @@ export class TransactionService
         if (obj.toContainerId)
         {
             const container = await ContainerService.tryGetContainerById(userId, obj.toContainerId);
-            if (!container.containerFound)
-                return {
-                    error: createHttpError(404, `Cannot find container with id ${obj.toContainerId}`),
-                    createdTxn: undefined
-                };
+            if (!container.containerFound) return new ContainerNotFoundError(obj.toContainerId, userId);
             newTxn.toContainer = container.container;
         }
         if (obj.toCurrencyId)
@@ -81,35 +121,22 @@ export class TransactionService
             newTxn.toCurrency = currency;
         }
 
-        if (!obj.fromAmount && !obj.toAmount)
-            return { error:
-                createHttpError(400, `"${nameofT('fromAmount')}" and ${nameofT('toAmount')} cannot be both undefined.`),
-                createdTxn: undefined
-            };
-        if (obj.fromAmount && (!obj.fromContainerId || !obj.fromCurrencyId))
-            return {
-                error: createHttpError(400, `If "${nameofT('fromAmount')}" is given, ${nameofT('fromContainerId')} and ${nameofT('fromCurrencyId')} must also be defined.`),
-                createdTxn: undefined
-            }
-        if (obj.toAmount && (!obj.toContainerId || !obj.toCurrencyId))
-            return {
-                error: createHttpError(400, `If ${nameofT('toAmount')} is given, ${nameofT('toContainerId')} and ${nameofT('toCurrencyId')} must also be defined.`),
-                createdTxn: undefined
-            }
+        if (!obj.fromAmount && !obj.toAmount) return new TxnMissingFromToAmountError();
+        if (obj.fromAmount && (!obj.fromContainerId || !obj.fromCurrencyId)) return new TxnMissingContainerOrCurrency();
+        if (obj.toAmount && (!obj.toContainerId || !obj.toCurrencyId)) return new TxnMissingContainerOrCurrency();
 
         const owner = await UserService.getUserById(userId);
-        if (!owner)
-            return {
-                error: createHttpError(`Cannot find user with id ${userId}`),
-                createdTxn: undefined
-            }
+        if (!owner) return new UserNotFoundError(userId);
 
         newTxn.owner = owner;
 
-        const txnType = unwrap(await TransactionTypeService.getTransactionTypeById(userId, obj.txnTypeId));
+        const txnType = await TransactionTypeService.getTransactionTypeById(userId, obj.txnTypeId);
+        if (txnType instanceof UserNotFoundError) return txnType;
+        if (txnType instanceof TxnTypeNotFoundError) return txnType;
+
         newTxn.txnType = txnType;
 
-        return { error: undefined, createdTxn: newTxn };
+        return newTxn;
     }
 
     public static async updateTransaction
@@ -143,10 +170,10 @@ export class TransactionService
                 ownerId: userId ?? null
             }
         });
-        if (!oldTxn) throw createHttpError(404, `Cannot find transaction with id '${targetTxnId}'`);
+
+        if (!oldTxn) return new TxnNotFoundError(targetTxnId, userId);
 
         // Modify old txn given input manually
-        await (async () =>
         {
             oldTxn.title = obj.title;
             oldTxn.creationDate = obj.creationDate;
@@ -176,12 +203,25 @@ export class TransactionService
                 oldTxn.toCurrencyId
             ));
 
-            oldTxn.txnTypeId = obj.txnTypeId ?? null;
-            oldTxn.txnType = !oldTxn.txnTypeId ? null : unwrap(await TransactionTypeService.getTransactionTypeById(oldTxn.ownerId, oldTxn.txnTypeId));
-        })();
+            {
+                oldTxn.txnTypeId = obj.txnTypeId ?? null;
+                if (!!oldTxn.txnTypeId)
+                {
+                    const oldTxnType = await TransactionTypeService.getTransactionTypeById(oldTxn.ownerId, oldTxn.txnTypeId);
+                    if (oldTxnType instanceof UserNotFoundError) return oldTxnType;
+                    if (oldTxnType instanceof TxnTypeNotFoundError) return oldTxnType;
+                    oldTxn.txnType = oldTxnType;
+                }
+                else { oldTxn.txnType = null; }
+            }
+        }
 
-        const { error: error } = unwrap(await TransactionService.validateTransaction(userId, oldTxn));
-        if (error) throw error;
+        const txnValidationResults = await TransactionService.validateTransaction(userId, oldTxn);
+        if (txnValidationResults instanceof UserNotFoundError) return txnValidationResults;
+        if (txnValidationResults instanceof TxnTypeNotFoundError) return txnValidationResults;
+        if (txnValidationResults instanceof ContainerNotFoundError) return txnValidationResults;
+        if (txnValidationResults instanceof TxnMissingFromToAmountError) return txnValidationResults;
+        if (txnValidationResults instanceof TxnMissingContainerOrCurrency) return txnValidationResults;
 
         return await TransactionRepository.getInstance().save(oldTxn);
     }
@@ -202,12 +242,15 @@ export class TransactionService
             toCurrencyId?: string | undefined,
             txnTypeId: string
         }
-    ): Promise<Transaction | UserNotFoundError>
+    )
     {
         const newTxn = await TransactionService.validateTransaction(userId, obj);
         if (newTxn instanceof UserNotFoundError) return newTxn;
-        if (newTxn.error) throw newTxn.error;
-        return await TransactionRepository.getInstance().save(newTxn.createdTxn);
+        if (newTxn instanceof TxnTypeNotFoundError) return newTxn;
+        if (newTxn instanceof TxnMissingFromToAmountError) return newTxn;
+        if (newTxn instanceof ContainerNotFoundError) return newTxn;
+        if (newTxn instanceof TxnMissingContainerOrCurrency) return newTxn;
+        return await TransactionRepository.getInstance().save(newTxn);
     }
 
     /**

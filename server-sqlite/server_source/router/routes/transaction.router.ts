@@ -2,13 +2,16 @@ import { IsNotEmpty, IsOptional, IsString } from 'class-validator';
 import express from 'express';
 import { type PutTxnAPI, type GetTxnAPI, type PostTxnAPI } from '../../../../api-types/txn.js';
 import { AccessTokenService, InvalidLoginTokenError } from '../../db/services/accessToken.service.js';
-import { TransactionService } from '../../db/services/transaction.service.js';
+import { TransactionService, TxnMissingContainerOrCurrency, TxnMissingFromToAmountError } from '../../db/services/transaction.service.js';
 import { IsDecimalJSString, IsIntString, IsUTCDateInt } from '../../db/validators.js';
 import { OptionalPaginationAPIQueryRequest, PaginationAPIResponseClass } from '../logics/pagination.js';
 import { TypesafeRouter } from '../typescriptRouter.js';
 import { ExpressValidations } from '../validation.js';
 import createHttpError from 'http-errors';
 import { unwrap } from '../../stdErrors/monadError.js';
+import { UserNotFoundError } from '../../db/services/user.service.js';
+import { TxnTypeNotFoundError } from '../../db/services/transactionType.service.js';
+import { ContainerNotFoundError } from '../../db/services/container.service.js';
 
 const router = new TypesafeRouter(express.Router());
 
@@ -33,7 +36,7 @@ router.post<PostTxnAPI.ResponseDTO>("/api/v1/transactions",
         const authResult = await AccessTokenService.validateRequestTokenValidated(req);
         if (authResult instanceof InvalidLoginTokenError) throw createHttpError(401);
         const parsedBody = await ExpressValidations.validateBodyAgainstModel<body>(body, req.body);
-        const transactionCreated = unwrap(await TransactionService.createTransaction(authResult.ownerUserId,
+        const transactionCreated = await TransactionService.createTransaction(authResult.ownerUserId,
         {
             creationDate: parsedBody.creationDate ? parsedBody.creationDate : Date.now(),
             title: parsedBody.title,
@@ -45,7 +48,13 @@ router.post<PostTxnAPI.ResponseDTO>("/api/v1/transactions",
             toAmount: parsedBody.toAmount,
             toContainerId: parsedBody.toContainerId,
             toCurrencyId: parsedBody.toCurrencyId
-        }));
+        });
+
+        if (transactionCreated instanceof UserNotFoundError) throw createHttpError(401);
+        if (transactionCreated instanceof TxnTypeNotFoundError) throw createHttpError(400, transactionCreated.message);
+        if (transactionCreated instanceof ContainerNotFoundError) throw createHttpError(400, transactionCreated.message);
+        if (transactionCreated instanceof TxnMissingFromToAmountError) throw createHttpError(400, transactionCreated.message);
+        if (transactionCreated instanceof TxnMissingContainerOrCurrency) throw createHttpError(400, transactionCreated.message);
 
         return { id: transactionCreated.id };
     }

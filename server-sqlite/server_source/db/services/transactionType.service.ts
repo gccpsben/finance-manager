@@ -9,6 +9,25 @@ import { UserNotFoundError } from "./user.service.js";
 
 const nameofT = (x: keyof TransactionType) => x;
 
+export class TxnTypeNotFoundError extends MonadError<typeof TxnTypeNotFoundError.ERROR_SYMBOL>
+{
+    static readonly ERROR_SYMBOL: unique symbol;
+    public txnTypeNameOrId: { id: string, name?: never } | { name: string, id?: never };
+    public userId: string;
+
+    constructor(txnTypeNameOrId: { id: string, name?: never } | { name: string, id?: never }, userId: string)
+    {
+        if ("id" in txnTypeNameOrId)
+            super(TxnTypeNotFoundError.ERROR_SYMBOL, `Cannot find the given txn type with id = ${txnTypeNameOrId.id}`);
+        else
+            super(TxnTypeNotFoundError.ERROR_SYMBOL, `Cannot find the given txn type with name = ${(txnTypeNameOrId as {name: string}).name}`);
+
+        this.name = this.constructor.name;
+        this.txnTypeNameOrId = txnTypeNameOrId;
+        this.userId = userId;
+    }
+}
+
 export class TxnTypeExistsError extends MonadError<typeof TxnTypeExistsError.ERROR_SYMBOL>
 {
     static readonly ERROR_SYMBOL: unique symbol;
@@ -48,7 +67,7 @@ export class TransactionTypeService
         .where(`type.${nameofT('id')} = :id AND type.${nameofT('ownerId')} = :ownerId`, { id: id, ownerId: ownerId })
         .getOne();
 
-        if (!result || !id) throw createHttpError(404, `Cannot find transaction type with id "${id}"`);
+        if (!result || !id) return new TxnTypeNotFoundError({id: id}, ownerId);
         return result;
     }
 
@@ -84,14 +103,14 @@ export class TransactionTypeService
     public static async getTransactionTypeByName(ownerId: string, name: string)
     {
         const result = await this.tryGetTransactionTypeByName(ownerId, name);
-        if (!result.found) throw createHttpError(404, `Cannot find transaction type with name "${name}"`);
+        if (!result.found) return new TxnTypeNotFoundError({ name: name }, ownerId);
         return result.obj;
     }
 
     public static async tryGetTransactionTypeByName(ownerId: string, name: string)
     {
         const user = await UserRepository.getInstance().findOne({where: { id: ownerId }});
-        if (!user) throw createHttpError(404, `Cannot find user with id '${ownerId}'`);
+        if (!user) throw new UserNotFoundError(ownerId);
 
         const result = await TransactionTypeRepository.getInstance()
         .createQueryBuilder(`type`)
