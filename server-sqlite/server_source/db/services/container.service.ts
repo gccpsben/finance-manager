@@ -10,7 +10,23 @@ import { CurrencyCalculator, CurrencyService } from "./currency.service.js";
 import { Currency } from "../entities/currency.entity.js";
 import { GlobalCurrencyCache } from "../caches/currencyListCache.cache.js";
 import { UserNotFoundError, UserService } from "./user.service.js";
-import { unwrap } from "../../stdErrors/monadError.js";
+import { MonadError, unwrap } from "../../stdErrors/monadError.js";
+
+export class ContainerExistsError extends MonadError<typeof ContainerExistsError.ERROR_SYMBOL>
+{
+    static readonly ERROR_SYMBOL: unique symbol;
+    public containerName: string;
+    public userId: string;
+
+    constructor(containerName: string, userId: string)
+    {
+        super(ContainerExistsError.ERROR_SYMBOL, `The given container with name "${containerName}" already exists for user id="${userId}".`);
+        this.name = this.constructor.name;
+        this.containerName = containerName;
+        this.userId = userId;
+    }
+}
+
 export class ContainerService
 {
     public static async tryGetContainerByName(ownerId: string, name: string)
@@ -43,7 +59,7 @@ export class ContainerService
     {
         const containerWithSameName = await ContainerService.tryGetContainerByName(ownerId, name);
         if (containerWithSameName.containerFound)
-            throw createHttpError(400, `Container with name '${name}' already exists.`);
+            return new ContainerExistsError(name, ownerId);
         const newContainer = ContainerRepository.getInstance().create();
         newContainer.creationDate = creationDate;
         newContainer.name = name;

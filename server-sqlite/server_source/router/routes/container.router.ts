@@ -2,7 +2,7 @@ import express from 'express';
 import { AccessTokenService, InvalidLoginTokenError } from '../../db/services/accessToken.service.js';
 import { IsOptional, IsString } from 'class-validator';
 import { ExpressValidations } from '../validation.js';
-import { ContainerService } from '../../db/services/container.service.js';
+import { ContainerExistsError, ContainerService } from '../../db/services/container.service.js';
 import { TypesafeRouter } from '../typescriptRouter.js';
 import type { GetContainerAPI, PostContainerAPI } from '../../../../api-types/container.js';
 import { OptionalPaginationAPIQueryRequest, PaginationAPIResponseClass } from '../logics/pagination.js';
@@ -91,6 +91,9 @@ router.post<PostContainerAPI.ResponseDTO>(`/api/v1/containers`,
 
         const parsedBody = await ExpressValidations.validateBodyAgainstModel<body>(body, req.body);
         const containerCreated = await ContainerService.createContainer(authResult.ownerUserId, parsedBody.name);
+        if (containerCreated instanceof ContainerExistsError)
+            throw createHttpError(400, `Container with name '${containerCreated.containerName}' already exists.`);
+
         return { id: containerCreated.id }
     }
 })
