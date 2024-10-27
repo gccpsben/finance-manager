@@ -10,7 +10,8 @@ import { ExpressValidations } from '../validation.js';
 import { TransactionService } from '../../db/services/transaction.service.js';
 import { InvalidLoginTokenError } from '../../db/services/accessToken.service.js';
 import createHttpError from 'http-errors';
-import { unwrap } from '../../stdErrors/monadError.js';
+import { UserNotFoundError } from '../../db/services/user.service.js';
+import { ArgsComparisonError, ConstantComparisonError } from '../../stdErrors/argsErrors.js';
 
 const router = new TypesafeRouter(express.Router());
 
@@ -60,13 +61,17 @@ router.get<GetUserNetworthHistoryAPI.ResponseDTO>(`/api/v1/calculations/networth
             division: reqQuery.division ?? 100
         };
 
-        const resultMap = unwrap(await CalculationsService.getUserNetworthHistory
+        const resultMap = await CalculationsService.getUserNetworthHistory
         (
             authResults.ownerUserId,
             input.startDate,
             input.endDate,
             input.division
-        ));
+        );
+
+        if (resultMap instanceof UserNotFoundError) throw createHttpError(401);
+        if (resultMap instanceof ArgsComparisonError) throw createHttpError(400, resultMap.message);
+        if (resultMap instanceof ConstantComparisonError) throw createHttpError(400, resultMap.message);
 
         return {
             map: resultMap
@@ -109,6 +114,10 @@ router.get<GetUserBalanceHistoryAPI.ResponseDTO>(`/api/v1/calculations/balanceHi
             input.endDate,
             input.division
         );
+
+        if (calResults instanceof UserNotFoundError) throw createHttpError(401);
+        if (calResults instanceof ArgsComparisonError) throw createHttpError(400, calResults.message);
+        if (calResults instanceof ConstantComparisonError) throw createHttpError(400, calResults.message);
 
         return (() =>
         {

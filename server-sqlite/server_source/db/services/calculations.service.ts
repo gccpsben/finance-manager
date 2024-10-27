@@ -3,13 +3,13 @@ import { TransactionRepository } from "../repositories/transaction.repository.js
 import { TransactionService } from "./transaction.service.js";
 import { SQLitePrimitiveOnly } from "../../index.d.js";
 import { Transaction } from "../entities/transaction.entity.js";
-import { DecimalAdditionMapReducer, nameof, safeWhile, ServiceUtils } from "../servicesUtils.js";
+import { DecimalAdditionMapReducer, nameof, ServiceUtils } from "../servicesUtils.js";
 import { LinearInterpolator } from "../../calculations/linearInterpolator.js";
-import createHttpError from "http-errors";
 import { CurrencyCalculator, CurrencyService } from "./currency.service.js";
 import { GlobalCurrencyCache } from "../caches/currencyListCache.cache.js";
 import { UserNotFoundError, UserService } from "./user.service.js";
 import { unwrap } from "../../stdErrors/monadError.js";
+import { ArgsComparisonError, ConstantComparisonError } from "../../stdErrors/argsErrors.js";
 
 export type UserBalanceHistoryMap = { [epoch: string]: { [currencyId: string]: Decimal } };
 export type UserBalanceHistoryResults =
@@ -86,13 +86,14 @@ export class CalculationsService
      * The resulting map will have exactly ``division`` count of entires.
      * The first entry will be the startDate, and the last entry will be the endDate.
      */
-    public static async getUserBalanceHistory(userId: string, startDate: number, endDate: number, division: number): Promise<UserBalanceHistoryResults>
+    public static async getUserBalanceHistory(userId: string, startDate: number, endDate: number, division: number):
+        Promise<UserBalanceHistoryResults | ArgsComparisonError<number> | ConstantComparisonError<number>>
     {
         if (startDate >= endDate)
-            throw createHttpError(400, `Start date "${startDate}" cannot be larger than or equal to "${endDate}".`);
+            return new ArgsComparisonError("startDate", startDate, "endDate", endDate, "LARGER_THAN_OR_EQUAL");
 
         if (division <= 1)
-            throw createHttpError(400, `Division must be a positive integer higher than 1, received "${division}".`);
+            return new ConstantComparisonError("division", division, 1, "LARGER_THAN_OR_EQUAL")
 
         /** Sorted: From earliest to latest txns */
         const usrTxns = (await TransactionService.getTransactions(userId)).rangeItems.reverse();
@@ -151,21 +152,17 @@ export class CalculationsService
         startDate: number,
         endDate: number,
         division: number
-    ): Promise<{[epoch: string]:string} | UserNotFoundError>
+    ): Promise<{[epoch: string]:string} | UserNotFoundError | ArgsComparisonError<number> | ConstantComparisonError<number>>
     {
         type cInterpolatorMap = { [currencyId: string]: LinearInterpolator };
-
-        if (startDate >= endDate)
-            throw createHttpError(400, `Start date "${startDate}" cannot be larger than or equal to "${endDate}".`);
-
-        if (division <= 1)
-            throw createHttpError(400, `Division must be a positive integer higher than 1, received "${division}".`);
 
         // Ensure user exists
         const userFetchResult = await UserService.getUserById(userId);
         if (userFetchResult === null) return new UserNotFoundError(userId);
 
         const balanceHistory = await CalculationsService.getUserBalanceHistory(userId, startDate, endDate, division);
+        if (balanceHistory instanceof ArgsComparisonError) return balanceHistory;
+        if (balanceHistory instanceof ConstantComparisonError) return balanceHistory;
 
         const currenciesIdsInvolved = Object.keys(balanceHistory.currenciesEarliestPresentEpoch);
 
