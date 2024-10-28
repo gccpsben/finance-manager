@@ -4,8 +4,8 @@ import dotenvExpand from 'dotenv-expand';
 import { isInt, isNumberString } from 'class-validator';
 import path from 'path';
 import fsExtra from 'fs-extra/esm';
-import { MonadError, NestableError, NestableErrorSymbol } from './stdErrors/monadError.js';
-import { DirNotFoundError } from './stdErrors/fsErrors.js';
+import { MonadError, NestableError, NestableErrorSymbol } from './std_errors/monadError.js';
+import { DirNotFoundError } from './std_errors/fsErrors.js';
 export type EnvType = "Development" | "UnitTest" | "Production";
 export enum RESTfulLogType { "DISABLED","TO_FILE_ONLY","TO_CONSOLE_ONLY","TO_BOTH" };
 

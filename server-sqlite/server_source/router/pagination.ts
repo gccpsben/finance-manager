@@ -1,7 +1,6 @@
 import { IsNumber, IsArray, IsOptional, IsNumberString } from "class-validator";
-import type { PaginationAPIResponse } from "../../../../api-types/lib.js";
-import { SQLitePrimitiveOnly } from "../../index.d.js";
-import { TransactionService } from "../../db/services/transaction.service.js";
+import type { PaginationAPIResponse } from "../../../api-types/lib.js";
+import { SQLitePrimitiveOnly } from "../index.d.js";
 
 export class PaginationAPIResponseClass<T> implements PaginationAPIResponse<T>
 {

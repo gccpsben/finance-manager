@@ -5,7 +5,7 @@ import { AccessToken } from '../entities/accessToken.entity.js';
 import * as express from 'express';
 import { UserRepository } from "../repositories/user.repository.js";
 import { SQLitePrimitiveOnly } from "../../index.d.js";
-import { MonadError, panic } from "../../stdErrors/monadError.js";
+import { MonadError, panic } from "../../std_errors/monadError.js";
 
 export class InvalidLoginTokenError extends MonadError<typeof InvalidLoginTokenError.ERROR_SYMBOL>
 {

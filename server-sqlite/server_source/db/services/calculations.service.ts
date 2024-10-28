@@ -8,8 +8,8 @@ import { LinearInterpolator } from "../../calculations/linearInterpolator.js";
 import { CurrencyCalculator, CurrencyService } from "./currency.service.js";
 import { GlobalCurrencyCache } from "../caches/currencyListCache.cache.js";
 import { UserNotFoundError, UserService } from "./user.service.js";
-import { unwrap } from "../../stdErrors/monadError.js";
-import { ArgsComparisonError, ConstantComparisonError } from "../../stdErrors/argsErrors.js";
+import { unwrap } from "../../std_errors/monadError.js";
+import { ArgsComparisonError, ConstantComparisonError } from "../../std_errors/argsErrors.js";
 
 export type UserBalanceHistoryMap = { [epoch: string]: { [currencyId: string]: Decimal } };
 export type UserBalanceHistoryResults =

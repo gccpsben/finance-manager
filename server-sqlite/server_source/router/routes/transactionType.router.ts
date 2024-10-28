@@ -5,7 +5,7 @@ import { ExpressValidations } from '../validation.js';
 import { TransactionTypeService, TxnTypeExistsError } from '../../db/services/transactionType.service.js';
 import { TypesafeRouter } from '../typescriptRouter.js';
 import type { GetTxnTypesAPI, PostTxnTypesAPI } from '../../../../api-types/txnType.js';
-import { OptionalPaginationAPIQueryRequest, PaginationAPIResponseClass } from '../logics/pagination.js';
+import { OptionalPaginationAPIQueryRequest, PaginationAPIResponseClass } from '../pagination.js';
 import createHttpError from 'http-errors';
 import { UserNotFoundError } from '../../db/services/user.service.js';
 

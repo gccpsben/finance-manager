@@ -2,7 +2,7 @@ import argon2 from "argon2";
 import { UserRepository } from "../repositories/user.repository.js";
 import { User } from "../entities/user.entity.js";
 import { AccessTokenService } from "./accessToken.service.js";
-import { MonadError } from "../../stdErrors/monadError.js";
+import { MonadError } from "../../std_errors/monadError.js";
 
 const nameofU = (x: keyof User) => x;
 

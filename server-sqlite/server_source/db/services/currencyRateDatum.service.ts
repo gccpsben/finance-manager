@@ -3,7 +3,7 @@ import { CurrencyRateDatumRepository, CurrencyRateDatumsCache } from "../reposit
 import { CurrencyCalculator, CurrencyService } from "./currency.service.js";
 import { Decimal } from "decimal.js";
 import { CurrencyRateDatum } from "../entities/currencyRateDatum.entity.js";
-import { unwrap } from "../../stdErrors/monadError.js";
+import { unwrap } from "../../std_errors/monadError.js";
 
 
 function minAndMax<T> (array: T[], getter: (obj:T) => number)

@@ -1,6 +1,6 @@
 import express from 'express';
 import * as core from "express-serve-static-core";
-import { ExtendedLog } from '../logging/extendedLog.js';
+import { ExtendedLog } from '../debug/extendedLog.js';
 import { getMainRouter } from './mainRouter.js';
 import morgan from 'morgan';
 import { PassThrough } from 'stream';

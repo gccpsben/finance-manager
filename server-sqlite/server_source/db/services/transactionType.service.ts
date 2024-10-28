@@ -4,7 +4,7 @@ import { UserRepository } from "../repositories/user.repository.js";
 import { TransactionType } from "../entities/transactionType.entity.js";
 import { ServiceUtils } from "../servicesUtils.js";
 import { SQLitePrimitiveOnly } from "../../index.d.js";
-import { MonadError } from "../../stdErrors/monadError.js";
+import { MonadError } from "../../std_errors/monadError.js";
 import { UserNotFoundError } from "./user.service.js";
 
 const nameofT = (x: keyof TransactionType) => x;

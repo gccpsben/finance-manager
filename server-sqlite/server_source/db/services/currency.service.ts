@@ -11,7 +11,7 @@ import { nameof, ServiceUtils } from "../servicesUtils.js";
 import { GlobalCurrencyRateDatumsCache } from '../caches/currencyRateDatumsCache.cache.js';
 import { GlobalCurrencyCache } from "../caches/currencyListCache.cache.js";
 import { UserNotFoundError, UserService } from "./user.service.js";
-import { MonadError, unwrap } from "../../stdErrors/monadError.js";
+import { MonadError, unwrap } from "../../std_errors/monadError.js";
 
 export class CurrencyNotFoundError extends MonadError<typeof CurrencyNotFoundError.ERROR_SYMBOL>
 {

@@ -7,7 +7,7 @@ import type { PostCurrencyRateAPI } from "../../../../api-types/currencyRateDatu
 import { TypesafeRouter } from '../typescriptRouter.js';
 import { CurrencyRateDatumService } from '../../db/services/currencyRateDatum.service.js';
 import createHttpError from 'http-errors';
-import { unwrap } from '../../stdErrors/monadError.js';
+import { unwrap } from '../../std_errors/monadError.js';
 
 const router = new TypesafeRouter(express.Router());
 

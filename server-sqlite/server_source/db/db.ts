@@ -2,14 +2,14 @@ import { DataSource } from "typeorm";
 import { User } from "./entities/user.entity.js";
 import { AccessToken } from "./entities/accessToken.entity.js";
 import { EnvManager } from "../env.js";
-import { ExtendedLog } from "../logging/extendedLog.js";
+import { ExtendedLog } from "../debug/extendedLog.js";
 import { Currency } from "./entities/currency.entity.js";
 import { Container } from "./entities/container.entity.js";
 import { Transaction } from "./entities/transaction.entity.js";
 import { TransactionType } from "./entities/transactionType.entity.js";
 import { CurrencyRateDatum } from "./entities/currencyRateDatum.entity.js";
 import { CurrencyRateSource } from "./entities/currencyRateSource.entity.js";
-import { MonadError, NestableError, NestableErrorSymbol } from "../stdErrors/monadError.js";
+import { MonadError, NestableError, NestableErrorSymbol } from "../std_errors/monadError.js";
 
 export class DatabaseInitError<T extends Error> extends MonadError<typeof DatabaseInitError.ERROR_SYMBOL> implements NestableError
 {

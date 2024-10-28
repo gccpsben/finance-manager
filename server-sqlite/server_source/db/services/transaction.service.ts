@@ -10,7 +10,7 @@ import type { SQLitePrimitiveOnly } from "../../index.d.js";
 import { nameof, ServiceUtils } from "../servicesUtils.js";
 import { Container } from "../entities/container.entity.js";
 import { isNullOrUndefined } from "../../router/validation.js";
-import { MonadError, unwrap } from "../../stdErrors/monadError.js";
+import { MonadError, unwrap } from "../../std_errors/monadError.js";
 
 export class TxnMissingContainerOrCurrency extends MonadError<typeof TxnMissingFromToAmountError.ERROR_SYMBOL>
 {

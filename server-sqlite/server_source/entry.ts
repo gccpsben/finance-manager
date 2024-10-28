@@ -1,7 +1,7 @@
 import 'reflect-metadata';
 import path from "path";
 import { EnvManager, RESTfulLogType } from "./env.js";
-import { ExtendedLog } from "./logging/extendedLog.js";
+import { ExtendedLog } from "./debug/extendedLog.js";
 import { Server } from "./router/server.js";
 import { CreateAppDataSourceError, Database, DatabaseInitError } from "./db/db.js";
 import { Decimal } from 'decimal.js';

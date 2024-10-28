@@ -11,7 +11,7 @@ import { TransactionService } from '../../db/services/transaction.service.js';
 import { InvalidLoginTokenError } from '../../db/services/accessToken.service.js';
 import createHttpError from 'http-errors';
 import { UserNotFoundError } from '../../db/services/user.service.js';
-import { ArgsComparisonError, ConstantComparisonError } from '../../stdErrors/argsErrors.js';
+import { ArgsComparisonError, ConstantComparisonError } from '../../std_errors/argsErrors.js';
 
 const router = new TypesafeRouter(express.Router());
 
