@@ -46,7 +46,6 @@ class CurrencyRateDatumRepositoryExtension
         currencyId: string, date: Date,
     ): Promise<DifferenceHydratedCurrencyRateDatum[]>
     {
-        if (!date || !isDate(date)) throw new Error(`findNearestTwoDatum: The provided date is not a date object.`);
         const cachedTwoDatums = GlobalCurrencyRateDatumsCache.findTwoNearestDatum(userId, currencyId, date);
         if (cachedTwoDatums !== undefined) return cachedTwoDatums;
 

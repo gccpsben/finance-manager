@@ -1,6 +1,6 @@
 import express from 'express';
 import { AccessTokenService, InvalidLoginTokenError } from '../../db/services/accessToken.service.js';
-import { CurrencyService } from '../../db/services/currency.service.js';
+import { CurrencyNameTakenError, CurrencyNotFoundError, CurrencyService, CurrencyTickerTakenError } from '../../db/services/currency.service.js';
 import { Decimal } from 'decimal.js';
 import { IsNumber, IsNumberString, IsOptional, IsString } from 'class-validator';
 import { ExpressValidations } from '../validation.js';
@@ -38,6 +38,11 @@ router.post<PostCurrencyAPI.ResponseDTO>(`/api/v1/currencies`,
             parsedBody.fallbackRateCurrencyId,
             parsedBody.ticker
         );
+
+        if (newCurrency instanceof CurrencyNameTakenError) throw createHttpError(400, newCurrency.message);
+        if (newCurrency instanceof CurrencyNotFoundError) throw createHttpError(400, newCurrency.message);
+        if (newCurrency instanceof CurrencyTickerTakenError) throw createHttpError(400, newCurrency.message);
+
         return { id: newCurrency.id }
     }
 });
@@ -84,13 +89,13 @@ router.get<GetCurrencyAPI.ResponseDTO>(`/api/v1/currencies`,
 
         const sqlPrimitiveCurrencies = await PaginationAPIResponseClass.prepareFromQueryItems
         (
-            await CurrencyService.getManyCurrencies(authResult.ownerUserId,
+            unwrap(await CurrencyService.getManyCurrencies(authResult.ownerUserId,
             {
                 startIndex: userQuery.start,
                 endIndex: userQuery.end,
                 id: userQuery.id,
                 name: userQuery.name
-            }),
+            })),
             userQuery.start
         );
 

@@ -11,7 +11,51 @@ import { nameof, ServiceUtils } from "../servicesUtils.js";
 import { GlobalCurrencyRateDatumsCache } from '../caches/currencyRateDatumsCache.cache.js';
 import { GlobalCurrencyCache } from "../caches/currencyListCache.cache.js";
 import { UserNotFoundError, UserService } from "./user.service.js";
-import { unwrap } from "../../stdErrors/monadError.js";
+import { MonadError, unwrap } from "../../stdErrors/monadError.js";
+
+export class CurrencyNotFoundError extends MonadError<typeof CurrencyNotFoundError.ERROR_SYMBOL>
+{
+    static readonly ERROR_SYMBOL: unique symbol;
+    public currencyId: string;
+    public userId: string;
+
+    constructor(currencyId: string, userId: string)
+    {
+        super(CurrencyNotFoundError.ERROR_SYMBOL, `Cannot find the given currency with id = ${currencyId}`);
+        this.name = this.constructor.name;
+        this.currencyId = currencyId;
+        this.userId = userId;
+    }
+}
+export class CurrencyNameTakenError extends MonadError<typeof CurrencyNameTakenError.ERROR_SYMBOL>
+{
+    static readonly ERROR_SYMBOL: unique symbol;
+    public currencyName: string;
+    public userId: string;
+
+    constructor(currencyName: string, userId: string)
+    {
+        super(CurrencyNameTakenError.ERROR_SYMBOL, `Currency with name ${currencyName} is already taken.`);
+        this.name = this.constructor.name;
+        this.currencyName = currencyName;
+        this.userId = userId;
+    }
+}
+
+export class CurrencyTickerTakenError extends MonadError<typeof CurrencyTickerTakenError.ERROR_SYMBOL>
+{
+    static readonly ERROR_SYMBOL: unique symbol;
+    public currencyTicker: string;
+    public userId: string;
+
+    constructor(currencyTicker: string, userId: string)
+    {
+        super(CurrencyTickerTakenError.ERROR_SYMBOL, `Currency with ticker ${currencyTicker} is already taken.`);
+        this.name = this.constructor.name;
+        this.currencyTicker = currencyTicker;
+        this.userId = userId;
+    }
+}
 
 export class CurrencyCalculator
 {
@@ -185,7 +229,7 @@ export class CurrencyService
     public static async tryGetUserBaseCurrency(userId: string)
     {
         const user = await UserRepository.getInstance().findOne({where: { id: userId ?? null }});
-        if (!user) throw createHttpError(404, `Cannot find user with id '${userId}'`);
+        if (!user) return new UserNotFoundError(userId);
 
         return await CurrencyRepository.getInstance().findOne(
         {
@@ -201,7 +245,7 @@ export class CurrencyService
     public static async getUserAllCurrencies(userId: string)
     {
         const user = await UserRepository.getInstance().findOne({where: { id: userId ?? null }});
-        if (!user) throw createHttpError(404, `Cannot find user with id '${userId}'`);
+        if (!user) return new UserNotFoundError(userId);
 
         const results = await CurrencyRepository.getInstance()
         .createQueryBuilder(`currency`)
@@ -219,8 +263,11 @@ export class CurrencyService
             startIndex?: number | undefined, endIndex?: number | undefined,
             name?: string | undefined, id?: string | undefined
         }
-    ): Promise<{ totalCount: number, rangeItems: SQLitePrimitiveOnly<Currency>[] }>
+    ): Promise<{ totalCount: number, rangeItems: SQLitePrimitiveOnly<Currency>[] } | UserNotFoundError>
     {
+        const user = await UserRepository.getInstance().findOne({where: { id: ownerId ?? null }});
+        if (!user) return new UserNotFoundError(ownerId);
+
         let dbQuery = CurrencyRepository.getInstance()
         .createQueryBuilder(`curr`)
         .where(`${nameof<Currency>('ownerId')} = :ownerId`, { ownerId: ownerId ?? null });
@@ -272,13 +319,13 @@ export class CurrencyService
     {
         // Check refCurrencyId exists if refCurrencyId is defined.
         if (refCurrencyId && !(await CurrencyRepository.getInstance().isCurrencyByIdExists(refCurrencyId, userId)))
-            throw createHttpError(404, `Cannot find ref currency with id '${refCurrencyId}'`);
+            return new CurrencyNotFoundError(refCurrencyId, userId);
 
         if (!!(await CurrencyRepository.getInstance().isCurrencyByNameExists(name, userId)))
-            throw createHttpError(400, `Currency with name '${name}' already exists.`);
+            return new CurrencyNameTakenError(name, userId);
 
         if (!!(await CurrencyRepository.getInstance().isCurrencyByTickerExists(ticker, userId)))
-            throw createHttpError(400, `Currency with ticker '${ticker}' already exists.`);
+            return new CurrencyTickerTakenError(ticker, userId);
 
         const newCurrency = CurrencyRepository.getInstance().create();
         newCurrency.name = name;
