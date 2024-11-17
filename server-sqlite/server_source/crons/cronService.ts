@@ -14,6 +14,7 @@ export class CronRunner
 
     public async initAll(): Promise<void>
     {
+        this.#crons.push(new CurrencyRatesCRON());
         await Promise.all(this.#crons.map(x => x.init()));
     }
 

@@ -9,6 +9,7 @@ import { Container } from "./container.entity.js";
 import { EnsureNotPlainForeignKey } from "../validators.js";
 import { Transaction } from "./transaction.entity.js";
 import { TransactionType } from "./transactionType.entity.js";
+import { CurrencyRateSource } from "./currencyRateSource.entity.js";
 
 @Entity()
 export class User extends EntityClass
@@ -35,6 +36,10 @@ export class User extends EntityClass
     @OneToMany(type => Currency, currency => currency.owner)
     @EnsureNotPlainForeignKey()
     currencies: Currency[];
+
+    @OneToMany(type => CurrencyRateSource, currencyRateSource => currencyRateSource.owner)
+    @EnsureNotPlainForeignKey()
+    currenciesRateSources: CurrencyRateSource[];
 
     @OneToMany(type => Container, container => container.owner)
     @EnsureNotPlainForeignKey()

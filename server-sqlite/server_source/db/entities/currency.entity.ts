@@ -1,4 +1,4 @@
-import { Entity, PrimaryGeneratedColumn, Column, BeforeInsert, BeforeUpdate, JoinColumn, Check, Unique, Relation } from "typeorm";
+import { Entity, PrimaryGeneratedColumn, Column, BeforeInsert, BeforeUpdate, JoinColumn, Check, Unique, Relation, OneToMany } from "typeorm";
 import "reflect-metadata"
 import { ManyToOne } from "typeorm";
 import { User } from "./user.entity.js";
@@ -7,6 +7,7 @@ import { EntityClass } from "../dbEntityBase.js";
 import { CurrencyRepository } from "../repositories/currency.repository.js";
 import { EnsureNotPlainForeignKey, IsDecimalJSString } from "../validators.js";
 import { SQLitePrimitiveOnly } from "../../index.d.js";
+import { CurrencyRateSource } from "./currencyRateSource.entity.js";
 
 @Entity()
 @Unique("UniqueCurrencyNameWithinUser",["name", "owner"]) // For each user, no currencies with the same name is allowed
@@ -47,6 +48,10 @@ export class Currency extends EntityClass
     @EnsureNotPlainForeignKey()
     owner: Relation<User>;
 
+    @OneToMany(type => CurrencyRateSource, currencyRateSource => currencyRateSource.refCurrency)
+    @EnsureNotPlainForeignKey()
+    currenciesRateSources: CurrencyRateSource[];
+
     @Column()
     @IsBoolean()
     @IsNotEmpty()
@@ -55,6 +60,9 @@ export class Currency extends EntityClass
     @Column()
     @IsNotEmpty()
     ticker: string;
+
+    @Column({ nullable: true })
+    lastRateCronUpdateTime: number | null;
 
     @BeforeInsert()
     @BeforeUpdate()

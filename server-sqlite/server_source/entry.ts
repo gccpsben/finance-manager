@@ -5,6 +5,7 @@ import { ExtendedLog } from "./debug/extendedLog.js";
 import { Server } from "./router/server.js";
 import { CreateAppDataSourceError, Database, DatabaseInitError } from "./db/db.js";
 import { Decimal } from 'decimal.js';
+import { CronRunner } from './crons/cronService.js';
 
 // `main` should be called to initialize the app.
 // This is the entry point of the app.
@@ -67,6 +68,13 @@ export async function main(envFilePath: string | undefined)
                 return databaseInitResults.panic();
 
             ExtendedLog.logGreen(`AppDataSource and database successfully initialized.`);
+        }
+
+        // Start CRON services
+        {
+            const cronRunner = new CronRunner();
+            await cronRunner.initAll();
+            await cronRunner.startAll();
         }
 
         // Start Server
