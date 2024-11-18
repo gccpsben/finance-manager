@@ -6,6 +6,7 @@ import * as express from 'express';
 import { UserRepository } from "../repositories/user.repository.js";
 import { SQLitePrimitiveOnly } from "../../index.d.js";
 import { MonadError, panic } from "../../std_errors/monadError.js";
+import { UserNotFoundError } from "./user.service.js";
 
 export class InvalidLoginTokenError extends MonadError<typeof InvalidLoginTokenError.ERROR_SYMBOL>
 {
@@ -23,9 +24,13 @@ export class AccessTokenService
     public static async generateTokenForUser(userId: string)
     {
         if (!EnvManager.tokenExpiryMs) return void(panic(`AccessTokenService.generateTokenForUser: EnvManager.tokenExpiryMs is not defined.`));
+
+        const targetUser = await UserRepository.getInstance().findOne({where: {id: userId}});
+        if (!targetUser) return new UserNotFoundError(userId);
+
         const newToken = AccessTokenRepository.getInstance().create();
         newToken.token = randomUUID();
-        newToken.owner = await UserRepository.getInstance().findOne({where: {id: userId}});
+        newToken.owner = targetUser;
         newToken.creationDate = Date.now();
         newToken.expiryDate = newToken.creationDate + EnvManager.tokenExpiryMs;
         await AccessTokenRepository.getInstance().save(newToken);
@@ -74,14 +79,24 @@ export class AccessTokenService
         {
             isTokenValid: boolean;
             tokenFound: boolean;
-            ownerUserId: string | undefined;
+            ownerUserId: string;
         }
     >
     {
+        const createErr = () => new InvalidLoginTokenError();
+
         const authorizationHeader = request.headers["authorization"];
+        if (authorizationHeader === null || authorizationHeader === undefined) return createErr();
         const validationResult = await AccessTokenService.validateToken(authorizationHeader);
-        if (!validationResult.isTokenValid) return new InvalidLoginTokenError();
-        return validationResult;
+
+        if (!validationResult.isTokenValid || !validationResult.ownerUserId || !validationResult.tokenFound)
+            return createErr();
+
+        return {
+            isTokenValid: true,
+            tokenFound: true,
+            ownerUserId: validationResult.ownerUserId!
+        };
     }
 
     public static async deleteTokensOfUser(userId: string)

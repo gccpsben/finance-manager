@@ -30,6 +30,8 @@ export class MonadError<T extends Symbol> extends Error
             output.push(current.error);
             current = current.error;
         }
+
+        return output;
     }
 
     public panic()
@@ -51,16 +53,18 @@ export class MonadError<T extends Symbol> extends Error
  * This function disallows using union as the generic parameter T.
  * If you need to catch all errors, use ``unwrapAny``.
  * */
-export function unwrap<T extends NoUnion<Symbol>, V>(errOrValue: MonadError<T> | V, msg?: string)
+export function unwrap<T extends NoUnion<Symbol>, V>(errOrValue: MonadError<T> | V, msg?: string): V
 {
-    if (errOrValue instanceof MonadError) return void(panic(msg));
+    // @ts-expect-error
+    if (errOrValue instanceof MonadError) return void(panic(msg ?? ""));
     return errOrValue;
 }
 
 /** Given a monad error, panic if it is an error, return the value as is if it is not. */
-export function unwrapAny<T extends Symbol, V>(errOrValue: MonadError<T> | V, msg?: string)
+export function unwrapAny<T extends Symbol, V>(errOrValue: MonadError<T> | V, msg?: string): V
 {
-    if (errOrValue instanceof MonadError) return void(panic(msg));
+    // @ts-expect-error
+    if (errOrValue instanceof MonadError) return void(panic(msg ?? ""));
     return errOrValue;
 }
 
