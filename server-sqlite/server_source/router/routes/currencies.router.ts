@@ -22,8 +22,8 @@ router.post<PostCurrencyAPI.ResponseDTO>(`/api/v1/currencies`,
         class body implements PostCurrencyAPI.RequestDTO
         {
             @IsString() name: string;
-            @IsOptional() @IsString() @IsDecimalJSString() fallbackRateAmount: string | undefined;
-            @IsOptional() @IsString() fallbackRateCurrencyId: string | undefined;
+            @IsOptional() @IsString() @IsDecimalJSString() fallbackRateAmount: string | null;
+            @IsOptional() @IsString() fallbackRateCurrencyId: string | null;
             @IsString() ticker: string;
         }
 
@@ -35,7 +35,7 @@ router.post<PostCurrencyAPI.ResponseDTO>(`/api/v1/currencies`,
             authResult.ownerUserId,
             parsedBody.name,
             parsedBody.fallbackRateAmount ? new Decimal(parsedBody.fallbackRateAmount) : undefined,
-            parsedBody.fallbackRateCurrencyId,
+            parsedBody.fallbackRateCurrencyId ?? undefined,
             parsedBody.ticker
         );
 
@@ -58,18 +58,6 @@ router.get<GetCurrencyAPI.ResponseDTO>(`/api/v1/currencies`,
             /** Which date should the rate of this currency be calculated against */
             @IsOptional() @IsNumberString() date: string;
         }
-
-        const domainToDTO = (curr: RateHydratedCurrency) => (
-        {
-            amount: curr.currency.fallbackRateAmount,
-            id: curr.currency.id,
-            isBase: curr.currency.isBase,
-            name: curr.currency.name,
-            owner: curr.currency.owner.id,
-            rateToBase: curr.rateToBase,
-            refCurrency: curr.currency.fallbackRateCurrency?.id,
-            ticker: curr.currency.ticker
-        });
 
         const authResult = await AccessTokenService.validateRequestTokenValidated(req);
         if (authResult instanceof InvalidLoginTokenError) throw createHttpError(401);

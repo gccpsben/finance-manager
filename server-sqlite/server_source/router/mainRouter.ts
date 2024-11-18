@@ -1,4 +1,4 @@
-import express, { NextFunction, Router } from 'express';
+import express from 'express';
 import { EnvManager } from '../env.js';
 import devOnlyRouter from './routes/dev.router.js';
 import userRouter from './routes/users.router.js';
@@ -10,6 +10,7 @@ import transactionsRouter from './routes/transaction.router.js';
 import calculationsRouter from './routes/calculations.router.js';
 import currencyRateDatumRouter from './routes/currencyRateDatum.router.js';
 import currencyRateDatumSrcsRouter from './routes/currencyRateSource.router.js';
+import { ExtendedLog } from '../debug/extendedLog.js';
 
 export function getMainRouter()
 {
@@ -28,7 +29,11 @@ export function getMainRouter()
     router.use("/", calculationsRouter);
     router.use("/", currencyRateDatumRouter);
     router.use("/", currencyRateDatumSrcsRouter);
-    router.use(express.static(EnvManager.distFolderLocation));
+
+    if (EnvManager.distFolderLocation)
+        router.use(express.static(EnvManager.distFolderLocation));
+    else
+        ExtendedLog.logYellow(`distFolderLocation is not set. Static dist folder's router will not be mounted.`);
 
     return router;
 }

@@ -53,10 +53,12 @@ router.get<GetUserNetworthHistoryAPI.ResponseDTO>(`/api/v1/calculations/networth
         const authResults = await AccessTokenService.validateRequestTokenValidated(req);
         if (authResults instanceof InvalidLoginTokenError) throw createHttpError(401);
 
+        const userEarliestTxn = await TransactionService.getUserEarliestTransaction(authResults.ownerUserId);
+
         const input =
         {
             // defaults to all
-            startDate: reqQuery.startDate ?? (await TransactionService.getUserEarliestTransaction(authResults.ownerUserId)).creationDate,
+            startDate: reqQuery.startDate ?? (userEarliestTxn ? userEarliestTxn.creationDate : Date.now()),
             endDate: reqQuery.endDate ?? Date.now(),
             division: reqQuery.division ?? 100
         };

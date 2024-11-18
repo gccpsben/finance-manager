@@ -2,6 +2,7 @@ import { Repository } from "typeorm";
 import { Currency } from "../entities/currency.entity.js";
 import { Database } from "../db.js";
 import { CURRENCY_RATE_SOURCE_ENTITY_TABLE_NAME, CurrencyRateSource } from "../entities/currencyRateSource.entity.js";
+import { panic } from "../../std_errors/monadError.js";
 
 class CurrencyRepositoryExtension
 {
@@ -95,10 +96,12 @@ class CurrencyRepositoryExtension
 
 export class CurrencyRepository
 {
-    private static extendedRepo: Repository<Currency> & CurrencyRepositoryExtension = undefined;
+    private static extendedRepo: (Repository<Currency> & CurrencyRepositoryExtension) | undefined = undefined;
 
     public static getInstance()
     {
+        if (!Database.AppDataSource) return panic("Database.AppDataSource is not ready yet.");
+
         if (!CurrencyRepository.extendedRepo)
             CurrencyRepository.extendedRepo = Database.AppDataSource.getRepository(Currency).extend(new CurrencyRepositoryExtension());
 

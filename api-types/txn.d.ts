@@ -31,7 +31,7 @@ export namespace GetTxnAPI
     {
         id: string;
         title: string;
-        description: string | null;
+        description: string;
         owner: string;
         creationDate: number;
         txnType: string;

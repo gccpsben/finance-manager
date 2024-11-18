@@ -4,8 +4,8 @@ export type CurrencyDTO =
 {
     id: string;
     name: string;
-    fallbackRateAmount: string | undefined;
-    fallbackRateCurrencyId: string | undefined;
+    fallbackRateAmount: string | null;
+    fallbackRateCurrencyId: string | null;
     owner: string;
     isBase: boolean;
     ticker: string;
@@ -18,8 +18,8 @@ export namespace PostCurrencyAPI
     export type RequestDTO =
     {
         name: string;
-        fallbackRateAmount: string | undefined;
-        fallbackRateCurrencyId: string | undefined;
+        fallbackRateAmount: string | null;
+        fallbackRateCurrencyId: string | null;
         ticker: string;
     };
 }
