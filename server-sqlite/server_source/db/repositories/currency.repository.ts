@@ -100,7 +100,8 @@ export class CurrencyRepository
 
     public static getInstance()
     {
-        if (!Database.AppDataSource) return panic("Database.AppDataSource is not ready yet.");
+        if (!Database.AppDataSource)
+            throw panic("Database.AppDataSource is not ready yet.");
 
         if (!CurrencyRepository.extendedRepo)
             CurrencyRepository.extendedRepo = Database.AppDataSource.getRepository(Currency).extend(new CurrencyRepositoryExtension());

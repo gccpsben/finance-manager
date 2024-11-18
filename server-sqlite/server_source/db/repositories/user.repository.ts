@@ -1,6 +1,7 @@
 import { Repository } from "typeorm";
 import { User } from "../entities/user.entity.js";
 import { Database } from "../db.js";
+import { panic } from "../../std_errors/monadError.js";
 
 class UserRepositoryExtension
 {
@@ -14,10 +15,13 @@ class UserRepositoryExtension
 
 export class UserRepository
 {
-    private static extendedRepo: Repository<User> & UserRepositoryExtension = undefined;
+    private static extendedRepo: (Repository<User> & UserRepositoryExtension) | undefined = undefined;
 
     public static getInstance()
     {
+        if (!Database.AppDataSource)
+            throw panic("Database.AppDataSource is not ready yet.");
+
         if (!UserRepository.extendedRepo)
             UserRepository.extendedRepo = Database.AppDataSource.getRepository(User).extend(new UserRepositoryExtension());
 

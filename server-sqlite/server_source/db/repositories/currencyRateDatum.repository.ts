@@ -5,6 +5,7 @@ import { SQLitePrimitiveOnly } from "../../index.d.js";
 import { isDate } from "class-validator";
 import { RepositoryCache } from "../dataCache.js";
 import { GlobalCurrencyRateDatumsCache } from "../caches/currencyRateDatumsCache.cache.js";
+import { panic } from "../../std_errors/monadError.js";
 
 export type DifferenceHydratedCurrencyRateDatum = SQLitePrimitiveOnly<CurrencyRateDatum> &
 { difference: number }
@@ -67,8 +68,8 @@ class CurrencyRateDatumRepositoryExtension
         this: Repository<CurrencyRateDatum>,
         userId:string,
         currencyId: string,
-        startDate: Date = undefined,
-        endDate: Date = undefined
+        startDate: Date | undefined = undefined,
+        endDate: Date | undefined = undefined
     )
     {
         let query = this
@@ -86,10 +87,13 @@ class CurrencyRateDatumRepositoryExtension
 
 export class CurrencyRateDatumRepository
 {
-    private static extendedRepo: Repository<CurrencyRateDatum> & CurrencyRateDatumRepositoryExtension = undefined;
+    private static extendedRepo: (Repository<CurrencyRateDatum> & CurrencyRateDatumRepositoryExtension) | undefined = undefined;
 
     public static getInstance()
     {
+        if (!Database.AppDataSource)
+            throw panic("Database.AppDataSource is not ready yet.");
+
         if (!CurrencyRateDatumRepository.extendedRepo)
             CurrencyRateDatumRepository.extendedRepo = Database.AppDataSource.getRepository(CurrencyRateDatum).extend(new CurrencyRateDatumRepositoryExtension())
         return CurrencyRateDatumRepository.extendedRepo;
