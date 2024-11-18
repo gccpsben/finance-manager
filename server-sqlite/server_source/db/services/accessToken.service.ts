@@ -23,7 +23,8 @@ export class AccessTokenService
 {
     public static async generateTokenForUser(userId: string)
     {
-        if (!EnvManager.tokenExpiryMs) return void(panic(`AccessTokenService.generateTokenForUser: EnvManager.tokenExpiryMs is not defined.`));
+        // @ts-expect-error
+        if (!EnvManager.tokenExpiryMs) return panic(`AccessTokenService.generateTokenForUser: EnvManager.tokenExpiryMs is not defined.`) as AccessToken;
 
         const targetUser = await UserRepository.getInstance().findOne({where: {id: userId}});
         if (!targetUser) return new UserNotFoundError(userId);

@@ -1,6 +1,7 @@
 import { Database } from "../db.js";
 import { Repository } from "typeorm";
 import { AccessToken } from "../entities/accessToken.entity.js";
+import { panic } from "../../std_errors/monadError.js";
 
 class AccessTokenRepositoryExtension
 {
@@ -14,10 +15,13 @@ class AccessTokenRepositoryExtension
 
 export class AccessTokenRepository
 {
-    private static extendedRepo: Repository<AccessToken> & AccessTokenRepositoryExtension = undefined;
+    private static extendedRepo: (Repository<AccessToken> & AccessTokenRepositoryExtension) | undefined = undefined;
 
     public static getInstance()
     {
+        if (!Database.AppDataSource)
+            throw panic("Database.AppDataSource is not ready yet.");
+
         if (!AccessTokenRepository.extendedRepo)
             AccessTokenRepository.extendedRepo = Database.AppDataSource.getRepository(AccessToken).extend(new AccessTokenRepositoryExtension())
         return AccessTokenRepository.extendedRepo;

@@ -1,5 +1,5 @@
-import { IsNotEmpty, IsString, validate } from 'class-validator';
-import { UserService } from '../../db/services/user.service.js';
+import { IsNotEmpty, IsString } from 'class-validator';
+import { UserNotFoundError, UserService } from '../../db/services/user.service.js';
 import express, { NextFunction } from 'express';
 import { ExpressValidations } from '../validation.js';
 import { AccessTokenService } from '../../db/services/accessToken.service.js';
@@ -22,7 +22,9 @@ router.post<PostLoginAPI.ResponseDTO>("/api/v1/auth/login",
         await ExpressValidations.validateBodyAgainstModel<body>(body, req.body);
         const authResult = await UserService.validatePassword(req.body.username, req.body.password);
         if (!authResult.success) throw createHttpError(401);
-        const newToken = await AccessTokenService.generateTokenForUser(authResult.userId);
+        const newToken = await AccessTokenService.generateTokenForUser(authResult.userId!);
+        if (newToken instanceof UserNotFoundError) throw createHttpError(401);
+
         return {
             token: newToken.token,
             creationDate: newToken.creationDate,
