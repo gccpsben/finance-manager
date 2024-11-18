@@ -12,6 +12,7 @@ import currencyTests from './currency.test.js';
 import txnTypeTests from './txnType.test.js';
 import transactionTests from './transaction.test.js';
 import calculationsTest, { testForCalculationsInternals } from './calculations.test.js';
+import { exit } from 'process';
 export type HTTPMethod = "GET" | "PATCH" | "POST" | "DELETE";
 
 export type TestUserEntry =
@@ -116,4 +117,5 @@ await (async () =>
     }
 
     (Server.expressServer as HTTPServer).close();
+    exit();
 })();
