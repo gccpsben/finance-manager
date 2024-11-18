@@ -45,7 +45,7 @@ export class ExtendedLog
         (
             (time: Date, index: number) =>
             {
-                return path.join(EnvManager.logsFolderPath, ExtendedLog.generateLogFileName(time, index));
+                return path.join(EnvManager.logsFolderPath!, ExtendedLog.generateLogFileName(time, index));
             },
             {
                 interval: '1M'

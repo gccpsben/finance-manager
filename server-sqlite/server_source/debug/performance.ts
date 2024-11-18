@@ -5,7 +5,7 @@ export class TimeDiffer
     public startDate: Date;
     public prefix: string | undefined;
     public isLapseMode = false;
-    private lastMarkTime: Date = undefined;
+    private lastMarkTime: Date;
     private lapseCount = 0;
 
     public constructor(prefix? : string | undefined, isLapseMode = false)
