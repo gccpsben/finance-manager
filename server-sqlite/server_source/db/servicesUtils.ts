@@ -1,5 +1,6 @@
 import { Decimal } from "decimal.js";
 import { SelectQueryBuilder } from "typeorm";
+import { OwnedEntity } from "./ownedEntity.js";
 
 export const nameof = <T>(name: Extract<keyof T, string>): string => name;
 export namespace ServiceUtils
@@ -55,6 +56,16 @@ export namespace ServiceUtils
         for (const entry of entries)
             output[entry[0]] = entry[1];
         return output;
+    }
+
+    export function ensureEntityOwnership(entity: OwnedEntity[] | OwnedEntity, expectedOwnerId: string)
+    {
+        const entities = Array.isArray(entity) ? entity : [entity];
+        for (const entity of entities)
+        {
+            if (entity.ownerId !== expectedOwnerId)
+                throw new Error("Owner mismatch.");
+        }
     }
 }
 
