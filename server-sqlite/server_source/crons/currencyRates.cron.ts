@@ -24,7 +24,7 @@ export class CurrencyRatesCRON implements CronService
         this.mainIntervalId = setInterval(async () =>
         {
             // Fetch all currencies (using repository)
-            const allCurrenciesToBeUpdated = (await CurrencyRepository.getInstance().getAllUsersCurrWithSources());
+            const allCurrenciesToBeUpdated = await CurrencyRepository.getInstance().getAllUsersCurrWithSources();
             for (const [_currencyId, { currency, rateSources }] of Object.entries(allCurrenciesToBeUpdated))
             {
                 if (rateSources.length === 0) continue;
@@ -37,11 +37,13 @@ export class CurrencyRatesCRON implements CronService
 
                 const currencyObj = (await CurrencyService.getCurrencyByIdWithoutCache(currency.ownerId, currency.id));
                 if (currencyObj instanceof UserNotFoundError) continue;
+                if (currencyObj === null) continue;
 
                 // Loop through all rate sources for this currency until one succeeds.
                 for (const src of sourcesSortedByLeastUsed)
                 {
                     const fullRateSrc = await CurrencyRateSourceRepository.getInstance().findOneBy({id: src.id ?? null});
+                    if (!fullRateSrc) continue;
 
                     currencyObj.lastRateCronUpdateTime = Date.now();
                     await CurrencyRepository.getInstance().save(currencyObj);
