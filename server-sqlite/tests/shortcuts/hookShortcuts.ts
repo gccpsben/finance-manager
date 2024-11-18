@@ -8,12 +8,13 @@ import { PostTxnTypesAPI } from '../../../api-types/txnType.js';
 import { PostLoginAPIClass } from '../auth.test.js';
 import { GetUserBalanceHistoryAPIClass, GetUserNetworthHistoryAPIClass, ResponseGetExpensesAndIncomesDTOClass } from '../calculations.test.js';
 import { GetContainerAPIClass, PostContainerAPIClass } from '../container.test.js';
-import { PostCurrencyAPIClass } from '../currency.test.js';
+import { PostCurrencyAPIClass, PostCurrencyRateSourceAPIClass } from '../currency.test.js';
 import { TestUserDict, TestUserEntry, UnitTestEndpoints } from '../index.test.js';
 import { AssertFetchReturns, HTTPAssert } from '../lib/assert.js';
 import { GetTxnAPIClass, PostTxnAPIClass } from '../transaction.test.js';
 import { ResponsePostTransactionTypesDTOBody } from '../txnType.test.js';
 import { GetTxnAPI, PutTxnAPI } from '../../../api-types/txn.js';
+import { PostCurrencyRateSrcAPI } from '../../../api-types/currencyRateSource.js';
 
 function choice<T> (list: T[]) { return list[Math.floor((Math.random()*list.length))]; }
 
@@ -238,6 +239,26 @@ export class HookShortcuts
             ...response,
             currencyId: response.parsedBody?.id as string | undefined
         };
+    }
+
+    public static async postCreateCurrencyRateSource(config:
+    {
+        serverURL:string,
+        token:string,
+        body: Partial<PostCurrencyRateSrcAPI.RequestDTO>,
+        assertBody?: boolean,
+        expectedCode?: number
+    })
+    {
+        const assertBody = config.assertBody === undefined ? true : config.assertBody;
+        const response = await HTTPAssert.assertFetch(UnitTestEndpoints.currencyRateSourcesEndpoints['post'],
+        {
+            baseURL: config.serverURL, expectedStatus: config.expectedCode, method: "POST",
+            body: config.body,
+            headers: { "authorization": config.token },
+            expectedBodyType: assertBody ? PostCurrencyRateSourceAPIClass.ResponseDTO : undefined
+        });
+        return response;
     }
 
     /** Random tnx types with unique names */

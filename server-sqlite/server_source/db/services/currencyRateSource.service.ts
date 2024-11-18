@@ -50,6 +50,35 @@ export class ExecuteCurrencyRateSourceError<T extends Error> extends MonadError<
 
 export class CurrencyRateSourceService
 {
+    public static async createCurrencyRateSource
+    (
+        ownerId: string,
+        hostname: string,
+        name: string,
+        jsonQueryString: string,
+        path: string,
+        refAmountCurrencyId: string,
+        refCurrencyId: string,
+    ): Promise<CurrencyRateSource | CurrencyNotFoundError>
+    {
+        const newCurrencyRateSource = CurrencyRateSourceRepository.getInstance().create();
+        newCurrencyRateSource.hostname = hostname;
+        newCurrencyRateSource.ownerId = ownerId;
+        newCurrencyRateSource.name = name;
+        newCurrencyRateSource.jsonQueryString = jsonQueryString;
+        newCurrencyRateSource.path = path;
+
+        const refCurrency = await CurrencyService.getCurrencyByIdWithoutCache(ownerId, refCurrencyId);
+        const refAmountCurrency = await CurrencyService.getCurrencyByIdWithoutCache(ownerId, refAmountCurrencyId);
+
+        if (refCurrency === null) return new CurrencyNotFoundError(refCurrencyId, ownerId);
+        if (refAmountCurrency === null) return new CurrencyNotFoundError(refAmountCurrencyId, ownerId);
+
+        newCurrencyRateSource.refAmountCurrencyId = refAmountCurrencyId;
+        newCurrencyRateSource.refCurrencyId = refCurrencyId;
+        return await CurrencyRateSourceRepository.getInstance().save(newCurrencyRateSource);
+    }
+
     public static async getUserCurrencyRatesSources
     (
         ownerId: string

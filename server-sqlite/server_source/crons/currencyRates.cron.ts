@@ -1,7 +1,7 @@
 import { CurrencyRepository } from "../db/repositories/currency.repository.js";
 import { CurrencyRateSourceRepository } from "../db/repositories/currencyRateSource.repository.js";
 import { CurrencyNotFoundError, CurrencyService } from "../db/services/currency.service.js";
-import { CurrencyRateSourceService, ExecuteCurrencyRateSourceError } from "../db/services/currencyRateSource.serivce.js";
+import { CurrencyRateSourceService, ExecuteCurrencyRateSourceError } from "../db/services/currencyRateSource.service.js";
 import { UserNotFoundError } from "../db/services/user.service.js";
 import { ExtendedLog } from "../debug/extendedLog.js";
 import { CronService } from "./cronService.js";

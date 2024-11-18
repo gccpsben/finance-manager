@@ -9,6 +9,7 @@ import transactionTypesRouter from './routes/transactionType.router.js';
 import transactionsRouter from './routes/transaction.router.js';
 import calculationsRouter from './routes/calculations.router.js';
 import currencyRateDatumRouter from './routes/currencyRateDatum.router.js';
+import currencyRateDatumSrcsRouter from './routes/currencyRateSource.router.js';
 
 export function getMainRouter()
 {
@@ -26,6 +27,7 @@ export function getMainRouter()
     router.use("/", transactionsRouter);
     router.use("/", calculationsRouter);
     router.use("/", currencyRateDatumRouter);
+    router.use("/", currencyRateDatumSrcsRouter);
     router.use(express.static(EnvManager.distFolderLocation));
 
     return router;

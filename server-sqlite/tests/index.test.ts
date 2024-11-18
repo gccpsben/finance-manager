@@ -65,6 +65,10 @@ export class UnitTestEndpoints
         "get": `/api/v1/transactions`,
         "put": `/api/v1/transactions`
     };
+    public static currencyRateSourcesEndpoints =
+    {
+        "post": `/api/v1/currencyRateSources`,
+    };
 }
 
 export async function resetDatabase()
