@@ -69,6 +69,7 @@ export class UnitTestEndpoints
     public static currencyRateSourcesEndpoints =
     {
         "post": `/api/v1/currencyRateSources`,
+        "get": `/api/v1/currencyRateSources`,
     };
 }
 

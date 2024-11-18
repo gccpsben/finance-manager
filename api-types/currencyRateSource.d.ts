@@ -12,3 +12,22 @@ export namespace PostCurrencyRateSrcAPI
 
     export type ResponseDTO = { id: string; };
 }
+
+export namespace GetCurrencyRateSrcAPI
+{
+    export type RequestDTO = { targetCurrencyId: string; };
+    export type ResponseDTO =
+    {
+        sources:
+        {
+            refCurrencyId: string;
+            refAmountCurrencyId: string;
+            hostname: string;
+            path: string;
+            jsonQueryString: string;
+            name: string;
+            id: string;
+            lastExecuteTime: number | null;
+        }[];
+    };
+}

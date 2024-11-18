@@ -1,6 +1,6 @@
 import { TypesafeRouter } from "../typescriptRouter.js";
 import express from 'express';
-import type { PostCurrencyRateSrcAPI } from "../../../../api-types/currencyRateSource.js";
+import type { GetCurrencyRateSrcAPI, PostCurrencyRateSrcAPI } from "../../../../api-types/currencyRateSource.js";
 import { IsString } from "class-validator";
 import { AccessTokenService, InvalidLoginTokenError } from "../../db/services/accessToken.service.js";
 import createHttpError from "http-errors";
@@ -9,6 +9,37 @@ import { CurrencyRateSourceService } from "../../db/services/currencyRateSource.
 import { CurrencyNotFoundError } from "../../db/services/currency.service.js";
 
 const router = new TypesafeRouter(express.Router());
+
+router.get<GetCurrencyRateSrcAPI.ResponseDTO>(`/api/v1/currencyRateSources`,
+{
+    handler: async (req: express.Request, res: express.Response) =>
+    {
+        const authResult = await AccessTokenService.validateRequestTokenValidated(req);
+        if (authResult instanceof InvalidLoginTokenError) throw createHttpError(401);
+
+        class query implements GetCurrencyRateSrcAPI.RequestDTO
+        {
+            @IsString() targetCurrencyId: string;
+        }
+
+        const parsedQuery = await ExpressValidations.validateBodyAgainstModel<query>(query, req.query);
+        const rateSources = await CurrencyRateSourceService.getUserCurrencyRatesSourcesOfCurrency(authResult.ownerUserId, parsedQuery.targetCurrencyId);
+
+        return {
+            sources: rateSources.map(s => (
+            {
+                hostname: s.hostname,
+                refCurrencyId: s.refCurrencyId,
+                refAmountCurrencyId: s.refAmountCurrencyId,
+                path: s.path,
+                jsonQueryString: s.jsonQueryString,
+                name: s.name,
+                lastExecuteTime: s.lastExecuteTime,
+                id: s.id
+            }))
+        };
+    }
+});
 
 router.post<PostCurrencyRateSrcAPI.ResponseDTO>(`/api/v1/currencyRateSources`,
 {
