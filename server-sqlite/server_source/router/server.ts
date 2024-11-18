@@ -137,8 +137,8 @@ export class Server
         {
             try
             {
-                sslKeyFile = readFileSync(EnvManager.sslKeyFullPath);
-                sslPemFile = readFileSync(EnvManager.sslPemFullPath);
+                sslKeyFile = readFileSync(EnvManager.sslKeyFullPath!);
+                sslPemFile = readFileSync(EnvManager.sslPemFullPath!);
             }
             catch(e)
             {

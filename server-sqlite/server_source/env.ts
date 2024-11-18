@@ -136,7 +136,7 @@ export class EnvManager
     public static restfulLogMode: RESTfulLogType;
     public static envType:EnvType = "Production";
 
-    public static readEnv(filePath:string): null | ReadEnvError<DirNotFoundError | Error>
+    public static readEnv(filePath:string): undefined | ReadEnvError<DirNotFoundError | Error>
     {
         try
         {
@@ -182,7 +182,7 @@ export class EnvManager
             if (sqliteFilePath && sqliteInMemory)
                 return new ParseEnvError(new InvalidSqliteConfigInEnvError());
 
-            if (!sqliteInMemory) EnvManager.sqliteFilePath = path.resolve(process.env.SQLITE_FILE_PATH);
+            if (!sqliteInMemory) EnvManager.sqliteFilePath = path.resolve(process.env.SQLITE_FILE_PATH!);
             else EnvManager.sqliteInMemory = true;
         }
 
@@ -241,21 +241,28 @@ export class EnvManager
             EnvManager.tokenExpiryMs = parseInt(process.env[keyName]);
         }
 
-        {
+        ssl: {
             const sslKeyPathKeyName = `SSL_KEY_PATH`;
             const sslPemPathKeyName = `SSL_PEM_PATH`;
 
             const sslEnabled = process.env[sslKeyPathKeyName] && process.env[sslPemPathKeyName];
-            if (!sslEnabled) return;
+            if (!sslEnabled) break ssl;
+
+            if (!process.env[sslKeyPathKeyName]) return new ParseEnvError(new MissingPropInEnvError(sslKeyPathKeyName));
+            if (!process.env[sslPemPathKeyName]) return new ParseEnvError(new MissingPropInEnvError(sslPemPathKeyName));
 
             EnvManager.sslKeyFullPath = path.resolve(path.join(process.cwd(), process.env[sslKeyPathKeyName]));
             EnvManager.sslPemFullPath = path.resolve(path.join(process.cwd(), process.env[sslPemPathKeyName]));
         }
 
-        {
+        restLog: {
             const keyName = `RESTFUL_LOG_MODE`;
             const keyValue = process.env[keyName];
-            if (!keyValue) return void(EnvManager.restfulLogMode = RESTfulLogType.TO_BOTH);
+            if (!keyValue)
+            {
+                EnvManager.restfulLogMode = RESTfulLogType.TO_BOTH;
+                break restLog;
+            }
 
             if (!(keyValue in RESTfulLogType))
                 return new ParseEnvError(new InvalidRESTfulLogTypeInEnvError(keyValue));
@@ -270,7 +277,7 @@ export class EnvManager
 
     public static getEnvType(): EnvType | UnknownEnvTypeError
     {
-        const envTypeRaw = process.env.NODE_ENV.toLowerCase();
+        const envTypeRaw = (process.env.NODE_ENV ?? "").toLowerCase();
         if (envTypeRaw == "development") return "Development";
         if (envTypeRaw == "dev") return "Development";
         if (envTypeRaw == "test") return "UnitTest";

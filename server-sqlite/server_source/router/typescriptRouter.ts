@@ -2,12 +2,12 @@ import express, { NextFunction, Router } from "express";
 
 export type TypesafeRouteConfig<BodyType> =
 {
-    handler?: (req: Express.Request, res: Express.Response) => Promise<BodyType> | never
+    handler: (req: Express.Request, res: Express.Response) => Promise<BodyType> | never
 }
 
 export class TypesafeRouter
 {
-    private _router: Router = undefined;
+    private _router: Router;
     public getRouter() { return this._router; }
 
     public constructor(router: Router) { this._router = router; }

@@ -6,6 +6,7 @@ import { Server } from "./router/server.js";
 import { CreateAppDataSourceError, Database, DatabaseInitError } from "./db/db.js";
 import { Decimal } from 'decimal.js';
 import { CronRunner } from './crons/cronService.js';
+import { panic } from './std_errors/monadError.js';
 
 // `main` should be called to initialize the app.
 // This is the entry point of the app.
@@ -79,6 +80,9 @@ export async function main(envFilePath: string | undefined)
 
         // Start Server
         {
+            if (!EnvManager.serverPort)
+                throw panic("Server port is not defined in env.");
+
             await Server.startServer
             (
                 EnvManager.serverPort,
