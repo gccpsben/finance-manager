@@ -1,5 +1,6 @@
 import NodeCache from "node-cache";
 import { Currency } from "../entities/currency.entity.js";
+import { IdBound } from "../../index.d.js";
 
 export class CurrencyCache
 {
@@ -14,7 +15,7 @@ export class CurrencyCache
     (
         userId: string,
         currencyId: string,
-        datums: Currency
+        datums: IdBound<Currency>
     )
     {
         this.#nodeCache.set(this.makeEntryKey(userId, currencyId), datums);
@@ -33,7 +34,7 @@ export class CurrencyCache
     (
         userId: string,
         currencyId: string
-    ): Currency | undefined
+    ): IdBound<Currency> | undefined
     {
         return this.#nodeCache.get(this.makeEntryKey(userId, currencyId));
     }

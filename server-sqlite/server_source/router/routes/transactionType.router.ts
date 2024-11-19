@@ -79,7 +79,7 @@ router.post<PostTxnTypesAPI.ResponseDTO>(`/api/v1/transactionTypes`,
         {
             id: createdType.id,
             name: createdType.name,
-            owner: createdType.owner.id
+            owner: createdType.ownerId
         });
     }
 });

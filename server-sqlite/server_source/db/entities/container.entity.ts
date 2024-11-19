@@ -1,6 +1,6 @@
-import { Check, Column, Entity, JoinColumn, ManyToOne, PrimaryGeneratedColumn, Relation, Unique } from "typeorm";
+import { Column, Entity, JoinColumn, ManyToOne, PrimaryGeneratedColumn, Relation, Unique } from "typeorm";
 import { EntityClass } from "../dbEntityBase.js";
-import { IsDate, IsNotEmpty, IsNumber, IsString, MaxLength } from "class-validator";
+import { IsNotEmpty, IsString, MaxLength } from "class-validator";
 import { User } from "./user.entity.js";
 import { EnsureNotPlainForeignKey, IsUTCDateInt } from "../validators.js";
 
@@ -9,7 +9,7 @@ import { EnsureNotPlainForeignKey, IsUTCDateInt } from "../validators.js";
 export class Container extends EntityClass
 {
     @PrimaryGeneratedColumn('uuid')
-    id: string;
+    id: string | null;
 
     @Column({ nullable: false, unique: false })
     @MaxLength(256)
@@ -27,5 +27,5 @@ export class Container extends EntityClass
     @ManyToOne(type => User, user => user.containers, { nullable: false })
     @JoinColumn()
     @EnsureNotPlainForeignKey()
-    owner: Relation<User>;
+    owner: Relation<User> | null;
 }

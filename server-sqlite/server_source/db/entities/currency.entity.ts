@@ -2,7 +2,7 @@ import { Entity, PrimaryGeneratedColumn, Column, BeforeInsert, BeforeUpdate, Joi
 import "reflect-metadata"
 import { ManyToOne } from "typeorm";
 import { User } from "./user.entity.js";
-import { IsBoolean, IsDate, IsNotEmpty, isNumber, IsObject, IsOptional, IsString, MaxLength, validate, ValidationError } from "class-validator";
+import { IsBoolean, IsNotEmpty, IsOptional, IsString, MaxLength, ValidationError } from "class-validator";
 import { EntityClass } from "../dbEntityBase.js";
 import { CurrencyRepository } from "../repositories/currency.repository.js";
 import { EnsureNotPlainForeignKey, IsDecimalJSString } from "../validators.js";
@@ -18,7 +18,7 @@ import { CurrencyRateSource } from "./currencyRateSource.entity.js";
 export class Currency extends EntityClass
 {
     @PrimaryGeneratedColumn('uuid')
-    id: string;
+    id: string | null;
 
     @Column({nullable: false})
     @IsNotEmpty()
@@ -26,14 +26,14 @@ export class Currency extends EntityClass
     @MaxLength(128)
     name: string;
 
-    @Column({nullable: true})
+    @Column({nullable: true, type: String})
     @IsOptional()
     @IsString()
     @IsDecimalJSString()
-    fallbackRateAmount?: string;
+    fallbackRateAmount?: string | null;
 
-    @Column( { nullable: true })
-    fallbackRateCurrencyId?: string;
+    @Column( { nullable: true, type: String })
+    fallbackRateCurrencyId?: string | null;
 
     @ManyToOne(type => Currency, currency => currency.fallbackRateCurrency, { nullable: true })
     @JoinColumn()
@@ -46,7 +46,7 @@ export class Currency extends EntityClass
     @ManyToOne(type => User, user => user.currencies, { nullable: false })
     @JoinColumn()
     @EnsureNotPlainForeignKey()
-    owner: Relation<User>;
+    owner: Relation<User> | null;
 
     @OneToMany(type => CurrencyRateSource, currencyRateSource => currencyRateSource.refCurrency)
     @EnsureNotPlainForeignKey()
@@ -61,8 +61,8 @@ export class Currency extends EntityClass
     @IsNotEmpty()
     ticker: string;
 
-    @Column({ nullable: true })
-    lastRateCronUpdateTime?: number;
+    @Column({ nullable: true, type: Number })
+    lastRateCronUpdateTime?: number | null;
 
     @BeforeInsert()
     @BeforeUpdate()
@@ -84,7 +84,7 @@ export class Currency extends EntityClass
             {
                 where:
                 {
-                    owner: { id: this.owner.id },
+                    owner: { id: this.ownerId },
                     isBase: true
                 },
                 relations: { owner: true }

@@ -34,8 +34,9 @@ export class AccessTokenService
         newToken.owner = targetUser;
         newToken.creationDate = Date.now();
         newToken.expiryDate = newToken.creationDate + EnvManager.tokenExpiryMs;
-        await AccessTokenRepository.getInstance().save(newToken);
-        return newToken;
+        const newlySavedToken = await AccessTokenRepository.getInstance().save(newToken);
+        if (!newlySavedToken.token) throw panic(`Newly saved token contains falsy token column.`);
+        return newToken as (typeof newToken & { token: string });
     }
 
     /** Check if a token is valid, and which user it refers to. */
@@ -49,13 +50,13 @@ export class AccessTokenService
             return {
                 isTokenValid: false,
                 tokenFound: true,
-                ownerUserId: tokenInDatabase.owner.id
+                ownerUserId: tokenInDatabase.ownerId
             }
         }
         return {
             isTokenValid: true,
             tokenFound: true,
-            ownerUserId: tokenInDatabase.owner.id
+            ownerUserId: tokenInDatabase.ownerId
         }
     }
 
@@ -69,7 +70,8 @@ export class AccessTokenService
             return {
                 expiryDate: incompleteRow.expiryDate,
                 creationDate: incompleteRow.creationDate,
-                token: incompleteRow.token
+                token: incompleteRow.token,
+                ownerId: userId
             } satisfies SQLitePrimitiveOnly<AccessToken>
         });
     }

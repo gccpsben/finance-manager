@@ -1,9 +1,10 @@
 import { UserNotFoundError, UserService } from "./user.service.js";
-import { CurrencyRateDatumRepository, CurrencyRateDatumsCache } from "../repositories/currencyRateDatum.repository.js";
+import { CurrencyRateDatumRepository } from "../repositories/currencyRateDatum.repository.js";
 import { CurrencyCalculator, CurrencyNotFoundError, CurrencyService } from "./currency.service.js";
 import { Decimal } from "decimal.js";
 import { CurrencyRateDatum } from "../entities/currencyRateDatum.entity.js";
-import { unwrap } from "../../std_errors/monadError.js";
+import { panic, unwrap } from "../../std_errors/monadError.js";
+import { IdBound } from "../../index.d.js";
 
 
 function minAndMax<T> (array: T[], getter: (obj:T) => number)
@@ -41,7 +42,7 @@ export class CurrencyRateDatumService
         date: number,
         currencyId: string,
         amountCurrencyId: string
-    ): Promise<CurrencyRateDatum | UserNotFoundError | CurrencyNotFoundError>
+    ): Promise<IdBound<CurrencyRateDatum> | UserNotFoundError | CurrencyNotFoundError>
     {
         const newRate = CurrencyRateDatumRepository.getInstance().create();
         newRate.amount = amount.toString();
@@ -60,7 +61,9 @@ export class CurrencyRateDatumService
 
         newRate.refCurrency = refCurrency;
         newRate.refAmountCurrency = refAmountCurrency;
-        return CurrencyRateDatumRepository.getInstance().save(newRate);
+        const newlySavedDatum = await CurrencyRateDatumRepository.getInstance().save(newRate);
+        if (!newlySavedDatum.id) throw panic(`Newly saved currency rate datum contains falsy IDs.`);
+        return newlySavedDatum as IdBound<typeof newlySavedDatum>;
     }
 
     public static async getCurrencyRateHistory

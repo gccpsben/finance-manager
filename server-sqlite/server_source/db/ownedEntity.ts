@@ -4,10 +4,5 @@ import { User } from "./entities/user.entity.js";
 export interface OwnedEntity
 {
     ownerId: string;
-    owner: Relation<User>;
-}
-
-export interface UniqueIDEntity
-{
-    id: string;
+    owner: Relation<User> | null;
 }

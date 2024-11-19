@@ -2,7 +2,6 @@ import { Entity, Column, PrimaryColumn, Relation } from "typeorm";
 import "reflect-metadata"
 import { ManyToOne } from "typeorm";
 import { User } from "./user.entity.js";
-import { IsDate, validate } from "class-validator";
 import { EntityClass } from "../dbEntityBase.js";
 import { EnsureNotPlainForeignKey, IsUTCDateInt } from "../validators.js";
 
@@ -20,7 +19,10 @@ export class AccessToken extends EntityClass
     @IsUTCDateInt()
     expiryDate: number;
 
+    @Column( { nullable: false })
+    ownerId: string;
+
     @ManyToOne(type => User, user => user.accessTokens, { nullable: false })
     @EnsureNotPlainForeignKey()
-    owner: Relation<User>;
+    owner: Relation<User> | null;
 }

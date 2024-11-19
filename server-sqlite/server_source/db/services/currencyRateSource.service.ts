@@ -1,5 +1,5 @@
 import path from "path";
-import { MonadError, NestableError, NestableErrorSymbol, unwrap } from "../../std_errors/monadError.js";
+import { MonadError, NestableError, NestableErrorSymbol, panic, unwrap } from "../../std_errors/monadError.js";
 import { CurrencyRateSource } from "../entities/currencyRateSource.entity.js";
 import { CurrencyRateSourceRepository } from "../repositories/currencyRateSource.repository.js";
 import { ServiceUtils } from "../servicesUtils.js";
@@ -10,6 +10,7 @@ import jmespath from 'jmespath';
 import { CurrencyRateDatumService } from "./currencyRateDatum.service.js";
 import { Decimal } from "decimal.js";
 import { CurrencyRateDatum } from "../entities/currencyRateDatum.entity.js";
+import { IdBound } from "../../index.d.js";
 
 export class InvalidNumberError extends MonadError<typeof InvalidNumberError.ERROR_SYMBOL>
 {
@@ -59,7 +60,7 @@ export class CurrencyRateSourceService
         path: string,
         refAmountCurrencyId: string,
         refCurrencyId: string,
-    ): Promise<CurrencyRateSource | CurrencyNotFoundError>
+    ): Promise<IdBound<CurrencyRateSource> | CurrencyNotFoundError>
     {
         const newCurrencyRateSource = CurrencyRateSourceRepository.getInstance().create();
         newCurrencyRateSource.hostname = hostname;
@@ -76,7 +77,9 @@ export class CurrencyRateSourceService
 
         newCurrencyRateSource.refAmountCurrencyId = refAmountCurrencyId;
         newCurrencyRateSource.refCurrencyId = refCurrencyId;
-        return await CurrencyRateSourceRepository.getInstance().save(newCurrencyRateSource);
+        const newlySavedSrc = await CurrencyRateSourceRepository.getInstance().save(newCurrencyRateSource);
+        if (!newlySavedSrc.id) throw panic(`Newly saved currency rate source contain falsy IDs.`);
+        return newlySavedSrc as IdBound<typeof newlySavedSrc>;
     }
 
     public static async getUserCurrencyRatesSources
@@ -94,12 +97,16 @@ export class CurrencyRateSourceService
     (
         ownerId: string,
         currencyId: string
-    )
+    ): Promise<IdBound<CurrencyRateSource>[]>
     {
         const userCurrencyRateSources = await CurrencyRateSourceRepository
         .getInstance()
         .find({ where: { ownerId: ownerId ?? null, refCurrencyId: currencyId ?? null } });
-        return userCurrencyRateSources;
+
+        if (userCurrencyRateSources.some(x => !x.id))
+            throw panic(`CurrencyRateSources queried from database contain falsy IDs.`);
+
+        return userCurrencyRateSources as IdBound<typeof userCurrencyRateSources[0]>[]
     }
 
     /**

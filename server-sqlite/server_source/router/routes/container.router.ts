@@ -12,6 +12,9 @@ import { Decimal } from 'decimal.js';
 import createHttpError from 'http-errors';
 import { unwrap } from '../../std_errors/monadError.js';
 import { UserNotFoundError } from '../../db/services/user.service.js';
+import type { SQLitePrimitiveOnly } from '../../index.d.js';
+import { Container } from '../../db/entities/container.entity.js';
+import type { IdBound } from '../../index.d.js';
 
 const router = new TypesafeRouter(express.Router());
 
@@ -41,7 +44,7 @@ router.get<GetContainerAPI.ResponseDTO>(`/api/v1/containers`,
             currencyRateDate: parsedQuery.currencyRateDate ? parseInt(parsedQuery.currencyRateDate) : Date.now()
         };
 
-        const response = await PaginationAPIResponseClass.prepareFromQueryItems
+        const response = await PaginationAPIResponseClass.prepareFromQueryItems<IdBound<SQLitePrimitiveOnly<Container>>>
         (
             await ContainerService.getManyContainers(authResult.ownerUserId,
             {

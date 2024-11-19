@@ -50,7 +50,7 @@ import { TransactionType } from "./transactionType.entity.js";
 export class Transaction extends EntityClass
 {
     @PrimaryGeneratedColumn("uuid")
-    id: string;
+    id: string | null;
 
     @Column({ nullable: false })
     @IsString()
@@ -59,12 +59,12 @@ export class Transaction extends EntityClass
     @Index({fulltext: true})
     title: string;
 
-    @Column({ nullable: true })
+    @Column({ nullable: true, type: String })
     @IsOptional()
     @IsString()
     @MaxLength(5128)
     @Index({fulltext: true})
-    description?: string;
+    description: string | null;
 
     @Column( { nullable: false })
     ownerId: string;
@@ -72,7 +72,7 @@ export class Transaction extends EntityClass
     @ManyToOne(type => User, user => user.transactions, { nullable: false })
     @JoinColumn({ name: "ownerId" })
     @EnsureNotPlainForeignKey()
-    owner: Relation<User>;
+    owner: Relation<User> | null;
 
     @Column({ type: "int", nullable: false })
     @IsUTCDateInt()
@@ -87,14 +87,14 @@ export class Transaction extends EntityClass
     txnType: Relation<TransactionType> | null;
 
     // #region From
-    @Column( { nullable: true } )
+    @Column( { nullable: true, type: String } )
     @IsOptional()
     @IsString()
     @IsDecimalJSString()
-    fromAmount?: string;
+    fromAmount: string | null;
 
-    @Column({nullable: true})
-    fromCurrencyId?: string;
+    @Column({nullable: true, type: String})
+    fromCurrencyId: string | null;
 
     @JoinColumn({ name: "fromCurrencyId" })
     @EnsureNotPlainForeignKey()
@@ -111,14 +111,14 @@ export class Transaction extends EntityClass
     // #endregion
 
     // #region To
-    @Column( { nullable: true } )
+    @Column( { nullable: true, type: String } )
     @IsOptional()
     @IsString()
     @IsDecimalJSString()
-    toAmount?: string;
+    toAmount: string | null;
 
     @Column({nullable: true})
-    toCurrencyId?: string;
+    toCurrencyId: string | null;
 
     @JoinColumn({ name: "toCurrencyId" })
     @EnsureNotPlainForeignKey()
@@ -126,7 +126,7 @@ export class Transaction extends EntityClass
     toCurrency: Relation<Currency> | null;
 
     @Column({nullable: true})
-    toContainerId?: string;
+    toContainerId: string | null;
 
     @JoinColumn({ name: "toContainerId" })
     @EnsureNotPlainForeignKey()

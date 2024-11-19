@@ -1,7 +1,6 @@
-import createHttpError from "http-errors";
 import { ContainerRepository } from "../repositories/container.repository.js";
 import { UserRepository } from "../repositories/user.repository.js";
-import { SQLitePrimitiveOnly } from "../../index.d.js";
+import { IdBound, SQLitePrimitiveOnly } from "../../index.d.js";
 import { Container } from "../entities/container.entity.js";
 import { nameof, ServiceUtils } from "../servicesUtils.js";
 import { TransactionService } from "./transaction.service.js";
@@ -10,7 +9,7 @@ import { CurrencyCalculator, CurrencyService } from "./currency.service.js";
 import { Currency } from "../entities/currency.entity.js";
 import { GlobalCurrencyCache } from "../caches/currencyListCache.cache.js";
 import { UserNotFoundError, UserService } from "./user.service.js";
-import { MonadError, unwrap } from "../../std_errors/monadError.js";
+import { MonadError, panic, unwrap } from "../../std_errors/monadError.js";
 
 export class ContainerNotFoundError extends MonadError<typeof ContainerNotFoundError.ERROR_SYMBOL>
 {
@@ -70,6 +69,7 @@ export class ContainerService
     }
 
     public static async createContainer(ownerId: string, name: string, creationDate: number = Date.now())
+        : Promise<IdBound<Container> | UserNotFoundError | ContainerExistsError>
     {
         const containerWithSameName = await ContainerService.tryGetContainerByName(ownerId, name);
         if (containerWithSameName.containerFound) return new ContainerExistsError(name, ownerId);
@@ -79,7 +79,9 @@ export class ContainerService
         newContainer.creationDate = creationDate;
         newContainer.name = name;
         newContainer.owner = owner;
-        return await ContainerRepository.getInstance().save(newContainer);
+        const savedNewContainer = await ContainerRepository.getInstance().save(newContainer);
+        if (!savedNewContainer.id) throw panic(`Container saved to database contain falsy IDs.`);
+        return savedNewContainer as (IdBound<typeof savedNewContainer>);
     }
 
     public static async getOneContainer(ownerId: string, query: {
@@ -107,7 +109,7 @@ export class ContainerService
             name?: string | undefined,
             id?: string | undefined
         }
-    ): Promise<{ totalCount: number, rangeItems: SQLitePrimitiveOnly<Container>[] }>
+    ): Promise<{ totalCount: number, rangeItems: IdBound<SQLitePrimitiveOnly<Container>>[] }>
     {
         let dbQuery = ContainerRepository.getInstance()
         .createQueryBuilder(`con`)
@@ -118,16 +120,18 @@ export class ContainerService
         dbQuery = ServiceUtils.paginateQuery(dbQuery, query);
 
         const queryResult = await dbQuery.getManyAndCount();
+        if (queryResult[0].some(x => !x.id)) throw panic(`Containers queried from database contain falsy IDs.`);
+
         return {
             totalCount: queryResult[1],
-            rangeItems: queryResult[0]
+            rangeItems: queryResult[0] as (IdBound<typeof queryResult[0][0]>)[]
         }
     }
 
     public static async getContainersBalance
     (
         ownerId: string,
-        containers: SQLitePrimitiveOnly<Container>[] | string[]
+        containers: IdBound<SQLitePrimitiveOnly<Container>>[] | string[]
     )
     {
         let relevantTxns = await TransactionService.getContainersTransactions(ownerId, containers);
@@ -160,7 +164,7 @@ export class ContainerService
     public static async valueHydrateContainers
     (
         ownerId: string,
-        containers: SQLitePrimitiveOnly<Container>[] | string[],
+        containers: IdBound<SQLitePrimitiveOnly<Container>>[] | string[],
         currencyRateDateToUse: number | undefined = undefined
     )
     {
@@ -183,7 +187,7 @@ export class ContainerService
 
         const relevantCurrencies = await (async () =>
         {
-            const output: { [currencyId: string]: SQLitePrimitiveOnly<Currency> } = {};
+            const output: { [currencyId: string]: IdBound<SQLitePrimitiveOnly<Currency>> } = {};
             const getCurrById = async (id: string) =>
             {
                 const cacheResult = GlobalCurrencyCache.queryCurrency(ownerId, id);

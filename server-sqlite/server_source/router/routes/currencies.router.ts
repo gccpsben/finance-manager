@@ -2,17 +2,18 @@ import express from 'express';
 import { AccessTokenService, InvalidLoginTokenError } from '../../db/services/accessToken.service.js';
 import { CurrencyNameTakenError, CurrencyNotFoundError, CurrencyService, CurrencyTickerTakenError } from '../../db/services/currency.service.js';
 import { Decimal } from 'decimal.js';
-import { IsNumber, IsNumberString, IsOptional, IsString } from 'class-validator';
+import { IsNumberString, IsOptional, IsString } from 'class-validator';
 import { ExpressValidations } from '../validation.js';
 import { IsDecimalJSString, IsIntString } from '../../db/validators.js';
 import createHttpError from 'http-errors';
-import { RateHydratedCurrency } from '../../db/entities/currency.entity.js';
+import { Currency } from '../../db/entities/currency.entity.js';
 import type { GetCurrencyAPI, GetCurrencyRateHistoryAPI, PostCurrencyAPI } from "../../../../api-types/currencies.js";
 import { TypesafeRouter } from '../typescriptRouter.js';
 import { OptionalPaginationAPIQueryRequest, PaginationAPIResponseClass } from '../pagination.js';
 import { CurrencyRateDatumService } from '../../db/services/currencyRateDatum.service.js';
 import { unwrap } from '../../std_errors/monadError.js';
 import { UserNotFoundError } from '../../db/services/user.service.js';
+import type { IdBound } from '../../index.d.js';
 
 const router = new TypesafeRouter(express.Router());
 
@@ -77,7 +78,7 @@ router.get<GetCurrencyAPI.ResponseDTO>(`/api/v1/currencies`,
             requestedRateDate: parsedQuery.date === undefined ? Date.now() : parseInt(parsedQuery.date)
         };
 
-        const sqlPrimitiveCurrencies = await PaginationAPIResponseClass.prepareFromQueryItems
+        const sqlPrimitiveCurrencies = await PaginationAPIResponseClass.prepareFromQueryItems<IdBound<Currency>>
         (
             unwrap(await CurrencyService.getManyCurrencies(authResult.ownerUserId,
             {

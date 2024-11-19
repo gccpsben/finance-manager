@@ -22,5 +22,5 @@ export class TransactionType extends EntityClass
 
     @ManyToOne(type => User, user => user.transactionTypes)
     @EnsureNotPlainForeignKey()
-    owner: Relation<User>;
+    owner: Relation<User> | null;
 }

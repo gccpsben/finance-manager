@@ -29,7 +29,7 @@ router.post<PostLoginAPI.ResponseDTO>("/api/v1/auth/login",
             token: newToken.token,
             creationDate: newToken.creationDate,
             expiryDate: newToken.expiryDate,
-            owner: newToken.owner.id
+            owner: newToken.ownerId
         }
     }
 });

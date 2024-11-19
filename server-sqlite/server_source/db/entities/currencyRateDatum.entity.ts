@@ -12,7 +12,7 @@ import { Currency } from "./currency.entity.js";
 export class CurrencyRateDatum extends EntityClass
 {
     @PrimaryGeneratedColumn('uuid')
-    id: string;
+    id: string | null;
 
     @Column({ nullable: false })
     @IsDecimalJSString()
@@ -24,7 +24,7 @@ export class CurrencyRateDatum extends EntityClass
     @ManyToOne(type => Currency, { nullable: false })
     @JoinColumn()
     @EnsureNotPlainForeignKey()
-    refCurrency: Relation<Currency>;
+    refCurrency: Relation<Currency> | null;
 
     @Column( { nullable: false })
     @Index()
@@ -33,7 +33,7 @@ export class CurrencyRateDatum extends EntityClass
     @ManyToOne(type => Currency, { nullable: false })
     @JoinColumn()
     @EnsureNotPlainForeignKey()
-    refAmountCurrency: Relation<Currency>;
+    refAmountCurrency: Relation<Currency> | null;
 
     @Column( { nullable: false })
     @Index()
@@ -42,7 +42,7 @@ export class CurrencyRateDatum extends EntityClass
     @ManyToOne(type => User, { nullable: false })
     @JoinColumn()
     @EnsureNotPlainForeignKey()
-    owner: Relation<User>;
+    owner: Relation<User> | null;
 
     @Column({ type: "int", nullable: false })
     @IsUTCDateInt()

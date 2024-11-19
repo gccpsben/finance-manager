@@ -1,4 +1,3 @@
-import createHttpError from "http-errors";
 import { TransactionRepository } from "../repositories/transaction.repository.js";
 import { ContainerNotFoundError, ContainerService } from "./container.service.js";
 import { CurrencyService } from "./currency.service.js";
@@ -8,9 +7,8 @@ import { Transaction } from "../entities/transaction.entity.js";
 import { Decimal } from "decimal.js";
 import type { PartialNull, SQLitePrimitiveOnly } from "../../index.d.js";
 import { nameof, ServiceUtils } from "../servicesUtils.js";
-import { Container } from "../entities/container.entity.js";
 import { isNullOrUndefined } from "../../router/validation.js";
-import { MonadError, unwrap } from "../../std_errors/monadError.js";
+import { MonadError, panic, unwrap } from "../../std_errors/monadError.js";
 
 export class TxnMissingContainerOrCurrency extends MonadError<typeof TxnMissingFromToAmountError.ERROR_SYMBOL>
 {
@@ -72,9 +70,9 @@ export class TransactionService
             fromAmount?: string,
             fromContainerId?: string,
             fromCurrencyId?: string,
-            toAmount?: string | undefined,
-            toContainerId?: string | undefined,
-            toCurrencyId?: string | undefined,
+            toAmount?: string | null,
+            toContainerId?: string | null,
+            toCurrencyId?: string | null,
             txnTypeId: string
         } | Transaction
     ): Promise<
@@ -147,8 +145,8 @@ export class TransactionService
 
         newTxn.txnType = txnType;
 
-        // TODO: Fix all null checks after we migrate everything to domain DTOs
         // @ts-ignore
+        // TODO: fix id null mismatch
         return newTxn;
     }
 
@@ -192,13 +190,11 @@ export class TransactionService
             oldTxn.creationDate = obj.creationDate;
             oldTxn.description = obj.description;
 
-            oldTxn.fromAmount = isNullOrUndefined(obj.fromAmount) ? undefined : obj.fromAmount;
+            oldTxn.fromAmount = isNullOrUndefined(obj.fromAmount) ? null : obj.fromAmount;
 
             oldTxn.fromContainerId = obj.fromContainerId ?? null;
             oldTxn.fromContainer = !oldTxn.fromContainerId ? null : await ContainerService.getOneContainer(oldTxn.ownerId, { id: obj.fromContainerId });
 
-            // TODO: Fix this after migration
-            // @ts-ignore
             oldTxn.fromCurrencyId = obj.fromCurrencyId ?? null;
             oldTxn.fromCurrency = !oldTxn.fromCurrencyId ? null : unwrap(await CurrencyService.getCurrencyByIdWithoutCache
             (
@@ -206,17 +202,11 @@ export class TransactionService
                 oldTxn.fromCurrencyId
             ));
 
-            // TODO: Fix this after migration
-            // @ts-ignore
             oldTxn.toAmount = isNullOrUndefined(obj.toAmount) ? null : obj.toAmount;
 
-            // TODO: Fix this after migration
-            // @ts-ignore
             oldTxn.toContainerId = obj.toContainerId ?? null;
             oldTxn.toContainer = !oldTxn.toContainerId ? null : await ContainerService.getOneContainer(oldTxn.ownerId, { id: obj.toContainerId });
 
-            // TODO: Fix this after migration
-            // @ts-ignore
             oldTxn.toCurrencyId = obj.toCurrencyId ?? null;
             oldTxn.toCurrency = !oldTxn.toCurrencyId ? null : unwrap(await CurrencyService.getCurrencyByIdWithoutCache
             (
@@ -271,7 +261,13 @@ export class TransactionService
         if (newTxn instanceof TxnMissingFromToAmountError) return newTxn;
         if (newTxn instanceof ContainerNotFoundError) return newTxn;
         if (newTxn instanceof TxnMissingContainerOrCurrency) return newTxn;
-        return await TransactionRepository.getInstance().save(newTxn);
+        const savedObj = await TransactionRepository.getInstance().save(newTxn);
+
+        if (!savedObj.id)
+            throw panic(`Saved rows in the database still got falsy IDs`);
+
+        // Id will always be defined since we saved the obj.
+        return savedObj as (typeof savedObj & { id: string });
     }
 
     /**
@@ -309,10 +305,10 @@ export class TransactionService
                     await CurrencyService.rateHydrateCurrency
                     (
                         userId,
-                        currencyRefetched!,
+                        [currencyRefetched!],
                         transaction.creationDate
                     )
-                ).rateToBase;
+                )[0].rateToBase;
                 currencyRate = new Decimal(rate);
                 mapping[currencyId] = currencyRate;
             }
@@ -352,7 +348,7 @@ export class TransactionService
             id?: string,
             description?: string
         } | undefined = undefined
-    ): Promise<{ totalCount: number, rangeItems: SQLitePrimitiveOnly<Transaction>[] }>
+    ): Promise<{ totalCount: number, rangeItems: SQLitePrimitiveOnly<Transaction & { id: string }>[] }>
     {
         let query = TransactionRepository.getInstance()
         .createQueryBuilder(`txn`)
@@ -378,9 +374,16 @@ export class TransactionService
 
         const queryResult = await query.getManyAndCount();
 
+        // Check if id are all defined.
+        if (queryResult[0].some(x => !x.id))
+            throw panic(`Some of the transactions queried from database has falsy primary keys.`);
+
         return {
             totalCount: queryResult[1],
-            rangeItems: queryResult[0],
+            rangeItems: queryResult[0].map(x => ({
+                ...x,
+                id: x.id!
+            })),
         };
     }
 
@@ -398,7 +401,7 @@ export class TransactionService
         return query;
     }
 
-    public static async getContainersTransactions(userId: string, containerIds: string[] | SQLitePrimitiveOnly<Container>[])
+    public static async getContainersTransactions(userId: string, containerIds: string[] | { id: string }[])
     {
         const targetContainerIds = ServiceUtils.normalizeEntitiesToIds(containerIds, 'id');
 

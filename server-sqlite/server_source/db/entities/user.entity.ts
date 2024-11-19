@@ -31,25 +31,25 @@ export class User extends EntityClass
 
     @OneToMany(type => AccessToken, accessToken => accessToken.owner)
     @EnsureNotPlainForeignKey()
-    accessTokens: AccessToken[];
+    accessTokens: AccessToken[] | null;
 
     @OneToMany(type => Currency, currency => currency.owner)
     @EnsureNotPlainForeignKey()
-    currencies: Currency[];
+    currencies: Currency[] | null;
 
     @OneToMany(type => CurrencyRateSource, currencyRateSource => currencyRateSource.owner)
     @EnsureNotPlainForeignKey()
-    currenciesRateSources: CurrencyRateSource[];
+    currenciesRateSources: CurrencyRateSource[] | null;
 
     @OneToMany(type => Container, container => container.owner)
     @EnsureNotPlainForeignKey()
-    containers: Container[];
+    containers: Container[] | null;
 
     @OneToMany(type => Transaction, transaction => transaction.owner)
     @EnsureNotPlainForeignKey()
-    transactions: Transaction[];
+    transactions: Transaction[] | null;
 
     @OneToMany(type => TransactionType, transactionType => transactionType.owner)
     @EnsureNotPlainForeignKey()
-    transactionTypes: TransactionType[];
+    transactionTypes: TransactionType[] | null;
 }

@@ -1,17 +1,16 @@
 import { Decimal } from "decimal.js";
 import { CurrencyRepository } from "../repositories/currency.repository.js";
 import { UserRepository } from "../repositories/user.repository.js";
-import createHttpError from "http-errors";
-import { Currency, RateHydratedPrimitiveCurrency } from "../entities/currency.entity.js";
+import { Currency } from "../entities/currency.entity.js";
 import { FindOptionsWhere } from "typeorm";
 import { CurrencyRateDatumRepository } from "../repositories/currencyRateDatum.repository.js";
 import { LinearInterpolator } from "../../calculations/linearInterpolator.js";
-import { SQLitePrimitiveOnly } from "../../index.d.js";
+import { IdBound, SQLitePrimitiveOnly } from "../../index.d.js";
 import { nameof, ServiceUtils } from "../servicesUtils.js";
 import { GlobalCurrencyRateDatumsCache } from '../caches/currencyRateDatumsCache.cache.js';
 import { GlobalCurrencyCache } from "../caches/currencyListCache.cache.js";
 import { UserNotFoundError, UserService } from "./user.service.js";
-import { MonadError, unwrap } from "../../std_errors/monadError.js";
+import { MonadError, panic, unwrap } from "../../std_errors/monadError.js";
 
 export class CurrencyNotFoundError extends MonadError<typeof CurrencyNotFoundError.ERROR_SYMBOL>
 {
@@ -59,7 +58,7 @@ export class CurrencyTickerTakenError extends MonadError<typeof CurrencyTickerTa
 
 export class CurrencyCalculator
 {
-    public static async currencyToCurrencyRate(ownerId:string, from: Currency, to: Currency)
+    public static async currencyToCurrencyRate(ownerId:string, from: Currency & { id: string }, to: Currency & { id: string })
     {
         // Ensure user exists
         const userFetchResult = await UserService.getUserById(ownerId);
@@ -77,7 +76,7 @@ export class CurrencyCalculator
     public static async currencyToBaseRate
     (
         ownerId: string,
-        from: SQLitePrimitiveOnly<Currency>,
+        from: IdBound<SQLitePrimitiveOnly<Currency>>,
         date: Date = new Date()
     ): Promise<Decimal | UserNotFoundError>
     {
@@ -90,10 +89,10 @@ export class CurrencyCalculator
         const getCurrById = async (id: string) =>
         {
             const cacheResult = GlobalCurrencyCache.queryCurrency(ownerId, id);
-            if (cacheResult) return cacheResult;
+            if (cacheResult) return cacheResult as (IdBound<typeof fetchedResult>);
             const fetchedResult = await CurrencyService.getCurrencyByIdWithoutCache(ownerId, id);
             GlobalCurrencyCache.cacheCurrency(ownerId, id, unwrap(fetchedResult)!);
-            return fetchedResult;
+            return fetchedResult as IdBound<typeof fetchedResult>;
         };
 
         const nearestTwoDatums = await CurrencyRateDatumRepository.getInstance().findNearestTwoDatum
@@ -263,7 +262,7 @@ export class CurrencyService
             startIndex?: number | undefined, endIndex?: number | undefined,
             name?: string | undefined, id?: string | undefined
         }
-    ): Promise<{ totalCount: number, rangeItems: SQLitePrimitiveOnly<Currency>[] } | UserNotFoundError>
+    ): Promise<{ totalCount: number, rangeItems: IdBound<Currency>[] } | UserNotFoundError>
     {
         const user = await UserRepository.getInstance().findOne({where: { id: ownerId ?? null }});
         if (!user) return new UserNotFoundError(ownerId);
@@ -277,16 +276,18 @@ export class CurrencyService
         dbQuery = ServiceUtils.paginateQuery(dbQuery, query);
 
         const queryResult = await dbQuery.getManyAndCount();
+        if (queryResult[0].some(x => !x.id)) throw panic(`Currencies queried from database contain falsy IDs`);
+
         return {
             totalCount: queryResult[1],
-            rangeItems: queryResult[0]
+            rangeItems: queryResult[0] as (typeof queryResult[0][0] & { id: string })[]
         }
     }
 
     public static async getCurrencyByIdWithoutCache(userId:string, currencyId: string): Promise<
         null |
         UserNotFoundError |
-        Currency
+        IdBound<Currency>
     >
     {
         return await this.getCurrencyWithoutCache(userId, { id: currencyId ?? null });
@@ -295,7 +296,7 @@ export class CurrencyService
     public static async getCurrencyWithoutCache(userId: string, where: Omit<FindOptionsWhere<Currency>, 'owner'>): Promise<
         null |
         UserNotFoundError |
-        Currency
+        IdBound<Currency>
     >
     {
         const user = await UserRepository.getInstance().findOne({where: { id: userId ?? null }});
@@ -308,14 +309,17 @@ export class CurrencyService
         });
 
         if (!result) return null;
-        return result;
+        if (!result.id) throw panic(`Currency queried from database contains falsy IDs`);
+
+        return result as IdBound<typeof result>;
     }
 
     public static async createCurrency(userId: string,
         name: string,
         amount: Decimal | undefined,
         refCurrencyId: string | undefined,
-        ticker: string)
+        ticker: string
+    ): Promise<IdBound<Currency> | CurrencyNotFoundError | CurrencyNameTakenError | CurrencyTickerTakenError | UserNotFoundError>
     {
         // Check refCurrencyId exists if refCurrencyId is defined.
         if (refCurrencyId && !(await CurrencyRepository.getInstance().isCurrencyByIdExists(refCurrencyId, userId)))
@@ -327,42 +331,36 @@ export class CurrencyService
         if (!!(await CurrencyRepository.getInstance().isCurrencyByTickerExists(ticker, userId)))
             return new CurrencyTickerTakenError(ticker, userId);
 
-        const newCurrency = CurrencyRepository.getInstance().create();
-        newCurrency.name = name;
         const user = await UserRepository.getInstance().findOne({where:{id: userId}});
-        if (user === null) return new UserNotFoundError(userId);
-        newCurrency.owner = user;
-        newCurrency.ticker = ticker;
-        if (refCurrencyId)
-            newCurrency.fallbackRateCurrency = await CurrencyRepository.getInstance().findOne({where:{id: refCurrencyId}});
+        if (user === null)
+            return new UserNotFoundError(userId);
+
+        const newCurrency = CurrencyRepository.getInstance().create(
+        {
+            name,
+            owner: user,
+            ticker: ticker
+        });
+
+        if (refCurrencyId) newCurrency.fallbackRateCurrency = await CurrencyRepository.getInstance().findOne({where:{id: refCurrencyId}});
         newCurrency.isBase = (amount === undefined && refCurrencyId === undefined);
         newCurrency.fallbackRateAmount = amount == undefined ? undefined : amount.toFixed();
-        await CurrencyRepository.getInstance().save(newCurrency);
-        return newCurrency;
+
+        const savedNewCurrency = await CurrencyRepository.getInstance().save(newCurrency);
+        if (!savedNewCurrency.id) throw panic(`Currencies saved into database contain falsy IDs.`);
+
+        return savedNewCurrency as IdBound<typeof savedNewCurrency>;
     }
 
     public static async rateHydrateCurrency
     (
         userId:string,
-        currency: SQLitePrimitiveOnly<Currency>[],
-        date: number | undefined
-    ): Promise<RateHydratedPrimitiveCurrency[]>
-    public static async rateHydrateCurrency
-    (
-        userId:string,
-        currency: SQLitePrimitiveOnly<Currency>,
-        date: number | undefined
-    ): Promise<RateHydratedPrimitiveCurrency>
-    public static async rateHydrateCurrency
-    (
-        userId:string,
-        currencies: SQLitePrimitiveOnly<Currency>[] | SQLitePrimitiveOnly<Currency>,
+        currencies: IdBound<SQLitePrimitiveOnly<Currency>>[],
         date: number | undefined = undefined
     )
-        : Promise<RateHydratedPrimitiveCurrency | RateHydratedPrimitiveCurrency[]>
     {
-        type outputType = { currency: SQLitePrimitiveOnly<Currency>, rateToBase: string };
-        const getRateToBase = async (c: SQLitePrimitiveOnly<Currency>) =>
+        type outputType = { currency: IdBound<SQLitePrimitiveOnly<Currency>>, rateToBase: string };
+        const getRateToBase = async (c: IdBound<SQLitePrimitiveOnly<Currency>>) =>
         (
             await CurrencyCalculator.currencyToBaseRate
             (
@@ -372,24 +370,14 @@ export class CurrencyService
             )
         ).toString();
 
-        if (Array.isArray(currencies))
+        const output: outputType[] = [];
+        for (const currency of currencies)
         {
-            const output: outputType[] = [];
-            for (const currency of currencies)
-            {
-                output.push({
-                    currency: currency,
-                    rateToBase: await getRateToBase(currency)
-                });
-            }
-            return output;
+            output.push({
+                currency: currency,
+                rateToBase: await getRateToBase(currency)
+            });
         }
-        else
-        {
-            return {
-                currency: currencies,
-                rateToBase: await getRateToBase(currencies)
-            }
-        }
+        return output;
     }
 }
