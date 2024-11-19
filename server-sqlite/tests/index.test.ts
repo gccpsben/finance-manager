@@ -11,6 +11,7 @@ import containerTests from './container.test.js';
 import currencyTests from './currency.test.js';
 import txnTypeTests from './txnType.test.js';
 import transactionTests from './transaction.test.js';
+import currencyRateSrcs from './currencyRateSource.test.js';
 import calculationsTest, { testForCalculationsInternals } from './calculations.test.js';
 import { exit } from 'process';
 export type HTTPMethod = "GET" | "PATCH" | "POST" | "DELETE";
@@ -108,6 +109,7 @@ await (async () =>
         await authTests.bind(this)();
         await containerTests.bind(this)();
         await currencyTests.bind(this)();
+        await currencyRateSrcs.bind(this)();
         await txnTypeTests.bind(this)();
         await transactionTests.bind(this)();
         await calculationsTest.bind(this)();
