@@ -120,12 +120,12 @@ export class CalculationsService
                 while (currentTxnIndex < usrTxns.length && usrTxns[currentTxnIndex].creationDate <= currentEpoch)
                 {
                     const txn = usrTxns[currentTxnIndex];
-                    if (txn.fromAmount)
+                    if (txn.fromAmount && txn.fromCurrencyId)
                     {
                         await balancesReducer.reduce(txn.fromCurrencyId, new Decimal(txn.fromAmount).neg());
                         appendCurrencyToEpoch(txn.fromCurrencyId, txn.creationDate);
                     }
-                    if (txn.toAmount)
+                    if (txn.toAmount && txn.toCurrencyId)
                     {
                         await balancesReducer.reduce(txn.toCurrencyId, new Decimal(txn.toAmount));
                         appendCurrencyToEpoch(txn.toCurrencyId, txn.creationDate);
@@ -193,7 +193,7 @@ export class CalculationsService
                     const cacheResult = GlobalCurrencyCache.queryCurrency(userId, currencyID);
                     if (cacheResult) return cacheResult;
                     const fetchedResult = unwrap(await CurrencyService.getCurrencyByIdWithoutCache(userId, currencyID));
-                    GlobalCurrencyCache.cacheCurrency(userId, currencyID, fetchedResult);
+                    GlobalCurrencyCache.cacheCurrency(userId, currencyID, fetchedResult!);
                     return fetchedResult;
                 })();
 
@@ -206,7 +206,7 @@ export class CalculationsService
                     currencyRateToBase = unwrap(await CurrencyCalculator.currencyToBaseRate
                     (
                         userId,
-                        currencyObject,
+                        currencyObject!,
                         new Date(parseInt(epoch))
                     ));
                 }

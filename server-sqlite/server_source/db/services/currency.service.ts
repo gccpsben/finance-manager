@@ -92,7 +92,7 @@ export class CurrencyCalculator
             const cacheResult = GlobalCurrencyCache.queryCurrency(ownerId, id);
             if (cacheResult) return cacheResult;
             const fetchedResult = await CurrencyService.getCurrencyByIdWithoutCache(ownerId, id);
-            GlobalCurrencyCache.cacheCurrency(ownerId, id, unwrap(fetchedResult));
+            GlobalCurrencyCache.cacheCurrency(ownerId, id, unwrap(fetchedResult)!);
             return fetchedResult;
         };
 
@@ -106,11 +106,11 @@ export class CurrencyCalculator
 
         if (nearestTwoDatums.length === 0)
         {
-            const currencyBaseAmount = new Decimal(from.fallbackRateAmount);
+            const currencyBaseAmount = new Decimal(from.fallbackRateAmount ?? "0");
             const currencyBaseAmountUnitToBaseRate = await CurrencyCalculator.currencyToBaseRate
             (
                 ownerId,
-                unwrap(await getCurrById(from.fallbackRateCurrencyId)),
+                unwrap(await getCurrById(from.fallbackRateCurrencyId!))!,
                 date
             )!;
             return currencyBaseAmount.mul(unwrap(currencyBaseAmountUnitToBaseRate));
@@ -122,7 +122,7 @@ export class CurrencyCalculator
             const datumUnitToBaseRate = unwrap(await CurrencyCalculator.currencyToBaseRate
             (
                 ownerId,
-                unwrap(await getCurrById(d1.refAmountCurrencyId)),
+                unwrap(await getCurrById(d1.refAmountCurrencyId))!,
                 new Date(d1.date)
             )!);
             return unwrap(datumAmount.mul(datumUnitToBaseRate));
@@ -132,8 +132,8 @@ export class CurrencyCalculator
         {
             const isDateBeforeD1D2 = date.getTime() < d1.date && date.getTime() < d2.date; // ....^..|....|........
             const isDateAfterD1D2 = date.getTime() > d1.date && date.getTime() > d2.date;  // .......|....|...^....
-            const D1Currency = unwrap(await getCurrById(d1.refAmountCurrencyId));
-            const D2Currency = d1.refAmountCurrencyId === d2.refAmountCurrencyId ? D1Currency : unwrap(await getCurrById(d2.refAmountCurrencyId));
+            const D1Currency = unwrap(await getCurrById(d1.refAmountCurrencyId))!;
+            const D2Currency = d1.refAmountCurrencyId === d2.refAmountCurrencyId ? D1Currency : unwrap(await getCurrById(d2.refAmountCurrencyId))!;
             const D1CurrBaseRate = unwrap(await CurrencyCalculator.currencyToBaseRate
             (
                 ownerId,
@@ -161,7 +161,7 @@ export class CurrencyCalculator
                 item => new Decimal(item.key),
                 item => item.value
             ).getValue(new Decimal(date.getTime()));
-            return midPt;
+            return midPt!;
         }
     }
 
@@ -193,7 +193,7 @@ export class CurrencyCalculator
             const cacheResult = GlobalCurrencyCache.queryCurrency(userId, id);
             if (cacheResult) return cacheResult;
             const fetchedResult = await CurrencyService.getCurrencyByIdWithoutCache(userId, id);
-            GlobalCurrencyCache.cacheCurrency(userId, id, unwrap(fetchedResult));
+            GlobalCurrencyCache.cacheCurrency(userId, id, unwrap(fetchedResult)!);
             return fetchedResult;
         };
 
@@ -202,7 +202,7 @@ export class CurrencyCalculator
             const output: { key:Decimal, value: Decimal }[] = [];
             for (const datum of datums)
             {
-                const datumUnitCurrency = unwrap(await getCurrById(datum.refAmountCurrencyId));
+                const datumUnitCurrency = unwrap(await getCurrById(datum.refAmountCurrencyId))!;
 
                 output.push(
                 {
@@ -329,7 +329,9 @@ export class CurrencyService
 
         const newCurrency = CurrencyRepository.getInstance().create();
         newCurrency.name = name;
-        newCurrency.owner = await UserRepository.getInstance().findOne({where:{id: userId}});
+        const user = await UserRepository.getInstance().findOne({where:{id: userId}});
+        if (user === null) return new UserNotFoundError(userId);
+        newCurrency.owner = user;
         newCurrency.ticker = ticker;
         if (refCurrencyId)
             newCurrency.fallbackRateCurrency = await CurrencyRepository.getInstance().findOne({where:{id: refCurrencyId}});
@@ -366,7 +368,7 @@ export class CurrencyService
             (
                 userId,
                 c,
-                new Date(date)
+                new Date(date ?? 0)
             )
         ).toString();
 

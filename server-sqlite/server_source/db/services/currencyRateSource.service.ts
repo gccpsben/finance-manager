@@ -154,6 +154,7 @@ export class CurrencyRateSourceService
                 currencyObj.id,
                 currencySource.refAmountCurrencyId
             );
+            if (rateDatum instanceof CurrencyNotFoundError) return createError(new CurrencyNotFoundError(refCurrencyId, ownerId));
 
             currencySource.lastExecuteTime = Date.now();
             await CurrencyRateSourceRepository.getInstance().save(currencySource);
@@ -165,7 +166,7 @@ export class CurrencyRateSourceService
             if (e instanceof Error)
                 return new ExecuteCurrencyRateSourceError(e, refCurrencyId, ownerId);
 
-            new ExecuteCurrencyRateSourceError(e, refCurrencyId, ownerId).panic();
+            throw new ExecuteCurrencyRateSourceError(e, refCurrencyId, ownerId).panic();
         }
     }
 }

@@ -64,7 +64,7 @@ export class Transaction extends EntityClass
     @IsString()
     @MaxLength(5128)
     @Index({fulltext: true})
-    description: string | undefined;
+    description?: string;
 
     @Column( { nullable: false })
     ownerId: string;
@@ -84,30 +84,30 @@ export class Transaction extends EntityClass
     @ManyToOne(type => TransactionType, { nullable: false })
     @JoinColumn({ name: "txnTypeId" })
     @EnsureNotPlainForeignKey()
-    txnType: Relation<TransactionType> | undefined;
+    txnType: Relation<TransactionType> | null;
 
     // #region From
     @Column( { nullable: true } )
     @IsOptional()
     @IsString()
     @IsDecimalJSString()
-    fromAmount: string | undefined;
+    fromAmount?: string;
 
     @Column({nullable: true})
-    fromCurrencyId: string;
+    fromCurrencyId?: string;
 
     @JoinColumn({ name: "fromCurrencyId" })
     @EnsureNotPlainForeignKey()
     @ManyToOne(type => Currency, { nullable: true })
-    fromCurrency: Relation<Currency> | undefined;
+    fromCurrency: Relation<Currency> | null;
 
     @Column({nullable: true})
-    fromContainerId: string;
+    fromContainerId: string | null;
 
     @JoinColumn({ name: "fromContainerId" })
     @EnsureNotPlainForeignKey()
     @ManyToOne(type => Container, { nullable: true })
-    fromContainer: Relation<Container> | undefined;
+    fromContainer: Relation<Container> | null;
     // #endregion
 
     // #region To
@@ -115,23 +115,23 @@ export class Transaction extends EntityClass
     @IsOptional()
     @IsString()
     @IsDecimalJSString()
-    toAmount: string | undefined;
+    toAmount?: string;
 
     @Column({nullable: true})
-    toCurrencyId: string;
+    toCurrencyId?: string;
 
     @JoinColumn({ name: "toCurrencyId" })
     @EnsureNotPlainForeignKey()
     @ManyToOne(type => Currency, { nullable: true })
-    toCurrency: Relation<Currency> | undefined;
+    toCurrency: Relation<Currency> | null;
 
     @Column({nullable: true})
-    toContainerId: string;
+    toContainerId?: string;
 
     @JoinColumn({ name: "toContainerId" })
     @EnsureNotPlainForeignKey()
     @ManyToOne(type => Container, { nullable: true })
-    toContainer: Relation<Container> | undefined;
+    toContainer: Relation<Container> | null;
     // #endregion
 
     @BeforeInsert()

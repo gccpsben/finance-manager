@@ -11,7 +11,8 @@
 		"build_prod": "tsc --outDir ./server_production",
 		"docs:dev": "vuepress dev docs",
 		"docs:build": "vuepress build docs",
-		"test": "tsc -p ./tests/tsconfig.json && node ./server_ut-build/tests/index.test.js"
+		"test": "tsc -p ./tests/tsconfig.json && node ./server_ut-build/tests/index.test.js",
+		"test-no-type": "tsc --noCheck -p ./tests/tsconfig.json && node ./server_ut-build/tests/index.test.js"
 	},
 	"devDependencies": {
 		"@faker-js/faker": "^8.4.1",

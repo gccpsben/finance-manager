@@ -72,12 +72,13 @@ export class ContainerService
     public static async createContainer(ownerId: string, name: string, creationDate: number = Date.now())
     {
         const containerWithSameName = await ContainerService.tryGetContainerByName(ownerId, name);
-        if (containerWithSameName.containerFound)
-            return new ContainerExistsError(name, ownerId);
+        if (containerWithSameName.containerFound) return new ContainerExistsError(name, ownerId);
+        const owner = await UserRepository.getInstance().findOne({where: {id: ownerId}});
+        if (owner === null) return new UserNotFoundError(ownerId);
         const newContainer = ContainerRepository.getInstance().create();
         newContainer.creationDate = creationDate;
         newContainer.name = name;
-        newContainer.owner = await UserRepository.getInstance().findOne({where: {id: ownerId}});
+        newContainer.owner = owner;
         return await ContainerRepository.getInstance().save(newContainer);
     }
 
@@ -144,8 +145,10 @@ export class ContainerService
 
             for (const txn of relevantTxns)
             {
-                if (txn.fromAmount) append(txn.fromContainerId, txn.fromCurrencyId, txn.fromAmount, true);
-                if (txn.toAmount) append(txn.toContainerId, txn.toCurrencyId, txn.toAmount);
+                if (txn.fromAmount && txn.fromContainerId && txn.fromCurrencyId)
+                    append(txn.fromContainerId, txn.fromCurrencyId, txn.fromAmount, true);
+                if (txn.toAmount && txn.toContainerId && txn.toCurrencyId)
+                    append(txn.toContainerId, txn.toCurrencyId, txn.toAmount);
             }
 
             return output;
@@ -186,12 +189,12 @@ export class ContainerService
                 const cacheResult = GlobalCurrencyCache.queryCurrency(ownerId, id);
                 if (cacheResult) return cacheResult;
                 const fetchedResult = unwrap(await CurrencyService.getCurrencyByIdWithoutCache(ownerId, id));
-                GlobalCurrencyCache.cacheCurrency(ownerId, id, fetchedResult);
+                GlobalCurrencyCache.cacheCurrency(ownerId, id, fetchedResult!);
                 return fetchedResult;
             };
 
             for (const cId of relevantCurrencyIds)
-                output[cId] = await getCurrById(cId);
+                output[cId] = (await getCurrById(cId))!;
 
             return output;
         })();

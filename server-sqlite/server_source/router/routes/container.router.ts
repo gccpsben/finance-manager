@@ -11,6 +11,7 @@ import { ServiceUtils } from '../../db/servicesUtils.js';
 import { Decimal } from 'decimal.js';
 import createHttpError from 'http-errors';
 import { unwrap } from '../../std_errors/monadError.js';
+import { UserNotFoundError } from '../../db/services/user.service.js';
 
 const router = new TypesafeRouter(express.Router());
 
@@ -91,8 +92,8 @@ router.post<PostContainerAPI.ResponseDTO>(`/api/v1/containers`,
 
         const parsedBody = await ExpressValidations.validateBodyAgainstModel<body>(body, req.body);
         const containerCreated = await ContainerService.createContainer(authResult.ownerUserId, parsedBody.name);
-        if (containerCreated instanceof ContainerExistsError)
-            throw createHttpError(400, `Container with name '${containerCreated.containerName}' already exists.`);
+        if (containerCreated instanceof ContainerExistsError) throw createHttpError(400, `Container with name '${containerCreated.containerName}' already exists.`);
+        if (containerCreated instanceof UserNotFoundError) throw createHttpError(401);
 
         return { id: containerCreated.id }
     }

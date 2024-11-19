@@ -157,11 +157,11 @@ router.get<GetTxnAPI.ResponseDTO>(`/api/v1/transactions`,
                 creationDate: item.creationDate,
                 txnType: item.txnTypeId,
                 fromAmount: item.fromAmount ?? null,
-                fromCurrency: item.fromCurrencyId,
-                fromContainer: item.fromContainerId,
+                fromCurrency: item.fromCurrencyId ?? null,
+                fromContainer: item.fromContainerId ?? null,
                 toAmount: item.toAmount ?? null,
-                toCurrency: item.toCurrencyId,
-                toContainer: item.toContainerId
+                toCurrency: item.toCurrencyId ?? null,
+                toContainer: item.toContainerId ?? null
             }))
         };
     }

@@ -1,4 +1,4 @@
-import { Entity, PrimaryGeneratedColumn, Column, JoinColumn, Unique, Check, Index } from "typeorm";
+import { Entity, PrimaryGeneratedColumn, Column, JoinColumn, Unique, Check, Index, Relation } from "typeorm";
 import "reflect-metadata"
 import { ManyToOne } from "typeorm";
 import { User } from "./user.entity.js";
@@ -21,28 +21,28 @@ export class CurrencyRateDatum extends EntityClass
     @Column( { nullable: false })
     refCurrencyId: string;
 
-    @ManyToOne(type => Currency, currency => currency.fallbackRateCurrency, { nullable: false })
+    @ManyToOne(type => Currency, { nullable: false })
     @JoinColumn()
     @EnsureNotPlainForeignKey()
-    refCurrency: Currency;
+    refCurrency: Relation<Currency>;
 
     @Column( { nullable: false })
     @Index()
     refAmountCurrencyId: string;
 
-    @ManyToOne(type => Currency, currency => currency.fallbackRateCurrency, { nullable: false })
+    @ManyToOne(type => Currency, { nullable: false })
     @JoinColumn()
     @EnsureNotPlainForeignKey()
-    refAmountCurrency: Currency;
+    refAmountCurrency: Relation<Currency>;
 
     @Column( { nullable: false })
     @Index()
     ownerId: string;
 
-    @ManyToOne(type => User, user => user.currencies, { nullable: false })
+    @ManyToOne(type => User, { nullable: false })
     @JoinColumn()
     @EnsureNotPlainForeignKey()
-    owner: User;
+    owner: Relation<User>;
 
     @Column({ type: "int", nullable: false })
     @IsUTCDateInt()

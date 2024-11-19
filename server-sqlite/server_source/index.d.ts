@@ -4,6 +4,7 @@ export type NonFunctionPropertyNames<T> = { [K in keyof T]: T[K] extends Functio
 export type NonFunctionProperties<T> = Pick<T, NonFunctionPropertyNames<T>>;
 export type PickByType<T, Value> = { [P in keyof T as T[P] extends Value | undefined ? P : never]: T[P] };
 export type OmitByType<T, Value> = { [P in keyof T as T[P] extends Value | undefined ? never : P]: T[P] };
+export type PartialNull<T> = { [key in keyof T]: T[key] | null };
 export type SQLitePrimitiveOnly<T> =
 {
     [P in keyof T as T[P] extends (boolean | number | string | null | undefined | Date) ? P : never]: T[P]

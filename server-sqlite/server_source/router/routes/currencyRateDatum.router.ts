@@ -8,6 +8,8 @@ import { TypesafeRouter } from '../typescriptRouter.js';
 import { CurrencyRateDatumService } from '../../db/services/currencyRateDatum.service.js';
 import createHttpError from 'http-errors';
 import { unwrap } from '../../std_errors/monadError.js';
+import { UserNotFoundError } from '../../db/services/user.service.js';
+import { CurrencyNotFoundError } from '../../db/services/currency.service.js';
 
 const router = new TypesafeRouter(express.Router());
 
@@ -27,14 +29,18 @@ router.post<PostCurrencyRateAPI.ResponseDTO>(`/api/v1/currencyRateDatums`,
         if (authResult instanceof InvalidLoginTokenError) throw createHttpError(401);
         const parsedBody = await ExpressValidations.validateBodyAgainstModel<body>(body, req.body);
 
-        const newRateDatum = unwrap(await CurrencyRateDatumService.createCurrencyRateDatum
+        const newRateDatum = await CurrencyRateDatumService.createCurrencyRateDatum
         (
             authResult.ownerUserId,
             parsedBody.amount,
             parsedBody.date,
             parsedBody.refCurrencyId,
             parsedBody.refAmountCurrencyId
-        ));
+        );
+
+        if (newRateDatum instanceof UserNotFoundError) throw createHttpError(401);
+        if (newRateDatum instanceof CurrencyNotFoundError) throw createHttpError(400, newRateDatum.message);
+
         return { id: newRateDatum.id };
     }
 });

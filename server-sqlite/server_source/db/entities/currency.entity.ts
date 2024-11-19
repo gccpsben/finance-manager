@@ -30,10 +30,10 @@ export class Currency extends EntityClass
     @IsOptional()
     @IsString()
     @IsDecimalJSString()
-    fallbackRateAmount: string | null;
+    fallbackRateAmount?: string;
 
     @Column( { nullable: true })
-    fallbackRateCurrencyId: string;
+    fallbackRateCurrencyId?: string;
 
     @ManyToOne(type => Currency, currency => currency.fallbackRateCurrency, { nullable: true })
     @JoinColumn()
@@ -62,7 +62,7 @@ export class Currency extends EntityClass
     ticker: string;
 
     @Column({ nullable: true })
-    lastRateCronUpdateTime: number | null;
+    lastRateCronUpdateTime?: number;
 
     @BeforeInsert()
     @BeforeUpdate()

@@ -73,6 +73,7 @@ router.post<PostTxnTypesAPI.ResponseDTO>(`/api/v1/transactionTypes`,
         const parsedBody = await ExpressValidations.validateBodyAgainstModel<body>(body, req.body);
         const createdType = await TransactionTypeService.createTransactionType(authResult.ownerUserId, parsedBody.name);
         if (createdType instanceof TxnTypeExistsError) throw createHttpError(400, createdType.message);
+        if (createdType instanceof UserNotFoundError) throw createHttpError(401);
 
         return (
         {

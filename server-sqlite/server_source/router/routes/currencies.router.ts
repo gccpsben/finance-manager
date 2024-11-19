@@ -12,6 +12,7 @@ import { TypesafeRouter } from '../typescriptRouter.js';
 import { OptionalPaginationAPIQueryRequest, PaginationAPIResponseClass } from '../pagination.js';
 import { CurrencyRateDatumService } from '../../db/services/currencyRateDatum.service.js';
 import { unwrap } from '../../std_errors/monadError.js';
+import { UserNotFoundError } from '../../db/services/user.service.js';
 
 const router = new TypesafeRouter(express.Router());
 
@@ -42,6 +43,7 @@ router.post<PostCurrencyAPI.ResponseDTO>(`/api/v1/currencies`,
         if (newCurrency instanceof CurrencyNameTakenError) throw createHttpError(400, newCurrency.message);
         if (newCurrency instanceof CurrencyNotFoundError) throw createHttpError(400, newCurrency.message);
         if (newCurrency instanceof CurrencyTickerTakenError) throw createHttpError(400, newCurrency.message);
+        if (newCurrency instanceof UserNotFoundError) throw createHttpError(401);
 
         return { id: newCurrency.id }
     }
@@ -99,13 +101,13 @@ router.get<GetCurrencyAPI.ResponseDTO>(`/api/v1/currencies`,
                 );
                 return rateHydratedCurrencies.map(c => (
                 {
-                    fallbackRateAmount: c.currency.fallbackRateAmount,
+                    fallbackRateAmount: c.currency.fallbackRateAmount ?? null,
                     id: c.currency.id,
                     isBase: c.currency.isBase,
                     name: c.currency.name,
                     owner: c.currency.ownerId,
                     rateToBase: c.rateToBase,
-                    fallbackRateCurrencyId: c.currency.fallbackRateCurrencyId,
+                    fallbackRateCurrencyId: c.currency.fallbackRateCurrencyId ?? null,
                     ticker: c.currency.ticker
                 }));
             })()

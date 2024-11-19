@@ -34,7 +34,7 @@ router.get<GetCurrencyRateSrcAPI.ResponseDTO>(`/api/v1/currencyRateSources`,
                 path: s.path,
                 jsonQueryString: s.jsonQueryString,
                 name: s.name,
-                lastExecuteTime: s.lastExecuteTime,
+                lastExecuteTime: s.lastExecuteTime ?? null,
                 id: s.id
             }))
         };

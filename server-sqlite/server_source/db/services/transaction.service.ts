@@ -6,7 +6,7 @@ import { TransactionTypeService, TxnTypeNotFoundError } from "./transactionType.
 import { UserNotFoundError, UserService } from "./user.service.js";
 import { Transaction } from "../entities/transaction.entity.js";
 import { Decimal } from "decimal.js";
-import type { SQLitePrimitiveOnly } from "../../index.d.js";
+import type { PartialNull, SQLitePrimitiveOnly } from "../../index.d.js";
 import { nameof, ServiceUtils } from "../servicesUtils.js";
 import { Container } from "../entities/container.entity.js";
 import { isNullOrUndefined } from "../../router/validation.js";
@@ -86,11 +86,14 @@ export class TransactionService
         TxnMissingContainerOrCurrency
     >
     {
+        // NOTICE when using TypeORM's `save` method.
+        // All undefined properties will be skipped.
+
         // Ensure user exists
         const userFetchResult = await UserService.getUserById(userId);
         if (userFetchResult === null) return new UserNotFoundError(userId);
 
-        const newTxn = TransactionRepository.getInstance().create();
+        const newTxn: PartialNull<Transaction> = TransactionRepository.getInstance().create();
         newTxn.creationDate = obj.creationDate;
         newTxn.description = obj.description;
 
@@ -99,7 +102,7 @@ export class TransactionService
         if (obj.fromContainerId)
         {
             const container = await ContainerService.tryGetContainerById(userId, obj.fromContainerId);
-            if (!container.containerFound) return new ContainerNotFoundError(obj.fromCurrencyId, userId);
+            if (!container.containerFound) return new ContainerNotFoundError(obj.fromContainerId, userId);
             newTxn.fromContainer = container.container;
         }
         if (obj.fromCurrencyId)
@@ -108,17 +111,25 @@ export class TransactionService
             newTxn.fromCurrency = currency;
         }
 
-        if (obj.toAmount) newTxn.toAmount = obj.toAmount;
-        if (obj.toContainerId)
+        // To Amount
         {
-            const container = await ContainerService.tryGetContainerById(userId, obj.toContainerId);
-            if (!container.containerFound) return new ContainerNotFoundError(obj.toContainerId, userId);
-            newTxn.toContainer = container.container;
-        }
-        if (obj.toCurrencyId)
-        {
-            const currency = unwrap(await CurrencyService.getCurrencyWithoutCache(userId,{ id: obj.toCurrencyId }));
-            newTxn.toCurrency = currency;
+            if (obj.toAmount) newTxn.toAmount = obj.toAmount;
+            else newTxn.toAmount = null;
+
+            if (obj.toContainerId)
+            {
+                const container = await ContainerService.tryGetContainerById(userId, obj.toContainerId);
+                if (!container.containerFound) return new ContainerNotFoundError(obj.toContainerId, userId);
+                newTxn.toContainer = container.container;
+            }
+            else { newTxn.toContainerId = null; newTxn.toContainer = null; }
+
+            if (obj.toCurrencyId)
+            {
+                const currency = unwrap(await CurrencyService.getCurrencyWithoutCache(userId,{ id: obj.toCurrencyId }));
+                newTxn.toCurrency = currency;
+            }
+            else { newTxn.toCurrencyId = null; newTxn.toCurrency = null; }
         }
 
         if (!obj.fromAmount && !obj.toAmount) return new TxnMissingFromToAmountError();
@@ -136,6 +147,8 @@ export class TransactionService
 
         newTxn.txnType = txnType;
 
+        // TODO: Fix all null checks after we migrate everything to domain DTOs
+        // @ts-ignore
         return newTxn;
     }
 
@@ -179,11 +192,13 @@ export class TransactionService
             oldTxn.creationDate = obj.creationDate;
             oldTxn.description = obj.description;
 
-            oldTxn.fromAmount = isNullOrUndefined(obj.fromAmount) ? null : obj.fromAmount;
+            oldTxn.fromAmount = isNullOrUndefined(obj.fromAmount) ? undefined : obj.fromAmount;
 
             oldTxn.fromContainerId = obj.fromContainerId ?? null;
             oldTxn.fromContainer = !oldTxn.fromContainerId ? null : await ContainerService.getOneContainer(oldTxn.ownerId, { id: obj.fromContainerId });
 
+            // TODO: Fix this after migration
+            // @ts-ignore
             oldTxn.fromCurrencyId = obj.fromCurrencyId ?? null;
             oldTxn.fromCurrency = !oldTxn.fromCurrencyId ? null : unwrap(await CurrencyService.getCurrencyByIdWithoutCache
             (
@@ -191,11 +206,17 @@ export class TransactionService
                 oldTxn.fromCurrencyId
             ));
 
+            // TODO: Fix this after migration
+            // @ts-ignore
             oldTxn.toAmount = isNullOrUndefined(obj.toAmount) ? null : obj.toAmount;
 
+            // TODO: Fix this after migration
+            // @ts-ignore
             oldTxn.toContainerId = obj.toContainerId ?? null;
             oldTxn.toContainer = !oldTxn.toContainerId ? null : await ContainerService.getOneContainer(oldTxn.ownerId, { id: obj.toContainerId });
 
+            // TODO: Fix this after migration
+            // @ts-ignore
             oldTxn.toCurrencyId = obj.toCurrencyId ?? null;
             oldTxn.toCurrency = !oldTxn.toCurrencyId ? null : unwrap(await CurrencyService.getCurrencyByIdWithoutCache
             (
@@ -259,7 +280,14 @@ export class TransactionService
     public static async getTxnIncreaseInValue
     (
         userId: string,
-        transaction: { fromAmount: string, toAmount:string, fromCurrencyId: string, toCurrencyId: string, creationDate: number },
+        transaction:
+        {
+            fromAmount?: string | null | undefined,
+            toAmount?:string | null | undefined,
+            fromCurrencyId?: string | null | undefined,
+            toCurrencyId?: string | null | undefined,
+            creationDate: number
+        },
         /** A mapping mapping each currency ID to its rate to base value. Will fetch from database if not given, or the currency is not found */
         currencyToBaseValueMappingCache: {[key:string]: Decimal} | undefined = undefined
     ): Promise<{ increaseInValue: Decimal, currencyBaseValMapping: {[key:string]: Decimal} } | UserNotFoundError>
@@ -281,7 +309,7 @@ export class TransactionService
                     await CurrencyService.rateHydrateCurrency
                     (
                         userId,
-                        currencyRefetched,
+                        currencyRefetched!,
                         transaction.creationDate
                     )
                 ).rateToBase;
@@ -291,7 +319,7 @@ export class TransactionService
             return new Decimal(amount).mul(currencyRate);
         };
 
-        if (transaction.fromAmount !== null && transaction.toAmount === null)
+        if (transaction.fromAmount && transaction.toAmount === null && transaction.fromCurrencyId)
         {
             return {
                 increaseInValue:  (await amountToBaseValue(transaction.fromAmount, transaction.fromCurrencyId)).neg(),
@@ -299,7 +327,7 @@ export class TransactionService
             }
         }
 
-        if (transaction.fromAmount === null && transaction.toAmount !== null)
+        if (transaction.fromAmount === null && transaction.toAmount && transaction.toCurrencyId)
         {
             return {
                 increaseInValue: await amountToBaseValue(transaction.toAmount, transaction.toCurrencyId),
@@ -308,7 +336,7 @@ export class TransactionService
         }
 
         return {
-            increaseInValue: (await amountToBaseValue(transaction.toAmount, transaction.toCurrencyId)).sub(await amountToBaseValue(transaction.fromAmount, transaction.fromCurrencyId)),
+            increaseInValue: (await amountToBaseValue(transaction.toAmount!, transaction.toCurrencyId!)).sub(await amountToBaseValue(transaction.fromAmount!, transaction.fromCurrencyId!)),
             currencyBaseValMapping: mapping
         };
     }
@@ -356,7 +384,7 @@ export class TransactionService
         };
     }
 
-    public static async getUserEarliestTransaction(userId: string): Promise<SQLitePrimitiveOnly<Transaction> | undefined>
+    public static async getUserEarliestTransaction(userId: string): Promise<SQLitePrimitiveOnly<Transaction> | null>
     {
         const nameofT = (x: keyof Transaction) => nameof<Transaction>(x);
 

@@ -75,7 +75,7 @@ export class Database
         {
             type: "sqlite",
             entities: [User, AccessToken, Currency, Container, Transaction, TransactionType, CurrencyRateDatum, CurrencyRateSource],
-            database: EnvManager.sqliteInMemory ? ":memory:" : EnvManager.sqliteFilePath,
+            database: EnvManager.sqliteInMemory ? ":memory:" : EnvManager.sqliteFilePath!,
             synchronize: true,
             logging: ['warn'],
             maxQueryExecutionTime: 100
@@ -96,6 +96,7 @@ export class Database
         catch(e)
         {
             ExtendedLog.logRed(`Error while initializing database. The database might contain entries violating database constrains.`);
+            console.log(e);
             return new DatabaseInitError(e);
         }
     }

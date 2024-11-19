@@ -1,6 +1,6 @@
 import { UserNotFoundError, UserService } from "./user.service.js";
 import { CurrencyRateDatumRepository, CurrencyRateDatumsCache } from "../repositories/currencyRateDatum.repository.js";
-import { CurrencyCalculator, CurrencyService } from "./currency.service.js";
+import { CurrencyCalculator, CurrencyNotFoundError, CurrencyService } from "./currency.service.js";
 import { Decimal } from "decimal.js";
 import { CurrencyRateDatum } from "../entities/currencyRateDatum.entity.js";
 import { unwrap } from "../../std_errors/monadError.js";
@@ -41,16 +41,22 @@ export class CurrencyRateDatumService
         date: number,
         currencyId: string,
         amountCurrencyId: string
-    ): Promise<CurrencyRateDatum | UserNotFoundError>
+    ): Promise<CurrencyRateDatum | UserNotFoundError | CurrencyNotFoundError>
     {
         const newRate = CurrencyRateDatumRepository.getInstance().create();
         newRate.amount = amount.toString();
         newRate.date = date;
-        newRate.owner = await UserService.getUserById(userId);
+
+        const owner = await UserService.getUserById(userId);
+        if (owner === null) return new UserNotFoundError(userId);
+        newRate.owner = owner;
+
         const refCurrency = await CurrencyService.getCurrencyWithoutCache(userId, { id: currencyId });
         const refAmountCurrency = await CurrencyService.getCurrencyWithoutCache(userId, { id: amountCurrencyId });
         if (refAmountCurrency instanceof UserNotFoundError) return refAmountCurrency;
         if (refCurrency instanceof UserNotFoundError) return refCurrency;
+        if (refCurrency === null) return new CurrencyNotFoundError(userId, currencyId);
+        if (refAmountCurrency === null) return new CurrencyNotFoundError(userId, amountCurrencyId);
 
         newRate.refCurrency = refCurrency;
         newRate.refAmountCurrency = refAmountCurrency;
@@ -61,7 +67,7 @@ export class CurrencyRateDatumService
     (
         ownerId: string,
         currencyId: string,
-        startDate: Date = undefined, endDate: Date = undefined,
+        startDate: Date | undefined = undefined, endDate: Date | undefined = undefined,
         division: number = 10
     )
     {
@@ -94,7 +100,7 @@ export class CurrencyRateDatumService
             output.push(
             {
                 date: xValueDecimal.toNumber(),
-                rateToBase: interpolator.getValue(xValueDecimal)
+                rateToBase: interpolator.getValue(xValueDecimal) ?? new Decimal("0") // TODO: Properly address this
             });
         }
 

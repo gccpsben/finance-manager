@@ -48,12 +48,12 @@ export class TransactionTypeService
     public static async createTransactionType(ownerId: string, name: string)
     {
         const typeWithSameName = await TransactionTypeService.tryGetTransactionTypeByName(ownerId, name);
-        if (typeWithSameName.found)
-            return new TxnTypeExistsError(name, ownerId);
-
+        if (typeWithSameName.found) return new TxnTypeExistsError(name, ownerId);
+        const owner = await UserRepository.getInstance().findOne({ where: { id: ownerId } });
+        if (owner === null) return new UserNotFoundError(ownerId);
         const newType = TransactionTypeRepository.getInstance().create();
         newType.name = name;
-        newType.owner = await UserRepository.getInstance().findOne({ where: { id: ownerId } });
+        newType.owner = owner;
         return await TransactionTypeRepository.getInstance().save(newType);
     }
 
