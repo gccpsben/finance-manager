@@ -1,11 +1,12 @@
 import { IsDateString, IsString } from "class-validator";
 import { BodyGenerator } from "./lib/bodyGenerator.js";
-import { serverURL, UnitTestEndpoints } from "./index.test.js";
+import { serverURL, TestUserDict, TestUserEntry, UnitTestEndpoints } from "./index.test.js";
 import { HTTPAssert } from './lib/assert.js';
 import { Context } from "./lib/context.js";
 import { PostUserAPI } from "../../api-types/user.js";
 import { PostLoginAPI } from "../../api-types/auth.js";
 import { IsUTCDateInt } from "../server_source/db/validators.js";
+import { randomUUID } from "crypto";
 
 export namespace PostUserAPIClass
 {
@@ -86,4 +87,81 @@ export default async function(this: Context)
             });
         });
     });
+}
+
+export namespace AuthHelpers
+{
+    export async function registerRandMockUsers(serverURL:string, userCount = 5)
+    {
+        let randUsers: TestUserDict = {};
+        for (let i = 0; i < userCount; i++)
+        {
+            const username = randomUUID();
+            randUsers[username] = { password: randomUUID(), username: username };
+        }
+        return await AuthHelpers.registerMockUsers(serverURL, randUsers);
+    }
+
+    /** Register all users defined in `usersCreds`. Token will be set on each object after registering. */
+    export async function registerMockUsers(serverURL: string, usersCreds: TestUserDict)
+    {
+        for (let [key, value] of Object.entries(usersCreds))
+        {
+            await HTTPAssert.assertFetch
+            (
+                UnitTestEndpoints.userEndpoints['post'],
+                {
+                    expectedStatus: 200,
+                    baseURL: serverURL,
+                    body: { username: value.username, password: value.password },
+                    method: "POST"
+                }
+            );
+
+            const loginResponse = await HTTPAssert.assertFetch
+            (
+                UnitTestEndpoints.loginEndpoints['post'],
+                {
+                    expectedStatus: 200,
+                    baseURL: serverURL,
+                    body: { username: value.username, password: value.password },
+                    method: "POST",
+                    expectedBodyType: PostLoginAPIClass.ResponseDTO
+                }
+            );
+            usersCreds[key].token = loginResponse.parsedBody.token;
+        }
+
+        return usersCreds;
+    }
+
+    export async function registerMockUsersArray(serverURL: string, usersCreds: TestUserEntry[])
+    {
+        for (let user of usersCreds)
+        {
+            await HTTPAssert.assertFetch
+            (
+                UnitTestEndpoints.userEndpoints['post'],
+                {
+                    expectedStatus: 200,
+                    baseURL: serverURL,
+                    body: { username: user.username, password: user.password },
+                    method: "POST"
+                }
+            );
+
+            const loginResponse = await HTTPAssert.assertFetch
+            (
+                UnitTestEndpoints.loginEndpoints['post'],
+                {
+                    expectedStatus: 200,
+                    baseURL: serverURL,
+                    body: { username: user.username, password: user.password },
+                    method: "POST",
+                    expectedBodyType: PostLoginAPIClass.ResponseDTO
+                }
+            );
+            user.token = loginResponse.parsedBody.token;
+        }
+    }
 }

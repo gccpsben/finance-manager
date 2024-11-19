@@ -2,14 +2,15 @@ import { resetDatabase, serverURL, UnitTestEndpoints } from "./index.test.js";
 import { AssertFetchReturns, assertStrictEqual, HTTPAssert } from "./lib/assert.js";
 import { Context } from "./lib/context.js";
 import { BodyGenerator } from "./lib/bodyGenerator.js";
-import { HookShortcuts } from "./shortcuts/hookShortcuts.js";
-import { IsString, IsNotEmpty, IsOptional, IsDateString, IsArray, ValidateNested, IsNumber } from "class-validator";
+import { IsString, IsNotEmpty, IsOptional, IsArray, ValidateNested, IsNumber } from "class-validator";
 import { IsDecimalJSString, IsUTCDateInt } from "../server_source/db/validators.js";
 import { simpleFaker } from "@faker-js/faker";
 import { GetTxnAPI, PostTxnAPI, PutTxnAPI } from "../../api-types/txn.js";
 import { PostContainerAPIClass } from "./container.test.js";
 import { PostCurrencyAPIClass } from "./currency.test.js";
 import { Type } from "class-transformer";
+import { AuthHelpers } from "./auth.test.js";
+import { TxnTypeHelpers } from "./txnType.test.js";
 
 export namespace GetTxnAPIClass
 {
@@ -115,7 +116,7 @@ export default async function(this: Context)
         {
             await resetDatabase();
 
-            const testUsersCreds = await HookShortcuts.registerRandMockUsers(serverURL, 1);
+            const testUsersCreds = await AuthHelpers.registerRandMockUsers(serverURL, 1);
             const firstUser = Object.values(testUsersCreds)[0];
             const testContext =
             {
@@ -168,7 +169,7 @@ export default async function(this: Context)
             // Register txn type for first user
             await (async function()
             {
-                const response = await HookShortcuts.postCreateTxnType(
+                const response = await TxnTypeHelpers.postCreateTxnType(
                 {
                     serverURL: serverURL,
                     body: { name: `TxnType1` },
@@ -193,7 +194,7 @@ export default async function(this: Context)
                 {
                     await this.test(`Forbid creating transactions without ${testCase.fieldMissed} but all other fields`, async function()
                     {
-                        await HookShortcuts.postCreateTransaction(
+                        await TransactionHelpers.postCreateTransaction(
                         {
                             serverURL: serverURL,
                             body: { ...testCase.obj },
@@ -206,7 +207,7 @@ export default async function(this: Context)
 
                 await this.test(`Allow creating transactions without description`, async function()
                 {
-                    await HookShortcuts.postCreateTransaction(
+                    await TransactionHelpers.postCreateTransaction(
                     {
                        serverURL: serverURL,
                        body: { ...baseObj, description: undefined },
@@ -218,7 +219,7 @@ export default async function(this: Context)
 
                 await this.test(`Allow creating transactions without creationDate`, async function()
                 {
-                    await HookShortcuts.postCreateTransaction(
+                    await TransactionHelpers.postCreateTransaction(
                     {
                         serverURL: serverURL,
                         body: { ...baseObj, creationDate: undefined },
@@ -230,7 +231,7 @@ export default async function(this: Context)
 
                 await this.test(`Allow creating transactions with valid body and token`, async function()
                 {
-                    await HookShortcuts.postCreateTransaction(
+                    await TransactionHelpers.postCreateTransaction(
                     {
                         serverURL: serverURL,
                         body: baseObj,
@@ -260,7 +261,7 @@ export default async function(this: Context)
                         txnTypeId: testContext.txnTypeId
                     } satisfies PostTxnAPIClass.RequestDTOClass;
 
-                    const createdTxn = await HookShortcuts.postCreateTransaction(
+                    const createdTxn = await TransactionHelpers.postCreateTransaction(
                     {
                         serverURL: serverURL,
                         body: baseObj,
@@ -275,7 +276,7 @@ export default async function(this: Context)
                 let txnCreated: AssertFetchReturns<GetTxnAPI.ResponseDTO>;
                 await this.test(`Getting the posted txn`, async function()
                 {
-                    txnCreated = await HookShortcuts.getTransaction(
+                    txnCreated = await TransactionHelpers.getTransaction(
                     {
                         serverURL: serverURL,
                         token: firstUser.token,
@@ -291,7 +292,7 @@ export default async function(this: Context)
 
                 await this.test(`Updating existing txn`, async function()
                 {
-                    await HookShortcuts.putTransaction(
+                    await TransactionHelpers.putTransaction(
                     {
                         serverURL: serverURL,
                         token: firstUser.token,
@@ -312,7 +313,7 @@ export default async function(this: Context)
                         }
                     });
 
-                    const txnAfterMutated = await HookShortcuts.getTransaction(
+                    const txnAfterMutated = await TransactionHelpers.getTransaction(
                     {
                         serverURL: serverURL,
                         token: firstUser.token,
@@ -336,4 +337,85 @@ export default async function(this: Context)
             })
         });
     });
+}
+
+export namespace TransactionHelpers
+{
+    export async function getTransaction(config:
+    {
+        serverURL: string,
+        token:string,
+        assertBody?: boolean,
+        expectedCode?: number,
+        start?: number,
+        end?: number,
+        id?: string
+    })
+    {
+        const searchParams: Record<any,any> = {  };
+        if (config.start !== undefined && config.start !== null) searchParams['start'] = config.start;
+        if (config.end !== undefined && config.end !== null) searchParams['end'] = config.end;
+        if (config.id !== undefined && config.id !== null) searchParams['id'] = config.id;
+
+        const assertBody = config.assertBody === undefined ? true : config.assertBody;
+        const response = await HTTPAssert.assertFetch
+        (
+            `${UnitTestEndpoints.transactionsEndpoints['get']}?${new URLSearchParams(searchParams).toString()}`,
+            {
+                baseURL: `${config.serverURL}`,
+                expectedStatus: config.expectedCode, method: "GET",
+                headers: { "authorization": config.token },
+                expectedBodyType: assertBody ? GetTxnAPIClass.ResponseDTOClass : undefined
+            }
+        );
+        const output = response;
+        return output as AssertFetchReturns<GetTxnAPI.ResponseDTO>;
+    }
+
+    export async function putTransaction(config:
+    {
+        serverURL: string,
+        token:string,
+        body: Partial<PutTxnAPI.RequestBodyDTO>,
+        targetTxnId: string,
+        expectedCode?: number,
+    })
+    {
+        const queryObj = { targetTxnId: config.targetTxnId } satisfies PutTxnAPI.RequestQueryDTO;
+        const response = await HTTPAssert.assertFetch
+        (
+            `${UnitTestEndpoints.transactionsEndpoints['put']}?${new URLSearchParams(queryObj).toString()}`,
+            {
+                baseURL: config.serverURL, expectedStatus: config.expectedCode, method: "PUT",
+                body: config.body,
+                headers: { "authorization": config.token },
+            }
+        );
+        return response as AssertFetchReturns<{}>;
+    }
+
+    export async function postCreateTransaction(config:
+    {
+        serverURL: string,
+        token:string,
+        body: Partial<PostTxnAPIClass.RequestDTOClass>,
+        assertBody?: boolean,
+        expectedCode?: number,
+    })
+    {
+        const assertBody = config.assertBody === undefined ? true : config.assertBody;
+        const response = await HTTPAssert.assertFetch(UnitTestEndpoints.transactionsEndpoints['post'],
+        {
+            baseURL: config.serverURL, expectedStatus: config.expectedCode, method: "POST",
+            body: config.body,
+            headers: { "authorization": config.token },
+            expectedBodyType: assertBody ? PostTxnAPIClass.ResponseDTOClass : undefined
+        });
+        const output =
+        {
+            ...response,
+            txnId: response.parsedBody?.id as string | undefined
+        };
+        return output as AssertFetchReturns<PostTxnAPIClass.ResponseDTOClass> & { txnId?: string | undefined };
+    }
 }

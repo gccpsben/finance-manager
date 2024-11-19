@@ -3,9 +3,10 @@ import { BodyGenerator } from "./lib/bodyGenerator.js";
 import { resetDatabase, serverURL, UnitTestEndpoints } from "./index.test.js";
 import { assertJSONEqual, assertStrictEqual, HTTPAssert } from "./lib/assert.js";
 import { Context } from "./lib/context.js";
-import { HookShortcuts } from "./shortcuts/hookShortcuts.js";
-import { GetTxnTypesAPI, TxnTypesDTO } from "../../api-types/txnType.js";
+import { Generator } from "./shortcuts/generator.js";
+import { GetTxnTypesAPI, PostTxnTypesAPI, TxnTypesDTO } from "../../api-types/txnType.js";
 import { Type } from "class-transformer";
+import { AuthHelpers } from "./auth.test.js";
 
 export class TransactionTypesDTOClass implements TxnTypesDTO
 {
@@ -42,7 +43,7 @@ export default async function(this: Context)
     {
         await this.module(UnitTestEndpoints.transactionTypesEndpoints['get'], async function()
         {
-            const userCreds = await HookShortcuts.registerRandMockUsers(serverURL, 1);
+            const userCreds = await AuthHelpers.registerRandMockUsers(serverURL, 1);
             const { username:firstUserName, token:firstUserToken } = Object.values(userCreds)[0];
             const baseValidObj = createPostTxnTypeBody(`TESTING TXN TYPE`);
             let postedTxnType = undefined as undefined | ResponsePostTransactionTypesDTOBody;
@@ -100,4 +101,62 @@ export default async function(this: Context)
             });
         })
     });
+}
+
+export namespace TxnTypeHelpers
+{
+    export async function postCreateTxnType(config:
+    {
+        serverURL:string,
+        token:string,
+        body: Partial<PostTxnTypesAPI.RequestDTO>,
+        assertBody?: boolean,
+        expectedCode?: number
+    })
+    {
+        const assertBody = config.assertBody === undefined ? true : config.assertBody;
+        const response = await HTTPAssert.assertFetch(UnitTestEndpoints.transactionTypesEndpoints['post'],
+        {
+            baseURL: config.serverURL, expectedStatus: config.expectedCode, method: "POST",
+            body: config.body,
+            headers: { "authorization": config.token },
+            expectedBodyType: assertBody ? ResponsePostTransactionTypesDTOBody : undefined
+        });
+        return {
+            ...response,
+            txnTypeId: response.parsedBody?.id as string | undefined
+        };
+    }
+
+    /** Random tnx types with unique names */
+    export async function postRandomTxnTypes(config:
+    {
+        serverURL:string,
+        token:string,
+        assertBody?: boolean,
+        expectedCode?: number,
+        txnCount: number
+    })
+    {
+        const usedNames: string[] = [];
+        const output: { txnId: string, txnName: string }[] = [];
+        for (let i = 0; i < config.txnCount; i++)
+        {
+            const randomName = Generator.randUniqueName(usedNames);
+            usedNames.push(randomName);
+            output.push(
+            {
+                txnId: (await TxnTypeHelpers.postCreateTxnType(
+                {
+                    body         : { name: randomName },
+                    serverURL    : config.serverURL,
+                    token        : config.token,
+                    assertBody   : config.assertBody,
+                    expectedCode : config.expectedCode
+                })).txnTypeId,
+                txnName: randomName
+            });
+        }
+        return output;
+    }
 }

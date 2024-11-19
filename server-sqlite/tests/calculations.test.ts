@@ -2,14 +2,17 @@ import { LinearInterpolator } from '../server_source/calculations/linearInterpol
 import { resetDatabase, serverURL, UnitTestEndpoints } from "./index.test.js";
 import { assertJSONEqual, assertStrictEqual, HTTPAssert } from "./lib/assert.js";
 import { Context } from "./lib/context.js";
-import { HookShortcuts } from "./shortcuts/hookShortcuts.js";
 import { Decimal } from "decimal.js";
 import { randomUUID } from "crypto";
 import { simpleFaker } from "@faker-js/faker";
 import { GetUserBalanceHistoryAPI, GetUserNetworthHistoryAPI, ResponseGetExpensesAndIncomesDTO } from "../../api-types/calculations.js";
 import { isDecimalJSString, IsDecimalJSString, IsEpochKeyedMap, IsPassing } from "../server_source/db/validators.js";
 import { shuffleArray } from './lib/utils.js';
-import { postCurrencyRateDatum } from './currency.test.js';
+import { CurrencyHelpers, postCurrencyRateDatum } from './currency.test.js';
+import { AuthHelpers } from './auth.test.js';
+import { TransactionHelpers } from './transaction.test.js';
+import { ContainerHelpers } from './container.test.js';
+import { TxnTypeHelpers } from './txnType.test.js';
 
 export namespace GetUserBalanceHistoryAPIClass
 {
@@ -73,14 +76,14 @@ export default async function(this: Context)
             {
                 await this.test(`Test for Correctness`, async function()
                 {
-                    const userCreds = await HookShortcuts.registerRandMockUsers(serverURL, 3);
+                    const userCreds = await AuthHelpers.registerRandMockUsers(serverURL, 3);
 
                     for (const [userKeyname, userObj] of Object.entries(userCreds))
                     {
                         const baseConfig = { serverURL, token: userObj.token, assertBody: true, expectedCode: 200 };
-                        const txnTypes = await HookShortcuts.postRandomTxnTypes({ ...baseConfig, txnCount: 3, });
-                        const containers = await HookShortcuts.postRandomContainers({ ...baseConfig, containerCount: 3 });
-                        const baseCurrency = await HookShortcuts.postCreateCurrency({ ...baseConfig, body: { name: "BASE", ticker: "BASE" } });
+                        const txnTypes = await TxnTypeHelpers.postRandomTxnTypes({ ...baseConfig, txnCount: 3, });
+                        const containers = await ContainerHelpers.postRandomContainers({ ...baseConfig, containerCount: 3 });
+                        const baseCurrency = await CurrencyHelpers.postCreateCurrency({ ...baseConfig, body: { name: "BASE", ticker: "BASE" } });
 
                         const txnsToPost: { toAmount: Decimal|undefined, fromAmount: Decimal|undefined, txnAgeDays: number }[] =
                         [
@@ -109,7 +112,7 @@ export default async function(this: Context)
                             const isFrom = !!txnToPost.fromAmount;
                             const isTo = !!txnToPost.toAmount;
 
-                            await HookShortcuts.postCreateTransaction(
+                            await TransactionHelpers.postCreateTransaction(
                             {
                                 body:
                                 {
@@ -128,7 +131,7 @@ export default async function(this: Context)
                             });
                         }
 
-                        const userExpensesAndIncomes = await HookShortcuts.getUserExpensesAndIncomes(baseConfig);
+                        const userExpensesAndIncomes = await CalculationsHelpers.getUserExpensesAndIncomes(baseConfig);
 
                         assertStrictEqual(userExpensesAndIncomes.res.parsedBody.expenses30d.toString(), expectedResult.expenses30d.toString());
                         assertStrictEqual(userExpensesAndIncomes.res.parsedBody.expenses7d.toString(), expectedResult.expenses7d.toString());
@@ -146,15 +149,15 @@ export default async function(this: Context)
             const makeCurrBody = (name: string, ticker: string, fallbackRateAmount: string, fallbackRateCurrencyId: string) =>
                 ({ name, ticker, fallbackRateAmount, fallbackRateCurrencyId });
 
-            const userCreds = await HookShortcuts.registerRandMockUsers(serverURL, 1);
+            const userCreds = await AuthHelpers.registerRandMockUsers(serverURL, 1);
             const firstUserObj = Object.values(userCreds)[0];
             const baseConfig = { serverURL: serverURL, token: firstUserObj.token, assertBody: true, expectedCode: 200 };
 
-            const txnTypes = await HookShortcuts.postRandomTxnTypes({ txnCount: 3, ...baseConfig });
-            const containers = await HookShortcuts.postRandomContainers({ containerCount: 3, ...baseConfig });
-            const baseCurrency = await HookShortcuts.postCreateCurrency({ body: { name: "BASE", ticker: "BASE" }, ...baseConfig });
-            const secondCurrency = await HookShortcuts.postCreateCurrency({ body: makeCurrBody("SEC", "SEC", '1', baseCurrency.currencyId), ...baseConfig });
-            const thirdCurrency = await HookShortcuts.postCreateCurrency({ body: makeCurrBody("THI", "THI", '1', secondCurrency.currencyId), ...baseConfig });
+            const txnTypes = await TxnTypeHelpers.postRandomTxnTypes({ txnCount: 3, ...baseConfig });
+            const containers = await ContainerHelpers.postRandomContainers({ containerCount: 3, ...baseConfig });
+            const baseCurrency = await CurrencyHelpers.postCreateCurrency({ body: { name: "BASE", ticker: "BASE" }, ...baseConfig });
+            const secondCurrency = await CurrencyHelpers.postCreateCurrency({ body: makeCurrBody("SEC", "SEC", '1', baseCurrency.currencyId), ...baseConfig });
+            const thirdCurrency = await CurrencyHelpers.postCreateCurrency({ body: makeCurrBody("THI", "THI", '1', secondCurrency.currencyId), ...baseConfig });
             const txnsToPost: { toAmount: string | undefined, fromAmount: string | undefined, txnAgeDays: number, currId: string, conId: string }[] =
             [
                 { fromAmount: undefined, toAmount: `100.0001`, txnAgeDays: 90, currId: baseCurrency.currencyId, conId: containers[0].containerId },
@@ -176,7 +179,7 @@ export default async function(this: Context)
                 const isFrom = !!txnToPost.fromAmount;
                 const isTo = !!txnToPost.toAmount;
 
-                await HookShortcuts.postCreateTransaction
+                await TransactionHelpers.postCreateTransaction
                 (
                     {
                         body:
@@ -201,7 +204,7 @@ export default async function(this: Context)
             {
                 await this.test(`Forbid division is not an int`, async function()
                 {
-                    await HookShortcuts.getUserBalanceHistory(
+                    await CalculationsHelpers.getUserBalanceHistory(
                     {
                         serverURL: serverURL,
                         token: firstUserObj.token,
@@ -215,7 +218,7 @@ export default async function(this: Context)
 
                 await this.test(`Forbid division === 1 or division === 0`, async function()
                 {
-                    await HookShortcuts.getUserBalanceHistory(
+                    await CalculationsHelpers.getUserBalanceHistory(
                     {
                         serverURL: serverURL,
                         token: firstUserObj.token,
@@ -226,7 +229,7 @@ export default async function(this: Context)
                         endDate: transformOffsetDate(0)
                     });
 
-                    await HookShortcuts.getUserBalanceHistory(
+                    await CalculationsHelpers.getUserBalanceHistory(
                     {
                         serverURL: serverURL,
                         token: firstUserObj.token,
@@ -244,7 +247,7 @@ export default async function(this: Context)
                     const rangeEnd = -10;
                     const division = 10;
 
-                    const userBalances = await HookShortcuts.getUserBalanceHistory(
+                    const userBalances = await CalculationsHelpers.getUserBalanceHistory(
                     {
                         serverURL: serverURL, token: firstUserObj.token, assertBody: true, expectedCode: 200,
                         division: division,
@@ -316,18 +319,18 @@ export default async function(this: Context)
             const makeCurrBody = (name: string, ticker: string, fallbackRateAmount: string, fallbackRateCurrencyId: string) =>
                 ({ name, ticker, fallbackRateAmount, fallbackRateCurrencyId });
 
-            const userCreds = await HookShortcuts.registerRandMockUsers(serverURL, 1);
+            const userCreds = await AuthHelpers.registerRandMockUsers(serverURL, 1);
             const firstUserObj = Object.values(userCreds)[0];
             const baseConfig = { serverURL: serverURL, token: firstUserObj.token, assertBody: true, expectedCode: 200 };
 
             const rangeStart = 100;
             const rangeEnd = 0;
             const division = 10;
-            const txnTypes = await HookShortcuts.postRandomTxnTypes({ txnCount: 3, ...baseConfig });
-            const containers = await HookShortcuts.postRandomContainers({ containerCount: 3, ...baseConfig });
-            const baseCurrency = await HookShortcuts.postCreateCurrency({ body: { name: "BASE", ticker: "BASE" }, ...baseConfig });
-            const secondCurrency = await HookShortcuts.postCreateCurrency({ body: makeCurrBody("SEC", "SEC", '1', baseCurrency.currencyId), ...baseConfig });
-            const thirdCurrency = await HookShortcuts.postCreateCurrency({ body: makeCurrBody("THI", "THI", '1', secondCurrency.currencyId), ...baseConfig });
+            const txnTypes = await TxnTypeHelpers.postRandomTxnTypes({ txnCount: 3, ...baseConfig });
+            const containers = await ContainerHelpers.postRandomContainers({ containerCount: 3, ...baseConfig });
+            const baseCurrency = await CurrencyHelpers.postCreateCurrency({ body: { name: "BASE", ticker: "BASE" }, ...baseConfig });
+            const secondCurrency = await CurrencyHelpers.postCreateCurrency({ body: makeCurrBody("SEC", "SEC", '1', baseCurrency.currencyId), ...baseConfig });
+            const thirdCurrency = await CurrencyHelpers.postCreateCurrency({ body: makeCurrBody("THI", "THI", '1', secondCurrency.currencyId), ...baseConfig });
             const txnsToPost: { toAmount: string | undefined, fromAmount: string | undefined, txnAgeDays: number, currId: string, conId: string }[] =
             [
                 { fromAmount: undefined  , toAmount: `100.0001` , txnAgeDays: 90, currId: baseCurrency.currencyId   , conId: containers[0].containerId },
@@ -362,7 +365,7 @@ export default async function(this: Context)
                 const isFrom = !!txnToPost.fromAmount;
                 const isTo = !!txnToPost.toAmount;
 
-                await HookShortcuts.postCreateTransaction
+                await TransactionHelpers.postCreateTransaction
                 (
                     {
                         body:
@@ -401,7 +404,7 @@ export default async function(this: Context)
             {
                 await this.test(`Forbid division is not an int`, async function()
                 {
-                    await HookShortcuts.getUserNetworthHistory(
+                    await CalculationsHelpers.getUserNetworthHistory(
                     {
                         serverURL: serverURL,
                         token: firstUserObj.token,
@@ -415,7 +418,7 @@ export default async function(this: Context)
 
                 await this.test(`Forbid division === 1 or division === 0`, async function()
                 {
-                    await HookShortcuts.getUserNetworthHistory(
+                    await CalculationsHelpers.getUserNetworthHistory(
                     {
                         serverURL: serverURL,
                         token: firstUserObj.token,
@@ -426,7 +429,7 @@ export default async function(this: Context)
                         endDate: transformOffsetDate(0)
                     });
 
-                    await HookShortcuts.getUserNetworthHistory(
+                    await CalculationsHelpers.getUserNetworthHistory(
                     {
                         serverURL: serverURL,
                         token: firstUserObj.token,
@@ -441,7 +444,7 @@ export default async function(this: Context)
                 await this.test(`Test for Correctness`, async function()
                 {
                     const divisionRangeInEpoch = (rangeEnd - rangeStart) / (division - 1);
-                    const response = await HookShortcuts.getUserNetworthHistory(
+                    const response = await CalculationsHelpers.getUserNetworthHistory(
                     {
                         serverURL: serverURL,
                         token: firstUserObj.token,
@@ -539,4 +542,85 @@ export async function testForCalculationsInternals(this: Context)
             }
         }).bind(this)();
     });
+}
+
+export namespace CalculationsHelpers
+{
+    export async function getUserExpensesAndIncomes(config:
+    {
+        serverURL:string,
+        token:string,
+        assertBody?: boolean,
+        expectedCode?: number
+    })
+    {
+        const assertBody = config.assertBody === undefined ? true : config.assertBody;
+        const response = await HTTPAssert.assertFetch
+        (
+            UnitTestEndpoints.calculationsEndpoints['expensesAndIncomes'],
+            {
+                baseURL: config.serverURL, expectedStatus: config.expectedCode, method: "GET",
+                headers: { "authorization": config.token },
+                expectedBodyType: assertBody ? ResponseGetExpensesAndIncomesDTOClass : undefined,
+            }
+        );
+        return {
+            res: response,
+            parsedBody: response.parsedBody
+        };
+    }
+
+    export async function getUserBalanceHistory(config:
+    {
+        serverURL:string,
+        token:string,
+        assertBody?: boolean,
+        expectedCode?: number,
+        startDate: number,
+        endDate: number,
+        division: number
+    })
+    {
+        const assertBody = config.assertBody === undefined ? true : config.assertBody;
+        const response = await HTTPAssert.assertFetch
+        (
+            `${UnitTestEndpoints.calculationsEndpoints['balanceHistory']}?startDate=${config.startDate}&endDate=${config.endDate}&division=${config.division}`,
+            {
+                baseURL: config.serverURL, expectedStatus: config.expectedCode, method: "GET",
+                headers: { "authorization": config.token },
+                expectedBodyType: assertBody ? GetUserBalanceHistoryAPIClass.ResponseDTO : undefined,
+            }
+        );
+        return {
+            res: response,
+            parsedBody: response.parsedBody
+        };
+    }
+
+    export async function getUserNetworthHistory(config:
+    {
+        serverURL:string,
+        token:string,
+        assertBody?: boolean,
+        expectedCode?: number,
+        startDate: number,
+        endDate: number,
+        division: number
+    })
+    {
+        const assertBody = config.assertBody === undefined ? true : config.assertBody;
+        const response = await HTTPAssert.assertFetch
+        (
+            `${UnitTestEndpoints.calculationsEndpoints['networthHistory']}?startDate=${config.startDate}&endDate=${config.endDate}&division=${config.division}`,
+            {
+                baseURL: config.serverURL, expectedStatus: config.expectedCode, method: "GET",
+                headers: { "authorization": config.token },
+                expectedBodyType: assertBody ? GetUserNetworthHistoryAPIClass.ResponseDTO : undefined,
+            }
+        );
+        return {
+            res: response,
+            parsedBody: response.parsedBody
+        };
+    }
 }

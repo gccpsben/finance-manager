@@ -3,14 +3,17 @@ import { resetDatabase, serverURL, TestUserEntry, UnitTestEndpoints } from "./in
 import { assertBodyConfirmToModel, assertStrictEqual, HTTPAssert } from "./lib/assert.js";
 import { Context } from "./lib/context.js";
 import { BodyGenerator } from "./lib/bodyGenerator.js";
-import { HookShortcuts } from "./shortcuts/hookShortcuts.js";
+import { Generator } from "./shortcuts/generator.js";
 import { BalancesHydratedContainerDTO, ContainerDTO, GetContainerAPI, PostContainerAPI, ValueHydratedContainerDTO } from "../../api-types/container.js";
 import { IsArray, IsDefined, IsNumber, IsString, ValidateNested } from "class-validator";
 import { Decimal } from "decimal.js";
 import { simpleFaker } from "@faker-js/faker";
-import { PostCurrencyRateDatumAPIClass } from "./currency.test.js";
+import { CurrencyHelpers, PostCurrencyRateDatumAPIClass } from "./currency.test.js";
 import { IsDecimalJSString, IsStringToDecimalJSStringDict, IsStringToStringDict, IsUTCDateInt } from "../server_source/db/validators.js";
 import { Type } from "class-transformer";
+import { AuthHelpers } from "./auth.test.js";
+import { TransactionHelpers } from "./transaction.test.js";
+import { TxnTypeHelpers } from "./txnType.test.js";
 
 export class ContainerDTOClass implements ContainerDTO
 {
@@ -112,12 +115,12 @@ export default async function(this: Context)
                     }));
 
                     // Register users for each user in matrix
-                    await HookShortcuts.registerMockUsersArray(serverURL, testUsersCreds);
+                    await AuthHelpers.registerMockUsersArray(serverURL, testUsersCreds);
 
                     for (const testCase of relationshipMatrix.matrix)
                     {
                         const  userToken = testUsersCreds.find(x => x.username === testCase.primaryValue)!.token;
-                        await HookShortcuts.postCreateContainer(
+                        await ContainerHelpers.postCreateContainer(
                         {
                             serverURL: serverURL,
                             body: { name: testCase.subPrimaryValue },
@@ -160,30 +163,30 @@ export default async function(this: Context)
                         fromContainerId?: string|undefined,
                         txnAgeDays: number
                     };
-                    const userCreds = await HookShortcuts.registerRandMockUsers(serverURL, 1);
+                    const userCreds = await AuthHelpers.registerRandMockUsers(serverURL, 1);
                     const userObj = Object.values(userCreds)[0];
 
-                    const txnTypes = await HookShortcuts.postRandomTxnTypes(
+                    const txnTypes = await TxnTypeHelpers.postRandomTxnTypes(
                     {
                         serverURL: serverURL, token: userObj.token,
                         txnCount: 3, assertBody: true, expectedCode: 200
                     });
-                    const containers = await HookShortcuts.postRandomContainers(
+                    const containers = await ContainerHelpers.postRandomContainers(
                     {
                         serverURL: serverURL, token: userObj.token,
                         containerCount: 3, assertBody: true, expectedCode: 200
                     });
-                    const baseCurrency = await HookShortcuts.postCreateCurrency(
+                    const baseCurrency = await CurrencyHelpers.postCreateCurrency(
                     {
                         body: { name: "BASE", ticker: "BASE" }, serverURL: serverURL,
                         token: userObj.token, assertBody: true, expectedCode: 200
                     });
-                    const secondCurrency = await HookShortcuts.postCreateCurrency(
+                    const secondCurrency = await CurrencyHelpers.postCreateCurrency(
                     {
                         body: { name: "SEC", ticker: "SEC", fallbackRateAmount: '1', fallbackRateCurrencyId: baseCurrency.currencyId },
                         serverURL: serverURL, token: userObj.token, assertBody: true, expectedCode: 200
                     });
-                    const thirdCurrency = await HookShortcuts.postCreateCurrency(
+                    const thirdCurrency = await CurrencyHelpers.postCreateCurrency(
                     {
                         body: { name: "THIRD", ticker: "THIRD", fallbackRateAmount: '1', fallbackRateCurrencyId: secondCurrency.currencyId },
                         serverURL: serverURL, token: userObj.token, assertBody: true, expectedCode: 200
@@ -270,7 +273,7 @@ export default async function(this: Context)
                         const isFrom = !!txnToPost.fromAmount;
                         const isTo = !!txnToPost.toAmount;
 
-                        await HookShortcuts.postCreateTransaction(
+                        await TransactionHelpers.postCreateTransaction(
                         {
                             body:
                             {
@@ -294,7 +297,7 @@ export default async function(this: Context)
 
                     await this.test(`Test for correctness of balances and values (1)`, async function()
                     {
-                        const res = await HookShortcuts.getUserContainers(
+                        const res = await ContainerHelpers.getUserContainers(
                         {
                             serverURL: serverURL, token: userObj.token, assertBody: true, expectedCode: 200,
                             dateEpoch: offsetDate(0)
@@ -320,7 +323,7 @@ export default async function(this: Context)
 
                     await this.test(`Test for correctness of balances and values (2)`, async function()
                     {
-                        const res = await HookShortcuts.getUserContainers(
+                        const res = await ContainerHelpers.getUserContainers(
                         {
                             serverURL: serverURL, token: userObj.token, assertBody: true, expectedCode: 200,
                             dateEpoch: offsetDate(15)
@@ -346,7 +349,7 @@ export default async function(this: Context)
 
                     await this.test(`Test for correctness of balances and values (3)`, async function()
                     {
-                        const res = await HookShortcuts.getUserContainers(
+                        const res = await ContainerHelpers.getUserContainers(
                         {
                             serverURL: serverURL, token: userObj.token, assertBody: true, expectedCode: 200,
                             dateEpoch: offsetDate(74)
@@ -373,4 +376,91 @@ export default async function(this: Context)
             });
         });
     });
+}
+
+export namespace ContainerHelpers
+{
+    export async function postCreateContainer(config:
+    {
+        serverURL:string,
+        token:string,
+        body: Partial<PostContainerAPI.RequestDTO>,
+        assertBody?: boolean,
+        expectedCode?: number
+    })
+    {
+        const assertBody = config.assertBody === undefined ? true : config.assertBody;
+        const response = await HTTPAssert.assertFetch(UnitTestEndpoints.containersEndpoints['post'],
+        {
+            baseURL: config.serverURL, expectedStatus: config.expectedCode, method: "POST",
+            body: config.body,
+            headers: { "authorization": config.token },
+            expectedBodyType: assertBody ? PostContainerAPIClass.ResponseDTO : undefined
+        });
+        return {
+            ...response,
+            containerId: response.parsedBody?.id as string | undefined
+        };
+    }
+
+    /** Random tnx types with unique names */
+    export async function postRandomContainers(config:
+    {
+        serverURL:string,
+        token:string,
+        assertBody?: boolean,
+        expectedCode?: number,
+        containerCount: number
+    })
+    {
+        const usedNames: string[] = [];
+        const output: { containerId: string, containerName: string }[] = [];
+        for (let i = 0; i < config.containerCount; i++)
+        {
+            const randomName = Generator.randUniqueName(usedNames);
+            usedNames.push(randomName);
+            output.push(
+            {
+                containerId: (await ContainerHelpers.postCreateContainer(
+                {
+                    body         : { name: randomName },
+                    serverURL    : config.serverURL,
+                    token        : config.token,
+                    assertBody   : config.assertBody,
+                    expectedCode : config.expectedCode
+                })).containerId,
+                containerName: randomName
+            });
+        }
+        return output;
+    }
+
+    export async function getUserContainers(config:
+    {
+        serverURL: string,
+        token: string,
+        assertBody?: boolean,
+        expectedCode?: number,
+        dateEpoch?: number | undefined
+    })
+    {
+        const assertBody = config.assertBody === undefined ? true : config.assertBody;
+        const url = config.dateEpoch !== undefined ?
+            `${UnitTestEndpoints.containersEndpoints['get']}?currencyRateDate=${config.dateEpoch}` :
+            UnitTestEndpoints.containersEndpoints['get'];
+
+        const response = await HTTPAssert.assertFetch
+        (
+            url,
+            {
+                baseURL: config.serverURL, expectedStatus: config.expectedCode, method: "GET",
+                headers: { "authorization": config.token },
+                expectedBodyType: assertBody ? GetContainerAPIClass.ResponseDTO : undefined,
+            }
+        );
+        return {
+            res: response,
+            parsedBody: response.parsedBody
+        };
+    }
 }

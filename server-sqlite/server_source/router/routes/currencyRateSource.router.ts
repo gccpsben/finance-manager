@@ -8,6 +8,7 @@ import { ExpressValidations } from "../validation.js";
 import { CurrencyRateSourceService } from "../../db/services/currencyRateSource.service.js";
 import { CurrencyNotFoundError } from "../../db/services/currency.service.js";
 
+// TODO: Add unit tests for this router
 const router = new TypesafeRouter(express.Router());
 
 router.get<GetCurrencyRateSrcAPI.ResponseDTO>(`/api/v1/currencyRateSources`,

@@ -2,7 +2,7 @@ import { IsString, IsBoolean, IsOptional, IsNumber, IsArray, ValidateNested, IsN
 import { IsDecimalJSString } from "../server_source/db/validators.js";
 import { Context } from "./lib/context.js";
 import { resetDatabase, serverURL, TestUserDict, TestUserEntry, UnitTestEndpoints } from "./index.test.js";
-import { HookShortcuts } from "./shortcuts/hookShortcuts.js";
+import { Generator } from "./shortcuts/generator.js";
 import { assertBodyConfirmToModel, assertStrictEqual, HTTPAssert } from "./lib/assert.js";
 import { BodyGenerator } from "./lib/bodyGenerator.js";
 import { simpleFaker } from '@faker-js/faker';
@@ -13,6 +13,7 @@ import { CurrencyDTO, PostCurrencyAPI, GetCurrencyAPI, GetCurrencyRateHistoryAPI
 import { PostCurrencyRateAPI } from "../../api-types/currencyRateDatum.js";
 import { PostCurrencyRateSrcAPI } from "../../api-types/currencyRateSource.js";
 import { Type } from "class-transformer";
+import { AuthHelpers } from "./auth.test.js";
 
 export class CurrencyDTOClass implements CurrencyDTO
 {
@@ -198,7 +199,7 @@ export default async function(this: Context)
                 {
                     await resetDatabase();
                     const testUsersCreds: TestUserDict = { "user1" : { username: "user1", password: "user1password" } };
-                    await HookShortcuts.registerMockUsers(serverURL, testUsersCreds);
+                    await AuthHelpers.registerMockUsers(serverURL, testUsersCreds);
                     const user = testUsersCreds["user1"];
 
                     await this.test(`Forbid base currencies without name - ${user.username}`, async function()
@@ -232,7 +233,7 @@ export default async function(this: Context)
 
                     await this.test(`Allow base currencies with valid token and body`, async function()
                     {
-                        await HookShortcuts.postCreateCurrency(
+                        await CurrencyHelpers.postCreateCurrency(
                         {
                         serverURL: serverURL,
                         body: { name: `User-Currency`, ticker: "USER-TICKER" },
@@ -244,7 +245,7 @@ export default async function(this: Context)
 
                     await this.test(`Forbid repeated base currencies`, async function()
                     {
-                        await HookShortcuts.postCreateCurrency(
+                        await CurrencyHelpers.postCreateCurrency(
                         {
                             serverURL: serverURL,
                             body: { name: `User-Currency`, ticker: "USER-TICKER" },
@@ -264,12 +265,12 @@ export default async function(this: Context)
                         }));
 
                         // Register users for each user in matrix
-                        await HookShortcuts.registerMockUsersArray(serverURL, testUsersCreds);
+                        await AuthHelpers.registerMockUsersArray(serverURL, testUsersCreds);
 
                         // Create a base currency for each user first
                         for (const user of testUsersCreds)
                         {
-                            const response = await HookShortcuts.postCreateCurrency(
+                            const response = await CurrencyHelpers.postCreateCurrency(
                             {
                                 serverURL: serverURL,
                                 body: { name: `User-Currency`, ticker: "USER-TICKER" },
@@ -285,7 +286,7 @@ export default async function(this: Context)
                             const userObj = testUsersCreds.find(x => x.username === testCase.primaryValue)!;
                             const userToken = userObj.token;
 
-                            await HookShortcuts.postCreateCurrency(
+                            await CurrencyHelpers.postCreateCurrency(
                             {
                                 serverURL: serverURL,
                                 body: { name: testCase.subPrimaryValue, ticker: testCase.subPrimaryValue, fallbackRateAmount: "1", fallbackRateCurrencyId: userObj.baseCurrencyId },
@@ -300,7 +301,7 @@ export default async function(this: Context)
                 await this.module(`Regular Currencies`, async function()
                 {
                     await resetDatabase();
-                    const testUsersCreds = await HookShortcuts.registerRandMockUsers(serverURL, 1);
+                    const testUsersCreds = await AuthHelpers.registerRandMockUsers(serverURL, 1);
                     const firstUser = Object.values(testUsersCreds)[0];
 
                     // Test for missing body params
@@ -309,7 +310,7 @@ export default async function(this: Context)
                         // Register base currency for first user
                         (async function()
                         {
-                            const response = await HookShortcuts.postCreateCurrency(
+                            const response = await CurrencyHelpers.postCreateCurrency(
                             {
                                 serverURL: serverURL,
                                 body: { name: `User-Currency`, ticker: `USER-TICKER` },
@@ -336,7 +337,7 @@ export default async function(this: Context)
 
                             await this.test(`Forbid creating regular currencies without ${missedField} but all other fields`, async function ()
                             {
-                                await HookShortcuts.postCreateCurrency(
+                                await CurrencyHelpers.postCreateCurrency(
                                 {
                                     serverURL: serverURL,
                                     body: { ...obj },
@@ -353,7 +354,7 @@ export default async function(this: Context)
                         const testStrs = ["100a", "", "2e+3", "0x123", "***", ".../"];
                         for (const str of testStrs)
                         {
-                            await HookShortcuts.postCreateCurrency(
+                            await CurrencyHelpers.postCreateCurrency(
                             {
                                 serverURL: serverURL,
                                 body: createCurrencyPostBody(`User-Currency`, `USER-TICKER`, firstUser.baseCurrencyId, str),
@@ -370,7 +371,7 @@ export default async function(this: Context)
                         const testStrs = fillArray(50, () => `${simpleFaker.number.float()}`);
                         for (const str of testStrs)
                         {
-                            const response = await HookShortcuts.postCreateCurrency(
+                            const response = await CurrencyHelpers.postCreateCurrency(
                             {
                                 serverURL: serverURL,
                                 body: createCurrencyPostBody(randomUUID(), randomUUID(), firstUser.baseCurrencyId, str),
@@ -419,7 +420,7 @@ export default async function(this: Context)
                     await this.module(`Without Rates Datum`, async function()
                     {
                         await resetDatabase();
-                        const testUsersCreds = await HookShortcuts.registerRandMockUsers(serverURL, 1);
+                        const testUsersCreds = await AuthHelpers.registerRandMockUsers(serverURL, 1);
                         const { username:firstUserName, token:firstUserToken } = Object.values(testUsersCreds)[0];
                         const baseCurrencyResponse = await postBaseCurrency(firstUserToken, `${firstUserName}curr`, `${firstUserName}ticker`);
                         const baseCurrencyID = baseCurrencyResponse.rawBody["id"] as string;
@@ -476,7 +477,7 @@ export default async function(this: Context)
                     await this.module(`With Rates Datum`, async function()
                     {
                         await resetDatabase();
-                        const testUsersCreds = await HookShortcuts.registerRandMockUsers(serverURL, 1);
+                        const testUsersCreds = await AuthHelpers.registerRandMockUsers(serverURL, 1);
                         const { username:firstUserName, token:firstUserToken } = Object.values(testUsersCreds)[0];
 
                         const offsetDate = (d: number) => testDateTimestamp + d * 100 * 1000; // convert the mock date in test case to real date
@@ -612,7 +613,7 @@ export default async function(this: Context)
                     await resetDatabase();
                     const offsetDate = (d: number) => testDateTimestamp + d * 100 * 1000; // convert the mock date in test case to real date
 
-                    const testUsersCreds = await HookShortcuts.registerRandMockUsers(serverURL, 1);
+                    const testUsersCreds = await AuthHelpers.registerRandMockUsers(serverURL, 1);
                     const { username:firstUserName, token:firstUserToken } = Object.values(testUsersCreds)[0];
                     const baseCurrencyResponse = await postBaseCurrency(firstUserToken, `${firstUserName}curr`, `${firstUserName}ticker`);
                     const baseCurrencyID = baseCurrencyResponse.rawBody["id"] as string;
@@ -713,7 +714,7 @@ export default async function(this: Context)
             {
                 // Setup environment
                 await resetDatabase();
-                const testUsersCreds = await HookShortcuts.registerRandMockUsers(serverURL, 1);
+                const testUsersCreds = await AuthHelpers.registerRandMockUsers(serverURL, 1);
                 const { username:firstUserName, token:firstUserToken } = Object.values(testUsersCreds)[0];
                 const baseCurrencyResponse = await postBaseCurrency(firstUserToken, `${firstUserName}curr`, `${firstUserName}ticker`);
                 const baseCurrencyID = baseCurrencyResponse.rawBody["id"] as string;
@@ -734,7 +735,7 @@ export default async function(this: Context)
                 {
                     await this.test(`Forbid creating sources without ${testCase.fieldMissed} but all other fields`, async function()
                     {
-                        await HookShortcuts.postCreateCurrencyRateSource(
+                        await CurrencyHelpers.postCreateCurrencyRateSource(
                         {
                             serverURL: serverURL, body: { ...testCase.obj },
                             token: firstUserToken, assertBody: false, expectedCode: 400
@@ -744,7 +745,7 @@ export default async function(this: Context)
 
                 await this.test(`Forbid non-existent refCurrency.`, async function()
                 {
-                    await HookShortcuts.postCreateCurrencyRateSource(
+                    await CurrencyHelpers.postCreateCurrencyRateSource(
                     {
                         serverURL: serverURL,
                         body:
@@ -761,7 +762,7 @@ export default async function(this: Context)
 
                 await this.test(`Forbid non-existent refAmountCurrency.`, async function()
                 {
-                    await HookShortcuts.postCreateCurrencyRateSource(
+                    await CurrencyHelpers.postCreateCurrencyRateSource(
                     {
                         serverURL: serverURL,
                         body:
@@ -778,7 +779,7 @@ export default async function(this: Context)
 
                 await this.test(`Forbid sources without valid token`, async function()
                 {
-                    await HookShortcuts.postCreateCurrencyRateSource(
+                    await CurrencyHelpers.postCreateCurrencyRateSource(
                     {
                         serverURL: serverURL,
                         body: validReqBody,
@@ -790,7 +791,7 @@ export default async function(this: Context)
 
                 await this.test(`Allow sources with valid token and body`, async function()
                 {
-                    await HookShortcuts.postCreateCurrencyRateSource(
+                    await CurrencyHelpers.postCreateCurrencyRateSource(
                     {
                         serverURL: serverURL,
                         body: validReqBody,
@@ -802,4 +803,104 @@ export default async function(this: Context)
             });
         })
     });
+}
+
+export namespace CurrencyHelpers
+{
+    export async function postCreateCurrency(config:
+    {
+        serverURL:string,
+        token:string,
+        body: Partial<PostCurrencyAPI.RequestDTO>,
+        assertBody?: boolean,
+        expectedCode?: number
+    })
+    {
+        const assertBody = config.assertBody === undefined ? true : config.assertBody;
+        const response = await HTTPAssert.assertFetch(UnitTestEndpoints.currenciesEndpoints['post'],
+        {
+            baseURL: config.serverURL, expectedStatus: config.expectedCode, method: "POST",
+            body: config.body,
+            headers: { "authorization": config.token },
+            expectedBodyType: assertBody ? PostCurrencyAPIClass.ResponseDTO : undefined
+        });
+        return {
+            ...response,
+            currencyId: response.parsedBody?.id as string | undefined
+        };
+    }
+
+    export async function postCreateCurrencyRateSource(config:
+    {
+        serverURL:string,
+        token:string,
+        body: Partial<PostCurrencyRateSrcAPI.RequestDTO>,
+        assertBody?: boolean,
+        expectedCode?: number
+    })
+    {
+        const assertBody = config.assertBody === undefined ? true : config.assertBody;
+        const response = await HTTPAssert.assertFetch(UnitTestEndpoints.currencyRateSourcesEndpoints['post'],
+        {
+            baseURL: config.serverURL, expectedStatus: config.expectedCode, method: "POST",
+            body: config.body,
+            headers: { "authorization": config.token },
+            expectedBodyType: assertBody ? PostCurrencyRateSourceAPIClass.ResponseDTO : undefined
+        });
+        return response;
+    }
+
+    export async function postRandomRegularCurrencies(config:
+    {
+        serverURL:string,
+        token:string,
+        assertBody?: boolean,
+        expectedCode?: number,
+        currenciesCount: number,
+        usedNames?: string[] | undefined,
+        baseCurrencyId: string
+    })
+    {
+        function choice<T> (list: T[]) { return list[Math.floor((Math.random()*list.length))]; }
+
+        const output:
+        {
+            id: string,
+            name: string,
+            amount: Decimal,
+            refCurrencyId: string
+        }[] = [];
+
+        const usedNames: string[] = [ ...(config.usedNames ?? []) ];
+        for (let i = 0; i < config.currenciesCount; i++)
+        {
+            const randomName = Generator.randUniqueName(usedNames);
+            const amount = new Decimal(Math.random() * 100000);
+            const refCurrencyId = output.length === 0 ? config.baseCurrencyId : choice(output).refCurrencyId;
+
+            usedNames.push(randomName);
+
+            output.push(
+            {
+                id: (await CurrencyHelpers.postCreateCurrency(
+                {
+                    body:
+                    {
+                        name                   : randomName,
+                        fallbackRateAmount     : amount.toString(),
+                        fallbackRateCurrencyId : refCurrencyId,
+                        ticker                 : randomName
+                    },
+                    serverURL    : config.serverURL,
+                    token        : config.token,
+                    assertBody   : config.assertBody,
+                    expectedCode : config.expectedCode,
+                })).currencyId,
+                amount: amount,
+                name: randomName,
+                refCurrencyId: refCurrencyId
+            });
+        }
+        return output;
+    }
 }
