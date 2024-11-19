@@ -79,12 +79,16 @@ export async function resetDatabase()
     await Database.init();
 }
 
-export let serverPort = undefined as undefined | number;
-export let serverURL = undefined as undefined | string;
+export let serverPort: number;
+export let serverURL: string;
 
 await (async () =>
 {
     await main(".test.env");
+
+    if (!EnvManager.serverPort)
+        throw new Error(`Unit Tests cannot start because port is not defined in the env file.`);
+
     serverPort = EnvManager.serverPort;
     serverURL = `http://localhost:${serverPort}`;
 
