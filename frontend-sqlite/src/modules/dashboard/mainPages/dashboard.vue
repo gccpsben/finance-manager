@@ -158,12 +158,12 @@ import { getTxnClassification } from '@/modules/transactions/utils/transactions'
 import type { HydratedTransaction } from "@/types/dtos/transactionsDTO";
 import vArea from "@/modules/core/directives/vArea";
 import { useCurrenciesStore } from '@/modules/currencies/stores/useCurrenciesStore';
-import listCellVue from '@/modules/core/components/data-display/listCell.vue';
-import cell from '@/modules/core/components/data-display/cell.vue';
-import containerValuesGraphCell from '@/modules/containers/components/containerValuesGraphCell.vue';
+import listCellVue from '@/modules/core/components/data-display/ListCell.vue';
+import cell from '@/modules/core/components/data-display/Cell.vue';
+import containerValuesGraphCell from '@/modules/containers/components/ContainerValuesGraphCell.vue';
 import router from "@/router";
-import numberCell from "@/modules/core/components/data-display/numberCell.vue";
-import networthHistoryCell from "../components/networthHistoryCell.vue";
+import numberCell from "@/modules/core/components/data-display/NumberCell.vue";
+import networthHistoryCell from "../components/NetworthHistoryCell.vue";
 import { useNetworthHistoryStore } from "@/modules/charts/stores/networthHistoryStore";
 import { Uncontrolled } from "@/modules/core/utils/defineProperty";
 

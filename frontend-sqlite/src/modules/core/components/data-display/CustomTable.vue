@@ -35,7 +35,7 @@
 </style>
 
 <script lang="ts" setup>
-import gridShortcut from '@/modules/core/components/layout/gridShortcut.vue';
+import gridShortcut from '@/modules/core/components/layout/GridShortcut.vue';
 </script>
 
 <script lang="ts">

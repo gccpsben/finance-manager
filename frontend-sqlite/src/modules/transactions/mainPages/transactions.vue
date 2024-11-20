@@ -81,7 +81,7 @@
 <script lang="ts" setup>
 import {API_TRANSACTIONS_PATH } from "@/apiPaths";
 import { getContainerNameById } from '@/modules/containers/utils/containers';
-import numberPagination from '@/modules/core/components/data-display/numberPagination.vue';
+import numberPagination from '@/modules/core/components/data-display/NumberPagination.vue';
 import useNetworkPaginationNew, { type UpdaterReturnType } from "@/modules/core/composables/useNetworkedPagination";
 import vArea from "@/modules/core/directives/vArea";
 import { useMainStore } from "@/modules/core/stores/store";

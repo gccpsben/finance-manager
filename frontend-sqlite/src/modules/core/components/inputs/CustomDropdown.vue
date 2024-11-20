@@ -158,10 +158,10 @@
 </style>
 
 <script lang="ts" setup>
-import textField from '@/modules/core/components/inputs/textField.vue';
+import textField from '@/modules/core/components/inputs/TextField.vue';
 import { defineProperty, Uncontrolled } from '@/modules/core/utils/defineProperty';
 import { ref, computed, useTemplateRef } from 'vue';
-import faIcon from '@/modules/core/components/decorations/faIcon.vue';
+import faIcon from '@/modules/core/components/decorations/FaIcon.vue';
 
 export type DropdownItem =
 {

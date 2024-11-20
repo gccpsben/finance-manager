@@ -20,11 +20,11 @@
 </template>
 
 <script lang="ts" setup>
-import WrappedLineChart from '@/modules/core/components/data-display/wrappedLineChart.vue';
-import cell from '@/modules/core/components/data-display/cell.vue';
+import WrappedLineChart from '@/modules/core/components/data-display/WrappedLineChart.vue';
+import cell from '@/modules/core/components/data-display/Cell.vue';
 import { computed, ref, watch } from 'vue';
-import NetworkCircularIndicator from '@/modules/core/components/data-display/networkCircularIndicator.vue';
-import variantsSelector from '@/modules/core/components/inputs/variantsSelector.vue';
+import NetworkCircularIndicator from '@/modules/core/components/data-display/NetworkCircularIndicator.vue';
+import variantsSelector from '@/modules/core/components/inputs/VariantsSelector.vue';
 import { useNetworthHistoryStore } from '@/modules/charts/stores/networthHistoryStore';
 
 type AvailableOptions = "All" | "30d" | "7d";

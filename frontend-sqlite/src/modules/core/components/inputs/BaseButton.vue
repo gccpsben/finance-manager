@@ -12,7 +12,7 @@
 </template>
 
 <script setup lang="ts">
-import GaIcon from '../decorations/gaIcon.vue';
+import GaIcon from '../decorations/GaIcon.vue';
 
 export type BaseButtonProps =
 {

@@ -106,12 +106,12 @@
 
 <script setup lang="ts">
 import router, { ROUTER_NAME_ALL_TRANSACTIONS, ROUTER_NAME_CREATE_NEW_TXN } from '@/router';
-import NetworkCircularIndicator from '@/modules/core/components/data-display/networkCircularIndicator.vue';
-import StaticNotice from '@/modules/core/components/data-display/staticNotice.vue';
-import ViewTitle from '@/modules/core/components/data-display/viewTitle.vue';
+import NetworkCircularIndicator from '@/modules/core/components/data-display/NetworkCircularIndicator.vue';
+import StaticNotice from '@/modules/core/components/data-display/StaticNotice.vue';
+import ViewTitle from '@/modules/core/components/data-display/ViewTitle.vue';
 import { computed, watch } from 'vue';
-import textField from '@/modules/core/components/inputs/textField.vue';
-import customDropdown from '@/modules/core/components/inputs/custom-dropdown.vue';
+import textField from '@/modules/core/components/inputs/TextField.vue';
+import customDropdown from '@/modules/core/components/inputs/CustomDropdown.vue';
 import { formatDate } from '@/modules/core/utils/date';
 import BaseButton from '@/modules/core/components/inputs/BaseButton.vue';
 import { DateFormatToShow, useAddTxn, useEditTxn } from '../composables/useEditAddTxn';

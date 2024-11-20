@@ -27,13 +27,13 @@
 <script setup lang="ts">
 import { computed } from 'vue';
 import router from '@/router';
-import NetworkCircularIndicator from '@/modules/core/components/data-display/networkCircularIndicator.vue';
+import NetworkCircularIndicator from '@/modules/core/components/data-display/NetworkCircularIndicator.vue';
 import { useNetworkRequest } from '@/modules/core/composables/useNetworkRequest';
 import type { GetCurrencyAPI } from '../../../../../api-types/currencies';
 import { API_CURRENCIES_PATH } from '@/apiPaths';
-import StaticNotice from '@/modules/core/components/data-display/staticNotice.vue';
-import ViewTitle from '@/modules/core/components/data-display/viewTitle.vue';
-import CurrencyRatesHistoryCell from '../components/currencyRatesHistoryCell.vue';
+import StaticNotice from '@/modules/core/components/data-display/StaticNotice.vue';
+import ViewTitle from '@/modules/core/components/data-display/ViewTitle.vue';
+import CurrencyRatesHistoryCell from '../components/CurrencyRatesHistoryCell.vue';
 
 const cid = computed(() => router.currentRoute.value.params['cid']);
 const currency = useNetworkRequest<GetCurrencyAPI.ResponseDTO>(

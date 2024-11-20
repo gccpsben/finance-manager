@@ -78,8 +78,8 @@
 import { API_LOGIN_PATH } from '@/apiPaths';
 import { useMainStore } from '@/modules/core/stores/store';
 import { useMeta } from 'vue-meta';
-import passwordField from '@/modules/core/components/inputs/passwordField.vue';
-import textField from '@/modules/core/components/inputs/textField.vue';
+import passwordField from '@/modules/core/components/inputs/PasswordField.vue';
+import textField from '@/modules/core/components/inputs/TextField.vue';
 import router from '@/router';
 
 export default

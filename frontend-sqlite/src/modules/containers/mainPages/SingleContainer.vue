@@ -57,13 +57,13 @@
 </template>
 
 <script lang="ts" setup>
-import ViewTitle from '@/modules/core/components/data-display/viewTitle.vue';
+import ViewTitle from '@/modules/core/components/data-display/ViewTitle.vue';
 import { useAddContainer, useEditContainer } from '../composables/useEditAddContainer';
 import { computed, watch } from 'vue';
 import router, { ROUTER_NAME_ALL_CONTAINERS, ROUTER_NAME_CREATE_NEW_CONTAINER } from '@/router';
-import TextField from '@/modules/core/components/inputs/textField.vue';
-import NetworkCircularIndicator from '@/modules/core/components/data-display/networkCircularIndicator.vue';
-import StaticNotice from '@/modules/core/components/data-display/staticNotice.vue';
+import TextField from '@/modules/core/components/inputs/TextField.vue';
+import NetworkCircularIndicator from '@/modules/core/components/data-display/NetworkCircularIndicator.vue';
+import StaticNotice from '@/modules/core/components/data-display/StaticNotice.vue';
 import BaseButton from '@/modules/core/components/inputs/BaseButton.vue';
 
 type AddHookReturnType = ReturnType<typeof useAddContainer>;

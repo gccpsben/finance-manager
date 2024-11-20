@@ -17,9 +17,9 @@
 <script lang="ts" setup>
 import { computed } from 'vue';
 import { defineProperty, Uncontrolled } from '../../utils/defineProperty';
-import networkCircularIndicator from '@/modules/core/components/data-display/networkCircularIndicator.vue';
-import variantsSelector from '@/modules/core/components/inputs/variantsSelector.vue';
-import cell, { type IconType } from '@/modules/core/components/data-display/cell.vue';
+import networkCircularIndicator from '@/modules/core/components/data-display/NetworkCircularIndicator.vue';
+import variantsSelector from '@/modules/core/components/inputs/VariantsSelector.vue';
+import cell, { type IconType } from '@/modules/core/components/data-display/Cell.vue';
 
 export type NumberCellProps =
 {

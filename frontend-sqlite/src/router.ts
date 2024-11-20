@@ -18,13 +18,13 @@ const router = createRouter(
 		{
 			path: '/main',
 			name: 'main',
-			component: () => import("@/modules/core/pages/index.vue"),
+			component: () => import("@/modules/core/pages/Index.vue"),
             children:
             [
                 {
                     path: 'dashboard',
                     name: 'dashboard',
-                    component: () => import("@/modules/dashboard/mainPages/dashboard.vue")
+                    component: () => import("@/modules/dashboard/mainPages/Dashboard.vue")
                 },
                 {
                     path: 'currencies',
@@ -33,12 +33,12 @@ const router = createRouter(
                         {
                             path: '',
                             name: 'currencies',
-                            component: () => import('@/modules/currencies/mainPages/currencies.vue'),
+                            component: () => import('@/modules/currencies/mainPages/Currencies.vue'),
                         },
                         {
                             path: ":cid",
                             name: 'singleCurrency',
-                            component: () => import(`@/modules/currencies/mainPages/singleCurrency.vue`),
+                            component: () => import(`@/modules/currencies/mainPages/SingleCurrency.vue`),
                         },
                     ]
                 },
@@ -49,24 +49,24 @@ const router = createRouter(
                         {
                             path: '',
                             name: ROUTER_NAME_ALL_TRANSACTIONS,
-                            component: () => import('@/modules/transactions/mainPages/transactions.vue'),
+                            component: () => import('@/modules/transactions/mainPages/Transactions.vue'),
                         },
                         {
                             path: "new",
                             name: ROUTER_NAME_CREATE_NEW_TXN,
-                            component: () => import(`@/modules/transactions/mainPages/singleTransaction.vue`),
+                            component: () => import(`@/modules/transactions/mainPages/SingleTransaction.vue`),
                         },
                         {
                             path: ":id",
                             name: 'singleTransaction',
-                            component: () => import(`@/modules/transactions/mainPages/singleTransaction.vue`),
+                            component: () => import(`@/modules/transactions/mainPages/SingleTransaction.vue`),
                         },
                     ]
                 },
                 {
                     path: 'charts',
                     name: 'charts',
-                    component: () => import('@/modules/charts/mainPages/charts.vue'),
+                    component: () => import('@/modules/charts/mainPages/Charts.vue'),
                 },
                 {
                     path: 'containers',
@@ -75,7 +75,7 @@ const router = createRouter(
                         {
                             path: '',
                             name: ROUTER_NAME_ALL_CONTAINERS,
-                            component: () => import('@/modules/containers/mainPages/containers.vue'),
+                            component: () => import('@/modules/containers/mainPages/Containers.vue'),
                         },
                         {
                             path: "new",
@@ -94,27 +94,27 @@ const router = createRouter(
         {
             path: '/login',
             name: 'login',
-            component: () => import("@/modules/core/pages/loginView.vue")
+            component: () => import("@/modules/core/pages/LoginView.vue")
         },
         {
             path: '/containers/add',
             name: 'addContainer',
-            component: () => import("@/modules/containers/pages/addContainerView.vue")
+            component: () => import("@/modules/containers/pages/AddContainerView.vue")
         },
         {
             path: '/types/add',
             name: 'addType',
-            component: () => import("@/modules/txnTypes/pages/addTypeView.vue")
+            component: () => import("@/modules/txnTypes/pages/AddTypeView.vue")
         },
         {
             path: '/currencies/add',
             name: 'addCurrency',
-            component: () => import("@/modules/currencies/pages/addCurrencyView.vue")
+            component: () => import("@/modules/currencies/pages/AddCurrencyView.vue")
         },
         {
             path: '/transactions/resolve',
             name: 'resolveTransaction',
-            component: () => import('@/modules/transactions/pages/resolveTransactionView.vue')
+            component: () => import('@/modules/transactions/pages/ResolveTransactionView.vue')
         },
 	]
 })

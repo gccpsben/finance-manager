@@ -56,11 +56,11 @@
 </template>
 
 <script lang="ts" setup>
-import CustomTable from '@/modules/core/components/tables/customTable.vue';
-import CustomTableCell from '@/modules/core/components/tables/customTableCell.vue';
-import CustomTableRow from '@/modules/core/components/tables/customTableRow.vue';
-import NumberPagination from '@/modules/core/components/data-display/numberPagination.vue';
-import NetworkCircularIndicator from '@/modules/core/components/data-display/networkCircularIndicator.vue';
+import CustomTable from '@/modules/core/components/tables/CustomTable.vue';
+import CustomTableCell from '@/modules/core/components/tables/CustomTableCell.vue';
+import CustomTableRow from '@/modules/core/components/tables/CustomTableRow.vue';
+import NumberPagination from '@/modules/core/components/data-display/NumberPagination.vue';
+import NetworkCircularIndicator from '@/modules/core/components/data-display/NetworkCircularIndicator.vue';
 import { useContainersStore } from '../stores/useContainersStore';
 import useNetworkPaginationNew from '@/modules/core/composables/useNetworkedPagination';
 import { ref, watch } from 'vue';
@@ -71,7 +71,7 @@ import router, { ROUTER_NAME_CREATE_NEW_CONTAINER, ROUTER_NAME_SINGLE_CONTAINER 
 import { API_CONTAINERS_PATH } from '@/apiPaths';
 import { useNetworkRequest } from '@/modules/core/composables/useNetworkRequest';
 import type { GetContainerAPI } from '../../../../../api-types/container';
-import OverlapArea from '@/modules/core/components/layout/overlapArea.vue';
+import OverlapArea from '@/modules/core/components/layout/OverlapArea.vue';
 
 const currenciesStore = useCurrenciesStore();
 currenciesStore.currencies.updateData();

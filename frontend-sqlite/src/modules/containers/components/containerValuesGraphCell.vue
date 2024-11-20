@@ -74,14 +74,14 @@
 </style>
 
 <script lang="ts">
-import paginationVue from '@/modules/core/components/data-display/pagination.vue';
-import numberPagination from '@/modules/core/components/data-display/numberPagination.vue';
+import paginationVue from '@/modules/core/components/data-display/Pagination.vue';
+import numberPagination from '@/modules/core/components/data-display/NumberPagination.vue';
 import { defineComponent } from 'vue';
 import { Chart, registerables } from "chart.js";
 import { useMainStore } from '@/modules/core/stores/store';
 import { useContainersStore } from '../stores/useContainersStore';
 import { useCurrenciesStore } from '../../currencies/stores/useCurrenciesStore';
-import cell from '@/modules/core/components/data-display/cell.vue';
+import cell from '@/modules/core/components/data-display/Cell.vue';
 Chart.register(...registerables);
 
 export default defineComponent(

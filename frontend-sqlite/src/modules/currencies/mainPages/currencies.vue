@@ -58,17 +58,17 @@
 </template>
 
 <script setup lang="ts">
-import CustomTable from '@/modules/core/components/tables/customTable.vue';
-import CustomTableCell from '@/modules/core/components/tables/customTableCell.vue';
-import CustomTableRow from '@/modules/core/components/tables/customTableRow.vue';
+import CustomTable from '@/modules/core/components/tables/CustomTable.vue';
+import CustomTableCell from '@/modules/core/components/tables/CustomTableCell.vue';
+import CustomTableRow from '@/modules/core/components/tables/CustomTableRow.vue';
 import { watch } from 'vue';
 import { useCurrenciesStore } from '../stores/useCurrenciesStore';
 import useNetworkPaginationNew, { type UpdaterReturnType } from '@/modules/core/composables/useNetworkedPagination';
 import type { CurrencyDTO } from '../../../../../api-types/currencies';
-import NumberPagination from '@/modules/core/components/data-display/numberPagination.vue';
-import OverlapArea from '@/modules/core/components/layout/overlapArea.vue';
-import NetworkCircularIndicator from '@/modules/core/components/data-display/networkCircularIndicator.vue';
-import CurrencyRateHistoryThumbnail from '../components/currencyRateHistoryThumbnail.vue';
+import NumberPagination from '@/modules/core/components/data-display/NumberPagination.vue';
+import OverlapArea from '@/modules/core/components/layout/OverlapArea.vue';
+import NetworkCircularIndicator from '@/modules/core/components/data-display/NetworkCircularIndicator.vue';
+import CurrencyRateHistoryThumbnail from '../components/CurrencyRateHistoryThumbnail.vue';
 import router from '@/router';
 
 const currenciesStore = useCurrenciesStore();

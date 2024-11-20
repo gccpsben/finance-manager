@@ -27,15 +27,15 @@
 </template>
 
 <script lang="ts" setup>
-import WrappedLineChart from '@/modules/core/components/data-display/wrappedLineChart.vue';
+import WrappedLineChart from '@/modules/core/components/data-display/WrappedLineChart.vue';
 import { useNetworkRequest } from '@/modules/core/composables/useNetworkRequest';
 import type { GetCurrencyRateHistoryAPI } from '@/../../api-types/currencies';
 import { API_CURRENCY_RATE_HISTORY_PATH } from '@/apiPaths';
 import { computed, watch } from 'vue';
-import NetworkCircularIndicator from '@/modules/core/components/data-display/networkCircularIndicator.vue';
-import GaIcon from '@/modules/core/components/decorations/gaIcon.vue';
-import OverlapArea from '@/modules/core/components/layout/overlapArea.vue';
-import AbsEnclosure from '@/modules/core/components/layout/absEnclosure.vue';
+import NetworkCircularIndicator from '@/modules/core/components/data-display/NetworkCircularIndicator.vue';
+import GaIcon from '@/modules/core/components/decorations/GaIcon.vue';
+import OverlapArea from '@/modules/core/components/layout/OverlapArea.vue';
+import AbsEnclosure from '@/modules/core/components/layout/AbsEnclosure.vue';
 
 const SEVEN_DAYS_AGO = Date.now() - 86400000 * 7;
 
