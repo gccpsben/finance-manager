@@ -8,7 +8,9 @@
                 <template v-else-if="icon && icon.type === 'Google'">
                     <ga-icon style="font-size:12px; color:white; margin-right: 14px;" :icon="`${icon.name}`" />
                 </template>
-                <h2 class="panelTitle">{{ title }}</h2>
+                <h2 class="panelTitle">
+                    {{ title }}
+                </h2>
             </div>
             <div>
                 <slot name="cellOptions"></slot>
@@ -49,8 +51,11 @@
         text-align:start;
         font-size:14px;
         .tight;
-        display:inline;
         font-weight: inherit;
+        overflow: hidden;
+        white-space: nowrap;
+        width: calc(100% - 15px);
+        text-overflow: ellipsis;
     }
     &.insetMode .panelTitle
     {
