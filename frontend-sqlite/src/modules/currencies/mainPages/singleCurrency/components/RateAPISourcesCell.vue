@@ -1,15 +1,14 @@
 <template>
     <Cell :title="'Rates API Sources'">
         <template v-if="currencyRateSrcs.lastSuccessfulData.value?.sources.length == 0">
-            <!-- <div class="fullSize center" style="font-size: 12px;">
-                <div>No Sources Added</div>
-                <div>No Sources Added</div>
-            </div> -->
-            <div class="fullSize center">
+            <div class="fullSize center" v-if="!isBaseCurrency">
                 <div style="grid-template-columns: 1fr; grid-template-rows: auto auto; display: grid; gap: 14px;">
                     <div class="center">No Sources Added</div>
                     <div class="center clickableLink" @click="onNewRateSrcClicked">Create a source</div>
                 </div>
+            </div>
+            <div v-else class="center fullSize" style="white-space: wrap;">
+                Cannot add API Source for Base Currency
             </div>
         </template>
         <template v-else>
@@ -113,6 +112,7 @@ import { useCurrenciesStore } from '@/modules/currencies/stores/useCurrenciesSto
 export type RateAPISourcesCellProps =
 {
     currencyId: string | null,
+    isBaseCurrency?: boolean | null
 };
 
 const props = withDefaults(defineProps<RateAPISourcesCellProps>(), { currencyId: null });

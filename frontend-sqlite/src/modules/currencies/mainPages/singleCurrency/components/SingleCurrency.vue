@@ -5,7 +5,7 @@
             <div><br /><br /></div>
             <div class="pageContent">
                 <CurrencyRatesHistoryCell style="height: 350px;" :currencyId="targetCurrency.id" v-area="'history'"/>
-                <RateAPISourcesCell :currency-id="cid"/>
+                <RateAPISourcesCell :currency-id="cid" :is-base-currency="targetCurrency.isBase"/>
             </div>
         </div>
         <div v-else-if="currency.lastSuccessfulData.value?.totalItems === 0" style="height: 100svh;" class="center">
@@ -17,7 +17,7 @@
             </StaticNotice>
         </div>
         <div v-else class="center" style="height: 100svh;">
-            <NetworkCircularIndicator isLoading :error="currency.error.value" />
+            <NetworkCircularIndicator isLoading :error="currency.error.value"/>
         </div>
     </div>
 </template>
@@ -55,10 +55,12 @@ const targetCurrency = computed(() => currency.lastSuccessfulData.value?.rangeIt
 #currencyTopDiv
 {
     container-name: currencyPage;
-    container-type: normal;
+    container-type: inline-size;
     .fullSize;
     font-family: @font;
     color: @foreground;
+    overflow: scroll;
+    overflow-x: hidden;
 
     .rateSrcsTable { font-size: 14px; }
 
@@ -77,8 +79,17 @@ const targetCurrency = computed(() => currency.lastSuccessfulData.value?.rangeIt
     }
 }
 
-@container currencyPage (width <= 500px)
+@container currencyPage (width <= 1000px)
 {
-    #currencyTopDivInner { padding: @mobilePagePadding !important; }
+    #currencyTopDivInner
+    {
+        padding: @mobilePagePadding !important;
+        .pageContent
+        {
+            grid-template-columns: 1fr !important;
+            grid-template-rows: 1fr 1fr !important;
+            grid-template-areas: 'history' 'srcs' !important;
+        }
+    }
 }
 </style>
