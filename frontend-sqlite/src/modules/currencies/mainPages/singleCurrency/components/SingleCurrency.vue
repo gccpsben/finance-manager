@@ -1,14 +1,12 @@
 <template>
     <div id="currencyTopDiv">
         <div v-if="isCurrencyFound && targetCurrency" id="currencyTopDivInner">
-            <div>
-                <ViewTitle :title="`${targetCurrency!.name}`"
-                           hasBackButton @back="router.back()"/>
+            <div><ViewTitle :title="`${targetCurrency!.name}`" hasBackButton @back="router.back()"/></div>
+            <div><br /><br /></div>
+            <div class="pageContent">
+                <CurrencyRatesHistoryCell style="height: 350px;" :currencyId="targetCurrency.id" v-area="'history'"/>
+                <RateAPISourcesCell :currency-id="cid"/>
             </div>
-            <div>
-                <br /><br />
-            </div>
-            <CurrencyRatesHistoryCell style="height: 350px;" :currencyId="targetCurrency.id"/>
         </div>
         <div v-else-if="currency.lastSuccessfulData.value?.totalItems === 0" style="height: 100svh;" class="center">
             <StaticNotice type="ERR">
@@ -29,13 +27,14 @@ import { computed } from 'vue';
 import router from '@/router';
 import NetworkCircularIndicator from '@/modules/core/components/data-display/NetworkCircularIndicator.vue';
 import { useNetworkRequest } from '@/modules/core/composables/useNetworkRequest';
-import type { GetCurrencyAPI } from '../../../../../api-types/currencies';
+import type { GetCurrencyAPI } from '@/modules/../../../api-types/currencies';
 import { API_CURRENCIES_PATH } from '@/apiPaths';
 import StaticNotice from '@/modules/core/components/data-display/StaticNotice.vue';
 import ViewTitle from '@/modules/core/components/data-display/ViewTitle.vue';
-import CurrencyRatesHistoryCell from '../components/CurrencyRatesHistoryCell.vue';
+import CurrencyRatesHistoryCell from '@/modules/currencies/components/CurrencyRatesHistoryCell.vue';
+import RateAPISourcesCell from './RateAPISourcesCell.vue';
 
-const cid = computed(() => router.currentRoute.value.params['cid']);
+const cid = computed(() => `${router.currentRoute.value.params['cid']}`);
 const currency = useNetworkRequest<GetCurrencyAPI.ResponseDTO>(
 {
     url: API_CURRENCIES_PATH,
@@ -56,12 +55,27 @@ const targetCurrency = computed(() => currency.lastSuccessfulData.value?.rangeIt
 #currencyTopDiv
 {
     container-name: currencyPage;
-    container-type: size;
+    container-type: normal;
     .fullSize;
+    font-family: @font;
+    color: @foreground;
 
-    #currencyTopDivInner { padding: @desktopPagePadding; }
+    .rateSrcsTable { font-size: 14px; }
+
+    #currencyTopDivInner
+    {
+        padding: @desktopPagePadding;
+
+        .pageContent
+        {
+            display: grid;
+            gap: 24px;
+            grid-template-columns: 1fr 1fr;
+            grid-template-rows: 1fr 1fr;
+            grid-template-areas: 'history srcs' '_ _';
+        }
+    }
 }
-
 
 @container currencyPage (width <= 500px)
 {

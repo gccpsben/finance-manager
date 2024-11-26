@@ -1,29 +1,46 @@
 import { TypesafeRouter } from "../typescriptRouter.js";
 import express from 'express';
-import type { GetCurrencyRateSrcAPI, PostCurrencyRateSrcAPI } from "../../../../api-types/currencyRateSource.js";
+import type { GetCurrencyRateSrcAPI, PostCurrencyRateSrcAPI, PatchCurrencyRateSrcAPI, GetCurrencyRateSrcBySrcIdAPI } from "../../../../api-types/currencyRateSource.js";
 import { IsString } from "class-validator";
 import { AccessTokenService, InvalidLoginTokenError } from "../../db/services/accessToken.service.js";
 import createHttpError from "http-errors";
 import { ExpressValidations } from "../validation.js";
-import { CurrencyRateSourceService } from "../../db/services/currencyRateSource.service.js";
+import { CurrencyRateSourceService, CurrencySrcNotFoundError, PatchCurrencySrcValidationError } from "../../db/services/currencyRateSource.service.js";
 import { CurrencyNotFoundError } from "../../db/services/currency.service.js";
 
 const router = new TypesafeRouter(express.Router());
 
-router.get<GetCurrencyRateSrcAPI.ResponseDTO>(`/api/v1/currencyRateSources`,
+router.get<GetCurrencyRateSrcBySrcIdAPI.ResponseDTO>(`/api/v1/currencyRateSources/:id` satisfies GetCurrencyRateSrcBySrcIdAPI.Path<':id'>,
 {
     handler: async (req: express.Request, res: express.Response) =>
     {
         const authResult = await AccessTokenService.validateRequestTokenValidated(req);
         if (authResult instanceof InvalidLoginTokenError) throw createHttpError(401);
 
-        class query implements GetCurrencyRateSrcAPI.RequestDTO
-        {
-            @IsString() targetCurrencyId: string;
-        }
+        const rateSrc = await CurrencyRateSourceService.getCurrencyRatesSourceById(authResult.ownerUserId, req.params['id']);
+        if (rateSrc === null) throw createHttpError(404);
 
-        const parsedQuery = await ExpressValidations.validateBodyAgainstModel<query>(query, req.query);
-        const rateSources = await CurrencyRateSourceService.getUserCurrencyRatesSourcesOfCurrency(authResult.ownerUserId, parsedQuery.targetCurrencyId);
+        return {
+            hostname: rateSrc.hostname,
+            refCurrencyId: rateSrc.refCurrencyId,
+            refAmountCurrencyId: rateSrc.refAmountCurrencyId,
+            path: rateSrc.path,
+            jsonQueryString: rateSrc.jsonQueryString,
+            name: rateSrc.name,
+            lastExecuteTime: rateSrc.lastExecuteTime ?? null,
+            id: rateSrc.id
+        };
+    }
+});
+
+router.get<GetCurrencyRateSrcAPI.ResponseDTO>(`/api/v1/:id/currencyRateSources` satisfies GetCurrencyRateSrcAPI.Path<':id'>,
+{
+    handler: async (req: express.Request, res: express.Response) =>
+    {
+        const authResult = await AccessTokenService.validateRequestTokenValidated(req);
+        if (authResult instanceof InvalidLoginTokenError) throw createHttpError(401);
+
+        const rateSources = await CurrencyRateSourceService.getUserCurrencyRatesSourcesOfCurrency(authResult.ownerUserId, req.params['id']);
 
         return {
             sources: rateSources.map(s => (
@@ -37,6 +54,52 @@ router.get<GetCurrencyRateSrcAPI.ResponseDTO>(`/api/v1/currencyRateSources`,
                 lastExecuteTime: s.lastExecuteTime ?? null,
                 id: s.id
             }))
+        };
+    }
+});
+
+router.patch<PatchCurrencyRateSrcAPI.ResponseDTO>(`/api/v1/currencyRateSources`,
+{
+    handler: async (req: express.Request, res: express.Response) =>
+    {
+        class body implements PatchCurrencyRateSrcAPI.RequestDTO
+        {
+            @IsString() id: string;
+            @IsString() refAmountCurrencyId: string;
+            @IsString() hostname: string;
+            @IsString() path: string;
+            @IsString() jsonQueryString: string;
+            @IsString() name: string;
+        }
+
+        const authResult = await AccessTokenService.validateRequestTokenValidated(req);
+        if (authResult instanceof InvalidLoginTokenError) throw createHttpError(401);
+        const parsedBody = await ExpressValidations.validateBodyAgainstModel<body>(body, req.body);
+
+        const newlyPatchRateSrc = await CurrencyRateSourceService.patchUserCurrencyRateSource
+        (
+            authResult.ownerUserId,
+            {
+                id: parsedBody.id,
+                hostname: parsedBody.hostname,
+                jsonQueryString: parsedBody.jsonQueryString,
+                name: parsedBody.name,
+                path: parsedBody.path,
+                refAmountCurrencyId: parsedBody.refAmountCurrencyId
+            }
+        );
+
+        if (newlyPatchRateSrc instanceof CurrencySrcNotFoundError) throw createHttpError(400, newlyPatchRateSrc.message);
+        if (newlyPatchRateSrc instanceof PatchCurrencySrcValidationError) throw createHttpError(400, newlyPatchRateSrc.message);
+        return {
+            hostname: newlyPatchRateSrc.hostname,
+            id: newlyPatchRateSrc.id,
+            jsonQueryString: newlyPatchRateSrc.jsonQueryString,
+            lastExecuteTime: newlyPatchRateSrc.lastExecuteTime,
+            name: newlyPatchRateSrc.name,
+            path: newlyPatchRateSrc.path,
+            refAmountCurrencyId: newlyPatchRateSrc.refAmountCurrencyId,
+            refCurrencyId: newlyPatchRateSrc.refCurrencyId
         };
     }
 });

@@ -14,6 +14,7 @@ import transactionTests from './transaction.test.js';
 import currencyRateSrcs from './currencyRateSource.test.js';
 import calculationsTest, { testForCalculationsInternals } from './calculations.test.js';
 import { exit } from 'process';
+import { GetCurrencyRateSrcAPI } from '../../api-types/currencyRateSource.js';
 export type HTTPMethod = "GET" | "PATCH" | "POST" | "DELETE";
 
 export type TestUserEntry =
@@ -70,7 +71,9 @@ export class UnitTestEndpoints
     public static currencyRateSourcesEndpoints =
     {
         "post": `/api/v1/currencyRateSources`,
-        "get": `/api/v1/currencyRateSources`,
+        get: <T extends string>(cid: T) => {
+            return `/api/v1/${cid}/currencyRateSources` satisfies GetCurrencyRateSrcAPI.Path<T>
+        }
     };
 }
 

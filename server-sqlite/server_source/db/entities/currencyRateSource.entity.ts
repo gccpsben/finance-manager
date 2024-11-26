@@ -51,5 +51,5 @@ export class CurrencyRateSource extends EntityClass implements OwnedEntity
     name: string;
 
     @Column({ nullable: true, type: Number })
-    lastExecuteTime?: number | null;
+    lastExecuteTime: number | null;
 }

@@ -12,3 +12,6 @@ export const API_DASHBOARD_BATCH_PATH = `/api/v1/batch/dashboard`;
 export const API_USER_INCOMES_EXPENSES_PATH = `/api/v1/calculations/expensesAndIncomes`;
 export const API_CURRENCY_RATE_HISTORY_PATH = `/api/v1/currencies/history`;
 export const API_PUT_TRANSACTIONS_PATH = "/api/v1/transactions";
+export const API_GET_CURRENCIES_RATE_SRCS_PATH = "/api/v1/currencyRateSources";
+export const API_PATCH_CURRENCIES_RATE_SRCS_PATH = "/api/v1/currencyRateSources";
+export const API_POST_CURRENCIES_RATE_SRCS_PATH = "/api/v1/currencyRateSources";

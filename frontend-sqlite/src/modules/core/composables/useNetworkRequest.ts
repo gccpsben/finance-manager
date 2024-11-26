@@ -85,6 +85,15 @@ export function useNetworkRequest<T>
         return axios.put(url, body, config);
     };
 
+    const patch = async (queryObj:NetworkQuery|string, extraHeaders:Record<string,string> = {}) =>
+    {
+        const body = typeof queryObj === 'string' ? queryObj : queryObj.body;
+        const url = typeof queryObj === 'string' ? queryObj : `${queryObj.url}?${new URLSearchParams(queryObj.query).toString()}`;
+        const config = { headers: { ...extraHeaders } };
+        if (shouldIncludeAuthHeaders) config.headers["Authorization"] = getCookie("jwt");
+        return axios.patch(url, body, config);
+    };
+
     const updateData: () => Promise<undefined|T> = async () =>
     {
         const queryMethod = typeof queryObj === 'string' ? 'GET' : queryObj?.method ?? 'GET';
@@ -100,7 +109,7 @@ export function useNetworkRequest<T>
             {
                 // if (queryMethod === 'DELETE') return () => {};
                 if (queryMethod === 'GET') return get;
-                // else if (queryMethod === 'PATCH') return () => {};
+                else if (queryMethod === 'PATCH') return patch;
                 else if (queryMethod === 'POST') return post;
                 else return put;
             })();

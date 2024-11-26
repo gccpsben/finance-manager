@@ -38,7 +38,7 @@ const router = createRouter(
                         {
                             path: ":cid",
                             name: 'singleCurrency',
-                            component: () => import(`@/modules/currencies/mainPages/SingleCurrency.vue`),
+                            component: () => import(`@/modules/currencies/mainPages/singleCurrency/components/SingleCurrency.vue`),
                         },
                     ]
                 },

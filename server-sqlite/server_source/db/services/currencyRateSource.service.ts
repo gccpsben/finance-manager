@@ -10,7 +10,7 @@ import jmespath from 'jmespath';
 import { CurrencyRateDatumService } from "./currencyRateDatum.service.js";
 import { Decimal } from "decimal.js";
 import { CurrencyRateDatum } from "../entities/currencyRateDatum.entity.js";
-import { IdBound } from "../../index.d.js";
+import type { IdBound } from "../../index.d.js";
 
 export class InvalidNumberError extends MonadError<typeof InvalidNumberError.ERROR_SYMBOL>
 {
@@ -24,6 +24,38 @@ export class InvalidNumberError extends MonadError<typeof InvalidNumberError.ERR
         this.name = this.constructor.name;
         this.valueGiven = valueGiven;
         this.userId = userId;
+    }
+}
+
+export class CurrencySrcNotFoundError extends MonadError<typeof InvalidNumberError.ERROR_SYMBOL>
+{
+    static readonly ERROR_SYMBOL: unique symbol;
+
+    public srcId: string;
+    public userId: string;
+
+    constructor(srcId: string, userId: string)
+    {
+        super(InvalidNumberError.ERROR_SYMBOL, `Cannot find a currency rate source with id='${srcId}' and ownerId='${userId}'`);
+        this.name = this.constructor.name;
+        this.srcId = srcId;
+        this.userId = userId;
+    }
+}
+
+export class PatchCurrencySrcValidationError extends MonadError<typeof InvalidNumberError.ERROR_SYMBOL>
+{
+    static readonly ERROR_SYMBOL: unique symbol;
+
+    public srcId: string;
+    public msg: string;
+
+    constructor(srcId: string, msg: string)
+    {
+        super(InvalidNumberError.ERROR_SYMBOL, `The new currency rate source failed validation: ${msg}`);
+        this.name = this.constructor.name;
+        this.srcId = srcId;
+        this.msg = msg;
     }
 }
 
@@ -68,18 +100,38 @@ export class CurrencyRateSourceService
         newCurrencyRateSource.name = name;
         newCurrencyRateSource.jsonQueryString = jsonQueryString;
         newCurrencyRateSource.path = path;
-
-        const refCurrency = await CurrencyService.getCurrencyByIdWithoutCache(ownerId, refCurrencyId);
-        const refAmountCurrency = await CurrencyService.getCurrencyByIdWithoutCache(ownerId, refAmountCurrencyId);
-
-        if (refCurrency === null) return new CurrencyNotFoundError(refCurrencyId, ownerId);
-        if (refAmountCurrency === null) return new CurrencyNotFoundError(refAmountCurrencyId, ownerId);
-
         newCurrencyRateSource.refAmountCurrencyId = refAmountCurrencyId;
         newCurrencyRateSource.refCurrencyId = refCurrencyId;
+
+        const validationResult = await CurrencyRateSourceService.validateCurrencyRateSource(newCurrencyRateSource);
+
+        if (validationResult === 'RefCurrencyNotFound' || validationResult === 'MissingRefCurrency')
+            return new CurrencyNotFoundError(refCurrencyId, ownerId);
+
+        if (validationResult === 'RefAmountCurrencyNotFound' || validationResult === 'MissingAmountCurrency')
+            return new CurrencyNotFoundError(refAmountCurrencyId, ownerId);
+
         const newlySavedSrc = await CurrencyRateSourceRepository.getInstance().save(newCurrencyRateSource);
         if (!newlySavedSrc.id) throw panic(`Newly saved currency rate source contain falsy IDs.`);
+
         return newlySavedSrc as IdBound<typeof newlySavedSrc>;
+    }
+
+    public static async validateCurrencyRateSource(src: CurrencyRateSource): Promise<
+        "RefCurrencyNotFound" | "RefAmountCurrencyNotFound" |
+        "MissingRefCurrency" | "MissingAmountCurrency" | null
+    >
+    {
+        if (!src.refAmountCurrencyId) return "MissingAmountCurrency";
+        if (!src.refCurrencyId) return "MissingRefCurrency";
+
+        const refCurrency = await CurrencyService.getCurrencyByIdWithoutCache(src.ownerId, src.refCurrencyId);
+        const refAmountCurrency = await CurrencyService.getCurrencyByIdWithoutCache(src.ownerId, src.refAmountCurrencyId);
+
+        if (refCurrency === null) return "RefCurrencyNotFound";
+        if (refAmountCurrency === null) return "RefAmountCurrencyNotFound";
+
+        return null;
     }
 
     public static async getUserCurrencyRatesSources
@@ -103,10 +155,60 @@ export class CurrencyRateSourceService
         .getInstance()
         .find({ where: { ownerId: ownerId ?? null, refCurrencyId: currencyId ?? null } });
 
+        console.log("a" + JSON.stringify(userCurrencyRateSources));
+
         if (userCurrencyRateSources.some(x => !x.id))
             throw panic(`CurrencyRateSources queried from database contain falsy IDs.`);
 
         return userCurrencyRateSources as IdBound<typeof userCurrencyRateSources[0]>[]
+    }
+
+    public static async getCurrencyRatesSourceById
+    (
+        ownerId: string,
+        srcId: string
+    ): Promise<IdBound<CurrencyRateSource> | null>
+    {
+        const userCurrencyRateSource = await CurrencyRateSourceRepository
+        .getInstance()
+        .findOne({ where: { ownerId: ownerId ?? null, id: srcId ?? null } });
+
+        if (!userCurrencyRateSource?.id && !!userCurrencyRateSource)
+            throw panic(`CurrencyRateSources queried from database contain falsy IDs.`);
+
+        return userCurrencyRateSource as IdBound<typeof userCurrencyRateSource>;
+    }
+
+    public static async patchUserCurrencyRateSource
+    (
+        ownerId:string,
+        patchArgs: IdBound<Partial<
+        {
+            hostname: string,
+            jsonQueryString: string,
+            name: string,
+            path: string,
+            refAmountCurrencyId: string
+        }>>
+    )
+    {
+        const originalSrc = await CurrencyRateSourceRepository
+        .getInstance()
+        .findOne({ where: { ownerId: ownerId ?? null, id: patchArgs.id ?? null } });
+
+        if (!originalSrc) return new CurrencySrcNotFoundError(patchArgs.id, ownerId);
+
+        if (patchArgs.hostname) originalSrc.hostname = patchArgs.hostname;
+        if (patchArgs.jsonQueryString) originalSrc.jsonQueryString = patchArgs.jsonQueryString;
+        if (patchArgs.name) originalSrc.name = patchArgs.name;
+        if (patchArgs.path) originalSrc.path = patchArgs.path;
+        if (patchArgs.refAmountCurrencyId) originalSrc.refAmountCurrencyId = patchArgs.refAmountCurrencyId;
+
+        const validationResult = await CurrencyRateSourceService.validateCurrencyRateSource(originalSrc);
+        if (validationResult !== null) return new PatchCurrencySrcValidationError(patchArgs.id, validationResult);
+
+        const newlySavedSrc = await CurrencyRateSourceRepository.getInstance().save(originalSrc);
+        return newlySavedSrc as IdBound<typeof newlySavedSrc>;
     }
 
     /**

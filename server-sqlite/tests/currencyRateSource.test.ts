@@ -213,7 +213,7 @@ export namespace CurrencyRateSourceHelpers
     })
     {
         const assertBody = config.assertBody === undefined ? true : config.assertBody;
-        const url = `${UnitTestEndpoints.currencyRateSourcesEndpoints['get']}?targetCurrencyId=${config.currencyId}`;
+        const url = UnitTestEndpoints.currencyRateSourcesEndpoints.get(config.currencyId);
 
         const response = await HTTPAssert.assertFetch
         (

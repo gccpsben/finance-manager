@@ -8,7 +8,7 @@
         </template>
         <template v-else-if="parsedDatums?.length == 0">
             <div class="fullSize center">
-                <div style="color: white; font-size: 12px;">No Data Available</div>
+                <div style="font-size: 12px;">No Data Available</div>
             </div>
         </template>
         <template v-else>
@@ -78,4 +78,6 @@ const parsedDatums = computed(() =>
 
 <style lang="less" scoped>
 @import "@/modules/core/stylesheets/globalStyle.less";
+
+
 </style>

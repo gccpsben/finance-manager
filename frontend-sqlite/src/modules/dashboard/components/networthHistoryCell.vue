@@ -4,7 +4,7 @@
             <NetworkCircularIndicator :error="targetRequestComposable.error" :is-loading="!!targetRequestComposable.isLoading" class="fullSize center"/>
         </template>
         <template v-else-if="parsedDatums?.length == 0">
-            <div class="fullSize center">
+            <div class="fullSize center noDataAvailableNotice">
                 <div>No Data Available</div>
             </div>
         </template>
@@ -60,4 +60,6 @@ const parsedDatums = computed(() =>
 
 <style lang="less" scoped>
 @import "@/modules/core/stylesheets/globalStyle.less";
+
+.noDataAvailableNotice { color: @foreground; }
 </style>
