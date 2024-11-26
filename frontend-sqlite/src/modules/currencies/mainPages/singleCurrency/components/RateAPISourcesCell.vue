@@ -1,7 +1,16 @@
 <template>
     <Cell :title="'Rates API Sources'">
         <template v-if="currencyRateSrcs.lastSuccessfulData.value?.sources.length == 0">
-            <div class="fullSize center" style="font-size: 12px;">No Sources Added</div>
+            <!-- <div class="fullSize center" style="font-size: 12px;">
+                <div>No Sources Added</div>
+                <div>No Sources Added</div>
+            </div> -->
+            <div class="fullSize center">
+                <div style="grid-template-columns: 1fr; grid-template-rows: auto auto; display: grid; gap: 14px;">
+                    <div class="center">No Sources Added</div>
+                    <div class="center clickableLink" @click="onNewRateSrcClicked">Create a source</div>
+                </div>
+            </div>
         </template>
         <template v-else>
             <div class="cellContent">
