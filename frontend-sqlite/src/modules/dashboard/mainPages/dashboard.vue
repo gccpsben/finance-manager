@@ -41,7 +41,7 @@
                         <grid-shortcut columns="50px 1fr 1fr" :class="{'fullSize': true}" @click="viewTxn(props.currentItem.id)" class="fullSize highlightableRow">
                             <div class="listItemTitle middleLeft">{{ store.getDateAge(props.currentItem.creationDate) }}</div>
                             <div class="listItemTitle middleLeft">
-                                {{ props.currentItem["title"] }}
+                                <div class="ellipsis">{{ props.currentItem.title }}</div>
                             </div>
                             <div class="listItemTitle middleRight">
                                 {{ currenciesStore.formatAmount(props.currentItem) }}
@@ -59,7 +59,7 @@
                         <grid-shortcut columns="50px 1fr 1fr" :class="{'fullSize': true}" @click="viewTxn(props.currentItem.id)" class="fullSize highlightableRow">
                             <div class="listItemTitle middleLeft">{{ store.getDateAge(props.currentItem.creationDate) }}</div>
                             <div class="listItemTitle middleLeft">
-                                {{ props.currentItem["title"] }}
+                                <div class="ellipsis">{{ props.currentItem.title }}</div>
                             </div>
                             <div class="listItemTitle middleRight">
                                 {{ currenciesStore.formatAmount(props.currentItem) }}
@@ -77,7 +77,7 @@
                         <grid-shortcut columns="50px 1fr 1fr" :class="{'fullSize': true}" @click="viewTxn(props.currentItem.id)" class="fullSize highlightableRow">
                             <div class="listItemTitle middleLeft">{{ store.getDateAge(props.currentItem.creationDate) }}</div>
                             <div class="listItemTitle middleLeft">
-                                {{ props.currentItem["title"] }}
+                                <div class="ellipsis">{{ props.currentItem.title }}</div>
                             </div>
                             <div class="listItemTitle middleRight">
                                 {{ currenciesStore.formatAmount(props.currentItem) }}
@@ -136,8 +136,14 @@
                 :items="store.toSorted(containersStore.containers.lastSuccessfulData?.rangeItems ?? [], (a,b) => parseFloat(b.value) - parseFloat(a.value))">
                     <template #row="props">
                         <grid-shortcut columns="1fr 1fr" class="fullSize">
-                            <div class="listItemTitle middleLeft">{{ props.currentItem.name }}</div>
-                            <div class="listItemTitle middleRight">{{ parseFloat(props.currentItem.value).toFixed(2) }} {{ currenciesStore.getBaseCurrencySymbol() }}</div>
+                            <div class="listItemTitle middleLeft">
+                                <div class="ellipsis">{{ props.currentItem.name }}</div>
+                            </div>
+                            <div class="listItemTitle middleRight ">
+                                <div class="ellipsis">
+                                    {{ parseFloat(props.currentItem.value).toFixed(2) }} {{ currenciesStore.getBaseCurrencySymbol() }}
+                                </div>
+                            </div>
                         </grid-shortcut>
                     </template>
                 </list-cell>
