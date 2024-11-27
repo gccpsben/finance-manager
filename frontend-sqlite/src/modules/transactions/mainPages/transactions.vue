@@ -47,9 +47,9 @@
                                     </div>
                                 </div>
                                 <div v-area.class="'txnAge'" class="tight yCenter ellipsisContainer">
-                                    <div>
+                                    <DateTooltip :date="item.creationDate" v-if="item.creationDate">
                                         {{ getDateAge(item?.creationDate) }} ago
-                                    </div>
+                                    </DateTooltip>
                                 </div>
                                 <div v-area.class="'txnType'" class="tight yCenter ellipsisContainer">
                                     <div>
@@ -95,8 +95,10 @@ import { useContainersStore } from '../../containers/stores/useContainersStore';
 import { useTxnTypesStore } from '../../txnTypes/stores/useTxnTypesStore';
 import FaIcon from '@/modules/core/components/decorations/FaIcon.vue';
 import NumberPagination from '@/modules/core/components/data-display/NumberPagination.vue';
+import { getDateAge } from '@/modules/core/utils/date';
+import DateTooltip from '@/modules/core/components/data-display/DateTooltip.vue';
 
-const { authGet, getDateAge, updateAll: mainStoreUpdateAll } = useMainStore();
+const { authGet, updateAll: mainStoreUpdateAll } = useMainStore();
 const { containers } = useContainersStore();
 const { txnTypes } = useTxnTypesStore();
 

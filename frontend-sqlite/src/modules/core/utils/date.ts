@@ -34,3 +34,70 @@ export function isDateValid(date: Date)
 {
     return !isNaN(date.getTime());
 }
+
+/**
+* Get the passed time of a date relative to current time.
+*/
+export function getDateAge(epoch: number, relativeTo?: number | undefined)
+{
+    let msDiff = (relativeTo ?? Date.now()) - epoch;
+    if (msDiff < 60000) return `${(msDiff / 1000).toFixed(0)}s`; // if < 1 min
+    else if (msDiff < 3.6e+6) return `${(msDiff / 60000).toFixed(0)}m`; // if < 1 hour
+    else if (msDiff < 8.64e+7) return `${(msDiff / (3.6e+6)).toFixed(0)}h`; // if < 1 day
+    else return `${(msDiff / (8.64e+7)).toFixed(0)}d`;
+}
+
+/**
+* Get the passed time of a date relative to current time.
+*/
+export function getDateAgeFull(
+    epoch: number,
+    mode: "combined" | "single" = 'combined',
+    relativeTo?: number | undefined,)
+{
+    const { d: days, h: hours, m: minutes, s: seconds, ms } = getDateAgeFullComponents(epoch, mode, relativeTo);
+    if (days > 0) return `${days}d ${hours}h ${minutes}m ${seconds}s ${ms}ms`;
+    if (hours > 0) return `${hours}h ${minutes}m ${seconds}s ${ms}ms`;
+    if (minutes > 0) return `${minutes}m ${seconds}s ${ms}ms`;
+    if (seconds > 0) return `${seconds}s ${ms}ms`;
+    return `${ms}ms`;
+}
+
+/**
+ * Get the passed time of a date relative to current time.
+ * `Combined` means that the difference is separated into components to ms/s/m/h/d.
+ * `Single` means that the difference is represented by ms/s/m/h/d.
+ */
+export function getDateAgeFullComponents(
+    epoch: number,
+    mode: "combined" | "single" = 'combined',
+    relativeTo?: number | undefined,
+) {
+    let msDiff = (relativeTo ?? Date.now()) - epoch;
+
+    // コンポーネントを計算
+    const ms = msDiff % 1000; // ミリ秒
+    const seconds = Math.floor((msDiff / 1000) % 60); // 秒
+    const minutes = Math.floor((msDiff / (1000 * 60)) % 60); // 分
+    const hours = Math.floor((msDiff / (1000 * 60 * 60)) % 24); // 時間
+    const days = Math.floor(msDiff / (1000 * 60 * 60 * 24)); // 日
+
+    // モードに応じて結果を返す
+    if (mode === "combined") {
+        return {
+            ms: ms,
+            s: seconds,
+            m: minutes,
+            h: hours,
+            d: days
+        };
+    } else { // mode === "single"
+        return {
+            ms: msDiff,
+            s: Math.floor(msDiff / 1000),
+            m: Math.floor(msDiff / (1000 * 60)),
+            h: Math.floor(msDiff / (1000 * 60 * 60)),
+            d: Math.floor(msDiff / (1000 * 60 * 60 * 24))
+        };
+    }
+}

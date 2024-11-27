@@ -184,18 +184,6 @@ export const useMainStore = defineStore(
             this.setCookie(cname, "", -1);
         },
 
-        /**
-         * Get the passed time of a date relative to current time.
-         */
-        getDateAge(epoch: number)
-        {
-            let msDiff = Date.now() - epoch;
-            if (msDiff < 60000) return `${(msDiff / 1000).toFixed(0)}s`; // if < 1 min
-            else if (msDiff < 3.6e+6) return `${(msDiff / 60000).toFixed(0)}m`; // if < 1 hour
-            else if (msDiff < 8.64e+7) return `${(msDiff / (3.6e+6)).toFixed(0)}h`; // if < 1 day
-            else return `${(msDiff / (8.64e+7)).toFixed(0)}d`;
-        },
-
         toSorted<T>(array:Array<T>, func:(a:T, b:T) => number)
         {
             let newArray = [...array];

@@ -39,7 +39,7 @@
                 :items="expenseTxns30d">
                     <template #row="props">
                         <grid-shortcut columns="50px 1fr 1fr" :class="{'fullSize': true}" @click="viewTxn(props.currentItem.id)" class="fullSize highlightableRow">
-                            <div class="listItemTitle middleLeft">{{ store.getDateAge(props.currentItem.creationDate) }}</div>
+                            <div class="listItemTitle middleLeft">{{ getDateAge(props.currentItem.creationDate) }}</div>
                             <div class="listItemTitle middleLeft">
                                 <div class="ellipsis">{{ props.currentItem.title }}</div>
                             </div>
@@ -57,7 +57,7 @@
                 :items="incomeTxns30d">
                     <template #row="props">
                         <grid-shortcut columns="50px 1fr 1fr" :class="{'fullSize': true}" @click="viewTxn(props.currentItem.id)" class="fullSize highlightableRow">
-                            <div class="listItemTitle middleLeft">{{ store.getDateAge(props.currentItem.creationDate) }}</div>
+                            <div class="listItemTitle middleLeft">{{ getDateAge(props.currentItem.creationDate) }}</div>
                             <div class="listItemTitle middleLeft">
                                 <div class="ellipsis">{{ props.currentItem.title }}</div>
                             </div>
@@ -75,7 +75,7 @@
                 :items="transferTxns30d">
                     <template #row="props">
                         <grid-shortcut columns="50px 1fr 1fr" :class="{'fullSize': true}" @click="viewTxn(props.currentItem.id)" class="fullSize highlightableRow">
-                            <div class="listItemTitle middleLeft">{{ store.getDateAge(props.currentItem.creationDate) }}</div>
+                            <div class="listItemTitle middleLeft">{{ getDateAge(props.currentItem.creationDate) }}</div>
                             <div class="listItemTitle middleLeft">
                                 <div class="ellipsis">{{ props.currentItem.title }}</div>
                             </div>
@@ -172,6 +172,7 @@ import numberCell from "@/modules/core/components/data-display/NumberCell.vue";
 import networthHistoryCell from "../components/NetworthHistoryCell.vue";
 import { useNetworthHistoryStore } from "@/modules/charts/stores/networthHistoryStore";
 import { Uncontrolled } from "@/modules/core/utils/defineProperty";
+import { getDateAge } from "@/modules/core/utils/date";
 
 export default
 {
@@ -368,6 +369,7 @@ export default
             if (txn == undefined) return "";
             return txn.changeInValue.toFixed(3) + ' HKD';
         },
+        getDateAge(epoch: number) { return getDateAge(epoch) },
         // getContainerTooltip(container: ValueHydratedContainer)
         // {
         //     if (container == undefined) return "";
