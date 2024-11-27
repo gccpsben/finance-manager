@@ -155,8 +155,6 @@ export class CurrencyRateSourceService
         .getInstance()
         .find({ where: { ownerId: ownerId ?? null, refCurrencyId: currencyId ?? null } });
 
-        console.log("a" + JSON.stringify(userCurrencyRateSources));
-
         if (userCurrencyRateSources.some(x => !x.id))
             throw panic(`CurrencyRateSources queried from database contain falsy IDs.`);
 
