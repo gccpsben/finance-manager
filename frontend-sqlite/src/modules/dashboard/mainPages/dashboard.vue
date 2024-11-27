@@ -10,33 +10,42 @@
                 style="background: linear-gradient(-45deg, rgba(213, 51, 105, 0.13) 0%, rgba(218, 81, 81, 0.42) 100%); color:white;"
                 :option-values="userExpenses"
                 :isLoading="store.userExpensesIncomes.isLoading"
-                :networkError="store.userExpensesIncomes.error" />
+                :networkError="store.userExpensesIncomes.error">
+                    <template #title>Expenses</template>
+                </number-cell>
 
                 <number-cell title="Incomes" :noItemsText="'No Data'" v-area="'incomesPanel'"
                 style="background: linear-gradient(-45deg, rgba(56, 213, 51, 0.09) 0%, rgba(81, 218, 90, 0.35) 100%); color:white;"
                 :option-values="userIncomes"
                 :isLoading="store.userExpensesIncomes.isLoading"
-                :networkError="store.userExpensesIncomes.error" />
+                :networkError="store.userExpensesIncomes.error">
+                    <template #title>Incomes</template>
+                </number-cell>
 
                 <number-cell title="Networth" :noItemsText="'No Data'" v-area="'networthPanel'"
                 v-model:selected-option="selectedNetworthRange"
                 style="background: linear-gradient(-45deg, rgba(213, 180, 51, 0.09) 0%, rgba(218, 203, 81, 0.44) 100%); color:white;"
                 :option-values="userNetworth.networthOptionValues"
                 :isLoading="userNetworth.isLoading"
-                :networkError="userNetworth.error" />
+                :networkError="userNetworth.error">
+                    <template #title>Networth</template>
+                </number-cell>
 
                 <number-cell title="Networth Change" :noItemsText="'No Data'" v-area="'netChangePanel'"
                 v-model:selected-option="selectedNetworthChangeRange"
                 style="background: linear-gradient(-45deg, rgba(51, 213, 190, 0.09) 0%, rgba(81, 218, 218, 0.43) 100%); color:white;"
                 :option-values="userNetworthChange.networthChangeOptionValues"
                 :isLoading="userNetworthChange.isLoading"
-                :networkError="userNetworthChange.error" />
+                :networkError="userNetworthChange.error">
+                    <template #title>Net Change</template>
+                </number-cell>
 
-                <list-cell v-area="'_30dExpensesList'" title="30d Expenses" :noItemsText="'No Expenses'"
+                <ListCell v-area="'_30dExpensesList'" title="30d Expenses" :noItemsText="'No Expenses'"
                 :isLoading="store.txns30d.isLoading"
                 :error="store.txns30d.error"
                 :itemsInPage="6"
                 :items="expenseTxns30d">
+                    <template #title>30d Expenses</template>
                     <template #row="props">
                         <TxnTooltip :txn="props.currentItem">
                             <grid-shortcut columns="50px 1fr 1fr" :class="{'fullSize': true}" @click="viewTxn(props.currentItem.id)" class="fullSize highlightableRow">
@@ -50,13 +59,14 @@
                             </grid-shortcut>
                         </TxnTooltip>
                     </template>
-                </list-cell>
+                </ListCell>
 
-                <list-cell v-area="'_30dIncomesList'" title="30d Incomes" :noItemsText="'No Incomes'"
+                <ListCell v-area="'_30dIncomesList'" title="30d Incomes" :noItemsText="'No Incomes'"
                 :isLoading="store.txns30d.isLoading"
                 :error="store.txns30d.error"
                 :itemsInPage="6"
                 :items="incomeTxns30d">
+                    <template #title>30d Incomes</template>
                     <template #row="props">
                         <TxnTooltip :txn="props.currentItem">
                             <grid-shortcut columns="50px 1fr 1fr" :class="{'fullSize': true}" @click="viewTxn(props.currentItem.id)" class="fullSize highlightableRow">
@@ -70,13 +80,14 @@
                             </grid-shortcut>
                         </TxnTooltip>
                     </template>
-                </list-cell>
+                </ListCell>
 
-                <list-cell v-area="'_30dTransfersList'" title="30d Transfers" :noItemsText="'No Transfers'"
+                <ListCell v-area="'_30dTransfersList'" :noItemsText="'No Transfers'"
                 :isLoading="store.txns30d.isLoading"
                 :error="store.txns30d.error"
                 :itemsInPage="6"
                 :items="transferTxns30d">
+                    <template #title>30d Transfers</template>
                     <template #row="props">
                         <TxnTooltip :txn="props.currentItem">
                             <grid-shortcut columns="50px 1fr 1fr" :class="{'fullSize': true}" @click="viewTxn(props.currentItem.id)" class="fullSize highlightableRow">
@@ -90,12 +101,12 @@
                             </grid-shortcut>
                         </TxnTooltip>
                     </template>
-                </list-cell>
+                </ListCell>
 
-                <networthHistoryCell v-area="'NetworthGraph'"/>
+                <NetworthHistoryCell v-area="'NetworthGraph'"/>
 
                 <!--
-                <list-cell v-area="'_allPendingTransactionsList'" title="All Pending Txns" :noItemsText="'No Pending Txns'"
+                <ListCell v-area="'_allPendingTransactionsList'" title="All Pending Txns" :noItemsText="'No Pending Txns'"
                 :isLoading="store.dashboardSummary.isLoading"
                 :error="store.dashboardSummary.error"
                 :items="store.dashboardSummary?.lastSuccessfulData?.allPendingTransactions ?? []">
@@ -117,9 +128,9 @@
                             </div>
                         </grid-shortcut>
                     </template>
-                </list-cell>
+                </ListCell>
 
-                <list-cell v-area="'_30dIncomesList'" title="30d Incomes" :noItemsText="'No Incomes'"
+                <ListCell v-area="'_30dIncomesList'" title="30d Incomes" :noItemsText="'No Incomes'"
                 :isLoading="store.dashboardSummary.isLoading"
                 :error="store.dashboardSummary.error"
                 :items="store.toReversed(store.dashboardSummary?.lastSuccessfulData?.incomes30d ?? [])">
@@ -133,13 +144,14 @@
                             </div>
                         </grid-shortcut>
                     </template>
-                </list-cell>-->
+                </ListCell>-->
 
-                <list-cell v-area="'ContainersList'" title="Containers" :noItemsText="'No Containers'"
+                <ListCell v-area="'ContainersList'" :noItemsText="'No Containers'"
                 :isLoading="containersStore.containers.isLoading"
                 :error="containersStore.containers.error"
                 :itemsInPage="6"
                 :items="store.toSorted(containersStore.containers.lastSuccessfulData?.rangeItems ?? [], (a,b) => parseFloat(b.value) - parseFloat(a.value))">
+                    <template #title>Containers</template>
                     <template #row="props">
                         <grid-shortcut columns="1fr 1fr" class="fullSize">
                             <div class="listItemTitle middleLeft">
@@ -152,10 +164,11 @@
                             </div>
                         </grid-shortcut>
                     </template>
-                </list-cell>
+                </ListCell>
 
-                <container-values-graph-cell v-area="'containerValuesGraph'"
-                title="Containers Value"></container-values-graph-cell>
+                <ContainerValuesGraphCell v-area="'containerValuesGraph'">
+                    <template #title>Containers Value</template>
+                </ContainerValuesGraphCell>
 
             </grid-shortcut>
         </div>
@@ -170,21 +183,21 @@ import { getTxnClassification } from '@/modules/transactions/utils/transactions'
 import type { HydratedTransaction } from "@/types/dtos/transactionsDTO";
 import vArea from "@/modules/core/directives/vArea";
 import { useCurrenciesStore } from '@/modules/currencies/stores/useCurrenciesStore';
-import listCellVue from '@/modules/core/components/data-display/ListCell.vue';
 import cell from '@/modules/core/components/data-display/Cell.vue';
-import containerValuesGraphCell from '@/modules/containers/components/ContainerValuesGraphCell.vue';
+import ContainerValuesGraphCell from '@/modules/containers/components/ContainerValuesGraphCell.vue';
 import router from "@/router";
 import numberCell from "@/modules/core/components/data-display/NumberCell.vue";
-import networthHistoryCell from "../components/NetworthHistoryCell.vue";
+import NetworthHistoryCell from "../components/NetworthHistoryCell.vue";
 import { useNetworthHistoryStore } from "@/modules/charts/stores/networthHistoryStore";
 import { Uncontrolled } from "@/modules/core/utils/defineProperty";
 import { getDateAge } from "@/modules/core/utils/date";
 import TxnTooltip from "@/modules/transactions/components/TxnTooltip.vue";
+import ListCell from "@/modules/core/components/data-display/ListCell.vue";
 
 export default
 {
     directives: {'area':vArea},
-    components: { "list-cell": listCellVue, "cell": cell, containerValuesGraphCell, networthHistoryCell, numberCell, TxnTooltip },
+    components: { ListCell, "cell": cell, ContainerValuesGraphCell, NetworthHistoryCell, numberCell, TxnTooltip },
     data()
     {
         let data =

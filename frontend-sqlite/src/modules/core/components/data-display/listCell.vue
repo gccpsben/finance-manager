@@ -1,6 +1,9 @@
 <template>
 
-    <cell :title="title.get()" :inset-mode="props.insetMode">
+    <cell :inset-mode="props.insetMode">
+        <template #title>
+            <slot name="title"></slot>
+        </template>
         <template #cellOptions>
             <div class="pageSelector">
                 <numberPagination v-model="currentPageIndex" :min-page-readable="1"
@@ -40,7 +43,6 @@ const props = withDefaults(defineProps<
 {
     items?: T[],
     itemsInPage?: number,
-    title?: string,
     noItemsText?: string,
     isLoading?: boolean,
     error?: object,
@@ -51,14 +53,12 @@ const props = withDefaults(defineProps<
     error: undefined,
     isLoading: true,
     items: () => [] as T[],
-    title: "Title Here",
     noItemsText: "No Items",
     insetMode: false
 });
 
 const items = defineProperty<T[], 'items', typeof props>("items", { default: [], emitFunc: undefined, props: props });
 const itemsInPage = defineProperty<number, 'itemsInPage', typeof props>("itemsInPage", { default: 7, emitFunc: undefined, props: props });
-const title = defineProperty<string, 'title', typeof props>("title", { default: "Title Here", emitFunc: undefined, props: props });
 const noItemsText = defineProperty<string, 'noItemsText', typeof props>("noItemsText", { default: "No Items", emitFunc: undefined, props: props });
 const isLoading = defineProperty<boolean, 'isLoading', typeof props>("isLoading", { default: true, emitFunc: undefined, props: props });
 const error = defineProperty<object|undefined, 'error', typeof props>("error", { default: undefined, emitFunc: undefined, props: props });

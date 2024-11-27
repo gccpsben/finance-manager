@@ -1,5 +1,8 @@
 <template>
-    <cell :title="title" :icon="icon" :inset-mode="insetMode">
+    <cell :icon="icon" :inset-mode="insetMode">
+        <template #title>
+            <slot name="title"></slot>
+        </template>
         <div v-if="!isLoading && !networkError" class="fullHeight xLeft">
             <h2 class="variantSelectorTab">{{ currentValue?.toFixed(2) }}</h2>
         </div>
@@ -23,7 +26,6 @@ import cell, { type IconType } from '@/modules/core/components/data-display/Cell
 
 export type NumberCellProps =
 {
-    title: string,
     isLoading: boolean,
     networkError?: any,
     icon?: { type: IconType, name: string },

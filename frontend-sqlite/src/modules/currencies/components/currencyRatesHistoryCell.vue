@@ -1,5 +1,5 @@
 <template>
-    <cell :title="'Rates History'" :available-options="['All', '30d', '7d']"
+    <cell :available-options="['All', '30d', '7d']"
           v-model:selected-option="selectedOption">
         <template v-if="datumResponse.isLoading.value || datumResponse.error.value">
             <NetworkCircularIndicator :error="datumResponse.error.value"
@@ -14,6 +14,7 @@
         <template v-else>
             <WrappedLineChart :is-x-axis-epoch="true" :datums="parsedDatums" />
         </template>
+        <template #title>Rates History</template>
     </cell>
 </template>
 

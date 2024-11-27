@@ -1,6 +1,9 @@
 <template>
     <pagination id="pagination" :items="sortedContainers" :itemsInPage="1" v-model:currentPage="currentPage" v-slot="props">
-        <cell :title="title" id="graphPanel">
+        <cell id="graphPanel">
+            <template #title>
+                <slot name="title"></slot>
+            </template>
             <template #cellOptions>
                 <numberPagination v-model:model-value="currentPage" :min-page-readable="1"
                     :max-page-readable="containersStore.containers?.lastSuccessfulData?.rangeItems.length ?? 0 + 1" />
@@ -87,7 +90,6 @@ Chart.register(...registerables);
 export default defineComponent(
 {
     components: { "pagination": paginationVue, "numberPagination": numberPagination, "cell": cell },
-    props: { "title": { default: "", type: String }, },
     setup()
     {
         const data =

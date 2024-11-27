@@ -1,5 +1,6 @@
 <template>
-    <cell :title="'Networth History'" v-if="targetRequestComposable">
+    <cell v-if="targetRequestComposable">
+        <template #title>Networth History</template>
         <template v-if="targetRequestComposable.isLoading || targetRequestComposable.error">
             <NetworkCircularIndicator :error="targetRequestComposable.error" :is-loading="!!targetRequestComposable.isLoading" class="fullSize center"/>
         </template>

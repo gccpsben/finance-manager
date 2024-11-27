@@ -8,9 +8,9 @@
                 <template v-else-if="icon && icon.type === 'Google'">
                     <ga-icon style="font-size:12px; color:white; margin-right: 14px;" :icon="`${icon.name}`" />
                 </template>
-                <h2 class="panelTitle">
-                    {{ title }}
-                </h2>
+                <div class="panelTitle">
+                    <slot name="title"></slot>
+                </div>
             </div>
             <div>
                 <slot name="cellOptions"></slot>
@@ -104,8 +104,7 @@ export type IconType = "Google" | "FontAwesome";
 
 const props = withDefaults(defineProps<
 {
-    title: string,
     icon?: { type: IconType, name: string } | undefined,
     insetMode?: boolean | undefined
-}>(), { title: "<no title>", icon: undefined, insetMode: false });
+}>(), { icon: undefined, insetMode: false });
 </script>

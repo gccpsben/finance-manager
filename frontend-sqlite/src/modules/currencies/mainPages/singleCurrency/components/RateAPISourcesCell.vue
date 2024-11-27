@@ -1,5 +1,6 @@
 <template>
-    <Cell :title="'Rates API Sources'">
+    <Cell>
+        <template #title>Rates API Sources</template>
         <template v-if="currencyRateSrcs.lastSuccessfulData.value?.sources.length == 0">
             <div class="fullSize center" v-if="!isBaseCurrency">
                 <div style="grid-template-columns: 1fr; grid-template-rows: auto auto; display: grid; gap: 14px;">
