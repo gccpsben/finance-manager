@@ -6,38 +6,66 @@
 
             <grid-shortcut id="mainGrid">
 
-                <number-cell title="Expenses" :noItemsText="'No Data'" v-area="'expensesPanel'"
+                <number-cell :noItemsText="'No Data'" v-area="'expensesPanel'"
                 style="background: linear-gradient(-45deg, rgba(213, 51, 105, 0.13) 0%, rgba(218, 81, 81, 0.42) 100%); color:white;"
                 :option-values="userExpenses"
                 :isLoading="store.userExpensesIncomes.isLoading"
                 :networkError="store.userExpensesIncomes.error">
-                    <template #title>Expenses</template>
+                    <template #title>
+                        <TipsIconTitle>
+                            <div style="display: inline-block">Expenses</div>
+                            <template #tipsContent>
+                                <div>Expenses</div>
+                            </template>
+                        </TipsIconTitle>
+                    </template>
                 </number-cell>
 
-                <number-cell title="Incomes" :noItemsText="'No Data'" v-area="'incomesPanel'"
+                <number-cell :noItemsText="'No Data'" v-area="'incomesPanel'"
                 style="background: linear-gradient(-45deg, rgba(56, 213, 51, 0.09) 0%, rgba(81, 218, 90, 0.35) 100%); color:white;"
                 :option-values="userIncomes"
                 :isLoading="store.userExpensesIncomes.isLoading"
                 :networkError="store.userExpensesIncomes.error">
-                    <template #title>Incomes</template>
+                    <template #title>
+                        <TipsIconTitle>
+                            <div style="display: inline-block">Incomes</div>
+                            <template #tipsContent>
+                                <div>Incomes</div>
+                            </template>
+                        </TipsIconTitle>
+                    </template>
                 </number-cell>
 
-                <number-cell title="Networth" :noItemsText="'No Data'" v-area="'networthPanel'"
+                <number-cell :noItemsText="'No Data'" v-area="'networthPanel'"
                 v-model:selected-option="selectedNetworthRange"
                 style="background: linear-gradient(-45deg, rgba(213, 180, 51, 0.09) 0%, rgba(218, 203, 81, 0.44) 100%); color:white;"
                 :option-values="userNetworth.networthOptionValues"
                 :isLoading="userNetworth.isLoading"
                 :networkError="userNetworth.error">
-                    <template #title>Networth</template>
+                    <template #title>
+                        <TipsIconTitle>
+                            <div style="display: inline-block">Networth</div>
+                            <template #tipsContent>
+                                <div>Networth</div>
+                            </template>
+                        </TipsIconTitle>
+                    </template>
                 </number-cell>
 
-                <number-cell title="Networth Change" :noItemsText="'No Data'" v-area="'netChangePanel'"
+                <number-cell :noItemsText="'No Data'" v-area="'netChangePanel'"
                 v-model:selected-option="selectedNetworthChangeRange"
                 style="background: linear-gradient(-45deg, rgba(51, 213, 190, 0.09) 0%, rgba(81, 218, 218, 0.43) 100%); color:white;"
                 :option-values="userNetworthChange.networthChangeOptionValues"
                 :isLoading="userNetworthChange.isLoading"
                 :networkError="userNetworthChange.error">
-                    <template #title>Net Change</template>
+                    <template #title>
+                        <TipsIconTitle>
+                            <div style="display: inline-block">Networth Change</div>
+                            <template #tipsContent>
+                                <div>Networth Change</div>
+                            </template>
+                        </TipsIconTitle>
+                    </template>
                 </number-cell>
 
                 <ListCell v-area="'_30dExpensesList'" title="30d Expenses" :noItemsText="'No Expenses'"
@@ -193,11 +221,13 @@ import { Uncontrolled } from "@/modules/core/utils/defineProperty";
 import { getDateAge } from "@/modules/core/utils/date";
 import TxnTooltip from "@/modules/transactions/components/TxnTooltip.vue";
 import ListCell from "@/modules/core/components/data-display/ListCell.vue";
+import TipsIcon from "@/modules/core/components/data-display/TipsIcon.vue";
+import TipsIconTitle from "@/modules/core/components/data-display/TipsIconTitle.vue";
 
 export default
 {
     directives: {'area':vArea},
-    components: { ListCell, "cell": cell, ContainerValuesGraphCell, NetworthHistoryCell, numberCell, TxnTooltip },
+    components: { TipsIconTitle, ListCell, "cell": cell, ContainerValuesGraphCell, NetworthHistoryCell, numberCell, TxnTooltip, TipsIcon },
     data()
     {
         let data =
