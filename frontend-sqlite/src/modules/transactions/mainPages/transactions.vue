@@ -2,7 +2,7 @@
 
     <div class="topDivTxn">
 
-        <view-title :title="'Transactions'"/>
+        <ViewTitle :title="'Transactions'"/>
         <br /><br />
 
         <div>
@@ -12,7 +12,7 @@
                 <div v-basic="'#panel.gridBase.tight'">
                     <div class="pageSelector">
                         <div class="xLeft yCenter">
-                            <fa-icon class="optionIcon" icon="fa-solid fa-rotate" />
+                            <FaIcon class="optionIcon" icon="fa-solid fa-rotate" />
                             <input v-basic="'#searchInput.fullHeight.minTextarea'"
                                    type="text"
                                    placeholder="Search for name..."
@@ -24,7 +24,7 @@
                                 <h2 class="uiRangeText">{{ uiRangeText }}</h2>
                             </div>
                             <div class="center">
-                                <numberPagination id="tablePagination"
+                                <NumberPagination id="tablePagination"
                                                   v-model="currentPageIndex"
                                                   :min-page-readable="1"
                                                   :max-page-readable="mainPagination.lastCallMaxPageIndex.value + 1" />
@@ -79,9 +79,9 @@
 </template>
 
 <script lang="ts" setup>
+import ViewTitle from '@/modules/core/components/data-display/ViewTitle.vue';
 import {API_TRANSACTIONS_PATH } from "@/apiPaths";
 import { getContainerNameById } from '@/modules/containers/utils/containers';
-import numberPagination from '@/modules/core/components/data-display/NumberPagination.vue';
 import useNetworkPaginationNew, { type UpdaterReturnType } from "@/modules/core/composables/useNetworkedPagination";
 import vArea from "@/modules/core/directives/vArea";
 import { useMainStore } from "@/modules/core/stores/store";
@@ -89,10 +89,12 @@ import { isNullOrUndefined } from "@/modules/core/utils/equals";
 import { buildSearchParams } from "@/modules/core/utils/urlParams";
 import { getTxnTypeNameById } from '@/modules/txnTypes/utils/transactionTypes';
 import router from "@/router";
-import { computed, onMounted, ref, toRaw, watch, type Ref } from 'vue';
+import { computed, onMounted, ref } from 'vue';
 import { type GetTxnAPI } from '../../../../../api-types/txn';
 import { useContainersStore } from '../../containers/stores/useContainersStore';
 import { useTxnTypesStore } from '../../txnTypes/stores/useTxnTypesStore';
+import FaIcon from '@/modules/core/components/decorations/FaIcon.vue';
+import NumberPagination from '@/modules/core/components/data-display/NumberPagination.vue';
 
 const { authGet, getDateAge, updateAll: mainStoreUpdateAll } = useMainStore();
 const { containers } = useContainersStore();
@@ -236,7 +238,7 @@ onMounted(async () => await mainStoreUpdateAll());
     padding: @desktopPagePadding;
     box-sizing: border-box;
     overflow-x:hidden; .fullSize;
-    font-family: 'Schibsted Grotesk', sans-serif;
+    font-family: @font;
 
     .botChip
     {
@@ -250,7 +252,8 @@ onMounted(async () => await mainStoreUpdateAll());
     .row
     {
         color:gray;
-        box-sizing: border-box; border-bottom:1px solid #151515;
+        box-sizing: border-box;
+        border-bottom: 1px solid @border;
         display:grid;
 
         gap: 15px;
