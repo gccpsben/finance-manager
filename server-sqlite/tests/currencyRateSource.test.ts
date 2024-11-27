@@ -1,5 +1,5 @@
 import { IsArray, IsNumber, IsOptional, IsString, ValidateNested } from "class-validator";
-import { GetCurrencyRateSrcAPI, PostCurrencyRateSrcAPI } from "../../api-types/currencyRateSource.d.js";
+import { DeleteCurrencyRateSrcAPI, GetCurrencyRateSrcAPI, PostCurrencyRateSrcAPI } from "../../api-types/currencyRateSource.d.js";
 import { Type } from "class-transformer";
 import { Context } from "./lib/context.js";
 import { resetDatabase, serverURL, TestUserDict, UnitTestEndpoints } from "./index.test.js";
@@ -9,6 +9,14 @@ import { assertBodyConfirmToModel, assertStrictEqual, HTTPAssert } from "./lib/a
 import { postBaseCurrency, postCurrency, PostCurrencyAPIClass } from "./currency.test.js";
 import { Decimal } from "decimal.js";
 import { randomUUID } from "crypto";
+
+export namespace DeleteCurrencyRateSrcAPIClass
+{
+    export class ResponseDTO implements DeleteCurrencyRateSrcAPI.ResponseDTO
+    {
+        @IsString() id: string;
+    }
+}
 
 export namespace GetCurrencyRateSrcAPIClass
 {
@@ -155,6 +163,7 @@ export default async function(this: Context)
                 });
             });
 
+            let firstPostedCurrencyRateSrc = "";
             await this.describe(`get`, async function()
             {
                 await this.test(`Check for missing props on posted sources.`, async function()
@@ -168,6 +177,7 @@ export default async function(this: Context)
                         currencyId: config.secondaryCurrencyID
                     });
 
+                    firstPostedCurrencyRateSrc = postedCurrencySrc.parsedBody.sources[0].id;
                     assertStrictEqual(postedCurrencySrc.parsedBody.sources.length, 1);
                     assertStrictEqual(postedCurrencySrc.parsedBody.sources[0].hostname, validReqBody.hostname);
                     assertStrictEqual(postedCurrencySrc.parsedBody.sources[0].jsonQueryString, validReqBody.jsonQueryString);
@@ -175,6 +185,41 @@ export default async function(this: Context)
                     assertStrictEqual(postedCurrencySrc.parsedBody.sources[0].path, validReqBody.path);
                     assertStrictEqual(postedCurrencySrc.parsedBody.sources[0].refAmountCurrencyId, validReqBody.refAmountCurrencyId);
                     assertStrictEqual(postedCurrencySrc.parsedBody.sources[0].refCurrencyId, validReqBody.refCurrencyId);
+                });
+            });
+
+            await this.describe(`delete`, async function()
+            {
+                await this.test(`Check if deletion works.`, async function()
+                {
+                    const postedCurrencySrcFromServerBeforeDel = await CurrencyRateSourceHelpers.getCurrencySources(
+                    {
+                        serverURL: serverURL,
+                        token: firstUserToken,
+                        assertBody: true,
+                        expectedCode: 200,
+                        currencyId: config.secondaryCurrencyID
+                    });
+                    assertStrictEqual(postedCurrencySrcFromServerBeforeDel.parsedBody.sources.length, 1);
+
+                    await CurrencyRateSourceHelpers.deleteCurrencySources(
+                    {
+                        serverURL: serverURL,
+                        token: firstUserToken,
+                        assertBody: true,
+                        expectedCode: 200,
+                        currencySrcId: firstPostedCurrencyRateSrc
+                    });
+
+                    const postedCurrencySrcFromServerAfterDel = await CurrencyRateSourceHelpers.getCurrencySources(
+                    {
+                        serverURL: serverURL,
+                        token: firstUserToken,
+                        assertBody: true,
+                        expectedCode: 200,
+                        currencyId: config.secondaryCurrencyID
+                    });
+                    assertStrictEqual(postedCurrencySrcFromServerAfterDel.parsedBody.sources.length, 0);
                 });
             });
         })
@@ -201,6 +246,33 @@ export namespace CurrencyRateSourceHelpers
             expectedBodyType: assertBody ? PostCurrencyRateSourceAPIClass.ResponseDTO : undefined
         });
         return response;
+    }
+
+    export async function deleteCurrencySources(config:
+    {
+        serverURL: string,
+        token: string,
+        assertBody?: boolean,
+        expectedCode?: number,
+        currencySrcId: string
+    })
+    {
+        const assertBody = config.assertBody === undefined ? true : config.assertBody;
+        const url = UnitTestEndpoints.currencyRateSourcesEndpoints.delete(config.currencySrcId);
+
+        const response = await HTTPAssert.assertFetch
+        (
+            url,
+            {
+                baseURL: config.serverURL, expectedStatus: config.expectedCode, method: "DELETE",
+                headers: { "authorization": config.token },
+                expectedBodyType: assertBody ? DeleteCurrencyRateSrcAPIClass.ResponseDTO : undefined,
+            }
+        );
+        return {
+            res: response,
+            parsedBody: response.parsedBody
+        };
     }
 
     export async function getCurrencySources(config:

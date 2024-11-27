@@ -1,3 +1,9 @@
+export namespace DeleteCurrencyRateSrcAPI
+{
+    export type Path<CurrencySrcId extends string> = `/api/v1/currencyRateSources/${CurrencySrcId}`;
+    export type ResponseDTO = { id: string; };
+}
+
 export namespace PostCurrencyRateSrcAPI
 {
     export type RequestDTO =

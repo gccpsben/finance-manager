@@ -276,4 +276,17 @@ export class CurrencyRateSourceService
             throw new ExecuteCurrencyRateSourceError(e, refCurrencyId, ownerId).panic();
         }
     }
+
+    public static async deleteCurrencyRateSource(ownerId: string, srcId: string):
+        Promise<null | CurrencySrcNotFoundError>
+    {
+        const whereClause = { ownerId: ownerId ?? null, id: srcId ?? null };
+
+        const originalSrc = await CurrencyRateSourceRepository
+        .getInstance()
+        .findOne({ where: whereClause });
+        if (!originalSrc) return new CurrencySrcNotFoundError(srcId, ownerId);
+        await CurrencyRateSourceRepository.getInstance().delete(whereClause);
+        return null;
+    }
 }

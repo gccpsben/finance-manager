@@ -1,6 +1,6 @@
 import { TypesafeRouter } from "../typescriptRouter.js";
 import express from 'express';
-import type { GetCurrencyRateSrcAPI, PostCurrencyRateSrcAPI, PatchCurrencyRateSrcAPI, GetCurrencyRateSrcBySrcIdAPI } from "../../../../api-types/currencyRateSource.js";
+import { type GetCurrencyRateSrcAPI, type PostCurrencyRateSrcAPI, type PatchCurrencyRateSrcAPI, type GetCurrencyRateSrcBySrcIdAPI, DeleteCurrencyRateSrcAPI } from "../../../../api-types/currencyRateSource.js";
 import { IsString } from "class-validator";
 import { AccessTokenService, InvalidLoginTokenError } from "../../db/services/accessToken.service.js";
 import createHttpError from "http-errors";
@@ -101,6 +101,19 @@ router.patch<PatchCurrencyRateSrcAPI.ResponseDTO>(`/api/v1/currencyRateSources`,
             refAmountCurrencyId: newlyPatchRateSrc.refAmountCurrencyId,
             refCurrencyId: newlyPatchRateSrc.refCurrencyId
         };
+    }
+});
+
+router.delete<DeleteCurrencyRateSrcAPI.ResponseDTO>(`/api/v1/currencyRateSources/:id` satisfies DeleteCurrencyRateSrcAPI.Path<string>,
+{
+    handler: async (req: express.Request, res: express.Response) =>
+    {
+        const authResult = await AccessTokenService.validateRequestTokenValidated(req);
+        if (authResult instanceof InvalidLoginTokenError) throw createHttpError(401);
+        const requestedId = req.params['id'];
+        const deleteResult = await CurrencyRateSourceService.deleteCurrencyRateSource(authResult.ownerUserId, requestedId);
+        if (deleteResult instanceof CurrencySrcNotFoundError) throw createHttpError(404, deleteResult.message);
+        return { id: requestedId };
     }
 });
 
