@@ -42,9 +42,9 @@
                                     </div>
                                 </div>
                                 <div v-area.class="'txnName'">
-                                    <div>
+                                    <TxnTooltip :txn="item">
                                         {{ item?.title }}
-                                    </div>
+                                    </TxnTooltip>
                                 </div>
                                 <div v-area.class="'txnAge'" class="tight yCenter ellipsisContainer">
                                     <DateTooltip :date="item.creationDate" v-if="item.creationDate">
@@ -97,6 +97,7 @@ import FaIcon from '@/modules/core/components/decorations/FaIcon.vue';
 import NumberPagination from '@/modules/core/components/data-display/NumberPagination.vue';
 import { getDateAge } from '@/modules/core/utils/date';
 import DateTooltip from '@/modules/core/components/data-display/DateTooltip.vue';
+import TxnTooltip from '../components/TxnTooltip.vue';
 
 const { authGet, updateAll: mainStoreUpdateAll } = useMainStore();
 const { containers } = useContainersStore();

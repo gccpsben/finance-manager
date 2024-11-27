@@ -1,5 +1,5 @@
 <template>
-    <VTooltip class="mainTooltip" :location="'bottom start'" :close-delay="500" :open-delay="500">
+    <VTooltip class="mainTxnTooltip" :location="'bottom start'" :close-delay="500" :open-delay="500">
         <template v-slot:activator="{ props }">
             <div v-bind="props">
                 <slot></slot>
@@ -59,7 +59,7 @@ const now = useNow({interval: 1000});
 <style lang="less" scoped>
 @import '@/modules/core/stylesheets/globalStyle.less';
 
-.mainTooltip
+.mainTxnTooltip
 {
     & > *
     {

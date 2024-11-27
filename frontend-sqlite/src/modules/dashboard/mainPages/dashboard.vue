@@ -38,15 +38,17 @@
                 :itemsInPage="6"
                 :items="expenseTxns30d">
                     <template #row="props">
-                        <grid-shortcut columns="50px 1fr 1fr" :class="{'fullSize': true}" @click="viewTxn(props.currentItem.id)" class="fullSize highlightableRow">
-                            <div class="listItemTitle middleLeft">{{ getDateAge(props.currentItem.creationDate) }}</div>
-                            <div class="listItemTitle middleLeft">
-                                <div class="ellipsis">{{ props.currentItem.title }}</div>
-                            </div>
-                            <div class="listItemTitle middleRight">
-                                {{ currenciesStore.formatAmount(props.currentItem) }}
-                            </div>
-                        </grid-shortcut>
+                        <TxnTooltip :txn="props.currentItem">
+                            <grid-shortcut columns="50px 1fr 1fr" :class="{'fullSize': true}" @click="viewTxn(props.currentItem.id)" class="fullSize highlightableRow">
+                                <div class="listItemTitle middleLeft">{{ getDateAge(props.currentItem.creationDate) }}</div>
+                                <div class="listItemTitle middleLeft">
+                                    <div class="ellipsis">{{ props.currentItem.title }}</div>
+                                </div>
+                                <div class="listItemTitle middleRight">
+                                    {{ currenciesStore.formatAmount(props.currentItem) }}
+                                </div>
+                            </grid-shortcut>
+                        </TxnTooltip>
                     </template>
                 </list-cell>
 
@@ -56,15 +58,17 @@
                 :itemsInPage="6"
                 :items="incomeTxns30d">
                     <template #row="props">
-                        <grid-shortcut columns="50px 1fr 1fr" :class="{'fullSize': true}" @click="viewTxn(props.currentItem.id)" class="fullSize highlightableRow">
-                            <div class="listItemTitle middleLeft">{{ getDateAge(props.currentItem.creationDate) }}</div>
-                            <div class="listItemTitle middleLeft">
-                                <div class="ellipsis">{{ props.currentItem.title }}</div>
-                            </div>
-                            <div class="listItemTitle middleRight">
-                                {{ currenciesStore.formatAmount(props.currentItem) }}
-                            </div>
-                        </grid-shortcut>
+                        <TxnTooltip :txn="props.currentItem">
+                            <grid-shortcut columns="50px 1fr 1fr" :class="{'fullSize': true}" @click="viewTxn(props.currentItem.id)" class="fullSize highlightableRow">
+                                <div class="listItemTitle middleLeft">{{ getDateAge(props.currentItem.creationDate) }}</div>
+                                <div class="listItemTitle middleLeft">
+                                    <div class="ellipsis">{{ props.currentItem.title }}</div>
+                                </div>
+                                <div class="listItemTitle middleRight">
+                                    {{ currenciesStore.formatAmount(props.currentItem) }}
+                                </div>
+                            </grid-shortcut>
+                        </TxnTooltip>
                     </template>
                 </list-cell>
 
@@ -74,15 +78,17 @@
                 :itemsInPage="6"
                 :items="transferTxns30d">
                     <template #row="props">
-                        <grid-shortcut columns="50px 1fr 1fr" :class="{'fullSize': true}" @click="viewTxn(props.currentItem.id)" class="fullSize highlightableRow">
-                            <div class="listItemTitle middleLeft">{{ getDateAge(props.currentItem.creationDate) }}</div>
-                            <div class="listItemTitle middleLeft">
-                                <div class="ellipsis">{{ props.currentItem.title }}</div>
-                            </div>
-                            <div class="listItemTitle middleRight">
-                                {{ currenciesStore.formatAmount(props.currentItem) }}
-                            </div>
-                        </grid-shortcut>
+                        <TxnTooltip :txn="props.currentItem">
+                            <grid-shortcut columns="50px 1fr 1fr" :class="{'fullSize': true}" @click="viewTxn(props.currentItem.id)" class="fullSize highlightableRow">
+                                <div class="listItemTitle middleLeft">{{ getDateAge(props.currentItem.creationDate) }}</div>
+                                <div class="listItemTitle middleLeft">
+                                    <div class="ellipsis">{{ props.currentItem.title }}</div>
+                                </div>
+                                <div class="listItemTitle middleRight">
+                                    {{ currenciesStore.formatAmount(props.currentItem) }}
+                                </div>
+                            </grid-shortcut>
+                        </TxnTooltip>
                     </template>
                 </list-cell>
 
@@ -173,11 +179,12 @@ import networthHistoryCell from "../components/NetworthHistoryCell.vue";
 import { useNetworthHistoryStore } from "@/modules/charts/stores/networthHistoryStore";
 import { Uncontrolled } from "@/modules/core/utils/defineProperty";
 import { getDateAge } from "@/modules/core/utils/date";
+import TxnTooltip from "@/modules/transactions/components/TxnTooltip.vue";
 
 export default
 {
     directives: {'area':vArea},
-    components: { "list-cell": listCellVue, "cell": cell, containerValuesGraphCell, networthHistoryCell, numberCell },
+    components: { "list-cell": listCellVue, "cell": cell, containerValuesGraphCell, networthHistoryCell, numberCell, TxnTooltip },
     data()
     {
         let data =
