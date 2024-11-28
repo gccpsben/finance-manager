@@ -284,34 +284,27 @@ export class TransactionService
             toCurrencyId?: string | null | undefined,
             creationDate: number
         },
-        /** A mapping mapping each currency ID to its rate to base value. Will fetch from database if not given, or the currency is not found */
-        currencyToBaseValueMappingCache: {[key:string]: Decimal} | undefined = undefined
-    ): Promise<{ increaseInValue: Decimal, currencyBaseValMapping: {[key:string]: Decimal} } | UserNotFoundError>
+    ): Promise<{ increaseInValue: Decimal } | UserNotFoundError>
     {
         // Ensure user exists
         const userFetchResult = await UserService.getUserById(userId);
         if (userFetchResult === null) return new UserNotFoundError(userId);
 
-        let mapping = !currencyToBaseValueMappingCache ? { } : { ...currencyToBaseValueMappingCache };
-
         const amountToBaseValue = async (amount: string, currencyId: string) =>
         {
-            let currencyRate = mapping[currencyId];
-            if (!currencyRate)
-            {
-                const currencyRefetched = unwrap(await CurrencyService.getCurrencyWithoutCache(userId, { id: currencyId }));
-                const rate =
+            let currencyRate: Decimal;
+            const currencyRefetched = unwrap(await CurrencyService.getCurrencyWithoutCache(userId, { id: currencyId }));
+            const rate =
+            (
+                await CurrencyService.rateHydrateCurrency
                 (
-                    await CurrencyService.rateHydrateCurrency
-                    (
-                        userId,
-                        [currencyRefetched!],
-                        transaction.creationDate
-                    )
-                )[0].rateToBase;
-                currencyRate = new Decimal(rate);
-                mapping[currencyId] = currencyRate;
-            }
+                    userId,
+                    [currencyRefetched!],
+                    transaction.creationDate
+                )
+            )[0].rateToBase;
+            currencyRate = new Decimal(rate);
+
             return new Decimal(amount).mul(currencyRate);
         };
 
@@ -319,7 +312,6 @@ export class TransactionService
         {
             return {
                 increaseInValue:  (await amountToBaseValue(transaction.fromAmount, transaction.fromCurrencyId)).neg(),
-                currencyBaseValMapping: mapping
             }
         }
 
@@ -327,13 +319,12 @@ export class TransactionService
         {
             return {
                 increaseInValue: await amountToBaseValue(transaction.toAmount, transaction.toCurrencyId),
-                currencyBaseValMapping: mapping
             }
         }
 
         return {
-            increaseInValue: (await amountToBaseValue(transaction.toAmount!, transaction.toCurrencyId!)).sub(await amountToBaseValue(transaction.fromAmount!, transaction.fromCurrencyId!)),
-            currencyBaseValMapping: mapping
+            increaseInValue: (await amountToBaseValue(transaction.toAmount!, transaction.toCurrencyId!))
+                .sub(await amountToBaseValue(transaction.fromAmount!, transaction.fromCurrencyId!)),
         };
     }
 

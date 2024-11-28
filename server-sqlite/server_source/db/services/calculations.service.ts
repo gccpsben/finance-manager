@@ -44,15 +44,13 @@ export class CalculationsService
         let currencyBaseValueMapping = { };
         for (let txn of allTxns)
         {
-            const { increaseInValue, currencyBaseValMapping: newCurrencyBaseValueMapping } =
+            const { increaseInValue } =
                 unwrap(await TransactionService.getTxnIncreaseInValue
                 (
                     userId,
-                    txn,
-                    currencyBaseValueMapping
+                    txn
                 ));
 
-            currencyBaseValueMapping = newCurrencyBaseValueMapping;
             const isValueDecreased = increaseInValue.lessThanOrEqualTo(new Decimal('0'));
             const txnAgeMs = now - txn.creationDate;
             const txnIs30d = txnAgeMs <= 2.592e+9;
