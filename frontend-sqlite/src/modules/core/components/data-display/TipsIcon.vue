@@ -15,7 +15,7 @@ import { computed } from 'vue';
 import { VTooltip } from 'vuetify/components';
 // import type { GetTxnAPI } from '../../../../../api-types/txn';
 import { formatDate, getDateAgeFull } from '@/modules/core/utils/date';
-import { useTxnTypesStore } from '@/modules/txnTypes/stores/useTxnTypesStore';
+import { useTxnTagsStore } from '@/modules/txnTypes/stores/useTxnTypesStore';
 import { useCurrenciesStore } from '@/modules/currencies/stores/useCurrenciesStore';
 import { useNow } from '@vueuse/core';
 import GaIcon from '../decorations/GaIcon.vue';

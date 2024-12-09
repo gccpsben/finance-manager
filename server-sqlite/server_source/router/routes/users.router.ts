@@ -1,6 +1,6 @@
 import { IsNotEmpty, IsString } from 'class-validator';
 import { UserNameTakenError, UserService } from '../../db/services/user.service.js';
-import express, { NextFunction } from 'express';
+import express from 'express';
 import { ExpressValidations } from '../validation.js';
 import createHttpError from 'http-errors';
 import type { DeleteUserAPI, PostUserAPI } from '../../../../api-types/user.js';

@@ -12,7 +12,7 @@ import { CurrencyHelpers, postCurrencyRateDatum } from './currency.test.js';
 import { AuthHelpers } from './auth.test.js';
 import { TransactionHelpers } from './transaction.test.js';
 import { ContainerHelpers } from './container.test.js';
-import { TxnTypeHelpers } from './txnType.test.js';
+import { TxnTagHelpers } from './txnTag.test.js';
 
 export namespace GetUserBalanceHistoryAPIClass
 {
@@ -81,7 +81,7 @@ export default async function(this: Context)
                     for (const [userKeyname, userObj] of Object.entries(userCreds))
                     {
                         const baseConfig = { serverURL, token: userObj.token, assertBody: true, expectedCode: 200 };
-                        const txnTypes = await TxnTypeHelpers.postRandomTxnTypes({ ...baseConfig, txnCount: 3, });
+                        const txnTypes = await TxnTagHelpers.postRandomTxnTags({ ...baseConfig, txnCount: 3, });
                         const containers = await ContainerHelpers.postRandomContainers({ ...baseConfig, containerCount: 3 });
                         const baseCurrency = await CurrencyHelpers.postCreateCurrency({ ...baseConfig, body: { name: "BASE", ticker: "BASE" } });
 
@@ -125,7 +125,7 @@ export default async function(this: Context)
                                     toAmount: isTo ? txnToPost.toAmount.toString() : undefined,
                                     toContainerId: isTo ? choice(containers).containerId : undefined,
                                     toCurrencyId: isTo ? baseCurrency.currencyId : undefined,
-                                    txnTypeId: choice(txnTypes).txnId
+                                    txnTagId: choice(txnTypes).txnId
                                 },
                                 ...baseConfig
                             });
@@ -153,7 +153,7 @@ export default async function(this: Context)
             const firstUserObj = Object.values(userCreds)[0];
             const baseConfig = { serverURL: serverURL, token: firstUserObj.token, assertBody: true, expectedCode: 200 };
 
-            const txnTypes = await TxnTypeHelpers.postRandomTxnTypes({ txnCount: 3, ...baseConfig });
+            const txnTypes = await TxnTagHelpers.postRandomTxnTags({ txnCount: 3, ...baseConfig });
             const containers = await ContainerHelpers.postRandomContainers({ containerCount: 3, ...baseConfig });
             const baseCurrency = await CurrencyHelpers.postCreateCurrency({ body: { name: "BASE", ticker: "BASE" }, ...baseConfig });
             const secondCurrency = await CurrencyHelpers.postCreateCurrency({ body: makeCurrBody("SEC", "SEC", '1', baseCurrency.currencyId), ...baseConfig });
@@ -193,7 +193,7 @@ export default async function(this: Context)
                             toAmount: isTo ? txnToPost.toAmount : undefined,
                             toContainerId: isTo ? txnToPost.conId : undefined,
                             toCurrencyId: isTo ? txnToPost.currId : undefined,
-                            txnTypeId: choice(txnTypes).txnId
+                            txnTagId: choice(txnTypes).txnId
                         },
                         serverURL: serverURL, token: firstUserObj.token, assertBody: true, expectedCode: 200
                     }
@@ -326,7 +326,7 @@ export default async function(this: Context)
             const rangeStart = 100;
             const rangeEnd = 0;
             const division = 10;
-            const txnTypes = await TxnTypeHelpers.postRandomTxnTypes({ txnCount: 3, ...baseConfig });
+            const txnTypes = await TxnTagHelpers.postRandomTxnTags({ txnCount: 3, ...baseConfig });
             const containers = await ContainerHelpers.postRandomContainers({ containerCount: 3, ...baseConfig });
             const baseCurrency = await CurrencyHelpers.postCreateCurrency({ body: { name: "BASE", ticker: "BASE" }, ...baseConfig });
             const secondCurrency = await CurrencyHelpers.postCreateCurrency({ body: makeCurrBody("SEC", "SEC", '1', baseCurrency.currencyId), ...baseConfig });
@@ -379,7 +379,7 @@ export default async function(this: Context)
                             toAmount: isTo ? txnToPost.toAmount : undefined,
                             toContainerId: isTo ? txnToPost.conId : undefined,
                             toCurrencyId: isTo ? txnToPost.currId : undefined,
-                            txnTypeId: choice(txnTypes).txnId
+                            txnTagId: choice(txnTypes).txnId
                         },
                         serverURL: serverURL, token: firstUserObj.token, assertBody: true, expectedCode: 200
                     }

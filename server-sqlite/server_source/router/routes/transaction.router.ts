@@ -9,7 +9,7 @@ import { TypesafeRouter } from '../typescriptRouter.js';
 import { ExpressValidations } from '../validation.js';
 import createHttpError from 'http-errors';
 import { UserNotFoundError } from '../../db/services/user.service.js';
-import { TxnTypeNotFoundError } from '../../db/services/transactionType.service.js';
+import { TxnTagNotFoundError } from '../../db/services/txnTag.service.js';
 import { ContainerNotFoundError } from '../../db/services/container.service.js';
 
 const router = new TypesafeRouter(express.Router());
@@ -23,7 +23,7 @@ router.post<PostTxnAPI.ResponseDTO>("/api/v1/transactions",
             @IsString() @IsNotEmpty() title: string;
             @IsOptional() @IsUTCDateInt() creationDate?: number | undefined;
             @IsOptional() @IsString() description?: string | undefined;
-            @IsString() @IsNotEmpty() txnTypeId: string;
+            @IsString() @IsNotEmpty() txnTagId: string;
             @IsOptional() @IsDecimalJSString() fromAmount: string | undefined;
             @IsOptional() @IsString() fromContainerId: string | undefined;
             @IsOptional() @IsString() fromCurrencyId: string | undefined;
@@ -40,7 +40,7 @@ router.post<PostTxnAPI.ResponseDTO>("/api/v1/transactions",
             creationDate: parsedBody.creationDate ? parsedBody.creationDate : Date.now(),
             title: parsedBody.title,
             description: parsedBody.description ?? "",
-            txnTypeId: parsedBody.txnTypeId,
+            txnTagId: parsedBody.txnTagId,
             fromAmount: parsedBody.fromAmount,
             fromContainerId: parsedBody.fromContainerId,
             fromCurrencyId: parsedBody.fromCurrencyId,
@@ -50,7 +50,7 @@ router.post<PostTxnAPI.ResponseDTO>("/api/v1/transactions",
         });
 
         if (transactionCreated instanceof UserNotFoundError) throw createHttpError(401);
-        if (transactionCreated instanceof TxnTypeNotFoundError) throw createHttpError(400, transactionCreated.message);
+        if (transactionCreated instanceof TxnTagNotFoundError) throw createHttpError(400, transactionCreated.message);
         if (transactionCreated instanceof ContainerNotFoundError) throw createHttpError(400, transactionCreated.message);
         if (transactionCreated instanceof TxnMissingFromToAmountError) throw createHttpError(400, transactionCreated.message);
         if (transactionCreated instanceof TxnMissingContainerOrCurrency) throw createHttpError(400, transactionCreated.message);
@@ -68,7 +68,7 @@ router.put<PutTxnAPI.ResponseDTO>("/api/v1/transactions",
             @IsString() @IsNotEmpty() title: string;
             @IsOptional() @IsUTCDateInt() creationDate?: number | undefined;
             @IsOptional() @IsString() description?: string | undefined;
-            @IsString() @IsNotEmpty() txnTypeId: string;
+            @IsString() @IsNotEmpty() txnTagId: string;
             @IsOptional() @IsDecimalJSString() fromAmount: string | undefined;
             @IsOptional() @IsString() fromContainerId: string | undefined;
             @IsOptional() @IsString() fromCurrencyId: string | undefined;
@@ -92,7 +92,7 @@ router.put<PutTxnAPI.ResponseDTO>("/api/v1/transactions",
             creationDate: parsedBody.creationDate ? parsedBody.creationDate : Date.now(),
             title: parsedBody.title,
             description: parsedBody.description ?? "",
-            txnTypeId: parsedBody.txnTypeId,
+            txnTagId: parsedBody.txnTagId,
             fromAmount: parsedBody.fromAmount,
             fromContainerId: parsedBody.fromContainerId,
             fromCurrencyId: parsedBody.fromCurrencyId,
@@ -155,7 +155,7 @@ router.get<GetTxnAPI.ResponseDTO>(`/api/v1/transactions`,
                 description: item.description ?? '',
                 owner: item.ownerId,
                 creationDate: item.creationDate,
-                txnType: item.txnTypeId,
+                txnTag: item.txnTagId,
                 fromAmount: item.fromAmount ?? null,
                 fromCurrency: item.fromCurrencyId ?? null,
                 fromContainer: item.fromContainerId ?? null,

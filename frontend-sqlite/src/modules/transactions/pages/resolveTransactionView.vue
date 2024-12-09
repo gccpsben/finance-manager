@@ -33,7 +33,7 @@
 <script lang="ts">
 import { useMainStore } from "@/modules/core/stores/store";
 import type { HydratedTransaction, Transaction } from "@/types/dtos/transactionsDTO";
-import type { TxnType } from "@/types/dtos/txnTypesDTO";
+import type { TxnTag } from "@/types/dtos/txnTagsDTO";
 import { useMeta } from 'vue-meta';
 
 export default
@@ -58,7 +58,7 @@ export default
             containerName: "",
             isFormUploading: false,
             unresolvedTransactions: [] as HydratedTransaction[],
-            selectedTransaction: undefined as TxnType|undefined
+            selectedTransaction: undefined as TxnTag|undefined
         }
     },
     methods:

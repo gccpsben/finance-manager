@@ -33,9 +33,9 @@
                         <custom-dropdown :options="selectableContainerOptions"
                                         class="fullSize" v-area="'fromContainer'" field-name="From Container"
                                         v-model:selected-option="txnWorkingCopy.currentData.value!.fromContainer!" />
-                        <custom-dropdown :options="selectableTxnTypesOptions"
-                                        class="fullSize" v-area="'txnType'" field-name="Txn Type"
-                                        v-model:selected-option="txnWorkingCopy.currentData.value!.txnType!" />
+                        <custom-dropdown :options="selectableTxnTagsOptions"
+                                        class="fullSize" v-area="'txnTag'" field-name="Txn Tags"
+                                        v-model:selected-option="txnWorkingCopy.currentData.value!.txnTag!" />
                         <custom-dropdown :options="selectableCurrenciesOptions"
                                         :class="{'disabled': !txnWorkingCopy.currentData.value!.fromContainer}"
                                         class="fullSize" v-area="'fromCurrency'" field-name="From Currency"
@@ -148,9 +148,9 @@ const selectableCurrenciesOptions = computed(() =>
     const items = editTxnHook.currencies.lastSuccessfulData?.rangeItems;
     return items?.map(x => ({ id: x.id, label: x.name, searchTerms: `${x.id} ${x.name}` })) ?? [];
 });
-const selectableTxnTypesOptions = computed(() =>
+const selectableTxnTagsOptions = computed(() =>
 {
-    const items = editTxnHook.txnTypes.lastSuccessfulData?.rangeItems;
+    const items = editTxnHook.txnTags.lastSuccessfulData?.rangeItems;
     return items?.map(x => ({ id: x.id, label: x.name, searchTerms: `${x.id} ${x.name}` })) ?? [];
 });
 const autoFillCurrentDateTime = () =>
@@ -217,7 +217,7 @@ async function handleSaveBtn()
     gap: 15px;
     grid-template:
         'id            id            date          date          ' 45px
-        'name          name          txnType       txnType       ' 45px
+        'name          name          txnTag       txnTag       ' 45px
         'fromContainer fromContainer toContainer   toContainer   ' minmax(0px, 45px)
         'fromCurrency  fromCurrency  toCurrency    toCurrency    ' minmax(0px, 45px)
         'fromAmount    fromAmount    toAmount      toAmount      ' minmax(0px, 45px)
@@ -284,7 +284,7 @@ async function handleSaveBtn()
             'id              id              ' 45px
             'name            name            ' 45px
             'date            date            ' 45px
-            'txnType         txnType         ' 45px
+            'txnTag         txnTag         ' 45px
             'fromContainer   fromContainer   ' minmax(0px, 45px)
             'fromAmount      fromCurrency    ' minmax(0px, 45px)
             'toContainer     toContainer     ' minmax(0px, 45px)

@@ -6,13 +6,13 @@ import { formatDate } from "@/modules/core/utils/date";
 import { isNumeric } from "@/modules/core/utils/numbers";
 import { waitUntil } from "@/modules/core/utils/wait";
 import { useCurrenciesStore } from "@/modules/currencies/stores/useCurrenciesStore";
-import { useTxnTypesStore } from "@/modules/txnTypes/stores/useTxnTypesStore";
+import { useTxnTagsStore } from "@/modules/txnTypes/stores/useTxnTypesStore";
 import { useResettableObject } from "@/resettableObject";
 import { computed, ref, toRaw } from "vue";
 
 type OmitFromTxnDTO<K extends keyof GetTxnAPI.TxnDTO> = Omit<GetTxnAPI.TxnDTO, K>;
-export type TxnWorkingEntity = OmitFromTxnDTO<'creationDate'|'txnType'|'owner'>
-                               & { creationDate: string; txnType: null | string; };
+export type TxnWorkingEntity = OmitFromTxnDTO<'creationDate'|'txnTag'|'owner'>
+                               & { creationDate: string; txnTag: null | string; };
 export const DateFormatToShow = "YYYY-MM-DD hh:mm:ss.ms";
 
 /**
@@ -27,7 +27,7 @@ function useTxnWorkingCopy()
     const txnLoadingError = ref(undefined);
     const { currencies } = useCurrenciesStore();
     const { containers } = useContainersStore();
-    const { txnTypes } = useTxnTypesStore();
+    const { txnTags: txnTypes } = useTxnTagsStore();
     const isEnteredDateValid = computed(() => !isNaN(new Date(`${txnToBeEdited.currentData.value?.creationDate}`).getTime()));
     const isEnteredFromAmountValid = computed(() => isNumeric(txnToBeEdited.currentData?.value?.fromAmount));
     const isEnteredToAmountValid = computed(() => isNumeric(txnToBeEdited.currentData?.value?.toAmount));
@@ -44,7 +44,7 @@ function useTxnWorkingCopy()
 
         if (!txn.fromAmount && !txn.toAmount) return "At least one of 'From' or 'To' sections must be provided.";
         if (!isEnteredDateValid.value) return 'The date provided is invalid.';
-        if (!txn.txnType) return 'A transaction type must be selected.';
+        if (!txn.txnTag) return 'A transaction tag must be selected.';
         if (!txn.title.trim()) return 'A name must be provided.';
         if (!!toContainer && !toCurrency) return "A currency must be selected in the 'To' section.";
         if (!!fromContainer && !fromCurrency) return "A currency must be selected in the 'From' section.";
@@ -136,7 +136,7 @@ function useTxnWorkingCopy()
         txnLoadingState,
         currencies,
         containers,
-        txnTypes,
+        txnTags: txnTypes,
         isEnteredDateValid,
         isEnteredFromAmountValid,
         isEnteredToAmountValid,
@@ -184,7 +184,7 @@ export function useEditTxn()
                 body:
                 {
                     title: transformedTxn.title,
-                    txnTypeId: transformedTxn.txnType!,
+                    txnTagId: transformedTxn.txnTag!,
                     creationDate: new Date(transformedTxn.creationDate).getTime(),
                     description: transformedTxn.description ?? undefined,
                     fromAmount: transformedTxn.fromAmount ?? undefined,
@@ -239,7 +239,7 @@ export function useAddTxn()
             toAmount: null,
             toCurrency: null,
             toContainer: null,
-            txnType: null
+            txnTag: null
         };
 
         txnWorkingCopyHook.txnToBeEdited.markSafePoint(emptyRawTxn);
@@ -276,7 +276,7 @@ export function useAddTxn()
                 body:
                 {
                     title: transformedTxn.title,
-                    txnTypeId: transformedTxn.txnType!,
+                    txnTagId: transformedTxn.txnTag!,
                     creationDate: new Date(transformedTxn.creationDate).getTime(),
                     description: transformedTxn.description ?? undefined,
                     fromAmount: transformedTxn.fromAmount ?? undefined,

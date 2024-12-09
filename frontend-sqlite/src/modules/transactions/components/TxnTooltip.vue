@@ -22,18 +22,18 @@ import { computed } from 'vue';
 import { VTooltip } from 'vuetify/components';
 import type { GetTxnAPI } from '../../../../../api-types/txn';
 import { formatDate, getDateAgeFull } from '@/modules/core/utils/date';
-import { useTxnTypesStore } from '@/modules/txnTypes/stores/useTxnTypesStore';
+import { useTxnTagsStore } from '@/modules/txnTypes/stores/useTxnTypesStore';
 import { useCurrenciesStore } from '@/modules/currencies/stores/useCurrenciesStore';
 import { useNow } from '@vueuse/core';
 
 
 export type TxnTooltipProps = { txn: GetTxnAPI.TxnDTO; };
 const props = defineProps<TxnTooltipProps>();
-const txnTypesStore = useTxnTypesStore();
+const txnTypesStore = useTxnTagsStore();
 const currenciesStore = useCurrenciesStore();
 const now = useNow({interval: 1000});
 const dateAge = computed(() => getDateAgeFull(props.txn.creationDate, 'combined', now.value.getTime()));
-const txnType = computed(() => txnTypesStore.txnTypes.lastSuccessfulData?.rangeItems.find(x => x.id === props.txn.txnType));
+const txnType = computed(() => txnTypesStore.txnTags.lastSuccessfulData?.rangeItems.find(x => x.id === props.txn.txnTag));
 const findCurrTicker = (currId: string) => currenciesStore.findCurrencyByPubID(currId)?.ticker;
 const conversionLabel = computed(() =>
 {

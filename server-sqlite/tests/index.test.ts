@@ -9,7 +9,7 @@ import { Context } from './lib/context.js';
 import authTests from './auth.test.js';
 import containerTests from './container.test.js';
 import currencyTests from './currency.test.js';
-import txnTypeTests from './txnType.test.js';
+import txnTypeTests from './txnTag.test.js';
 import transactionTests from './transaction.test.js';
 import currencyRateSrcs from './currencyRateSource.test.js';
 import calculationsTest, { testForCalculationsInternals } from './calculations.test.js';
@@ -57,10 +57,10 @@ export class UnitTestEndpoints
     {
         "post": `/api/v1/currencyRateDatums`
     };
-    public static transactionTypesEndpoints =
+    public static transactionTagsEndpoints =
     {
-        "post": `/api/v1/transactionTypes`,
-        "get": `/api/v1/transactionTypes`,
+        "post": `/api/v1/transactionTags`,
+        "get": `/api/v1/transactionTags`,
     };
     public static transactionsEndpoints =
     {

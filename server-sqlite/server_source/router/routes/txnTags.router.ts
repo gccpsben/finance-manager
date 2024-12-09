@@ -2,16 +2,16 @@ import express from 'express';
 import { AccessTokenService, InvalidLoginTokenError } from '../../db/services/accessToken.service.js';
 import { IsNotEmpty, IsOptional, IsString } from 'class-validator';
 import { ExpressValidations } from '../validation.js';
-import { TransactionTypeService, TxnTypeExistsError } from '../../db/services/transactionType.service.js';
+import { TransactionTagService, TxnTagExistsError } from '../../db/services/txnTag.service.js';
 import { TypesafeRouter } from '../typescriptRouter.js';
-import type { GetTxnTypesAPI, PostTxnTypesAPI } from '../../../../api-types/txnType.js';
+import type { GetTxnTagsAPI, PostTxnTagsAPI } from '../../../../api-types/txnTag.js';
 import { OptionalPaginationAPIQueryRequest, PaginationAPIResponseClass } from '../pagination.js';
 import createHttpError from 'http-errors';
 import { UserNotFoundError } from '../../db/services/user.service.js';
 
 const router = new TypesafeRouter(express.Router());
 
-router.get<GetTxnTypesAPI.ResponseDTO>(`/api/v1/transactionTypes`,
+router.get<GetTxnTagsAPI.ResponseDTO>(`/api/v1/transactionTags`,
 {
     handler: async (req: express.Request, res: express.Response) =>
     {
@@ -33,36 +33,36 @@ router.get<GetTxnTypesAPI.ResponseDTO>(`/api/v1/transactionTypes`,
             id: parsedQuery.id
         };
 
-        const userTxnTypes = await TransactionTypeService.getUserTransactionTypes(authResult.ownerUserId,
+        const userTxnTags = await TransactionTagService.getUserTxnTags(authResult.ownerUserId,
         {
             startIndex: userQuery.start,
             endIndex: userQuery.end,
             id: userQuery.id,
             name: userQuery.name
         });
-        if (userTxnTypes instanceof UserNotFoundError) throw createHttpError(401);
+        if (userTxnTags instanceof UserNotFoundError) throw createHttpError(401);
 
-        const response = await PaginationAPIResponseClass.prepareFromQueryItems(userTxnTypes,userQuery.start);
+        const response = await PaginationAPIResponseClass.prepareFromQueryItems(userTxnTags,userQuery.start);
 
         return {
             endingIndex: response.endingIndex,
             startingIndex: response.startingIndex,
             totalItems: response.totalItems,
-            rangeItems: response.rangeItems.map(type => (
+            rangeItems: response.rangeItems.map(tag => (
             {
-                id: type.id,
-                name: type.name,
-                owner: type.ownerId
+                id: tag.id,
+                name: tag.name,
+                owner: tag.ownerId
             })),
         };
     }
 });
 
-router.post<PostTxnTypesAPI.ResponseDTO>(`/api/v1/transactionTypes`,
+router.post<PostTxnTagsAPI.ResponseDTO>(`/api/v1/transactionTags`,
 {
     handler: async (req: express.Request, res: express.Response) =>
     {
-        class body implements PostTxnTypesAPI.RequestDTO
+        class body implements PostTxnTagsAPI.RequestDTO
         {
             @IsString() @IsNotEmpty() name: string;
         }
@@ -71,15 +71,15 @@ router.post<PostTxnTypesAPI.ResponseDTO>(`/api/v1/transactionTypes`,
         if (authResult instanceof InvalidLoginTokenError) throw createHttpError(401);
 
         const parsedBody = await ExpressValidations.validateBodyAgainstModel<body>(body, req.body);
-        const createdType = await TransactionTypeService.createTransactionType(authResult.ownerUserId, parsedBody.name);
-        if (createdType instanceof TxnTypeExistsError) throw createHttpError(400, createdType.message);
-        if (createdType instanceof UserNotFoundError) throw createHttpError(401);
+        const createdTag = await TransactionTagService.createTxnTag(authResult.ownerUserId, parsedBody.name);
+        if (createdTag instanceof TxnTagExistsError) throw createHttpError(400, createdTag.message);
+        if (createdTag instanceof UserNotFoundError) throw createHttpError(401);
 
         return (
         {
-            id: createdType.id,
-            name: createdType.name,
-            owner: createdType.ownerId
+            id: createdTag.id,
+            name: createdTag.name,
+            owner: createdTag.ownerId
         });
     }
 });

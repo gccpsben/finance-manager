@@ -10,7 +10,7 @@ import { PostContainerAPIClass } from "./container.test.js";
 import { PostCurrencyAPIClass } from "./currency.test.js";
 import { Type } from "class-transformer";
 import { AuthHelpers } from "./auth.test.js";
-import { TxnTypeHelpers } from "./txnType.test.js";
+import { TxnTagHelpers } from "./txnTag.test.js";
 
 export namespace GetTxnAPIClass
 {
@@ -21,7 +21,7 @@ export namespace GetTxnAPIClass
         @IsOptional() @IsString() description: string;
         @IsString() owner: string;
         @IsOptional() @IsUTCDateInt()  creationDate: number;
-        @IsString() txnType: string;
+        @IsString() txnTag: string;
         @IsOptional() @IsDecimalJSString() fromAmount: string;
         @IsOptional() @IsString() fromCurrency: string;
         @IsOptional() @IsString() fromContainer: string;
@@ -50,7 +50,7 @@ export namespace PostTxnAPIClass
         @IsString() @IsNotEmpty() title: string;
         @IsOptional() @IsUTCDateInt() creationDate?: number | undefined;
         @IsOptional() @IsString() description?: string | undefined;
-        @IsString() txnTypeId: string;
+        @IsString() txnTagId: string;
         @IsOptional() @IsDecimalJSString() fromAmount?: string | undefined;
         @IsOptional() @IsString() fromContainerId?: string | undefined;
         @IsOptional() @IsString() fromCurrencyId?: string | undefined;
@@ -72,7 +72,7 @@ export namespace PutTxnAPIClass
         @IsString() @IsNotEmpty() title: string;
         @IsOptional() @IsUTCDateInt() creationDate?: number | undefined;
         @IsOptional() @IsString() description?: string | undefined;
-        @IsString() txnTypeId: string;
+        @IsString() txnTagId: string;
         @IsOptional() @IsDecimalJSString() fromAmount?: string | undefined;
         @IsOptional() @IsString() fromContainerId?: string | undefined;
         @IsOptional() @IsString() fromCurrencyId?: string | undefined;
@@ -124,7 +124,7 @@ export default async function(this: Context)
                 secCurrId: undefined as undefined | string,
                 secCurrAmountToBase: "7.1",
                 containerId: undefined as undefined | string,
-                txnTypeId: undefined as undefined | string
+                txnTagId: undefined as undefined | string
             };
 
             // Register base currency for first user
@@ -166,17 +166,17 @@ export default async function(this: Context)
                 testContext.containerId = response.parsedBody.id;
             }).bind(this)();
 
-            // Register txn type for first user
+            // Register txn tag for first user
             await (async function()
             {
-                const response = await TxnTypeHelpers.postCreateTxnType(
+                const response = await TxnTagHelpers.postCreateTxnTag(
                 {
                     serverURL: serverURL,
                     body: { name: `TxnType1` },
                     token: firstUser.token,
                     assertBody: true
                 });
-                testContext.txnTypeId = response.parsedBody.id;
+                testContext.txnTagId = response.parsedBody.id;
             }).bind(this)();
 
             await this.describe(`post`, async function()
@@ -187,7 +187,7 @@ export default async function(this: Context)
                     fromAmount: "200",
                     fromContainerId: testContext.containerId,
                     fromCurrencyId: testContext.baseCurrId,
-                    txnTypeId: testContext.txnTypeId
+                    txnTagId: testContext.txnTagId
                 } satisfies PostTxnAPIClass.RequestDTOClass;
 
                 for (const testCase of BodyGenerator.enumerateMissingField(baseObj, ["description", "creationDate"]))
@@ -258,7 +258,7 @@ export default async function(this: Context)
                         toAmount: "200",
                         toContainerId: testContext.containerId,
                         toCurrencyId: testContext.baseCurrId,
-                        txnTypeId: testContext.txnTypeId
+                        txnTagId: testContext.txnTagId
                     } satisfies PostTxnAPIClass.RequestDTOClass;
 
                     const createdTxn = await TransactionHelpers.postCreateTransaction(
@@ -306,7 +306,7 @@ export default async function(this: Context)
                             toAmount: undefined,
                             toContainerId: undefined,
                             toCurrencyId: undefined,
-                            txnTypeId: testContext.txnTypeId,
+                            txnTagId: testContext.txnTagId,
                             creationDate: txnCreated.parsedBody.rangeItems[0].creationDate,
                             description: "changed desc",
                             title: "changed title",
@@ -329,7 +329,7 @@ export default async function(this: Context)
                     assertStrictEqual(txnAfterMutated.parsedBody.rangeItems[0].toAmount, null);
                     assertStrictEqual(txnAfterMutated.parsedBody.rangeItems[0].toContainer, null);
                     assertStrictEqual(txnAfterMutated.parsedBody.rangeItems[0].toCurrency, null);
-                    assertStrictEqual(txnAfterMutated.parsedBody.rangeItems[0].txnType, testContext.txnTypeId);
+                    assertStrictEqual(txnAfterMutated.parsedBody.rangeItems[0].txnTag, testContext.txnTagId);
                     assertStrictEqual(txnAfterMutated.parsedBody.rangeItems[0].creationDate, txnCreated.parsedBody.rangeItems[0].creationDate);
                     assertStrictEqual(txnAfterMutated.parsedBody.rangeItems[0].description, "changed desc");
                     assertStrictEqual(txnAfterMutated.parsedBody.rangeItems[0].title, "changed title");

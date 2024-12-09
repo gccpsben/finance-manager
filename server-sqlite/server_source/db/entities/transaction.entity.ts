@@ -6,7 +6,7 @@ import { Currency } from "./currency.entity.js";
 import { Container } from "./container.entity.js";
 import { EnsureNotPlainForeignKey, IsDecimalJSString, IsUTCDateInt } from "../validators.js";
 import { User } from "./user.entity.js";
-import { TransactionType } from "./transactionType.entity.js";
+import { TxnTag } from "./txnTag.entity.js";
 
 @Entity()
 @Check
@@ -79,12 +79,12 @@ export class Transaction extends EntityClass
     creationDate: number;
 
     @Column( { nullable: false } )
-    txnTypeId: string;
+    txnTagId: string;
 
-    @ManyToOne(type => TransactionType, { nullable: false })
-    @JoinColumn({ name: "txnTypeId" })
+    @ManyToOne(type => TxnTag, { nullable: false })
+    @JoinColumn({ name: "txnTagId" })
     @EnsureNotPlainForeignKey()
-    txnType: Relation<TransactionType> | null;
+    tags: Relation<TxnTag> | null;
 
     // #region From
     @Column( { nullable: true, type: String } )

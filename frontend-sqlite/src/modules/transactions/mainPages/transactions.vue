@@ -51,9 +51,9 @@
                                         {{ getDateAge(item?.creationDate) }} ago
                                     </DateTooltip>
                                 </div>
-                                <div v-area.class="'txnType'" class="tight yCenter ellipsisContainer">
+                                <div v-area.class="'txnTag'" class="tight yCenter ellipsisContainer">
                                     <div>
-                                        {{ getTxnTypeNameById(item?.txnType, txnTypes.lastSuccessfulData?.rangeItems ?? []) }}
+                                        {{ getTxnTypeNameById(item?.txnTag, txnTypes.lastSuccessfulData?.rangeItems ?? []) }}
                                     </div>
                                 </div>
                                 <div v-area.class="'txnFrom'" class="xRight">
@@ -92,7 +92,7 @@ import router from "@/router";
 import { computed, onMounted, ref } from 'vue';
 import { type GetTxnAPI } from '../../../../../api-types/txn';
 import { useContainersStore } from '../../containers/stores/useContainersStore';
-import { useTxnTypesStore } from '../../txnTypes/stores/useTxnTypesStore';
+import { useTxnTagsStore } from '../../txnTypes/stores/useTxnTypesStore';
 import FaIcon from '@/modules/core/components/decorations/FaIcon.vue';
 import NumberPagination from '@/modules/core/components/data-display/NumberPagination.vue';
 import { getDateAge } from '@/modules/core/utils/date';
@@ -101,7 +101,7 @@ import TxnTooltip from '../components/TxnTooltip.vue';
 
 const { authGet, updateAll: mainStoreUpdateAll } = useMainStore();
 const { containers } = useContainersStore();
-const { txnTypes } = useTxnTypesStore();
+const { txnTags: txnTypes } = useTxnTagsStore();
 
 const currentPageIndex = ref(0);
 const itemsInPage = 15;
@@ -261,7 +261,7 @@ onMounted(async () => await mainStoreUpdateAll());
 
         gap: 15px;
         grid-template-columns:  30px     150fr   100px  150fr   50fr          150fr   50px      150fr 100fr;
-        grid-template-areas:   'checkbox txnName txnAge txnType txnValueChange txnFrom arrowIcon txnTo chips';
+        grid-template-areas:   'checkbox txnName txnAge txnTag txnValueChange txnFrom arrowIcon txnTo chips';
         grid-template-rows: 1fr; .horiPadding(15px); cursor:pointer;
 
         & > div { .tight; .yCenter; .ellipsisContainer; }
@@ -279,7 +279,7 @@ onMounted(async () => await mainStoreUpdateAll());
                 grid-template-columns:  30px     150fr   100px  50fr           150fr   50px      150fr 100fr !important;
                 grid-template-areas:   'checkbox txnName txnAge txnValueChange txnFrom arrowIcon txnTo chips' !important;
 
-                & > div.txnType
+                & > div.txnTag
                 {
                     overflow:hidden !important;
                     display:none !important;
@@ -371,7 +371,7 @@ onMounted(async () => await mainStoreUpdateAll());
     .row
     {
         grid-template-columns:  150fr   100px  150fr   50fr           50fr  0px     0px       0px !important;
-        grid-template-areas:   'txnName txnAge txnType txnValueChange chips txnFrom arrowIcon txnTo' !important;
+        grid-template-areas:   'txnName txnAge txnTag txnValueChange chips txnFrom arrowIcon txnTo' !important;
         grid-template-rows: 1fr; .horiPadding(15px); cursor:pointer;
     }
 }

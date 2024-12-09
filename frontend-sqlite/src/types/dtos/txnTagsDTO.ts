@@ -1,3 +1,3 @@
 import type { NamedObject, IDObject } from "../interfaces";
 
-export type TxnType = NamedObject & IDObject;
+export type TxnTag = NamedObject & IDObject;

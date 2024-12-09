@@ -6,7 +6,7 @@ import { EnsureNotPlainForeignKey } from "../validators.js";
 import { User } from "./user.entity.js";
 
 @Entity()
-export class TransactionType extends EntityClass
+export class TxnTag extends EntityClass
 {
     @PrimaryGeneratedColumn("uuid")
     id: string;
@@ -20,7 +20,7 @@ export class TransactionType extends EntityClass
     @Column( { nullable: false })
     ownerId: string;
 
-    @ManyToOne(type => User, user => user.transactionTypes)
+    @ManyToOne(type => User, user => user.tags)
     @EnsureNotPlainForeignKey()
     owner: Relation<User> | null;
 }

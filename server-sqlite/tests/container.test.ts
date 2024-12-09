@@ -13,7 +13,7 @@ import { IsDecimalJSString, IsStringToDecimalJSStringDict, IsStringToStringDict,
 import { Type } from "class-transformer";
 import { AuthHelpers } from "./auth.test.js";
 import { TransactionHelpers } from "./transaction.test.js";
-import { TxnTypeHelpers } from "./txnType.test.js";
+import { TxnTagHelpers } from "./txnTag.test.js";
 
 export class ContainerDTOClass implements ContainerDTO
 {
@@ -166,7 +166,7 @@ export default async function(this: Context)
                     const userCreds = await AuthHelpers.registerRandMockUsers(serverURL, 1);
                     const userObj = Object.values(userCreds)[0];
 
-                    const txnTypes = await TxnTypeHelpers.postRandomTxnTypes(
+                    const txnTypes = await TxnTagHelpers.postRandomTxnTags(
                     {
                         serverURL: serverURL, token: userObj.token,
                         txnCount: 3, assertBody: true, expectedCode: 200
@@ -286,7 +286,7 @@ export default async function(this: Context)
                                 toAmount: isTo ? txnToPost.toAmount.toString() : undefined,
                                 toContainerId: isTo ? txnToPost.toContainerId : undefined,
                                 toCurrencyId: isTo ? txnToPost.toCurrencyID : undefined,
-                                txnTypeId: choice(txnTypes).txnId
+                                txnTagId: choice(txnTypes).txnId
                             },
                             serverURL: serverURL,
                             token: userObj.token,

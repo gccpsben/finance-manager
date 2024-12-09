@@ -1,7 +1,7 @@
 import { TransactionRepository } from "../repositories/transaction.repository.js";
 import { ContainerNotFoundError, ContainerService } from "./container.service.js";
 import { CurrencyService } from "./currency.service.js";
-import { TransactionTypeService, TxnTypeNotFoundError } from "./transactionType.service.js";
+import { TransactionTagService, TxnTagNotFoundError } from "./txnTag.service.js";
 import { UserNotFoundError, UserService } from "./user.service.js";
 import { Transaction } from "../entities/transaction.entity.js";
 import { Decimal } from "decimal.js";
@@ -73,12 +73,12 @@ export class TransactionService
             toAmount?: string | null,
             toContainerId?: string | null,
             toCurrencyId?: string | null,
-            txnTypeId: string
+            txnTagId: string
         } | Transaction
     ): Promise<
         Transaction |
         UserNotFoundError |
-        TxnTypeNotFoundError |
+        TxnTagNotFoundError |
         ContainerNotFoundError |
         TxnMissingFromToAmountError |
         TxnMissingContainerOrCurrency
@@ -139,11 +139,11 @@ export class TransactionService
 
         newTxn.owner = owner;
 
-        const txnType = await TransactionTypeService.getTransactionTypeById(userId, obj.txnTypeId);
-        if (txnType instanceof UserNotFoundError) return txnType;
-        if (txnType instanceof TxnTypeNotFoundError) return txnType;
+        const txnTag = await TransactionTagService.getTxnTagById(userId, obj.txnTagId);
+        if (txnTag instanceof UserNotFoundError) return txnTag;
+        if (txnTag instanceof TxnTagNotFoundError) return txnTag;
 
-        newTxn.txnType = txnType;
+        newTxn.tags = txnTag;
 
         // @ts-ignore
         // TODO: fix id null mismatch
@@ -165,7 +165,7 @@ export class TransactionService
             toAmount?: string | undefined,
             toContainerId?: string | undefined,
             toCurrencyId?: string | undefined,
-            txnTypeId: string
+            txnTagId: string
         }
     )
     {
@@ -215,21 +215,21 @@ export class TransactionService
             ));
 
             {
-                oldTxn.txnTypeId = obj.txnTypeId ?? null;
-                if (!!oldTxn.txnTypeId)
+                oldTxn.txnTagId = obj.txnTagId ?? null;
+                if (!!oldTxn.txnTagId)
                 {
-                    const oldTxnType = await TransactionTypeService.getTransactionTypeById(oldTxn.ownerId, oldTxn.txnTypeId);
+                    const oldTxnType = await TransactionTagService.getTxnTagById(oldTxn.ownerId, oldTxn.txnTagId);
                     if (oldTxnType instanceof UserNotFoundError) return oldTxnType;
-                    if (oldTxnType instanceof TxnTypeNotFoundError) return oldTxnType;
-                    oldTxn.txnType = oldTxnType;
+                    if (oldTxnType instanceof TxnTagNotFoundError) return oldTxnType;
+                    oldTxn.tags = oldTxnType;
                 }
-                else { oldTxn.txnType = null; }
+                else { oldTxn.tags = null; }
             }
         }
 
         const txnValidationResults = await TransactionService.validateTransaction(userId, oldTxn);
         if (txnValidationResults instanceof UserNotFoundError) return txnValidationResults;
-        if (txnValidationResults instanceof TxnTypeNotFoundError) return txnValidationResults;
+        if (txnValidationResults instanceof TxnTagNotFoundError) return txnValidationResults;
         if (txnValidationResults instanceof ContainerNotFoundError) return txnValidationResults;
         if (txnValidationResults instanceof TxnMissingFromToAmountError) return txnValidationResults;
         if (txnValidationResults instanceof TxnMissingContainerOrCurrency) return txnValidationResults;
@@ -251,13 +251,13 @@ export class TransactionService
             toAmount?: string | undefined,
             toContainerId?: string | undefined,
             toCurrencyId?: string | undefined,
-            txnTypeId: string
+            txnTagId: string
         }
     )
     {
         const newTxn = await TransactionService.validateTransaction(userId, obj);
         if (newTxn instanceof UserNotFoundError) return newTxn;
-        if (newTxn instanceof TxnTypeNotFoundError) return newTxn;
+        if (newTxn instanceof TxnTagNotFoundError) return newTxn;
         if (newTxn instanceof TxnMissingFromToAmountError) return newTxn;
         if (newTxn instanceof ContainerNotFoundError) return newTxn;
         if (newTxn instanceof TxnMissingContainerOrCurrency) return newTxn;

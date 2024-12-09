@@ -20,7 +20,7 @@ export type Transaction =
     fromAmount: string | null;
     toAmount: string | null;
     owner: string;
-    txnType: string;
+    txnTag: string;
     fromCurrency: string | null;
     fromContainer: string | null;
     toCurrency: string | null;

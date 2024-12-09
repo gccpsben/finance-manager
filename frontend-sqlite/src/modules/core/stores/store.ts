@@ -1,4 +1,4 @@
-import { API_BAL_VAL_PATH, API_GRAPHS_PATH, API_NET_WORTH_GRAPH_PATH, API_SUMMARY_PATH, API_TRANSACTIONS_PATH, API_TXN_TYPES_PATH, API_USER_INCOMES_EXPENSES_PATH } from '@/apiPaths';
+import { API_BAL_VAL_PATH, API_GRAPHS_PATH, API_NET_WORTH_GRAPH_PATH, API_SUMMARY_PATH, API_TRANSACTIONS_PATH, API_TXN_TAGS_PATH, API_USER_INCOMES_EXPENSES_PATH } from '@/apiPaths';
 import { useNetworkRequest } from '../composables/useNetworkRequest';
 import type { DashboardSummary } from '@/types/dtos/dashboardSummaryDTO';
 import axios, { AxiosError } from 'axios';

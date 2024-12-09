@@ -4,20 +4,20 @@ import { resetDatabase, serverURL, UnitTestEndpoints } from "./index.test.js";
 import { assertJSONEqual, assertStrictEqual, HTTPAssert } from "./lib/assert.js";
 import { Context } from "./lib/context.js";
 import { Generator } from "./shortcuts/generator.js";
-import { GetTxnTypesAPI, PostTxnTypesAPI, TxnTypesDTO } from "../../api-types/txnType.js";
+import { GetTxnTagsAPI, PostTxnTagsAPI, TxnTagsDTO } from "../../api-types/txnTag.js";
 import { Type } from "class-transformer";
 import { AuthHelpers } from "./auth.test.js";
 
-export class TransactionTypesDTOClass implements TxnTypesDTO
+export class TransactionTagsDTOClass implements TxnTagsDTO
 {
     @IsString() id: string;
     @IsString() owner: string;
     @IsString() name: string;
 }
 
-export namespace GetTxnTypesAPIClass
+export namespace GetTxnTagsAPIClass
 {
-    export class ResponseDTOClass implements GetTxnTypesAPI.ResponseDTO
+    export class ResponseDTOClass implements GetTxnTagsAPI.ResponseDTO
     {
         @IsNumber() totalItems: number;
         @IsNumber() startingIndex: number;
@@ -25,13 +25,13 @@ export namespace GetTxnTypesAPIClass
 
         @IsArray()
         @ValidateNested({ each: true })
-        @Type(() => TransactionTypesDTOClass)
-        rangeItems: TransactionTypesDTOClass[];
+        @Type(() => TransactionTagsDTOClass)
+        rangeItems: TransactionTagsDTOClass[];
     }
 }
 
 // This class is to add validation decorators to the api-types defined
-export class ResponsePostTransactionTypesDTOBody extends TransactionTypesDTOClass {}
+export class ResponsePostTxnTagsDTOBody extends TransactionTagsDTOClass {}
 
 const createPostTxnTypeBody = (name: string) => ({ "name": name });
 
@@ -39,20 +39,20 @@ export default async function(this: Context)
 {
     await resetDatabase();
 
-    await this.module("Txn Types", async function()
+    await this.module("Txn Tags", async function()
     {
-        await this.module(UnitTestEndpoints.transactionTypesEndpoints['get'], async function()
+        await this.module(UnitTestEndpoints.transactionTagsEndpoints['get'], async function()
         {
             const userCreds = await AuthHelpers.registerRandMockUsers(serverURL, 1);
             const { username:firstUserName, token:firstUserToken } = Object.values(userCreds)[0];
-            const baseValidObj = createPostTxnTypeBody(`TESTING TXN TYPE`);
-            let postedTxnType = undefined as undefined | ResponsePostTransactionTypesDTOBody;
+            const baseValidObj = createPostTxnTypeBody(`TESTING TXN TAG`);
+            let postedTxnTag = undefined as undefined | ResponsePostTxnTagsDTOBody;
 
             await this.describe(`post`, async function()
             {
-                await this.test(`Forbid creating txn types without token`, async function()
+                await this.test(`Forbid creating txn tags without token`, async function()
                 {
-                    await HTTPAssert.assertFetch(UnitTestEndpoints.transactionTypesEndpoints['post'],
+                    await HTTPAssert.assertFetch(UnitTestEndpoints.transactionTagsEndpoints['post'],
                     {
                         baseURL: serverURL, expectedStatus: 401, method: "POST",
                         body: baseValidObj
@@ -61,9 +61,9 @@ export default async function(this: Context)
 
                 for (const testCase of BodyGenerator.enumerateMissingField(baseValidObj))
                 {
-                    await this.test(`Forbid creating txn types without ${testCase.fieldMissed}`, async function()
+                    await this.test(`Forbid creating txn tags without ${testCase.fieldMissed}`, async function()
                     {
-                        await HTTPAssert.assertFetch(UnitTestEndpoints.transactionTypesEndpoints['post'],
+                        await HTTPAssert.assertFetch(UnitTestEndpoints.transactionTagsEndpoints['post'],
                         {
                             baseURL: serverURL, expectedStatus: 400, method: "POST",
                             body: testCase.obj,
@@ -72,64 +72,64 @@ export default async function(this: Context)
                     });
                 }
 
-                await this.test(`Allow creating txn types with valid body`, async function()
+                await this.test(`Allow creating txn tags with valid body`, async function()
                 {
-                    const response = await HTTPAssert.assertFetch(UnitTestEndpoints.transactionTypesEndpoints['post'],
+                    const response = await HTTPAssert.assertFetch(UnitTestEndpoints.transactionTagsEndpoints['post'],
                     {
                         baseURL: serverURL, expectedStatus: 200, method: "POST",
                         headers: { "authorization": firstUserToken },
                         body: baseValidObj,
-                        expectedBodyType: ResponsePostTransactionTypesDTOBody
+                        expectedBodyType: ResponsePostTxnTagsDTOBody
                     });
-                    postedTxnType = response.parsedBody;
+                    postedTxnTag = response.parsedBody;
                 });
             });
 
             await this.describe(`get`, async function()
             {
-                await this.test(`Check for missing props on posted types`, async function()
+                await this.test(`Check for missing props on posted tags`, async function()
                 {
-                    const response = await HTTPAssert.assertFetch(UnitTestEndpoints.transactionTypesEndpoints['get'],
+                    const response = await HTTPAssert.assertFetch(UnitTestEndpoints.transactionTagsEndpoints['get'],
                     {
                         baseURL: serverURL, expectedStatus: 200, method: "GET",
                         headers: { "authorization": firstUserToken },
-                        expectedBodyType: GetTxnTypesAPIClass.ResponseDTOClass
+                        expectedBodyType: GetTxnTagsAPIClass.ResponseDTOClass
                     });
                     assertStrictEqual(response.parsedBody.rangeItems.length, 1);
-                    assertJSONEqual(response.parsedBody.rangeItems[0], postedTxnType);
+                    assertJSONEqual(response.parsedBody.rangeItems[0], postedTxnTag);
                 });
             });
         })
     });
 }
 
-export namespace TxnTypeHelpers
+export namespace TxnTagHelpers
 {
-    export async function postCreateTxnType(config:
+    export async function postCreateTxnTag(config:
     {
         serverURL:string,
         token:string,
-        body: Partial<PostTxnTypesAPI.RequestDTO>,
+        body: Partial<PostTxnTagsAPI.RequestDTO>,
         assertBody?: boolean,
         expectedCode?: number
     })
     {
         const assertBody = config.assertBody === undefined ? true : config.assertBody;
-        const response = await HTTPAssert.assertFetch(UnitTestEndpoints.transactionTypesEndpoints['post'],
+        const response = await HTTPAssert.assertFetch(UnitTestEndpoints.transactionTagsEndpoints['post'],
         {
             baseURL: config.serverURL, expectedStatus: config.expectedCode, method: "POST",
             body: config.body,
             headers: { "authorization": config.token },
-            expectedBodyType: assertBody ? ResponsePostTransactionTypesDTOBody : undefined
+            expectedBodyType: assertBody ? ResponsePostTxnTagsDTOBody : undefined
         });
         return {
             ...response,
-            txnTypeId: response.parsedBody?.id as string | undefined
+            txnTagId: response.parsedBody?.id as string | undefined
         };
     }
 
-    /** Random tnx types with unique names */
-    export async function postRandomTxnTypes(config:
+    /** Random tnx tags with unique names */
+    export async function postRandomTxnTags(config:
     {
         serverURL:string,
         token:string,
@@ -146,14 +146,14 @@ export namespace TxnTypeHelpers
             usedNames.push(randomName);
             output.push(
             {
-                txnId: (await TxnTypeHelpers.postCreateTxnType(
+                txnId: (await TxnTagHelpers.postCreateTxnTag(
                 {
                     body         : { name: randomName },
                     serverURL    : config.serverURL,
                     token        : config.token,
                     assertBody   : config.assertBody,
                     expectedCode : config.expectedCode
-                })).txnTypeId,
+                })).txnTagId,
                 txnName: randomName
             });
         }

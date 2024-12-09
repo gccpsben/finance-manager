@@ -5,7 +5,7 @@ import userRouter from './routes/users.router.js';
 import authRouter from './routes/auth.router.js';
 import currenciesRouter from './routes/currencies.router.js';
 import containerRouter from './routes/container.router.js';
-import transactionTypesRouter from './routes/transactionType.router.js';
+import txnTagsRouter from './routes/txnTags.router.js';
 import transactionsRouter from './routes/transaction.router.js';
 import calculationsRouter from './routes/calculations.router.js';
 import currencyRateDatumRouter from './routes/currencyRateDatum.router.js';
@@ -24,7 +24,7 @@ export function getMainRouter()
     router.use("/", currenciesRouter);
     router.use("/", authRouter);
     router.use("/", containerRouter);
-    router.use("/", transactionTypesRouter);
+    router.use("/", txnTagsRouter);
     router.use("/", transactionsRouter);
     router.use("/", calculationsRouter);
     router.use("/", currencyRateDatumRouter);

@@ -1,6 +1,6 @@
-import type { TxnTypesDTO } from "@/../../api-types/txnType";
+import type { TxnTagsDTO } from "@/../../api-types/txnTag";
 
-export function getTxnTypeNameById(id: string, types: TxnTypesDTO[])
+export function getTxnTypeNameById(id: string, types: TxnTagsDTO[])
 {
     return types.find(type => type.id == id)?.name;
 }
