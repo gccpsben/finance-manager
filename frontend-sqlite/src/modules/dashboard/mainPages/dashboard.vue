@@ -7,41 +7,43 @@
             <grid-shortcut id="mainGrid">
 
                 <number-cell :noItemsText="'No Data'" v-area="'expensesPanel'"
-                style="background: linear-gradient(-45deg, rgba(213, 51, 105, 0.13) 0%, rgba(218, 81, 81, 0.42) 100%); color:white;"
-                :option-values="userExpenses"
-                :isLoading="store.userExpensesIncomes.isLoading"
-                :networkError="store.userExpensesIncomes.error">
+                             style="background: linear-gradient(-45deg, rgba(213, 51, 105, 0.13) 0%, rgba(218, 81, 81, 0.42) 100%); color:white;"
+                             :option-values="userExpenses"
+                             :isLoading="store.userExpensesIncomes.isLoading"
+                             :networkError="store.userExpensesIncomes.error">
                     <template #title>
                         <TipsIconTitle>
                             <div style="display: inline-block">Expenses</div>
                             <template #tipsContent>
-                                <div>Expenses</div>
+                                <div>Sum of value change of all transactions that incurred negative change in value.</div>
+                                <div>Currencies rate at the time of the transaction will be used for calculations.</div>
                             </template>
                         </TipsIconTitle>
                     </template>
                 </number-cell>
 
                 <number-cell :noItemsText="'No Data'" v-area="'incomesPanel'"
-                style="background: linear-gradient(-45deg, rgba(56, 213, 51, 0.09) 0%, rgba(81, 218, 90, 0.35) 100%); color:white;"
-                :option-values="userIncomes"
-                :isLoading="store.userExpensesIncomes.isLoading"
-                :networkError="store.userExpensesIncomes.error">
+                             style="background: linear-gradient(-45deg, rgba(56, 213, 51, 0.09) 0%, rgba(81, 218, 90, 0.35) 100%); color:white;"
+                             :option-values="userIncomes"
+                             :isLoading="store.userExpensesIncomes.isLoading"
+                             :networkError="store.userExpensesIncomes.error">
                     <template #title>
                         <TipsIconTitle>
                             <div style="display: inline-block">Incomes</div>
                             <template #tipsContent>
-                                <div>Incomes</div>
+                                <div>Sum of value change of all transactions that incurred positive change in value.</div>
+                                <div>Currencies rate at the time of the transaction will be used for calculations.</div>
                             </template>
                         </TipsIconTitle>
                     </template>
                 </number-cell>
 
                 <number-cell :noItemsText="'No Data'" v-area="'networthPanel'"
-                v-model:selected-option="selectedNetworthRange"
-                style="background: linear-gradient(-45deg, rgba(213, 180, 51, 0.09) 0%, rgba(218, 203, 81, 0.44) 100%); color:white;"
-                :option-values="userNetworth.networthOptionValues"
-                :isLoading="userNetworth.isLoading"
-                :networkError="userNetworth.error">
+                             v-model:selected-option="selectedNetworthRange"
+                             style="background: linear-gradient(-45deg, rgba(213, 180, 51, 0.09) 0%, rgba(218, 203, 81, 0.44) 100%); color:white;"
+                             :option-values="userNetworth.networthOptionValues"
+                             :isLoading="userNetworth.isLoading"
+                             :networkError="userNetworth.error">
                     <template #title>
                         <TipsIconTitle>
                             <div style="display: inline-block">Networth</div>
@@ -53,27 +55,36 @@
                 </number-cell>
 
                 <number-cell :noItemsText="'No Data'" v-area="'netChangePanel'"
-                v-model:selected-option="selectedNetworthChangeRange"
-                style="background: linear-gradient(-45deg, rgba(51, 213, 190, 0.09) 0%, rgba(81, 218, 218, 0.43) 100%); color:white;"
-                :option-values="userNetworthChange.networthChangeOptionValues"
-                :isLoading="userNetworthChange.isLoading"
-                :networkError="userNetworthChange.error">
+                             v-model:selected-option="selectedNetworthChangeRange"
+                             style="background: linear-gradient(-45deg, rgba(51, 213, 190, 0.09) 0%, rgba(81, 218, 218, 0.43) 100%); color:white;"
+                             :option-values="userNetworthChange.networthChangeOptionValues"
+                             :isLoading="userNetworthChange.isLoading"
+                             :networkError="userNetworthChange.error">
                     <template #title>
                         <TipsIconTitle>
                             <div style="display: inline-block">Networth Change</div>
                             <template #tipsContent>
-                                <div>Networth Change</div>
+                                <div>The change in networth, this includes all containers, currencies and transactions.</div>
+                                <div>Currencies rate at the time of the transaction will be used for calculations.</div>
                             </template>
                         </TipsIconTitle>
                     </template>
                 </number-cell>
 
-                <ListCell v-area="'_30dExpensesList'" title="30d Expenses" :noItemsText="'No Expenses'"
+                <ListCell v-area="'_30dExpensesList'" :noItemsText="'No Expenses'"
                 :isLoading="store.txns30d.isLoading"
                 :error="store.txns30d.error"
                 :itemsInPage="6"
                 :items="expenseTxns30d">
-                    <template #title>30d Expenses</template>
+                    <template #title>
+                        <TipsIconTitle>
+                            30d Expenses
+                            <template #tipsContent>
+                                <div>All expenses in the past 30 days.</div>
+                                <div>Change in value of each transaction is not considered here, all transactions with 'From' and no 'To' will be listed here.</div>
+                            </template>
+                        </TipsIconTitle>
+                    </template>
                     <template #row="props">
                         <TxnTooltip :txn="props.currentItem">
                             <grid-shortcut columns="50px 1fr 1fr" :class="{'fullSize': true}" @click="viewTxn(props.currentItem.id)" class="fullSize highlightableRow">
@@ -89,12 +100,20 @@
                     </template>
                 </ListCell>
 
-                <ListCell v-area="'_30dIncomesList'" title="30d Incomes" :noItemsText="'No Incomes'"
+                <ListCell v-area="'_30dIncomesList'" :noItemsText="'No Incomes'"
                 :isLoading="store.txns30d.isLoading"
                 :error="store.txns30d.error"
                 :itemsInPage="6"
                 :items="incomeTxns30d">
-                    <template #title>30d Incomes</template>
+                    <template #title>
+                        <TipsIconTitle>
+                            30d Incomes
+                            <template #tipsContent>
+                                <div>All incomes in the past 30 days.</div>
+                                <div>Change in value of each transaction is not considered here, all transactions with no 'From' and only 'To' will be listed here.</div>
+                            </template>
+                        </TipsIconTitle>
+                    </template>
                     <template #row="props">
                         <TxnTooltip :txn="props.currentItem">
                             <grid-shortcut columns="50px 1fr 1fr" :class="{'fullSize': true}" @click="viewTxn(props.currentItem.id)" class="fullSize highlightableRow">
@@ -115,7 +134,15 @@
                 :error="store.txns30d.error"
                 :itemsInPage="6"
                 :items="transferTxns30d">
-                    <template #title>30d Transfers</template>
+                    <template #title>
+                        <TipsIconTitle>
+                            30d Transfers
+                            <template #tipsContent>
+                                <div>All transfers in the past 30 days.</div>
+                                <div>Change in value of each transaction is not considered here, all transactions with both 'From' and 'To' will be listed here.</div>
+                            </template>
+                        </TipsIconTitle>
+                    </template>
                     <template #row="props">
                         <TxnTooltip :txn="props.currentItem">
                             <grid-shortcut columns="50px 1fr 1fr" :class="{'fullSize': true}" @click="viewTxn(props.currentItem.id)" class="fullSize highlightableRow">

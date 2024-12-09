@@ -63,9 +63,10 @@ const now = useNow({interval: 1000});
 {
     & > *
     {
-        background: @surface !important;
+        background: @backgroundDark !important;
+        border: 1px solid @border;
+        box-shadow: 0px 0px 5px #000;
         color: white;
-        box-shadow: 0px 0px 5px gray;
         pointer-events: all;
     }
 
