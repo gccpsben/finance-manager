@@ -87,9 +87,9 @@ export class ContainerService
     public static async getOneContainer(ownerId: string, query: {
         name? : string | undefined,
         id? : string | undefined
-    })
+    }): Promise<IdBound<Container> | null>
     {
-        return await ContainerRepository.getInstance().findOne(
+        const fetchedContainer = await ContainerRepository.getInstance().findOne(
         {
             where:
             {
@@ -98,6 +98,7 @@ export class ContainerService
                 owner: {id: ownerId}
             }
         });
+        return fetchedContainer as (IdBound<typeof fetchedContainer>);
     }
 
     public static async getManyContainers
