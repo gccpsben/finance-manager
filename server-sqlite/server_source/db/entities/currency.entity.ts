@@ -66,7 +66,7 @@ export class Currency extends EntityClass
 
     @BeforeInsert()
     @BeforeUpdate()
-    public async validate()
+    public override async validate()
     {
         await super.validate();
 

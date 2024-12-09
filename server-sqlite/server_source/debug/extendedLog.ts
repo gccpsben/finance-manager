@@ -28,7 +28,7 @@ export class ExtendedLog
     public static generateLogFileName(time: Date, index: number)
     {
         const dateTime = time ?? new Date();
-        const pad = num => (num > 9 ? "" : "0") + num;
+        const pad = (num: number) => (num > 9 ? "" : "0") + num;
         let year = dateTime.getFullYear();
         let month = pad(dateTime.getMonth() + 1);
 

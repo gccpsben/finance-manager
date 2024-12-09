@@ -258,6 +258,7 @@ export class EnvManager
         restLog: {
             const keyName = `RESTFUL_LOG_MODE`;
             const keyValue = process.env[keyName];
+
             if (!keyValue)
             {
                 EnvManager.restfulLogMode = RESTfulLogType.TO_BOTH;
@@ -266,8 +267,8 @@ export class EnvManager
 
             if (!(keyValue in RESTfulLogType))
                 return new ParseEnvError(new InvalidRESTfulLogTypeInEnvError(keyValue));
-
-            EnvManager.restfulLogMode = RESTfulLogType[keyValue];
+            else
+                EnvManager.restfulLogMode = RESTfulLogType[keyValue as keyof typeof RESTfulLogType];
         }
 
         return null;

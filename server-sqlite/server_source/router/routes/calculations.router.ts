@@ -125,6 +125,8 @@ router.get<GetUserBalanceHistoryAPI.ResponseDTO>(`/api/v1/calculations/balanceHi
         {
             const outputMap = {};
             for (const epoch of Object.keys(calResults.historyMap))
+                // TODO: Fix this TS type error
+                // @ts-expect-error
                 outputMap[epoch] = ServiceUtils.mapObjectValues(calResults.historyMap[epoch], decimal => decimal.toString());
             return {
                 map: outputMap
