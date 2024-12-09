@@ -1,4 +1,4 @@
-import { Entity, PrimaryGeneratedColumn, Column, BeforeInsert, BeforeUpdate, ManyToOne, JoinColumn, Check, Index, Relation } from "typeorm";
+import { Entity, PrimaryGeneratedColumn, Column, BeforeInsert, BeforeUpdate, ManyToOne, JoinColumn, Check, Index, Relation, ManyToMany, JoinTable } from "typeorm";
 import "reflect-metadata"
 import { IsNotEmpty, IsOptional, IsString, MaxLength } from "class-validator";
 import { EntityClass } from "../dbEntityBase.js";
@@ -47,6 +47,11 @@ import { TxnTag } from "./txnTag.entity.js";
         THEN toAmount IS NOT NULL
     END`
 )
+
+/**
+ * Represent the raw entity of a `Transaction` stored inside database.
+ * This type should RARELY be used in the application.
+ */
 export class Transaction extends EntityClass
 {
     @PrimaryGeneratedColumn("uuid")
@@ -78,13 +83,10 @@ export class Transaction extends EntityClass
     @IsUTCDateInt()
     creationDate: number;
 
-    @Column( { nullable: false } )
-    txnTagId: string;
-
-    @ManyToOne(type => TxnTag, { nullable: false })
-    @JoinColumn({ name: "txnTagId" })
+    @ManyToMany((type) => TxnTag, { cascade: true })
+    @JoinTable()
     @EnsureNotPlainForeignKey()
-    tags: Relation<TxnTag> | null;
+    tags: TxnTag[] | string[] | null;
 
     // #region From
     @Column( { nullable: true, type: String } )

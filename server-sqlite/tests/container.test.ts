@@ -286,7 +286,7 @@ export default async function(this: Context)
                                 toAmount: isTo ? txnToPost.toAmount.toString() : undefined,
                                 toContainerId: isTo ? txnToPost.toContainerId : undefined,
                                 toCurrencyId: isTo ? txnToPost.toCurrencyID : undefined,
-                                txnTagId: choice(txnTypes).txnId
+                                tagIds: [choice(txnTypes).txnId]
                             },
                             serverURL: serverURL,
                             token: userObj.token,

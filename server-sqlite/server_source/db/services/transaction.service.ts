@@ -9,6 +9,7 @@ import type { PartialNull, SQLitePrimitiveOnly } from "../../index.d.js";
 import { nameof, ServiceUtils } from "../servicesUtils.js";
 import { isNullOrUndefined } from "../../router/validation.js";
 import { MonadError, panic, unwrap } from "../../std_errors/monadError.js";
+import { TxnTag } from "../entities/txnTag.entity.js";
 
 export class TxnMissingContainerOrCurrency extends MonadError<typeof TxnMissingFromToAmountError.ERROR_SYMBOL>
 {
@@ -73,8 +74,8 @@ export class TransactionService
             toAmount?: string | null,
             toContainerId?: string | null,
             toCurrencyId?: string | null,
-            txnTagId: string
-        } | Transaction
+            txnTagIds: string[]
+        }
     ): Promise<
         Transaction |
         UserNotFoundError |
@@ -139,11 +140,16 @@ export class TransactionService
 
         newTxn.owner = owner;
 
-        const txnTag = await TransactionTagService.getTxnTagById(userId, obj.txnTagId);
-        if (txnTag instanceof UserNotFoundError) return txnTag;
-        if (txnTag instanceof TxnTagNotFoundError) return txnTag;
+        const tnxTagObjs: TxnTag[] = [];
+        for (const txnTagId of obj.txnTagIds)
+        {
+            const txnTag = await TransactionTagService.getTxnTagById(userId, txnTagId);
+            if (txnTag instanceof UserNotFoundError) return txnTag;
+            if (txnTag instanceof TxnTagNotFoundError) return txnTag;
+            tnxTagObjs.push(txnTag);
+        }
 
-        newTxn.tags = txnTag;
+        newTxn.tags = tnxTagObjs;
 
         // @ts-ignore
         // TODO: fix id null mismatch
@@ -165,7 +171,7 @@ export class TransactionService
             toAmount?: string | undefined,
             toContainerId?: string | undefined,
             toCurrencyId?: string | undefined,
-            txnTagId: string
+            tagIds: string[]
         }
     )
     {
@@ -215,19 +221,34 @@ export class TransactionService
             ));
 
             {
-                oldTxn.txnTagId = obj.txnTagId ?? null;
-                if (!!oldTxn.txnTagId)
+                let tagObjs: TxnTag[] = [];
+                if (!!obj.tagIds)
                 {
-                    const oldTxnType = await TransactionTagService.getTxnTagById(oldTxn.ownerId, oldTxn.txnTagId);
-                    if (oldTxnType instanceof UserNotFoundError) return oldTxnType;
-                    if (oldTxnType instanceof TxnTagNotFoundError) return oldTxnType;
-                    oldTxn.tags = oldTxnType;
+                    for (const txnTagId of obj.tagIds)
+                    {
+                        const txnTagObj = await TransactionTagService.getTxnTagById(oldTxn.ownerId, txnTagId);
+                        if (txnTagObj instanceof UserNotFoundError) return txnTagObj;
+                        if (txnTagObj instanceof TxnTagNotFoundError) return txnTagObj;
+                        tagObjs.push(txnTagObj);
+                    }
                 }
-                else { oldTxn.tags = null; }
+                oldTxn.tags = tagObjs;
             }
         }
 
-        const txnValidationResults = await TransactionService.validateTransaction(userId, oldTxn);
+        const txnValidationResults = await TransactionService.validateTransaction(userId, {
+            creationDate: oldTxn.creationDate,
+            txnTagIds: oldTxn.tags.map(t => t.id),
+            description: oldTxn.description ?? '',
+            title: oldTxn.title,
+            fromAmount: oldTxn.fromAmount ?? undefined,
+            fromContainerId: oldTxn.fromContainerId ?? undefined,
+            fromCurrencyId: oldTxn.fromCurrencyId ?? undefined,
+            toAmount: oldTxn.toAmount,
+            toContainerId: oldTxn.toContainerId,
+            toCurrencyId: oldTxn.toCurrencyId
+        });
+
         if (txnValidationResults instanceof UserNotFoundError) return txnValidationResults;
         if (txnValidationResults instanceof TxnTagNotFoundError) return txnValidationResults;
         if (txnValidationResults instanceof ContainerNotFoundError) return txnValidationResults;
@@ -251,7 +272,7 @@ export class TransactionService
             toAmount?: string | undefined,
             toContainerId?: string | undefined,
             toCurrencyId?: string | undefined,
-            txnTagId: string
+            txnTagIds: string[]
         }
     )
     {
@@ -339,10 +360,11 @@ export class TransactionService
             id?: string,
             description?: string
         } | undefined = undefined
-    ): Promise<{ totalCount: number, rangeItems: SQLitePrimitiveOnly<Transaction & { id: string }>[] }>
+    )
     {
         let query = TransactionRepository.getInstance()
         .createQueryBuilder(`txn`)
+        .loadAllRelationIds({ relations: [nameofT('tags')] })
         .orderBy(`txn.${nameofT('creationDate')}`, "DESC")
         .where(`${nameofT('ownerId')} = :ownerId`, { ownerId: userId });
 
@@ -372,8 +394,18 @@ export class TransactionService
         return {
             totalCount: queryResult[1],
             rangeItems: queryResult[0].map(x => ({
-                ...x,
-                id: x.id!
+                title: x.title,
+                creationDate: x.creationDate,
+                description: x.description,
+                fromAmount: x.fromAmount,
+                fromContainerId: x.fromContainerId,
+                fromCurrencyId: x.fromCurrencyId,
+                id: x.id,
+                ownerId: x.ownerId,
+                toAmount: x.toAmount,
+                toContainerId: x.toContainerId,
+                toCurrencyId: x.toCurrencyId,
+                tagIds: x.tags as string[]
             })),
         };
     }

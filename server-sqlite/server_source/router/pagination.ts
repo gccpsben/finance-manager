@@ -1,6 +1,5 @@
 import { IsNumber, IsArray, IsOptional, IsNumberString } from "class-validator";
 import type { PaginationAPIResponse } from "../../../api-types/lib.js";
-import { SQLitePrimitiveOnly } from "../index.d.js";
 
 export class PaginationAPIResponseClass<T> implements PaginationAPIResponse<T>
 {
@@ -9,19 +8,19 @@ export class PaginationAPIResponseClass<T> implements PaginationAPIResponse<T>
     @IsNumber() endingIndex: number;
     @IsArray() rangeItems: T[];
 
-    public static async prepareFromQueryItems<T extends object>
+    public static async prepareFromQueryItems<T>
     (
         queriedItems:
         {
             totalCount: number,
-            rangeItems: SQLitePrimitiveOnly<T>[]
+            rangeItems: T[]
         },
         userQueryStartIndex: number | undefined
     )
     {
-        const response: PaginationAPIResponseClass<SQLitePrimitiveOnly<T>> = await (async () =>
+        const response: PaginationAPIResponseClass<T> = await (async () =>
         {
-            const output = new PaginationAPIResponseClass<SQLitePrimitiveOnly<T>>();
+            const output = new PaginationAPIResponseClass<T>();
             output.startingIndex = userQueryStartIndex ?? 0;
             output.endingIndex = (userQueryStartIndex ?? 0) + queriedItems.rangeItems.length - 1;
             output.rangeItems = queriedItems.rangeItems;

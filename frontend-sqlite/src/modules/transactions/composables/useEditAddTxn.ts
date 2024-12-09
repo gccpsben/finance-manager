@@ -11,8 +11,7 @@ import { useResettableObject } from "@/resettableObject";
 import { computed, ref, toRaw } from "vue";
 
 type OmitFromTxnDTO<K extends keyof GetTxnAPI.TxnDTO> = Omit<GetTxnAPI.TxnDTO, K>;
-export type TxnWorkingEntity = OmitFromTxnDTO<'creationDate'|'txnTag'|'owner'>
-                               & { creationDate: string; txnTag: null | string; };
+export type TxnWorkingEntity = OmitFromTxnDTO<'creationDate'|'owner'> & { creationDate: string; };
 export const DateFormatToShow = "YYYY-MM-DD hh:mm:ss.ms";
 
 /**
@@ -44,7 +43,6 @@ function useTxnWorkingCopy()
 
         if (!txn.fromAmount && !txn.toAmount) return "At least one of 'From' or 'To' sections must be provided.";
         if (!isEnteredDateValid.value) return 'The date provided is invalid.';
-        if (!txn.txnTag) return 'A transaction tag must be selected.';
         if (!txn.title.trim()) return 'A name must be provided.';
         if (!!toContainer && !toCurrency) return "A currency must be selected in the 'To' section.";
         if (!!fromContainer && !fromCurrency) return "A currency must be selected in the 'From' section.";
@@ -184,7 +182,7 @@ export function useEditTxn()
                 body:
                 {
                     title: transformedTxn.title,
-                    txnTagId: transformedTxn.txnTag!,
+                    tagIds: transformedTxn.tagIds,
                     creationDate: new Date(transformedTxn.creationDate).getTime(),
                     description: transformedTxn.description ?? undefined,
                     fromAmount: transformedTxn.fromAmount ?? undefined,
@@ -239,7 +237,7 @@ export function useAddTxn()
             toAmount: null,
             toCurrency: null,
             toContainer: null,
-            txnTag: null
+            tagIds: []
         };
 
         txnWorkingCopyHook.txnToBeEdited.markSafePoint(emptyRawTxn);
@@ -276,7 +274,7 @@ export function useAddTxn()
                 body:
                 {
                     title: transformedTxn.title,
-                    txnTagId: transformedTxn.txnTag!,
+                    tagIds: transformedTxn.tagIds,
                     creationDate: new Date(transformedTxn.creationDate).getTime(),
                     description: transformedTxn.description ?? undefined,
                     fromAmount: transformedTxn.fromAmount ?? undefined,

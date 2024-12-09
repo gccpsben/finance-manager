@@ -35,7 +35,7 @@
                                         v-model:selected-option="txnWorkingCopy.currentData.value!.fromContainer!" />
                         <custom-dropdown :options="selectableTxnTagsOptions"
                                         class="fullSize" v-area="'txnTag'" field-name="Txn Tags"
-                                        v-model:selected-option="txnWorkingCopy.currentData.value!.txnTag!" />
+                                        v-model:selected-option="txnWorkingCopy.currentData.value!.tagIds[0]" />
                         <custom-dropdown :options="selectableCurrenciesOptions"
                                         :class="{'disabled': !txnWorkingCopy.currentData.value!.fromContainer}"
                                         class="fullSize" v-area="'fromCurrency'" field-name="From Currency"

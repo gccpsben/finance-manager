@@ -1,8 +1,8 @@
-import { IsNotEmpty, IsOptional, IsString } from 'class-validator';
+import { IsArray, IsNotEmpty, IsOptional, IsString } from 'class-validator';
 import express from 'express';
 import { type PutTxnAPI, type GetTxnAPI, type PostTxnAPI } from '../../../../api-types/txn.js';
 import { AccessTokenService, InvalidLoginTokenError } from '../../db/services/accessToken.service.js';
-import { TransactionService, TxnMissingContainerOrCurrency, TxnMissingFromToAmountError } from '../../db/services/transaction.service.js';
+import { TransactionService, TxnMissingContainerOrCurrency, TxnMissingFromToAmountError, TxnNotFoundError } from '../../db/services/transaction.service.js';
 import { IsDecimalJSString, IsIntString, IsUTCDateInt } from '../../db/validators.js';
 import { OptionalPaginationAPIQueryRequest, PaginationAPIResponseClass } from '../pagination.js';
 import { TypesafeRouter } from '../typescriptRouter.js';
@@ -23,7 +23,7 @@ router.post<PostTxnAPI.ResponseDTO>("/api/v1/transactions",
             @IsString() @IsNotEmpty() title: string;
             @IsOptional() @IsUTCDateInt() creationDate?: number | undefined;
             @IsOptional() @IsString() description?: string | undefined;
-            @IsString() @IsNotEmpty() txnTagId: string;
+            @IsArray() @IsNotEmpty() tagIds: string[];
             @IsOptional() @IsDecimalJSString() fromAmount: string | undefined;
             @IsOptional() @IsString() fromContainerId: string | undefined;
             @IsOptional() @IsString() fromCurrencyId: string | undefined;
@@ -40,7 +40,7 @@ router.post<PostTxnAPI.ResponseDTO>("/api/v1/transactions",
             creationDate: parsedBody.creationDate ? parsedBody.creationDate : Date.now(),
             title: parsedBody.title,
             description: parsedBody.description ?? "",
-            txnTagId: parsedBody.txnTagId,
+            txnTagIds: parsedBody.tagIds,
             fromAmount: parsedBody.fromAmount,
             fromContainerId: parsedBody.fromContainerId,
             fromCurrencyId: parsedBody.fromCurrencyId,
@@ -68,7 +68,7 @@ router.put<PutTxnAPI.ResponseDTO>("/api/v1/transactions",
             @IsString() @IsNotEmpty() title: string;
             @IsOptional() @IsUTCDateInt() creationDate?: number | undefined;
             @IsOptional() @IsString() description?: string | undefined;
-            @IsString() @IsNotEmpty() txnTagId: string;
+            @IsArray() @IsNotEmpty() tagIds: string[];
             @IsOptional() @IsDecimalJSString() fromAmount: string | undefined;
             @IsOptional() @IsString() fromContainerId: string | undefined;
             @IsOptional() @IsString() fromCurrencyId: string | undefined;
@@ -92,7 +92,7 @@ router.put<PutTxnAPI.ResponseDTO>("/api/v1/transactions",
             creationDate: parsedBody.creationDate ? parsedBody.creationDate : Date.now(),
             title: parsedBody.title,
             description: parsedBody.description ?? "",
-            txnTagId: parsedBody.txnTagId,
+            tagIds: parsedBody.tagIds,
             fromAmount: parsedBody.fromAmount,
             fromContainerId: parsedBody.fromContainerId,
             fromCurrencyId: parsedBody.fromCurrencyId,
@@ -100,6 +100,13 @@ router.put<PutTxnAPI.ResponseDTO>("/api/v1/transactions",
             toContainerId: parsedBody.toContainerId,
             toCurrencyId: parsedBody.toCurrencyId
         });
+
+        if (updatedTxn instanceof UserNotFoundError) throw createHttpError(401);
+        if (updatedTxn instanceof TxnNotFoundError) throw createHttpError(404);
+        if (updatedTxn instanceof TxnTagNotFoundError) throw createHttpError(400, updatedTxn.message);
+        if (updatedTxn instanceof ContainerNotFoundError) throw createHttpError(400, updatedTxn.message);
+        if (updatedTxn instanceof TxnMissingFromToAmountError) throw createHttpError(400, updatedTxn.message);
+        if (updatedTxn instanceof TxnMissingContainerOrCurrency) throw createHttpError(400, updatedTxn.message);
 
         return {};
     }
@@ -150,12 +157,12 @@ router.get<GetTxnAPI.ResponseDTO>(`/api/v1/transactions`,
             startingIndex: response.startingIndex,
             rangeItems: response.rangeItems.map(item => (
             {
-                id: item.id,
+                id: item.id!,
                 title: item.title,
                 description: item.description ?? '',
                 owner: item.ownerId,
                 creationDate: item.creationDate,
-                txnTag: item.txnTagId,
+                tagIds: item.tagIds,
                 fromAmount: item.fromAmount ?? null,
                 fromCurrency: item.fromCurrencyId ?? null,
                 fromContainer: item.fromContainerId ?? null,

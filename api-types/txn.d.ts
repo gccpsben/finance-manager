@@ -6,7 +6,7 @@ export namespace PostTxnAPI
         title: string;
         creationDate?: number | null;
         description?: string | null;
-        txnTagId: string;
+        tagIds: string[];
         fromAmount?: string | null;
         fromContainerId?: string | null;
         fromCurrencyId?: string | null;
@@ -34,7 +34,7 @@ export namespace GetTxnAPI
         description: string;
         owner: string;
         creationDate: number;
-        txnTag: string;
+        tagIds: string[];
         fromAmount: string | null;
         fromCurrency: string | null;
         fromContainer: string | null;

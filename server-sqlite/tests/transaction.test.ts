@@ -21,7 +21,7 @@ export namespace GetTxnAPIClass
         @IsOptional() @IsString() description: string;
         @IsString() owner: string;
         @IsOptional() @IsUTCDateInt()  creationDate: number;
-        @IsString() txnTag: string;
+        @IsArray() tagIds: string[];
         @IsOptional() @IsDecimalJSString() fromAmount: string;
         @IsOptional() @IsString() fromCurrency: string;
         @IsOptional() @IsString() fromContainer: string;
@@ -50,7 +50,7 @@ export namespace PostTxnAPIClass
         @IsString() @IsNotEmpty() title: string;
         @IsOptional() @IsUTCDateInt() creationDate?: number | undefined;
         @IsOptional() @IsString() description?: string | undefined;
-        @IsString() txnTagId: string;
+        @IsArray() tagIds: string[];
         @IsOptional() @IsDecimalJSString() fromAmount?: string | undefined;
         @IsOptional() @IsString() fromContainerId?: string | undefined;
         @IsOptional() @IsString() fromCurrencyId?: string | undefined;
@@ -72,7 +72,7 @@ export namespace PutTxnAPIClass
         @IsString() @IsNotEmpty() title: string;
         @IsOptional() @IsUTCDateInt() creationDate?: number | undefined;
         @IsOptional() @IsString() description?: string | undefined;
-        @IsString() txnTagId: string;
+        @IsArray() tagIds: string[];
         @IsOptional() @IsDecimalJSString() fromAmount?: string | undefined;
         @IsOptional() @IsString() fromContainerId?: string | undefined;
         @IsOptional() @IsString() fromCurrencyId?: string | undefined;
@@ -124,7 +124,8 @@ export default async function(this: Context)
                 secCurrId: undefined as undefined | string,
                 secCurrAmountToBase: "7.1",
                 containerId: undefined as undefined | string,
-                txnTagId: undefined as undefined | string
+                txnTagId1: undefined as undefined | string,
+                txnTagId2: undefined as undefined | string
             };
 
             // Register base currency for first user
@@ -176,7 +177,20 @@ export default async function(this: Context)
                     token: firstUser.token,
                     assertBody: true
                 });
-                testContext.txnTagId = response.parsedBody.id;
+                testContext.txnTagId1 = response.parsedBody.id;
+            }).bind(this)();
+
+            // Register txn tag for first user
+            await (async function()
+            {
+                const response = await TxnTagHelpers.postCreateTxnTag(
+                {
+                    serverURL: serverURL,
+                    body: { name: `TxnType2` },
+                    token: firstUser.token,
+                    assertBody: true
+                });
+                testContext.txnTagId2 = response.parsedBody.id;
             }).bind(this)();
 
             await this.describe(`post`, async function()
@@ -187,7 +201,7 @@ export default async function(this: Context)
                     fromAmount: "200",
                     fromContainerId: testContext.containerId,
                     fromCurrencyId: testContext.baseCurrId,
-                    txnTagId: testContext.txnTagId
+                    tagIds: [testContext.txnTagId1]
                 } satisfies PostTxnAPIClass.RequestDTOClass;
 
                 for (const testCase of BodyGenerator.enumerateMissingField(baseObj, ["description", "creationDate"]))
@@ -258,7 +272,7 @@ export default async function(this: Context)
                         toAmount: "200",
                         toContainerId: testContext.containerId,
                         toCurrencyId: testContext.baseCurrId,
-                        txnTagId: testContext.txnTagId
+                        tagIds: [testContext.txnTagId1]
                     } satisfies PostTxnAPIClass.RequestDTOClass;
 
                     const createdTxn = await TransactionHelpers.postCreateTransaction(
@@ -286,6 +300,7 @@ export default async function(this: Context)
                     });
 
                     assertStrictEqual(txnCreated.parsedBody.rangeItems.length, 1);
+                    assertStrictEqual(txnCreated.parsedBody.rangeItems[0].tagIds[0], testContext.txnTagId1);
                     assertStrictEqual(txnCreated.parsedBody.rangeItems[0].id, createdTxnId);
                     assertStrictEqual(txnCreated.parsedBody.rangeItems[0].title, randTxnBaseBody.title);
                 });
@@ -306,7 +321,7 @@ export default async function(this: Context)
                             toAmount: undefined,
                             toContainerId: undefined,
                             toCurrencyId: undefined,
-                            txnTagId: testContext.txnTagId,
+                            tagIds: [testContext.txnTagId2],
                             creationDate: txnCreated.parsedBody.rangeItems[0].creationDate,
                             description: "changed desc",
                             title: "changed title",
@@ -329,7 +344,7 @@ export default async function(this: Context)
                     assertStrictEqual(txnAfterMutated.parsedBody.rangeItems[0].toAmount, null);
                     assertStrictEqual(txnAfterMutated.parsedBody.rangeItems[0].toContainer, null);
                     assertStrictEqual(txnAfterMutated.parsedBody.rangeItems[0].toCurrency, null);
-                    assertStrictEqual(txnAfterMutated.parsedBody.rangeItems[0].txnTag, testContext.txnTagId);
+                    assertStrictEqual(txnAfterMutated.parsedBody.rangeItems[0].tagIds[0], testContext.txnTagId2);
                     assertStrictEqual(txnAfterMutated.parsedBody.rangeItems[0].creationDate, txnCreated.parsedBody.rangeItems[0].creationDate);
                     assertStrictEqual(txnAfterMutated.parsedBody.rangeItems[0].description, "changed desc");
                     assertStrictEqual(txnAfterMutated.parsedBody.rangeItems[0].title, "changed title");
