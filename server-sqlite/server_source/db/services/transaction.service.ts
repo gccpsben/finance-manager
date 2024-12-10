@@ -352,7 +352,7 @@ export class TransactionService
     public static async getTransactions
     (
         userId: string,
-        config:
+        query:
         {
             startIndex?: number | undefined, endIndex?: number | undefined,
             startDate?: number | undefined, endDate?: number | undefined,
@@ -362,30 +362,31 @@ export class TransactionService
         } | undefined = undefined
     )
     {
-        let query = TransactionRepository.getInstance()
-        .createQueryBuilder(`txn`)
-        .loadAllRelationIds({ relations: [nameofT('tags')] })
-        .orderBy(`txn.${nameofT('creationDate')}`, "DESC")
-        .where(`${nameofT('ownerId')} = :ownerId`, { ownerId: userId });
+        const alias = "txn";
 
-        if (config?.id !== undefined)
-            query = query.andWhere(`txn.${nameofT('id')} == :target_id`, {target_id: `${config.id}`});
+        let sqlQuery = TransactionRepository.getInstance().createQueryBuilder(alias);
+        sqlQuery = sqlQuery.leftJoinAndSelect(`${alias}.${nameofT('tags')}`, "txn_tag")
+        sqlQuery = sqlQuery.orderBy(`${alias}.${nameofT('creationDate')}`, "DESC")
+        sqlQuery = sqlQuery.where(`${alias}.${nameofT('ownerId')} = :ownerId`, { ownerId: userId });
 
-        if (config?.title !== undefined)
-            query = query.andWhere(`txn.${nameofT('title')} LIKE :title`, { title: `%${config.title}%` });
+        if (query?.id !== undefined)
+            sqlQuery = sqlQuery.andWhere(`${alias}.${nameofT('id')} == :target_id`, {target_id: `${query.id}`});
 
-        if (config?.description !== undefined)
-            query = query.andWhere(`txn.${nameofT('description')} LIKE :description`, { description: `%${config.description}%` });
+        if (query?.title !== undefined)
+            sqlQuery = sqlQuery.andWhere(`${alias}.${nameofT('title')} LIKE :title`, { title: `%${query.title}%` });
 
-        if (config?.startDate)
-            query = query.andWhere(`${nameofT('creationDate')} >= :startDate`, { startDate: config.startDate });
+        if (query?.description !== undefined)
+            sqlQuery = sqlQuery.andWhere(`${alias}.${nameofT('description')} LIKE :description`, { description: `%${query.description}%` });
 
-        if (config?.endDate)
-            query = query.andWhere(`${nameofT('creationDate')} <= :endDate`, { endDate: config.endDate });
+        if (query?.startDate)
+            sqlQuery = sqlQuery.andWhere(`${nameofT('creationDate')} >= :startDate`, { startDate: query.startDate });
 
-        query = ServiceUtils.paginateQuery(query, config ?? {});
+        if (query?.endDate)
+            sqlQuery = sqlQuery.andWhere(`${nameofT('creationDate')} <= :endDate`, { endDate: query.endDate });
 
-        const queryResult = await query.getManyAndCount();
+        sqlQuery = ServiceUtils.paginateQuery(sqlQuery, query ?? {});
+
+        const queryResult = await sqlQuery.getManyAndCount();
 
         // Check if id are all defined.
         if (queryResult[0].some(x => !x.id))
@@ -405,7 +406,7 @@ export class TransactionService
                 toAmount: x.toAmount,
                 toContainerId: x.toContainerId,
                 toCurrencyId: x.toCurrencyId,
-                tagIds: x.tags as string[]
+                tagIds: (x.tags as { id: string }[]).map(x => x.id) ?? []
             })),
         };
     }
