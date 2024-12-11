@@ -1,6 +1,6 @@
 import { UnitTestEndpoints } from "../../index.test.js";
 import { HTTPAssert } from "../../lib/assert.js";
-import { GetUserBalanceHistoryAPIClass, GetUserNetworthHistoryAPIClass, ResponseGetExpensesAndIncomesDTOClass } from "./classes.js";
+import { GetExpensesAndIncomesAPIClass, GetUserBalanceHistoryAPIClass, GetUserNetworthHistoryAPIClass } from "./classes.js";
 
 export namespace CalculationsHelpers
 {
@@ -9,17 +9,24 @@ export namespace CalculationsHelpers
         serverURL:string,
         token:string,
         assertBody?: boolean,
-        expectedCode?: number
+        expectedCode?: number,
+        currentMonthStartEpoch: number,
+        currentWeekStartEpoch: number
     })
     {
+        const searchParams = new URLSearchParams(
+        {
+            "currentMonthStartEpoch": `${config.currentMonthStartEpoch}`,
+            "currentWeekStartEpoch": `${config.currentWeekStartEpoch}`,
+        });
         const assertBody = config.assertBody === undefined ? true : config.assertBody;
         const response = await HTTPAssert.assertFetch
         (
-            UnitTestEndpoints.calculationsEndpoints['expensesAndIncomes'],
+            `${UnitTestEndpoints.calculationsEndpoints['expensesAndIncomes']}?${searchParams.toString()}`,
             {
                 baseURL: config.serverURL, expectedStatus: config.expectedCode, method: "GET",
                 headers: { "authorization": config.token },
-                expectedBodyType: assertBody ? ResponseGetExpensesAndIncomesDTOClass : undefined,
+                expectedBodyType: assertBody ? GetExpensesAndIncomesAPIClass.ResponseDTO : undefined,
             }
         );
         return {

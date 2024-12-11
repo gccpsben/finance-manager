@@ -43,6 +43,8 @@ export default async function(this: Context)
                         const containers = await ContainerHelpers.postRandomContainers({ ...baseConfig, containerCount: 3 });
                         const baseCurrency = await CurrencyHelpers.postCreateCurrency({ ...baseConfig, body: { name: "BASE", ticker: "BASE" } });
 
+                        const currentMonthStartEpoch = transformOffsetDate(30);
+                        const currentWeekStartEpoch = transformOffsetDate(7);
                         const txnsToPost: { toAmount: Decimal|undefined, fromAmount: Decimal|undefined, txnAgeDays: number }[] =
                         [
                             { fromAmount: undefined              , toAmount: new Decimal(`100.0001`), txnAgeDays: 90  },
@@ -62,7 +64,11 @@ export default async function(this: Context)
                             expenses30d: new Decimal(`12769.3001`),
                             incomes30d: new Decimal(`164022`),
                             expenses7d: new Decimal(`12769.3`),
-                            incomes7d: new Decimal(`164022`)
+                            incomes7d: new Decimal(`164022`),
+                            expensesWeek: new Decimal(`12769.3`),
+                            incomesWeek: new Decimal(`164022`),
+                            expensesMonth: new Decimal(`12769.3001`),
+                            incomesMonth: new Decimal(`164022`),
                         };
 
                         for (const txnToPost of txnsToPost)
@@ -94,12 +100,22 @@ export default async function(this: Context)
                             });
                         }
 
-                        const userExpensesAndIncomes = await CalculationsHelpers.getUserExpensesAndIncomes(baseConfig);
+                        const userExpensesAndIncomes = await CalculationsHelpers.getUserExpensesAndIncomes
+                        (
+                            {
+                                ...baseConfig,
+                                currentMonthStartEpoch: currentMonthStartEpoch,
+                                currentWeekStartEpoch: currentWeekStartEpoch
+                            }
+                        );
 
                         assertStrictEqual(userExpensesAndIncomes.res.parsedBody.expenses30d.toString(), expectedResult.expenses30d.toString());
                         assertStrictEqual(userExpensesAndIncomes.res.parsedBody.expenses7d.toString(), expectedResult.expenses7d.toString());
                         assertStrictEqual(userExpensesAndIncomes.res.parsedBody.incomes30d.toString(), expectedResult.incomes30d.toString());
                         assertStrictEqual(userExpensesAndIncomes.res.parsedBody.incomes7d.toString(), expectedResult.incomes7d.toString());
+                        assertStrictEqual(userExpensesAndIncomes.res.parsedBody.incomesCurrentMonth.toString(), expectedResult.incomesMonth.toString());
+                        assertStrictEqual(userExpensesAndIncomes.res.parsedBody.incomesCurrentWeek.toString(), expectedResult.incomesWeek.toString());
+                        assertStrictEqual(userExpensesAndIncomes.res.parsedBody.expensesCurrentMonth.toString(), expectedResult.expensesMonth.toString());
                     }
                 }, { timeout: 60000 });
             })

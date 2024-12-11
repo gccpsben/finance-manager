@@ -1,4 +1,4 @@
-import { GetUserBalanceHistoryAPI, GetUserNetworthHistoryAPI, ResponseGetExpensesAndIncomesDTO } from "../../../../api-types/calculations.js";
+import { GetExpensesAndIncomesAPI, GetUserBalanceHistoryAPI, GetUserNetworthHistoryAPI } from "../../../../api-types/calculations.js";
 import { isDecimalJSString, IsDecimalJSString, IsEpochKeyedMap, IsPassing } from "../../../server_source/db/validators.js";
 
 export namespace GetUserBalanceHistoryAPIClass
@@ -36,10 +36,17 @@ export namespace GetUserNetworthHistoryAPIClass
     }
 }
 
-export class ResponseGetExpensesAndIncomesDTOClass implements ResponseGetExpensesAndIncomesDTO
+export namespace GetExpensesAndIncomesAPIClass
 {
-    @IsDecimalJSString() expenses30d: string;
-    @IsDecimalJSString() incomes30d: string;
-    @IsDecimalJSString() expenses7d: string;
-    @IsDecimalJSString() incomes7d: string;
+    export class ResponseDTO implements GetExpensesAndIncomesAPI.ResponseDTO
+    {
+        @IsDecimalJSString() expensesCurrentWeek: string;
+        @IsDecimalJSString() incomesCurrentWeek: string;
+        @IsDecimalJSString() expensesCurrentMonth: string;
+        @IsDecimalJSString() incomesCurrentMonth: string;
+        @IsDecimalJSString() expenses30d: string;
+        @IsDecimalJSString() incomes30d: string;
+        @IsDecimalJSString() expenses7d: string;
+        @IsDecimalJSString() incomes7d: string;
+    }
 }

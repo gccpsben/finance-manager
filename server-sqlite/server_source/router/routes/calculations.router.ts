@@ -2,10 +2,10 @@ import express from 'express';
 import { AccessTokenService } from '../../db/services/accessToken.service.js';
 import { TypesafeRouter } from '../typescriptRouter.js';
 import { CalculationsService } from '../../db/services/calculations.service.js';
-import { GetUserBalanceHistoryAPI, GetUserNetworthHistoryAPI, type ResponseGetExpensesAndIncomesDTO } from '../../../../api-types/calculations.js';
+import { GetExpensesAndIncomesAPI, GetUserBalanceHistoryAPI, GetUserNetworthHistoryAPI } from '../../../../api-types/calculations.js';
 import { ServiceUtils } from '../../db/servicesUtils.js';
 import { IsPositiveIntString, IsUTCDateIntString } from '../../db/validators.js';
-import { IsOptional } from 'class-validator';
+import { IsNotEmpty, IsOptional } from 'class-validator';
 import { ExpressValidations } from '../validation.js';
 import { TransactionService } from '../../db/services/transaction.service.js';
 import { InvalidLoginTokenError } from '../../db/services/accessToken.service.js';
@@ -15,7 +15,7 @@ import { ArgsComparisonError, ConstantComparisonError } from '../../std_errors/a
 
 const router = new TypesafeRouter(express.Router());
 
-router.get<ResponseGetExpensesAndIncomesDTO>("/api/v1/calculations/expensesAndIncomes",
+router.get<GetExpensesAndIncomesAPI.ResponseDTO>("/api/v1/calculations/expensesAndIncomes",
 {
     handler: async (req:express.Request, res:express.Response) =>
     {
@@ -23,15 +23,26 @@ router.get<ResponseGetExpensesAndIncomesDTO>("/api/v1/calculations/expensesAndIn
         const authResults = await AccessTokenService.validateRequestTokenValidated(req, now);
         if (authResults instanceof InvalidLoginTokenError) throw createHttpError(401);
 
+        class query implements GetExpensesAndIncomesAPI.RequestQueryDTO
+        {
+            @IsNotEmpty() @IsUTCDateIntString() currentMonthStartEpoch: string;
+            @IsNotEmpty() @IsUTCDateIntString() currentWeekStartEpoch: string;
+        }
+        const parsedQuery = await ExpressValidations.validateBodyAgainstModel<query>(query, req.query);
+
         const _30dKey = "30d";
         const _7dKey = "7d";
+        const _currentWeekKey = "week";
+        const _currentMonthKey = "month";
 
         const calResults = await CalculationsService.getExpensesAndIncomesOfTimeRanges
         (
             authResults.ownerUserId,
             {
                 [_30dKey]: { epoch: now - 2.592e+9, mode: 'AT_OR_AFTER' },
-                [_7dKey]: { epoch: now - 6.048e+8, mode: 'AT_OR_AFTER' }
+                [_7dKey]: { epoch: now - 6.048e+8, mode: 'AT_OR_AFTER' },
+                [_currentMonthKey]: { epoch: parseInt(parsedQuery.currentMonthStartEpoch), mode: 'AT_OR_AFTER' },
+                [_currentWeekKey]: { epoch: parseInt(parsedQuery.currentWeekStartEpoch), mode: 'AT_OR_AFTER' }
             },
             now
         );
@@ -39,7 +50,11 @@ router.get<ResponseGetExpensesAndIncomesDTO>("/api/v1/calculations/expensesAndIn
             expenses30d: calResults[_30dKey].expenses.toString(),
             incomes30d: calResults[_30dKey].incomes.toString(),
             expenses7d: calResults[_7dKey].expenses.toString(),
-            incomes7d: calResults[_7dKey].incomes.toString()
+            incomes7d: calResults[_7dKey].incomes.toString(),
+            expensesCurrentMonth: calResults[_currentMonthKey].expenses.toString(),
+            incomesCurrentMonth: calResults[_currentMonthKey].incomes.toString(),
+            expensesCurrentWeek: calResults[_currentWeekKey].expenses.toString(),
+            incomesCurrentWeek: calResults[_currentWeekKey].incomes.toString(),
         }
     }
 });

@@ -1,11 +1,23 @@
-export type GetExpensesAndIncomesDTO = { };
-export type ResponseGetExpensesAndIncomesDTO =
+export namespace GetExpensesAndIncomesAPI
 {
-    expenses30d: string;
-    incomes30d: string;
-    expenses7d: string;
-    incomes7d: string
-};
+    export type RequestQueryDTO =
+    {
+        currentMonthStartEpoch: string;
+        currentWeekStartEpoch: string;
+    };
+
+    export type ResponseDTO =
+    {
+        expenses30d: string;
+        incomes30d: string;
+        expenses7d: string;
+        incomes7d: string
+        expensesCurrentWeek: string;
+        incomesCurrentWeek: string
+        expensesCurrentMonth: string;
+        incomesCurrentMonth: string
+    };
+}
 
 export namespace GetUserBalanceHistoryAPI
 {
