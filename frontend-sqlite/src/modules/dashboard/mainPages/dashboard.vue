@@ -17,6 +17,9 @@
                             <template #tipsContent>
                                 <div>Sum of value change of all transactions that incurred negative change in value.</div>
                                 <div>Currencies rate at the time of the transaction will be used for calculations.</div>
+                                <br />
+                                <div>Choosing 'M' counts all transactions after the start of the current month ({{ formatDate(new Date(getCurrentMonthStartEpoch())) }}).</div>
+                                <div>Choosing 'W' counts all transactions after the start of the current week ({{ formatDate(new Date(getStartOfWeekEpoch())) }}).</div>
                             </template>
                         </TipsIconTitle>
                     </template>
@@ -33,6 +36,9 @@
                             <template #tipsContent>
                                 <div>Sum of value change of all transactions that incurred positive change in value.</div>
                                 <div>Currencies rate at the time of the transaction will be used for calculations.</div>
+                                <br />
+                                <div>Choosing 'M' counts all transactions after the start of the current month ({{ formatDate(new Date(getCurrentMonthStartEpoch())) }}).</div>
+                                <div>Choosing 'W' counts all transactions after the start of the current week ({{ formatDate(new Date(getStartOfWeekEpoch())) }}).</div>
                             </template>
                         </TipsIconTitle>
                     </template>
@@ -245,7 +251,7 @@ import numberCell from "@/modules/core/components/data-display/NumberCell.vue";
 import NetworthHistoryCell from "../components/NetworthHistoryCell.vue";
 import { useNetworthHistoryStore } from "@/modules/charts/stores/networthHistoryStore";
 import { Uncontrolled } from "@/modules/core/utils/defineProperty";
-import { getDateAge } from "@/modules/core/utils/date";
+import { formatDate, getCurrentMonthStartEpoch, getDateAge, getStartOfWeekEpoch } from "@/modules/core/utils/date";
 import TxnTooltip from "@/modules/transactions/components/TxnTooltip.vue";
 import ListCell from "@/modules/core/components/data-display/ListCell.vue";
 import TipsIcon from "@/modules/core/components/data-display/TipsIcon.vue";
@@ -409,18 +415,22 @@ export default
         },
         userExpenses()
         {
-            if (!this.store.userExpensesIncomes?.lastSuccessfulData) return { '30d': 0, '7d': 0 };
+            if (!this.store.userExpensesIncomes?.lastSuccessfulData) return { '30d': 0, '7d': 0, 'M': 0, 'W': 0 };
             return {
                 '30d': parseFloat(this.store.userExpensesIncomes.lastSuccessfulData.expenses30d),
                 '7d': parseFloat(this.store.userExpensesIncomes.lastSuccessfulData.expenses7d),
+                "M": parseFloat(this.store.userExpensesIncomes.lastSuccessfulData.expensesCurrentMonth),
+                "W": parseFloat(this.store.userExpensesIncomes.lastSuccessfulData.expensesCurrentWeek),
             };
         },
         userIncomes()
         {
-            if (!this.store.userExpensesIncomes?.lastSuccessfulData) return { '30d': 0, '7d': 0 };
+            if (!this.store.userExpensesIncomes?.lastSuccessfulData) return { '30d': 0, '7d': 0, 'M': 0, 'W': 0 };
             return {
                 '30d': parseFloat(this.store.userExpensesIncomes.lastSuccessfulData.incomes30d),
                 '7d': parseFloat(this.store.userExpensesIncomes.lastSuccessfulData.incomes7d),
+                "M": parseFloat(this.store.userExpensesIncomes.lastSuccessfulData.incomesCurrentMonth),
+                "W": parseFloat(this.store.userExpensesIncomes.lastSuccessfulData.incomesCurrentWeek),
             };
         },
         expenseTxns30d()
@@ -447,21 +457,13 @@ export default
             return txn.changeInValue.toFixed(3) + ' HKD';
         },
         getDateAge(epoch: number) { return getDateAge(epoch) },
-        // getContainerTooltip(container: ValueHydratedContainer)
-        // {
-        //     if (container == undefined) return "";
-        //     let output = "";
-        //     for (let [key, value] of Object.entries(container.balance))
-        //     {
-        //         let currency = (this.store.currencies.lastSuccessfulData ?? []).find(curr => curr.id == key);
-        //         output += `${currency?.ticker}: ${(value as any).toFixed(3)}\n`;
-        //     }
-        //     return output;
-        // },
         viewTxn(id:string)
         {
             router.push({name: 'singleTransaction', params: { id: id }})
-        }
+        },
+        formatDate: formatDate,
+        getCurrentMonthStartEpoch: getCurrentMonthStartEpoch,
+        getStartOfWeekEpoch: getStartOfWeekEpoch
     }
 }
 </script>

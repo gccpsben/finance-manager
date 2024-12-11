@@ -4,9 +4,10 @@ import type { DashboardSummary } from '@/types/dtos/dashboardSummaryDTO';
 import axios, { AxiosError } from 'axios';
 import { defineStore } from 'pinia';
 import type { GraphsSummary } from '@/types/dtos/graphsSummaryDTO';
-import type { ResponseGetExpensesAndIncomesDTO } from "@/../../api-types/calculations";
 import type { GetTxnAPI } from '../../../../../api-types/txn';
 import router from '@/router';
+import { getCurrentMonthStartEpoch, getStartOfWeekEpoch } from '../utils/date';
+import type { GetExpensesAndIncomesAPI } from '../../../../../api-types/calculations';
 
 export type Subpage = { name: string; }
 
@@ -68,14 +69,23 @@ export const useMainStore = defineStore(
                     iconClass: "fa fa-inbox"
                 }
             ] as PageDefinition[],
-            userExpensesIncomes: useNetworkRequest<ResponseGetExpensesAndIncomesDTO>(API_USER_INCOMES_EXPENSES_PATH, { includeAuthHeaders: true, updateOnMount: false }),
+            userExpensesIncomes: useNetworkRequest<GetExpensesAndIncomesAPI.ResponseDTO>
+            (
+                `${API_USER_INCOMES_EXPENSES_PATH}?${new URLSearchParams(
+                {
+                    currentMonthStartEpoch: `${getCurrentMonthStartEpoch()}`,
+                    currentWeekStartEpoch: `${getStartOfWeekEpoch()}`,
+                })}`,
+                {
+                    includeAuthHeaders: true,
+                    updateOnMount: false,
+                }
+            ),
             dashboardSummary: useNetworkRequest<DashboardSummary>(API_SUMMARY_PATH, { includeAuthHeaders: true, updateOnMount: false }),
             graphsSummary: useNetworkRequest<GraphsSummary>(API_GRAPHS_PATH, { includeAuthHeaders: true, updateOnMount: false }),
             balanceValueHistory: useNetworkRequest<BalanceValueHistoryAPIResponse>(API_BAL_VAL_PATH, { includeAuthHeaders: true, updateOnMount: false }),
 
             txns30d: useNetworkRequest<GetTxnAPI.ResponseDTO>(`${API_TRANSACTIONS_PATH}?startDate=${Date.now() - 2.628e+9}`, { includeAuthHeaders: true, updateOnMount: false }),
-            // containers: useNetworkRequest<GetContainerAPI.ResponseDTO>(API_CONTAINERS_PATH, { includeAuthHeaders: true }),
-            // txnTypes: useNetworkRequest<GetTxnTypesAPI.ResponseDTO>(API_TXN_TYPES_PATH, { includeAuthHeaders: true }),
             netWorthHistory: useNetworkRequest<NetWorthAPIResponse>(API_NET_WORTH_GRAPH_PATH, { includeAuthHeaders: true, updateOnMount: false }),
             lastUpdateTime: new Date(0) as Date,
             mainViewSidebarVisible: true

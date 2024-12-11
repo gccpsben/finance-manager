@@ -101,3 +101,42 @@ export function getDateAgeFullComponents(
         };
     }
 }
+
+/** Get the epoch of the first day of the current month of a given timezone (fallback to system timezone). */
+export function getCurrentMonthStartEpoch(timezone?: string)
+{
+    // Get the current date
+    const now = new Date();
+
+    // Create a new date object for the first day of the current month
+    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+
+    // Convert to the specified timezone
+    const options = { timeZone: timezone };
+    const startOfMonthInLocalTime = new Date(startOfMonth.toLocaleString('en-US', options));
+
+    // Return the epoch time in milliseconds
+    return startOfMonthInLocalTime.getTime();
+}
+
+export function getStartOfWeekEpoch(timezone?: string): number
+{
+    // Get the current date
+    const now = new Date();
+
+    // Get the current day of the week (0 = Sunday, 1 = Monday, ..., 6 = Saturday)
+    const dayOfWeek = now.getUTCDay();
+
+    // Calculate the number of days to subtract to get to the previous Monday
+    const daysToSubtract = (dayOfWeek + 6) % 7; // Adjust to start week on Monday
+
+    // Create a new date object for the start of the week (previous Monday)
+    const startOfWeek = new Date(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate() - daysToSubtract);
+
+    // Convert to the specified timezone
+    const options = { timeZone: timezone, hour12: false };
+    const startOfWeekInLocalTime = new Date(startOfWeek.toLocaleString('en-US', options));
+
+    // Return the epoch time in milliseconds
+    return startOfWeekInLocalTime.getTime();
+};
