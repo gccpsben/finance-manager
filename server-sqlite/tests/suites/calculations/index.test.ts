@@ -74,16 +74,21 @@ export default async function(this: Context)
                             {
                                 body:
                                 {
-                                    title: randomUUID(),
-                                    creationDate: transformOffsetDate(txnToPost.txnAgeDays),
-                                    description: simpleFaker.string.sample(100),
-                                    fromAmount: isFrom ? txnToPost.fromAmount.toString() : undefined,
-                                    fromContainerId: isFrom ? choice(containers).containerId : undefined,
-                                    fromCurrencyId: isFrom ? baseCurrency.currencyId : undefined,
-                                    toAmount: isTo ? txnToPost.toAmount.toString() : undefined,
-                                    toContainerId: isTo ? choice(containers).containerId : undefined,
-                                    toCurrencyId: isTo ? baseCurrency.currencyId : undefined,
-                                    tagIds: [choice(txnTypes).txnId]
+                                    transactions:
+                                    [
+                                        {
+                                            title: randomUUID(),
+                                            creationDate: transformOffsetDate(txnToPost.txnAgeDays),
+                                            description: simpleFaker.string.sample(100),
+                                            fromAmount: isFrom ? txnToPost.fromAmount.toString() : undefined,
+                                            fromContainerId: isFrom ? choice(containers).containerId : undefined,
+                                            fromCurrencyId: isFrom ? baseCurrency.currencyId : undefined,
+                                            toAmount: isTo ? txnToPost.toAmount.toString() : undefined,
+                                            toContainerId: isTo ? choice(containers).containerId : undefined,
+                                            toCurrencyId: isTo ? baseCurrency.currencyId : undefined,
+                                            tagIds: [choice(txnTypes).txnId]
+                                        }
+                                    ]
                                 },
                                 ...baseConfig
                             });
@@ -142,16 +147,21 @@ export default async function(this: Context)
                     {
                         body:
                         {
-                            title: randomUUID(),
-                            creationDate: transformOffsetDate(txnToPost.txnAgeDays),
-                            description: simpleFaker.string.sample(100),
-                            fromAmount: isFrom ? txnToPost.fromAmount : undefined,
-                            fromContainerId: isFrom ? txnToPost.conId : undefined,
-                            fromCurrencyId: isFrom ? txnToPost.currId : undefined,
-                            toAmount: isTo ? txnToPost.toAmount : undefined,
-                            toContainerId: isTo ? txnToPost.conId : undefined,
-                            toCurrencyId: isTo ? txnToPost.currId : undefined,
-                            tagIds: [choice(txnTypes).txnId]
+                            transactions:
+                            [
+                                {
+                                    title: randomUUID(),
+                                    creationDate: transformOffsetDate(txnToPost.txnAgeDays),
+                                    description: simpleFaker.string.sample(100),
+                                    fromAmount: isFrom ? txnToPost.fromAmount : undefined,
+                                    fromContainerId: isFrom ? txnToPost.conId : undefined,
+                                    fromCurrencyId: isFrom ? txnToPost.currId : undefined,
+                                    toAmount: isTo ? txnToPost.toAmount : undefined,
+                                    toContainerId: isTo ? txnToPost.conId : undefined,
+                                    toCurrencyId: isTo ? txnToPost.currId : undefined,
+                                    tagIds: [choice(txnTypes).txnId]
+                                }
+                            ]
                         },
                         serverURL: serverURL, token: firstUserObj.token, assertBody: true, expectedCode: 200
                     }
@@ -328,16 +338,21 @@ export default async function(this: Context)
                     {
                         body:
                         {
-                            title: randomUUID(),
-                            creationDate: transformOffsetDate(txnToPost.txnAgeDays),
-                            description: simpleFaker.string.sample(100),
-                            fromAmount: isFrom ? txnToPost.fromAmount : undefined,
-                            fromContainerId: isFrom ? txnToPost.conId : undefined,
-                            fromCurrencyId: isFrom ? txnToPost.currId : undefined,
-                            toAmount: isTo ? txnToPost.toAmount : undefined,
-                            toContainerId: isTo ? txnToPost.conId : undefined,
-                            toCurrencyId: isTo ? txnToPost.currId : undefined,
-                            tagIds: [choice(txnTypes).txnId]
+                            transactions:
+                            [
+                                {
+                                    title: randomUUID(),
+                                    creationDate: transformOffsetDate(txnToPost.txnAgeDays),
+                                    description: simpleFaker.string.sample(100),
+                                    fromAmount: isFrom ? txnToPost.fromAmount : undefined,
+                                    fromContainerId: isFrom ? txnToPost.conId : undefined,
+                                    fromCurrencyId: isFrom ? txnToPost.currId : undefined,
+                                    toAmount: isTo ? txnToPost.toAmount : undefined,
+                                    toContainerId: isTo ? txnToPost.conId : undefined,
+                                    toCurrencyId: isTo ? txnToPost.currId : undefined,
+                                    tagIds: [choice(txnTypes).txnId]
+                                }
+                            ]
                         },
                         serverURL: serverURL, token: firstUserObj.token, assertBody: true, expectedCode: 200
                     }

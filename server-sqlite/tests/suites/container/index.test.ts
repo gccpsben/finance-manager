@@ -227,16 +227,21 @@ export default async function(this: Context)
                         {
                             body:
                             {
-                                title: randomUUID(),
-                                creationDate: Date.now() - txnToPost.txnAgeDays * 8.64e+7,
-                                description: simpleFaker.string.sample(100),
-                                fromAmount: isFrom ? txnToPost.fromAmount.toString() : undefined,
-                                fromContainerId: isFrom ? txnToPost.fromContainerId : undefined,
-                                fromCurrencyId: isFrom ? txnToPost.fromCurrencyID : undefined,
-                                toAmount: isTo ? txnToPost.toAmount.toString() : undefined,
-                                toContainerId: isTo ? txnToPost.toContainerId : undefined,
-                                toCurrencyId: isTo ? txnToPost.toCurrencyID : undefined,
-                                tagIds: [choice(txnTypes).txnId]
+                                transactions:
+                                [
+                                    {
+                                        title: randomUUID(),
+                                        creationDate: Date.now() - txnToPost.txnAgeDays * 8.64e+7,
+                                        description: simpleFaker.string.sample(100),
+                                        fromAmount: isFrom ? txnToPost.fromAmount.toString() : undefined,
+                                        fromContainerId: isFrom ? txnToPost.fromContainerId : undefined,
+                                        fromCurrencyId: isFrom ? txnToPost.fromCurrencyID : undefined,
+                                        toAmount: isTo ? txnToPost.toAmount.toString() : undefined,
+                                        toContainerId: isTo ? txnToPost.toContainerId : undefined,
+                                        toCurrencyId: isTo ? txnToPost.toCurrencyID : undefined,
+                                        tagIds: [choice(txnTypes).txnId]
+                                    }
+                                ]
                             },
                             serverURL: serverURL,
                             token: userObj.token,

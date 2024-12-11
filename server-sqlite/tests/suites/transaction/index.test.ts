@@ -126,7 +126,7 @@ export default async function(this: Context)
                     fromContainerId: testContext.containerId,
                     fromCurrencyId: testContext.baseCurrId,
                     tagIds: [testContext.txnTagId1]
-                } satisfies PostTxnAPIClass.RequestDTOClass;
+                } satisfies PostTxnAPIClass.RequestItemDTOClass;
 
                 for (const testCase of BodyGenerator.enumerateMissingField(baseObj, ["description", "creationDate"]))
                 {
@@ -135,7 +135,8 @@ export default async function(this: Context)
                         await TransactionHelpers.postCreateTransaction(
                         {
                             serverURL: serverURL,
-                            body: { ...testCase.obj },
+                            // @ts-expect-error
+                            body: { transactions: [ testCase.obj ] },
                             token: firstUser.token,
                             assertBody: false,
                             expectedCode: 400
@@ -148,7 +149,7 @@ export default async function(this: Context)
                     await TransactionHelpers.postCreateTransaction(
                     {
                        serverURL: serverURL,
-                       body: { ...baseObj, description: undefined },
+                       body: { transactions: [ { ...baseObj, description: undefined } ] },
                        token: firstUser.token,
                        assertBody: true,
                        expectedCode: 200
@@ -160,7 +161,7 @@ export default async function(this: Context)
                     await TransactionHelpers.postCreateTransaction(
                     {
                         serverURL: serverURL,
-                        body: { ...baseObj, creationDate: undefined },
+                        body: { transactions: [ { ...baseObj, creationDate: undefined } ] },
                         token: firstUser.token,
                         assertBody: true,
                         expectedCode: 200
@@ -171,12 +172,69 @@ export default async function(this: Context)
                 {
                     await TransactionHelpers.postCreateTransaction(
                     {
-                        serverURL: serverURL,
-                        body: baseObj,
-                        token: firstUser.token,
-                        assertBody: true,
-                        expectedCode: 200
+                        serverURL: serverURL, body: { transactions: [ baseObj ] },
+                        token: firstUser.token, assertBody: true, expectedCode: 200
                     });
+                });
+
+                await this.test(`Allow creating transactions in batch with valid body and token`, async function()
+                {
+                    const allTxnBeforeBatchPOST = await TransactionHelpers.getTransaction(
+                    {
+                        serverURL: serverURL, token: firstUser.token,
+                        assertBody: true, expectedCode: 200,
+                    });
+
+                    const response = await TransactionHelpers.postCreateTransaction(
+                    {
+                        serverURL: serverURL, body: { transactions: [ baseObj, baseObj, baseObj ] },
+                        token: firstUser.token, assertBody: true, expectedCode: 200
+                    });
+
+                    const allTxnAfterBatchPOST = await TransactionHelpers.getTransaction(
+                    {
+                        serverURL: serverURL, token: firstUser.token,
+                        assertBody: true, expectedCode: 200,
+                    });
+
+                    // Assert that extra 3 txns are added
+                    assertStrictEqual(allTxnAfterBatchPOST.parsedBody.rangeItems.length - allTxnBeforeBatchPOST.parsedBody.rangeItems.length, 3);
+                });
+
+                await this.test(`Test if transactional query is working in creating txns in batch `, async function()
+                {
+                    const txnCountBeforeBatchPOST = (await TransactionHelpers.getTransaction(
+                    {
+                        serverURL: serverURL, token: firstUser.token,
+                        assertBody: true, expectedCode: 200,
+                    })).parsedBody.rangeItems.length;
+
+                    await TransactionHelpers.postCreateTransaction(
+                    {
+                        serverURL: serverURL,token: firstUser.token, assertBody: false, expectedCode: 400,
+                        body:
+                        {
+                            transactions:
+                            [
+                                baseObj,
+                                baseObj,
+                                {
+                                    ...baseObj,
+                                    // @ts-expect-error
+                                    creationDate: "this value should fail validations"
+                                }
+                            ]
+                        }
+                    });
+
+                    const txnCountAfterBatchPOST = (await TransactionHelpers.getTransaction(
+                    {
+                        serverURL: serverURL, token: firstUser.token,
+                        assertBody: true, expectedCode: 200,
+                    })).parsedBody.rangeItems.length;
+
+                    // Assert that no txns are added
+                    assertStrictEqual(txnCountBeforeBatchPOST - txnCountAfterBatchPOST, 0);
                 });
             });
 
@@ -197,18 +255,18 @@ export default async function(this: Context)
                         toContainerId: testContext.containerId,
                         toCurrencyId: testContext.baseCurrId,
                         tagIds: [testContext.txnTagId1]
-                    } satisfies PostTxnAPIClass.RequestDTOClass;
+                    } satisfies PostTxnAPIClass.RequestItemDTOClass;
 
                     const createdTxn = await TransactionHelpers.postCreateTransaction(
                     {
                         serverURL: serverURL,
-                        body: baseObj,
+                        body: { transactions: [ baseObj ] },
                         token: firstUser.token,
                         assertBody: true,
                         expectedCode: 200
                     });
 
-                    createdTxnId = createdTxn.parsedBody.id;
+                    createdTxnId = createdTxn.parsedBody.id[0];
                 });
 
                 let txnCreated: AssertFetchReturns<GetTxnAPI.ResponseDTO>;

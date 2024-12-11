@@ -1,7 +1,7 @@
 import { PaginationAPIResponse } from "./lib"
 export namespace PostTxnAPI
 {
-    export type RequestDTO =
+    export type RequestItemDTO =
     {
         title: string;
         creationDate?: number | null;
@@ -15,13 +15,18 @@ export namespace PostTxnAPI
         toCurrencyId?: string | null;
     };
 
-    export type ResponseDTO = { id: string; };
+    export type RequestDTO =
+    {
+        transactions: RequestItemDTO[]
+    };
+
+    export type ResponseDTO = { id: string[]; };
 }
 
 export namespace PutTxnAPI
 {
     export type RequestQueryDTO = { targetTxnId: string; };
-    export type RequestBodyDTO = PostTxnAPI.RequestDTO;
+    export type RequestBodyDTO = PostTxnAPI.RequestItemDTO;
     export type ResponseDTO = { };
 }
 

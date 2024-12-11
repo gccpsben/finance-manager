@@ -36,7 +36,7 @@ export namespace GetTxnAPIClass
 
 export namespace PostTxnAPIClass
 {
-    export class RequestDTOClass implements PostTxnAPI.RequestDTO
+    export class RequestItemDTOClass implements PostTxnAPI.RequestItemDTO
     {
         @IsString() @IsNotEmpty() title: string;
         @IsOptional() @IsUTCDateInt() creationDate?: number | undefined;
@@ -50,9 +50,17 @@ export namespace PostTxnAPIClass
         @IsOptional() @IsString() toCurrencyId?: string | undefined;
     }
 
+    export class RequestDTOClass implements PostTxnAPI.RequestDTO
+    {
+        @IsArray()
+        @ValidateNested({ each: true })
+        @Type(() => RequestItemDTOClass)
+        transactions: RequestItemDTOClass[];
+    }
+
     export class ResponseDTOClass implements PostTxnAPI.ResponseDTO
     {
-        @IsString() id: string;
+        @IsArray() id: string[];
     }
 }
 

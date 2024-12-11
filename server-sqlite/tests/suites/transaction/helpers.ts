@@ -78,8 +78,8 @@ export namespace TransactionHelpers
         const output =
         {
             ...response,
-            txnId: response.parsedBody?.id as string | undefined
+            txnId: response.parsedBody?.id as string[] | undefined
         };
-        return output as AssertFetchReturns<PostTxnAPIClass.ResponseDTOClass> & { txnId?: string | undefined };
+        return output as AssertFetchReturns<PostTxnAPIClass.ResponseDTOClass> & { txnId?: string[] | undefined };
     }
 }

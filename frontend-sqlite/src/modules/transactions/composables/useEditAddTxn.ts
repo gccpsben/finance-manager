@@ -273,16 +273,21 @@ export function useAddTxn()
                 method: "POST",
                 body:
                 {
-                    title: transformedTxn.title,
-                    tagIds: transformedTxn.tagIds,
-                    creationDate: new Date(transformedTxn.creationDate).getTime(),
-                    description: transformedTxn.description ?? undefined,
-                    fromAmount: transformedTxn.fromAmount ?? undefined,
-                    fromContainerId: transformedTxn.fromContainer ?? undefined,
-                    fromCurrencyId: transformedTxn.fromCurrency ?? undefined,
-                    toAmount: transformedTxn.toAmount ?? undefined,
-                    toContainerId: transformedTxn.toContainer ?? undefined,
-                    toCurrencyId: transformedTxn.toCurrency ?? undefined
+                    transactions:
+                    [
+                        {
+                            title: transformedTxn.title,
+                            tagIds: transformedTxn.tagIds,
+                            creationDate: new Date(transformedTxn.creationDate).getTime(),
+                            description: transformedTxn.description ?? undefined,
+                            fromAmount: transformedTxn.fromAmount ?? undefined,
+                            fromContainerId: transformedTxn.fromContainer ?? undefined,
+                            fromCurrencyId: transformedTxn.fromCurrency ?? undefined,
+                            toAmount: transformedTxn.toAmount ?? undefined,
+                            toContainerId: transformedTxn.toContainer ?? undefined,
+                            toCurrencyId: transformedTxn.toCurrency ?? undefined
+                        }
+                    ]
                 } satisfies PostTxnAPI.RequestDTO
             },
             {

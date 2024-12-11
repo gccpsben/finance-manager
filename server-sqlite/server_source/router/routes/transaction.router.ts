@@ -1,4 +1,4 @@
-import { IsArray, IsNotEmpty, IsOptional, IsString } from 'class-validator';
+import { IsArray, IsNotEmpty, IsOptional, IsString, ValidateNested } from 'class-validator';
 import express from 'express';
 import { type PutTxnAPI, type GetTxnAPI, type PostTxnAPI } from '../../../../api-types/txn.js';
 import { AccessTokenService, InvalidLoginTokenError } from '../../db/services/accessToken.service.js';
@@ -12,6 +12,7 @@ import { UserNotFoundError } from '../../db/services/user.service.js';
 import { TxnTagNotFoundError } from '../../db/services/txnTag.service.js';
 import { ContainerNotFoundError } from '../../db/services/container.service.js';
 import { Database } from '../../db/db.js';
+import { Type } from 'class-transformer';
 
 const router = new TypesafeRouter(express.Router());
 
@@ -19,7 +20,7 @@ router.post<PostTxnAPI.ResponseDTO>("/api/v1/transactions",
 {
     handler: async (req: express.Request, res: express.Express) =>
     {
-        class body implements PostTxnAPI.RequestDTO
+        class bodyItem implements PostTxnAPI.RequestItemDTO
         {
             @IsString() @IsNotEmpty() title: string;
             @IsOptional() @IsUTCDateInt() creationDate?: number | undefined;
@@ -33,38 +34,54 @@ router.post<PostTxnAPI.ResponseDTO>("/api/v1/transactions",
             @IsOptional() @IsString() toCurrencyId: string | undefined;
         }
 
+        class body implements PostTxnAPI.RequestDTO
+        {
+            @IsArray()
+            @ValidateNested({ each: true })
+            @Type(() => bodyItem)
+            transactions: bodyItem[];
+        }
+
+        // Check for auth
         const authResult = await AccessTokenService.validateRequestTokenValidated(req);
         if (authResult instanceof InvalidLoginTokenError) throw createHttpError(401);
-        const parsedBody = await ExpressValidations.validateBodyAgainstModel<body>(body, req.body);
 
         const queryRunner = Database.AppDataSource!.createQueryRunner();
         queryRunner.startTransaction();
         const endFailure = async () => { queryRunner.rollbackTransaction(); queryRunner.release(); };
         const endSuccess = async () => { queryRunner.commitTransaction(); queryRunner.release(); };
 
-        let transactionCreated = await TransactionService.createTransaction(authResult.ownerUserId,
-        {
-            creationDate: parsedBody.creationDate ? parsedBody.creationDate : Date.now(),
-            title: parsedBody.title,
-            description: parsedBody.description ?? "",
-            txnTagIds: parsedBody.tagIds,
-            fromAmount: parsedBody.fromAmount,
-            fromContainerId: parsedBody.fromContainerId,
-            fromCurrencyId: parsedBody.fromCurrencyId,
-            toAmount: parsedBody.toAmount,
-            toContainerId: parsedBody.toContainerId,
-            toCurrencyId: parsedBody.toCurrencyId
-        }, queryRunner);
+        const parsedBody = await ExpressValidations.validateBodyAgainstModel<body>(body, req.body);
+        const idsCreated: string[] = [];
 
-        if (transactionCreated instanceof UserNotFoundError) { await endFailure(); throw createHttpError(401) };
-        if (transactionCreated instanceof TxnTagNotFoundError) { await endFailure();  throw createHttpError(400, transactionCreated.message); }
-        if (transactionCreated instanceof ContainerNotFoundError) { await endFailure(); throw createHttpError(400, transactionCreated.message); }
-        if (transactionCreated instanceof TxnMissingFromToAmountError) { await endFailure(); throw createHttpError(400, transactionCreated.message); }
-        if (transactionCreated instanceof TxnMissingContainerOrCurrency) { await endFailure(); throw createHttpError(400, transactionCreated.message); }
+        for (const item of parsedBody.transactions)
+        {
+            let transactionCreated = await TransactionService.createTransaction(authResult.ownerUserId,
+            {
+                creationDate: item.creationDate ? item.creationDate : Date.now(),
+                title: item.title,
+                description: item.description ?? "",
+                txnTagIds: item.tagIds,
+                fromAmount: item.fromAmount,
+                fromContainerId: item.fromContainerId,
+                fromCurrencyId: item.fromCurrencyId,
+                toAmount: item.toAmount,
+                toContainerId: item.toContainerId,
+                toCurrencyId: item.toCurrencyId
+            }, queryRunner);
+
+            if (transactionCreated instanceof UserNotFoundError) { await endFailure(); throw createHttpError(401) };
+            if (transactionCreated instanceof TxnTagNotFoundError) { await endFailure();  throw createHttpError(400, transactionCreated.message); }
+            if (transactionCreated instanceof ContainerNotFoundError) { await endFailure(); throw createHttpError(400, transactionCreated.message); }
+            if (transactionCreated instanceof TxnMissingFromToAmountError) { await endFailure(); throw createHttpError(400, transactionCreated.message); }
+            if (transactionCreated instanceof TxnMissingContainerOrCurrency) { await endFailure(); throw createHttpError(400, transactionCreated.message); }
+
+            idsCreated.push(transactionCreated.id);
+        }
 
         await endSuccess();
 
-        return { id: transactionCreated.id };
+        return { id: idsCreated };
     }
 });
 
