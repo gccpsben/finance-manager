@@ -19,7 +19,7 @@
     color:white;
     margin:4px;
     border-radius: 4px;
-    min-width: 50px;
+    min-width: 10px;
     width: fit-content;
     height: min-content;
     display: inline-block;
