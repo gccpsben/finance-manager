@@ -12,6 +12,12 @@ import { panic, unwrap } from "../../std_errors/monadError.js";
 import { ArgsComparisonError, ConstantComparisonError } from "../../std_errors/argsErrors.js";
 import { isInt } from "class-validator";
 
+/** An object that represents a query of a time range. */
+export type TimeRangeQuery =
+{
+    mode: "AT_OR_AFTER" | "AT_OR_BEFORE",
+    epoch: number
+};
 export type UserBalanceHistoryMap = { [epoch: string]: { [currencyId: string]: Decimal } };
 export type UserBalanceHistoryResults =
 {
@@ -21,13 +27,32 @@ export type UserBalanceHistoryResults =
 
 export class CalculationsService
 {
-    public static async getUserExpensesAndIncomes30d
+    /**
+     * Get the total expenses and incomes given a list of time ranges.
+     */
+    public static async getExpensesAndIncomesOfTimeRanges
     (
         userId: string,
+        queryLines: { [queryName: string]: TimeRangeQuery },
         nowEpoch: number
     )
     {
         if (!isInt(nowEpoch)) throw panic(`nowEpoch must be an integer.`);
+
+        const queryNamesAndQuery = Object.entries(queryLines);
+
+        // Only fetch all transactions after the earliest requested epoch to save bandwidth.
+        const earliestEpochRequested: number = (() =>
+        {
+            let earliestEpochRequested = queryNamesAndQuery[0][1].epoch;
+            if (Object.values(queryLines).some(q => q.mode === 'AT_OR_BEFORE')) return 0;
+            for (const queryLine of Object.values(queryLines))
+            {
+                if (queryLine.mode === 'AT_OR_AFTER' && queryLine.epoch <= earliestEpochRequested)
+                    earliestEpochRequested = queryLine.epoch;
+            }
+            return earliestEpochRequested;
+        })();
 
         const allTxns = await TransactionRepository.getInstance().createQueryBuilder(`txn`)
         .select(
@@ -40,12 +65,16 @@ export class CalculationsService
             `txn.${nameof<Transaction>('fromCurrencyId')}`
         ])
         .where(`txn.${nameof<Transaction>('ownerId')} = :ownerId`, { ownerId: userId })
-        .andWhere(`${nameof<Transaction>('creationDate')} >= :startDate`, { startDate: nowEpoch - 2.592e+9 })
+        .andWhere(`${nameof<Transaction>('creationDate')} >= :startDate`, { startDate: earliestEpochRequested })
         .getMany() as SQLitePrimitiveOnly<Transaction>[];
 
-        const total = { expenses: new Decimal('0'), incomes: new Decimal("0") };
-        const total30d = { expenses: new Decimal('0'), incomes: new Decimal("0") };
-        const total7d = { expenses: new Decimal('0'), incomes: new Decimal("0") };
+        const totalCutoffs = (() =>
+        {
+            const output: { [cutoffName: string]: { expenses: Decimal, incomes: Decimal } } = {};
+            for (const key of Object.keys(queryLines))
+                output[key] = { expenses: new Decimal('0'), incomes: new Decimal("0") };
+            return output;
+        })();
 
         for (let txn of allTxns)
         {
@@ -57,29 +86,29 @@ export class CalculationsService
                 ));
 
             const isValueDecreased = increaseInValue.lessThanOrEqualTo(new Decimal('0'));
-            const txnAgeMs = nowEpoch - txn.creationDate;
-            const txnIs30d = txnAgeMs <= 2.592e+9;
-            const txnIs7d = txnAgeMs <= 6.048e+8;
+            for (const queryQueryPair of queryNamesAndQuery)
+            {
+                const query = queryQueryPair[1];
+                const queryName = queryQueryPair[0];
+                const isTxnWithinQueryRange = (() =>
+                {
+                    if (query.mode === 'AT_OR_AFTER' && txn.creationDate >= query.epoch) return true;
+                    if (query.mode === 'AT_OR_BEFORE' && txn.creationDate <= query.epoch) return true;
+                    return false;
+                })();
+                if (!isTxnWithinQueryRange) continue;
 
-            if (isValueDecreased)
-            {
-                const delta = increaseInValue.neg();
-                total.expenses = total.expenses.add(delta);
-                if (txnIs30d) total30d.expenses = total30d.expenses.add(delta);
-                if (txnIs7d) total7d.expenses = total7d.expenses.add(delta);
+                if (isValueDecreased)
+                {
+                    const delta = increaseInValue.neg();
+                    totalCutoffs[queryName].expenses = totalCutoffs[queryName].expenses.add(delta);
+                }
+                else { totalCutoffs[queryName].incomes = totalCutoffs[queryName].incomes.add(increaseInValue); }
             }
-            else
-            {
-                total.incomes = total.incomes.add(increaseInValue);
-                if (txnIs30d) total30d.incomes = total30d.incomes.add(increaseInValue);
-                if (txnIs7d) total7d.incomes = total7d.incomes.add(increaseInValue);
-            }
+
         }
-        return {
-            total: total,
-            total30d: total30d,
-            total7d: total7d
-        };
+
+        return totalCutoffs;
     }
 
     /**

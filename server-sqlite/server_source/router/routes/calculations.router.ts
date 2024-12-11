@@ -23,12 +23,23 @@ router.get<ResponseGetExpensesAndIncomesDTO>("/api/v1/calculations/expensesAndIn
         const authResults = await AccessTokenService.validateRequestTokenValidated(req, now);
         if (authResults instanceof InvalidLoginTokenError) throw createHttpError(401);
 
-        const calResults = await CalculationsService.getUserExpensesAndIncomes30d(authResults.ownerUserId, now);
+        const _30dKey = "30d";
+        const _7dKey = "7d";
+
+        const calResults = await CalculationsService.getExpensesAndIncomesOfTimeRanges
+        (
+            authResults.ownerUserId,
+            {
+                [_30dKey]: { epoch: now - 2.592e+9, mode: 'AT_OR_AFTER' },
+                [_7dKey]: { epoch: now - 6.048e+8, mode: 'AT_OR_AFTER' }
+            },
+            now
+        );
         return {
-            expenses30d: calResults.total30d.expenses.toString(),
-            incomes30d: calResults.total30d.incomes.toString(),
-            expenses7d: calResults.total7d.expenses.toString(),
-            incomes7d: calResults.total7d.incomes.toString()
+            expenses30d: calResults[_30dKey].expenses.toString(),
+            incomes30d: calResults[_30dKey].incomes.toString(),
+            expenses7d: calResults[_7dKey].expenses.toString(),
+            incomes7d: calResults[_7dKey].incomes.toString()
         }
     }
 });
