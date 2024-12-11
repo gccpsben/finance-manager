@@ -14,12 +14,18 @@
                     <WrappedLineChart :show-axis-labels="false" :show-grid-lines="false" is-x-axis-epoch :datums="parsedDatums" />
                 </AbsEnclosure>
                 <div v-if="isRateOutdated" class="fullSize yBottom xRight">
-                    <div style="display: grid; grid-template-columns: auto auto; color: orange;">
-                        <div class="center" style="font-size: 12px; margin-bottom: 4px;">Stale Data</div>
-                        <div class="center">
-                            <GaIcon icon="warning" style="transform:scale(0.7);"/>
-                        </div>
-                    </div>
+                    <VTooltip class="staleDataTooltip" :location="'bottom start'"
+                              open-on-click :close-delay="500" :open-delay="500">
+                        <template v-slot:activator="{ props }">
+                            <div class="staleDataWarning" v-bind="props">
+                                <div class="center" style="font-size: 12px; margin-bottom: 4px;">Stale Data</div>
+                                <div class="center">
+                                    <GaIcon icon="warning" style="transform:scale(0.7);"/>
+                                </div>
+                            </div>
+                        </template>
+                        <div>Last data-point fetched is at least 1 day old.</div>
+                    </VTooltip>
                 </div>
             </OverlapArea>
         </template>
@@ -36,6 +42,7 @@ import NetworkCircularIndicator from '@/modules/core/components/data-display/Net
 import GaIcon from '@/modules/core/components/decorations/GaIcon.vue';
 import OverlapArea from '@/modules/core/components/layout/OverlapArea.vue';
 import AbsEnclosure from '@/modules/core/components/layout/AbsEnclosure.vue';
+import { VTooltip } from 'vuetify/components';
 
 const SEVEN_DAYS_AGO = Date.now() - 86400000 * 7;
 
@@ -93,4 +100,22 @@ const isRateOutdated = computed(() =>
 @import "@/modules/core/stylesheets/globalStyle.less";
 
 .chartDisabled { pointer-events: none; opacity: 0.3; }
+.staleDataTooltip
+{
+    & > *
+    {
+        background: @backgroundDark !important;
+        border: 1px solid @border !important;
+        box-shadow: 0px 0px 5px #000;
+        color: white;
+        pointer-events: all;
+    }
+}
+.staleDataWarning
+{
+    display: grid;
+    grid-template-columns: auto auto;
+    color: tan;
+    &:hover { color: orange; }
+}
 </style>
