@@ -19,10 +19,11 @@ router.get<ResponseGetExpensesAndIncomesDTO>("/api/v1/calculations/expensesAndIn
 {
     handler: async (req:express.Request, res:express.Response) =>
     {
-        const authResults = await AccessTokenService.validateRequestTokenValidated(req);
+        const now = Date.now();
+        const authResults = await AccessTokenService.validateRequestTokenValidated(req, now);
         if (authResults instanceof InvalidLoginTokenError) throw createHttpError(401);
 
-        const calResults = await CalculationsService.getUserExpensesAndIncomes30d(authResults.ownerUserId);
+        const calResults = await CalculationsService.getUserExpensesAndIncomes30d(authResults.ownerUserId, now);
         return {
             expenses30d: calResults.total30d.expenses.toString(),
             incomes30d: calResults.total30d.incomes.toString(),
@@ -36,6 +37,10 @@ router.get<GetUserNetworthHistoryAPI.ResponseDTO>(`/api/v1/calculations/networth
 {
     handler: async (req: express.Request, res: express.Response) =>
     {
+        const now = Date.now();
+        const authResults = await AccessTokenService.validateRequestTokenValidated(req, now);
+        if (authResults instanceof InvalidLoginTokenError) throw createHttpError(401);
+
         class query implements GetUserNetworthHistoryAPI.RequestQueryDTO
         {
             @IsOptional() @IsUTCDateIntString() startDate: string | undefined;
@@ -50,16 +55,13 @@ router.get<GetUserNetworthHistoryAPI.ResponseDTO>(`/api/v1/calculations/networth
             division: parsedQuery.division === undefined ? undefined : parseInt(parsedQuery.division),
         };
 
-        const authResults = await AccessTokenService.validateRequestTokenValidated(req);
-        if (authResults instanceof InvalidLoginTokenError) throw createHttpError(401);
-
         const userEarliestTxn = await TransactionService.getUserEarliestTransaction(authResults.ownerUserId);
 
         const input =
         {
             // defaults to all
-            startDate: reqQuery.startDate ?? (userEarliestTxn ? userEarliestTxn.creationDate : Date.now()),
-            endDate: reqQuery.endDate ?? Date.now(),
+            startDate: reqQuery.startDate ?? (userEarliestTxn ? userEarliestTxn.creationDate : now),
+            endDate: reqQuery.endDate ?? now,
             division: reqQuery.division ?? 100
         };
 
@@ -85,7 +87,8 @@ router.get<GetUserBalanceHistoryAPI.ResponseDTO>(`/api/v1/calculations/balanceHi
 {
     handler: async (req: express.Request, res: express.Response) =>
     {
-        const authResults = await AccessTokenService.validateRequestTokenValidated(req);
+        const now = Date.now();
+        const authResults = await AccessTokenService.validateRequestTokenValidated(req, now);
         if (authResults instanceof InvalidLoginTokenError) throw createHttpError(401);
 
         class query implements GetUserBalanceHistoryAPI.RequestQueryDTO
@@ -104,8 +107,8 @@ router.get<GetUserBalanceHistoryAPI.ResponseDTO>(`/api/v1/calculations/balanceHi
 
         const input =
         {
-            startDate: reqQuery.startDate ?? Date.now() - 2.592e+9, // 30d
-            endDate: reqQuery.endDate ?? Date.now(),
+            startDate: reqQuery.startDate ?? now - 2.592e+9, // 30d
+            endDate: reqQuery.endDate ?? now,
             division: reqQuery.division ?? 100
         };
 

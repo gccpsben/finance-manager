@@ -19,10 +19,11 @@ router.post<PostLoginAPI.ResponseDTO>("/api/v1/auth/login",
             @IsString() @IsNotEmpty() password: string;
         };
 
+        const now = Date.now();
         await ExpressValidations.validateBodyAgainstModel<body>(body, req.body);
         const authResult = await UserService.validatePassword(req.body.username, req.body.password);
         if (!authResult.success) throw createHttpError(401);
-        const newToken = await AccessTokenService.generateTokenForUser(authResult.userId!);
+        const newToken = await AccessTokenService.generateTokenForUser(authResult.userId!, now);
         if (newToken instanceof UserNotFoundError) throw createHttpError(401);
 
         return {

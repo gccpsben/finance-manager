@@ -21,6 +21,10 @@ router.post<PostCurrencyAPI.ResponseDTO>(`/api/v1/currencies`,
 {
     handler: async (req: express.Request, res: express.Response) =>
     {
+        const now = Date.now();
+        const authResult = await AccessTokenService.validateRequestTokenValidated(req, now);
+        if (authResult instanceof InvalidLoginTokenError) throw createHttpError(401);
+
         class body implements PostCurrencyAPI.RequestDTO
         {
             @IsString() name: string;
@@ -29,8 +33,6 @@ router.post<PostCurrencyAPI.ResponseDTO>(`/api/v1/currencies`,
             @IsString() ticker: string;
         }
 
-        const authResult = await AccessTokenService.validateRequestTokenValidated(req);
-        if (authResult instanceof InvalidLoginTokenError) throw createHttpError(401);
         const parsedBody = await ExpressValidations.validateBodyAgainstModel<body>(body, req.body);
         const newCurrency = await CurrencyService.createCurrency
         (
@@ -54,6 +56,10 @@ router.get<GetCurrencyAPI.ResponseDTO>(`/api/v1/currencies`,
 {
     handler: async (req: express.Request, res: express.Response) =>
     {
+        const now = Date.now();
+        const authResult = await AccessTokenService.validateRequestTokenValidated(req, now);
+        if (authResult instanceof InvalidLoginTokenError) throw createHttpError(401);
+
         class query extends OptionalPaginationAPIQueryRequest
         {
             @IsOptional() @IsString() name: string;
@@ -62,8 +68,6 @@ router.get<GetCurrencyAPI.ResponseDTO>(`/api/v1/currencies`,
             @IsOptional() @IsNumberString() date: string;
         }
 
-        const authResult = await AccessTokenService.validateRequestTokenValidated(req);
-        if (authResult instanceof InvalidLoginTokenError) throw createHttpError(401);
         const parsedQuery = await ExpressValidations.validateBodyAgainstModel<query>(query, req.query);
 
         if (parsedQuery.id && parsedQuery.name)
@@ -75,7 +79,7 @@ router.get<GetCurrencyAPI.ResponseDTO>(`/api/v1/currencies`,
             end: parsedQuery.end ? parseInt(parsedQuery.end) : undefined,
             name: parsedQuery.name,
             id: parsedQuery.id,
-            requestedRateDate: parsedQuery.date === undefined ? Date.now() : parseInt(parsedQuery.date)
+            requestedRateDate: parsedQuery.date === undefined ? now : parseInt(parsedQuery.date)
         };
 
         const sqlPrimitiveCurrencies = await PaginationAPIResponseClass.prepareFromQueryItems<IdBound<Currency>>
@@ -120,6 +124,10 @@ router.get<GetCurrencyRateHistoryAPI.ResponseDTO>(`/api/v1/currencies/history`,
 {
     handler: async (req: express.Request, res: express.Response) =>
     {
+        const now = Date.now();
+        const authResult = await AccessTokenService.validateRequestTokenValidated(req, now);
+        if (authResult instanceof InvalidLoginTokenError) throw createHttpError(401);
+
         class query implements GetCurrencyRateHistoryAPI.RequestQueryDTO
         {
             @IsString() id: string;
@@ -127,9 +135,6 @@ router.get<GetCurrencyRateHistoryAPI.ResponseDTO>(`/api/v1/currencies/history`,
             @IsOptional() @IsIntString() startDate?: string;
             @IsOptional() @IsIntString() endDate?: string;
         }
-
-        const authResult = await AccessTokenService.validateRequestTokenValidated(req);
-        if (authResult instanceof InvalidLoginTokenError) throw createHttpError(401);
 
         const parsedQuery = await ExpressValidations.validateBodyAgainstModel<query>(query, req.query);
         const datums = unwrap(await CurrencyRateDatumService.getCurrencyRateHistory

@@ -23,12 +23,14 @@ export class CurrencyRatesCRON implements CronService
 
         this.mainIntervalId = setInterval(async () =>
         {
+            const now = Date.now();
+
             // Fetch all currencies (using repository)
             const allCurrenciesToBeUpdated = await CurrencyRepository.getInstance().getAllUsersCurrWithSources();
             for (const [_currencyId, { currency, rateSources }] of Object.entries(allCurrenciesToBeUpdated))
             {
                 if (rateSources.length === 0) continue;
-                if (!!currency.lastRateCronUpdateTime && Date.now() - currency.lastRateCronUpdateTime < 10_800_000)
+                if (!!currency.lastRateCronUpdateTime && now - currency.lastRateCronUpdateTime < 10_800_000)
                     continue;
 
                 // Sort the sources from least recently used to most recently used.
@@ -45,11 +47,11 @@ export class CurrencyRatesCRON implements CronService
                     const fullRateSrc = await CurrencyRateSourceRepository.getInstance().findOneBy({id: src.id ?? null});
                     if (!fullRateSrc) continue;
 
-                    currencyObj.lastRateCronUpdateTime = Date.now();
+                    currencyObj.lastRateCronUpdateTime = now;
                     await CurrencyRepository.getInstance().save(currencyObj);
 
                     ExtendedLog.logCyan(`Fetching rate of ticker='${currency.ticker}', hostname='${fullRateSrc.hostname}', path='${fullRateSrc.path}' using source name='${src.name}'`);
-                    const fetchResult = await CurrencyRateSourceService.executeCurrencyRateSource(currency.ownerId, fullRateSrc);
+                    const fetchResult = await CurrencyRateSourceService.executeCurrencyRateSource(currency.ownerId, fullRateSrc, now);
 
                     if (fetchResult instanceof ExecuteCurrencyRateSourceError)
                     {

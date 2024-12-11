@@ -15,7 +15,8 @@ router.get<GetTxnTagsAPI.ResponseDTO>(`/api/v1/transactionTags`,
 {
     handler: async (req: express.Request, res: express.Response) =>
     {
-        const authResult = await AccessTokenService.validateRequestTokenValidated(req);
+        const now = Date.now();
+        const authResult = await AccessTokenService.validateRequestTokenValidated(req, now);
         if (authResult instanceof InvalidLoginTokenError) throw createHttpError(401);
 
         class query extends OptionalPaginationAPIQueryRequest
@@ -67,7 +68,8 @@ router.post<PostTxnTagsAPI.ResponseDTO>(`/api/v1/transactionTags`,
             @IsString() @IsNotEmpty() name: string;
         }
 
-        const authResult = await AccessTokenService.validateRequestTokenValidated(req);
+        const now = Date.now();
+        const authResult = await AccessTokenService.validateRequestTokenValidated(req, now);
         if (authResult instanceof InvalidLoginTokenError) throw createHttpError(401);
 
         const parsedBody = await ExpressValidations.validateBodyAgainstModel<body>(body, req.body);

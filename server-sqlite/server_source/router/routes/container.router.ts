@@ -22,7 +22,8 @@ router.get<GetContainerAPI.ResponseDTO>(`/api/v1/containers`,
 {
     handler: async (req: express.Request, res: express.Response) =>
     {
-        const authResult = await AccessTokenService.validateRequestTokenValidated(req);
+        const now = Date.now();
+        const authResult = await AccessTokenService.validateRequestTokenValidated(req, now);
         if (authResult instanceof InvalidLoginTokenError) throw createHttpError(401);
 
         class query extends OptionalPaginationAPIQueryRequest
@@ -41,7 +42,7 @@ router.get<GetContainerAPI.ResponseDTO>(`/api/v1/containers`,
             end: parsedQuery.end ? parseInt(parsedQuery.end) : undefined,
             name: parsedQuery.name,
             id: parsedQuery.id,
-            currencyRateDate: parsedQuery.currencyRateDate ? parseInt(parsedQuery.currencyRateDate) : Date.now()
+            currencyRateDate: parsedQuery.currencyRateDate ? parseInt(parsedQuery.currencyRateDate) : now
         };
 
         const response = await PaginationAPIResponseClass.prepareFromQueryItems<IdBound<SQLitePrimitiveOnly<Container>>>
@@ -89,9 +90,11 @@ router.post<PostContainerAPI.ResponseDTO>(`/api/v1/containers`,
 {
     handler: async (req: express.Request, res: express.Response) =>
     {
-        class body implements PostContainerAPI.RequestDTO { @IsString() name: string; }
-        const authResult = await AccessTokenService.validateRequestTokenValidated(req);
+        const now = Date.now();
+        const authResult = await AccessTokenService.validateRequestTokenValidated(req, now);
         if (authResult instanceof InvalidLoginTokenError) throw createHttpError(401);
+
+        class body implements PostContainerAPI.RequestDTO { @IsString() name: string; }
 
         const parsedBody = await ExpressValidations.validateBodyAgainstModel<body>(body, req.body);
         const containerCreated = await ContainerService.createContainer(authResult.ownerUserId, parsedBody.name);

@@ -8,8 +8,9 @@ import { LinearInterpolator } from "../../calculations/linearInterpolator.js";
 import { CurrencyCalculator, CurrencyService } from "./currency.service.js";
 import { GlobalCurrencyCache } from "../caches/currencyListCache.cache.js";
 import { UserNotFoundError, UserService } from "./user.service.js";
-import { unwrap } from "../../std_errors/monadError.js";
+import { panic, unwrap } from "../../std_errors/monadError.js";
 import { ArgsComparisonError, ConstantComparisonError } from "../../std_errors/argsErrors.js";
+import { isInt } from "class-validator";
 
 export type UserBalanceHistoryMap = { [epoch: string]: { [currencyId: string]: Decimal } };
 export type UserBalanceHistoryResults =
@@ -20,8 +21,14 @@ export type UserBalanceHistoryResults =
 
 export class CalculationsService
 {
-    public static async getUserExpensesAndIncomes30d(userId: string)
+    public static async getUserExpensesAndIncomes30d
+    (
+        userId: string,
+        nowEpoch: number
+    )
     {
+        if (!isInt(nowEpoch)) throw panic(`nowEpoch must be an integer.`);
+
         const allTxns = await TransactionRepository.getInstance().createQueryBuilder(`txn`)
         .select(
         [
@@ -33,15 +40,13 @@ export class CalculationsService
             `txn.${nameof<Transaction>('fromCurrencyId')}`
         ])
         .where(`txn.${nameof<Transaction>('ownerId')} = :ownerId`, { ownerId: userId })
-        .andWhere(`${nameof<Transaction>('creationDate')} >= :startDate`, { startDate: Date.now() - 2.592e+9 })
+        .andWhere(`${nameof<Transaction>('creationDate')} >= :startDate`, { startDate: nowEpoch - 2.592e+9 })
         .getMany() as SQLitePrimitiveOnly<Transaction>[];
 
-        const now = new Date().getTime();
         const total = { expenses: new Decimal('0'), incomes: new Decimal("0") };
         const total30d = { expenses: new Decimal('0'), incomes: new Decimal("0") };
         const total7d = { expenses: new Decimal('0'), incomes: new Decimal("0") };
 
-        let currencyBaseValueMapping = { };
         for (let txn of allTxns)
         {
             const { increaseInValue } =
@@ -52,7 +57,7 @@ export class CalculationsService
                 ));
 
             const isValueDecreased = increaseInValue.lessThanOrEqualTo(new Decimal('0'));
-            const txnAgeMs = now - txn.creationDate;
+            const txnAgeMs = nowEpoch - txn.creationDate;
             const txnIs30d = txnAgeMs <= 2.592e+9;
             const txnIs7d = txnAgeMs <= 6.048e+8;
 

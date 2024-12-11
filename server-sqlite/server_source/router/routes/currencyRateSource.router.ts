@@ -14,7 +14,8 @@ router.get<GetCurrencyRateSrcBySrcIdAPI.ResponseDTO>(`/api/v1/currencyRateSource
 {
     handler: async (req: express.Request, res: express.Response) =>
     {
-        const authResult = await AccessTokenService.validateRequestTokenValidated(req);
+        const now = Date.now();
+        const authResult = await AccessTokenService.validateRequestTokenValidated(req, now);
         if (authResult instanceof InvalidLoginTokenError) throw createHttpError(401);
 
         const rateSrc = await CurrencyRateSourceService.getCurrencyRatesSourceById(authResult.ownerUserId, req.params['id']);
@@ -37,7 +38,8 @@ router.get<GetCurrencyRateSrcAPI.ResponseDTO>(`/api/v1/:id/currencyRateSources` 
 {
     handler: async (req: express.Request, res: express.Response) =>
     {
-        const authResult = await AccessTokenService.validateRequestTokenValidated(req);
+        const now = Date.now();
+        const authResult = await AccessTokenService.validateRequestTokenValidated(req, now);
         if (authResult instanceof InvalidLoginTokenError) throw createHttpError(401);
 
         const rateSources = await CurrencyRateSourceService.getUserCurrencyRatesSourcesOfCurrency(authResult.ownerUserId, req.params['id']);
@@ -72,7 +74,8 @@ router.patch<PatchCurrencyRateSrcAPI.ResponseDTO>(`/api/v1/currencyRateSources`,
             @IsString() name: string;
         }
 
-        const authResult = await AccessTokenService.validateRequestTokenValidated(req);
+        const now = Date.now();
+        const authResult = await AccessTokenService.validateRequestTokenValidated(req, now);
         if (authResult instanceof InvalidLoginTokenError) throw createHttpError(401);
         const parsedBody = await ExpressValidations.validateBodyAgainstModel<body>(body, req.body);
 
@@ -108,7 +111,8 @@ router.delete<DeleteCurrencyRateSrcAPI.ResponseDTO>(`/api/v1/currencyRateSources
 {
     handler: async (req: express.Request, res: express.Response) =>
     {
-        const authResult = await AccessTokenService.validateRequestTokenValidated(req);
+        const now = Date.now();
+        const authResult = await AccessTokenService.validateRequestTokenValidated(req, now);
         if (authResult instanceof InvalidLoginTokenError) throw createHttpError(401);
         const requestedId = req.params['id'];
         const deleteResult = await CurrencyRateSourceService.deleteCurrencyRateSource(authResult.ownerUserId, requestedId);
@@ -131,7 +135,8 @@ router.post<PostCurrencyRateSrcAPI.ResponseDTO>(`/api/v1/currencyRateSources`,
             @IsString() name: string;
         }
 
-        const authResult = await AccessTokenService.validateRequestTokenValidated(req);
+        const now = Date.now();
+        const authResult = await AccessTokenService.validateRequestTokenValidated(req, now);
         if (authResult instanceof InvalidLoginTokenError) throw createHttpError(401);
         const parsedBody = await ExpressValidations.validateBodyAgainstModel<body>(body, req.body);
 

@@ -21,7 +21,7 @@ export class InvalidLoginTokenError extends MonadError<typeof InvalidLoginTokenE
 
 export class AccessTokenService
 {
-    public static async generateTokenForUser(userId: string)
+    public static async generateTokenForUser(userId: string, nowEpoch: number)
     {
         // @ts-expect-error
         if (!EnvManager.tokenExpiryMs) return panic(`AccessTokenService.generateTokenForUser: EnvManager.tokenExpiryMs is not defined.`) as AccessToken;
@@ -32,7 +32,7 @@ export class AccessTokenService
         const newToken = AccessTokenRepository.getInstance().create();
         newToken.token = randomUUID();
         newToken.owner = targetUser;
-        newToken.creationDate = Date.now();
+        newToken.creationDate = nowEpoch;
         newToken.expiryDate = newToken.creationDate + EnvManager.tokenExpiryMs;
         const newlySavedToken = await AccessTokenRepository.getInstance().save(newToken);
         if (!newlySavedToken.token) throw panic(`Newly saved token contains falsy token column.`);
@@ -40,11 +40,15 @@ export class AccessTokenService
     }
 
     /** Check if a token is valid, and which user it refers to. */
-    public static async validateToken(tokenRaw: string): Promise<{isTokenValid: boolean, tokenFound: boolean, ownerUserId: string | undefined}>
+    public static async validateToken
+    (
+        tokenRaw: string,
+        nowEpoch: number
+    ): Promise<{isTokenValid: boolean, tokenFound: boolean, ownerUserId: string | undefined}>
     {
         const tokenInDatabase = await AccessTokenRepository.getInstance().findOne({ where: { token: tokenRaw }, relations: { owner: true } });
         if (!tokenRaw || tokenInDatabase === null) return { isTokenValid: false, tokenFound: false, ownerUserId: undefined };
-        if (Date.now() >= tokenInDatabase.expiryDate)
+        if (nowEpoch >= tokenInDatabase.expiryDate)
         {
             await AccessTokenRepository.getInstance().delete({ token: tokenInDatabase.token });
             return {
@@ -77,7 +81,11 @@ export class AccessTokenService
     }
 
     /** Ensure an express request object has proper token in its header. */
-    public static async validateRequestTokenValidated(request: express.Request) : Promise<
+    public static async validateRequestTokenValidated
+    (
+        request: express.Request,
+        nowEpoch: number
+    ) : Promise<
         InvalidLoginTokenError |
         {
             isTokenValid: boolean;
@@ -90,7 +98,7 @@ export class AccessTokenService
 
         const authorizationHeader = request.headers["authorization"];
         if (authorizationHeader === null || authorizationHeader === undefined) return createErr();
-        const validationResult = await AccessTokenService.validateToken(authorizationHeader);
+        const validationResult = await AccessTokenService.validateToken(authorizationHeader, nowEpoch);
 
         if (!validationResult.isTokenValid || !validationResult.ownerUserId || !validationResult.tokenFound)
             return createErr();

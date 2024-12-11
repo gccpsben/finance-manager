@@ -216,7 +216,8 @@ export class CurrencyRateSourceService
     public static async executeCurrencyRateSource
     (
         ownerId: string,
-        currencySource: CurrencyRateSource
+        currencySource: CurrencyRateSource,
+        nowEpoch: number
     ): Promise<CurrencyRateDatum |
         ExecuteCurrencyRateSourceError<
             Error |
@@ -257,13 +258,13 @@ export class CurrencyRateSourceService
             (
                 ownerId,
                 new Decimal(parsedFloat).toString(),
-                Date.now(),
+                nowEpoch,
                 currencyObj.id,
                 currencySource.refAmountCurrencyId
             );
             if (rateDatum instanceof CurrencyNotFoundError) return createError(new CurrencyNotFoundError(refCurrencyId, ownerId));
 
-            currencySource.lastExecuteTime = Date.now();
+            currencySource.lastExecuteTime = nowEpoch;
             await CurrencyRateSourceRepository.getInstance().save(currencySource);
 
             return unwrap(rateDatum, "rate datum: owner id mismatch.");

@@ -43,7 +43,8 @@ router.post<PostTxnAPI.ResponseDTO>("/api/v1/transactions",
         }
 
         // Check for auth
-        const authResult = await AccessTokenService.validateRequestTokenValidated(req);
+        const now = Date.now();
+        const authResult = await AccessTokenService.validateRequestTokenValidated(req, now);
         if (authResult instanceof InvalidLoginTokenError) throw createHttpError(401);
 
         const queryRunner = Database.AppDataSource!.createQueryRunner();
@@ -58,7 +59,7 @@ router.post<PostTxnAPI.ResponseDTO>("/api/v1/transactions",
         {
             let transactionCreated = await TransactionService.createTransaction(authResult.ownerUserId,
             {
-                creationDate: item.creationDate ? item.creationDate : Date.now(),
+                creationDate: item.creationDate ? item.creationDate : now,
                 title: item.title,
                 description: item.description ?? "",
                 txnTagIds: item.tagIds,
@@ -108,7 +109,8 @@ router.put<PutTxnAPI.ResponseDTO>("/api/v1/transactions",
             @IsString() @IsNotEmpty() targetTxnId: string;
         }
 
-        const authResult = await AccessTokenService.validateRequestTokenValidated(req);
+        const now = Date.now();
+        const authResult = await AccessTokenService.validateRequestTokenValidated(req, now);
         if (authResult instanceof InvalidLoginTokenError) throw createHttpError(401);
         const parsedBody = await ExpressValidations.validateBodyAgainstModel<body>(body, req.body);
         const parsedQuery = await ExpressValidations.validateBodyAgainstModel<query>(query, req.query);
@@ -120,7 +122,7 @@ router.put<PutTxnAPI.ResponseDTO>("/api/v1/transactions",
 
         const updatedTxn = await TransactionService.updateTransaction(authResult.ownerUserId, parsedQuery.targetTxnId,
         {
-            creationDate: parsedBody.creationDate ? parsedBody.creationDate : Date.now(),
+            creationDate: parsedBody.creationDate ? parsedBody.creationDate : now,
             title: parsedBody.title,
             description: parsedBody.description ?? "",
             tagIds: parsedBody.tagIds,
@@ -157,7 +159,8 @@ router.get<GetTxnAPI.ResponseDTO>(`/api/v1/transactions`,
             @IsOptional() @IsIntString() endDate?: string | undefined;
         }
 
-        const authResult = await AccessTokenService.validateRequestTokenValidated(req);
+        const now = Date.now();
+        const authResult = await AccessTokenService.validateRequestTokenValidated(req, now);
         if (authResult instanceof InvalidLoginTokenError) throw createHttpError(401);
         const parsedQuery = await ExpressValidations.validateBodyAgainstModel<query>(query, req.query);
         const userQuery =
