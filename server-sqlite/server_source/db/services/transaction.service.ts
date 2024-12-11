@@ -10,6 +10,7 @@ import { nameof, ServiceUtils } from "../servicesUtils.js";
 import { isNullOrUndefined } from "../../router/validation.js";
 import { MonadError, panic, unwrap } from "../../std_errors/monadError.js";
 import { TxnTag } from "../entities/txnTag.entity.js";
+import { QueryRunner } from "typeorm/browser";
 
 export class TxnMissingContainerOrCurrency extends MonadError<typeof TxnMissingFromToAmountError.ERROR_SYMBOL>
 {
@@ -172,14 +173,15 @@ export class TransactionService
             toContainerId?: string | undefined,
             toCurrencyId?: string | undefined,
             tagIds: string[]
-        }
+        },
+        queryRunner: QueryRunner
     )
     {
         // Ensure user exists
         const userFetchResult = await UserService.getUserById(userId);
         if (userFetchResult === null) return new UserNotFoundError(userId);
 
-        const oldTxn = await TransactionRepository.getInstance().findOne(
+        const oldTxn = await queryRunner.manager.getRepository(Transaction).findOne(
         {
             where:
             {
@@ -255,7 +257,7 @@ export class TransactionService
         if (txnValidationResults instanceof TxnMissingFromToAmountError) return txnValidationResults;
         if (txnValidationResults instanceof TxnMissingContainerOrCurrency) return txnValidationResults;
 
-        return await TransactionRepository.getInstance().save(oldTxn);
+        return await queryRunner.manager.getRepository(Transaction).save(oldTxn);
     }
 
     public static async createTransaction
@@ -273,7 +275,8 @@ export class TransactionService
             toContainerId?: string | undefined,
             toCurrencyId?: string | undefined,
             txnTagIds: string[]
-        }
+        },
+        queryRunner: QueryRunner
     )
     {
         const newTxn = await TransactionService.validateTransaction(userId, obj);
@@ -282,7 +285,7 @@ export class TransactionService
         if (newTxn instanceof TxnMissingFromToAmountError) return newTxn;
         if (newTxn instanceof ContainerNotFoundError) return newTxn;
         if (newTxn instanceof TxnMissingContainerOrCurrency) return newTxn;
-        const savedObj = await TransactionRepository.getInstance().save(newTxn);
+        const savedObj = await queryRunner.manager.getRepository(Transaction).save(newTxn);
 
         if (!savedObj.id)
             throw panic(`Saved rows in the database still got falsy IDs`);

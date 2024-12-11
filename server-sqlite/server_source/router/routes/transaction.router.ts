@@ -11,6 +11,7 @@ import createHttpError from 'http-errors';
 import { UserNotFoundError } from '../../db/services/user.service.js';
 import { TxnTagNotFoundError } from '../../db/services/txnTag.service.js';
 import { ContainerNotFoundError } from '../../db/services/container.service.js';
+import { Database } from '../../db/db.js';
 
 const router = new TypesafeRouter(express.Router());
 
@@ -35,7 +36,13 @@ router.post<PostTxnAPI.ResponseDTO>("/api/v1/transactions",
         const authResult = await AccessTokenService.validateRequestTokenValidated(req);
         if (authResult instanceof InvalidLoginTokenError) throw createHttpError(401);
         const parsedBody = await ExpressValidations.validateBodyAgainstModel<body>(body, req.body);
-        const transactionCreated = await TransactionService.createTransaction(authResult.ownerUserId,
+
+        const queryRunner = Database.AppDataSource!.createQueryRunner();
+        queryRunner.startTransaction();
+        const endFailure = async () => { queryRunner.rollbackTransaction(); queryRunner.release(); };
+        const endSuccess = async () => { queryRunner.commitTransaction(); queryRunner.release(); };
+
+        let transactionCreated = await TransactionService.createTransaction(authResult.ownerUserId,
         {
             creationDate: parsedBody.creationDate ? parsedBody.creationDate : Date.now(),
             title: parsedBody.title,
@@ -47,13 +54,15 @@ router.post<PostTxnAPI.ResponseDTO>("/api/v1/transactions",
             toAmount: parsedBody.toAmount,
             toContainerId: parsedBody.toContainerId,
             toCurrencyId: parsedBody.toCurrencyId
-        });
+        }, queryRunner);
 
-        if (transactionCreated instanceof UserNotFoundError) throw createHttpError(401);
-        if (transactionCreated instanceof TxnTagNotFoundError) throw createHttpError(400, transactionCreated.message);
-        if (transactionCreated instanceof ContainerNotFoundError) throw createHttpError(400, transactionCreated.message);
-        if (transactionCreated instanceof TxnMissingFromToAmountError) throw createHttpError(400, transactionCreated.message);
-        if (transactionCreated instanceof TxnMissingContainerOrCurrency) throw createHttpError(400, transactionCreated.message);
+        if (transactionCreated instanceof UserNotFoundError) { await endFailure(); throw createHttpError(401) };
+        if (transactionCreated instanceof TxnTagNotFoundError) { await endFailure();  throw createHttpError(400, transactionCreated.message); }
+        if (transactionCreated instanceof ContainerNotFoundError) { await endFailure(); throw createHttpError(400, transactionCreated.message); }
+        if (transactionCreated instanceof TxnMissingFromToAmountError) { await endFailure(); throw createHttpError(400, transactionCreated.message); }
+        if (transactionCreated instanceof TxnMissingContainerOrCurrency) { await endFailure(); throw createHttpError(400, transactionCreated.message); }
+
+        await endSuccess();
 
         return { id: transactionCreated.id };
     }
@@ -87,6 +96,11 @@ router.put<PutTxnAPI.ResponseDTO>("/api/v1/transactions",
         const parsedBody = await ExpressValidations.validateBodyAgainstModel<body>(body, req.body);
         const parsedQuery = await ExpressValidations.validateBodyAgainstModel<query>(query, req.query);
 
+        const queryRunner = Database.AppDataSource!.createQueryRunner();
+        queryRunner.startTransaction();
+        const endFailure = async () => { queryRunner.rollbackTransaction(); queryRunner.release(); };
+        const endSuccess = async () => { queryRunner.commitTransaction(); queryRunner.release(); };
+
         const updatedTxn = await TransactionService.updateTransaction(authResult.ownerUserId, parsedQuery.targetTxnId,
         {
             creationDate: parsedBody.creationDate ? parsedBody.creationDate : Date.now(),
@@ -99,14 +113,16 @@ router.put<PutTxnAPI.ResponseDTO>("/api/v1/transactions",
             toAmount: parsedBody.toAmount,
             toContainerId: parsedBody.toContainerId,
             toCurrencyId: parsedBody.toCurrencyId
-        });
+        }, queryRunner);
 
-        if (updatedTxn instanceof UserNotFoundError) throw createHttpError(401);
-        if (updatedTxn instanceof TxnNotFoundError) throw createHttpError(404);
-        if (updatedTxn instanceof TxnTagNotFoundError) throw createHttpError(400, updatedTxn.message);
-        if (updatedTxn instanceof ContainerNotFoundError) throw createHttpError(400, updatedTxn.message);
-        if (updatedTxn instanceof TxnMissingFromToAmountError) throw createHttpError(400, updatedTxn.message);
-        if (updatedTxn instanceof TxnMissingContainerOrCurrency) throw createHttpError(400, updatedTxn.message);
+        if (updatedTxn instanceof UserNotFoundError) { await endFailure(); throw createHttpError(401); }
+        if (updatedTxn instanceof TxnNotFoundError) { await endFailure(); throw createHttpError(404); }
+        if (updatedTxn instanceof TxnTagNotFoundError) { await endFailure(); throw createHttpError(400, updatedTxn.message); }
+        if (updatedTxn instanceof ContainerNotFoundError) { await endFailure(); throw createHttpError(400, updatedTxn.message); }
+        if (updatedTxn instanceof TxnMissingFromToAmountError) { await endFailure(); throw createHttpError(400, updatedTxn.message); }
+        if (updatedTxn instanceof TxnMissingContainerOrCurrency) { await endFailure(); throw createHttpError(400, updatedTxn.message); }
+
+        await endSuccess();
 
         return {};
     }
