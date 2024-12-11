@@ -3,7 +3,7 @@
         <div id="txnTopDivInner">
             <div v-if="shouldDisplayMainEditor">
                 <div>
-                    <view-title :title="isAddMode ? `Add Transaction` : `Edit Transaction`"
+                    <ViewTitle :title="isAddMode ? `Add Transaction` : `Edit Transaction`"
                                 hasBackButton @back="router.back()"/>
                 </div>
                 <div>
@@ -12,14 +12,14 @@
                 <div class="fullSize">
                     <div id="viewTxnGrid">
 
-                        <text-field v-area="'id'" :field-name="'ID'"
+                        <TextField v-area="'id'" :field-name="'ID'"
                                     :text="txnWorkingCopy.currentData.value!.id ?? ''" readonly/>
 
-                        <text-field v-area="'name'"
+                        <TextField v-area="'name'"
                                     :override-theme-color="!!txnWorkingCopy.currentData.value!.title.trim() ? undefined : 'red'"
                                     :field-name="'Name'" v-model:text="txnWorkingCopy.currentData.value!.title"/>
 
-                        <text-field v-area="'date'" :field-name="'Date'" v-model:text="txnWorkingCopy.currentData.value!.creationDate"
+                        <TextField v-area="'date'" :field-name="'Date'" v-model:text="txnWorkingCopy.currentData.value!.creationDate"
                                     :override-theme-color="editTxnHook.isEnteredDateValid ? undefined : 'red'">
                             <template #fieldActions>
                                 <div class="nowButtonContainer">
@@ -28,40 +28,40 @@
                                     </BaseButton>
                                 </div>
                             </template>
-                        </text-field>
+                        </TextField>
 
-                        <custom-dropdown :options="selectableContainerOptions"
+                        <CustomDropdown :options="selectableContainerOptions"
                                         class="fullSize" v-area="'fromContainer'" field-name="From Container"
                                         v-model:selected-option="txnWorkingCopy.currentData.value!.fromContainer!" />
-                        <custom-dropdown :options="selectableTxnTagsOptions"
-                                        class="fullSize" v-area="'txnTag'" field-name="Txn Tags"
-                                        v-model:selected-option="txnWorkingCopy.currentData.value!.tagIds[0]" />
-                        <custom-dropdown :options="selectableCurrenciesOptions"
+                        <CustomDropdown :options="selectableCurrenciesOptions"
                                         :class="{'disabled': !txnWorkingCopy.currentData.value!.fromContainer}"
                                         class="fullSize" v-area="'fromCurrency'" field-name="From Currency"
                                         v-model:selected-option="txnWorkingCopy.currentData.value!.fromCurrency!" />
-                        <text-field v-area="'fromAmount'" field-name="From Amount" input-type="number"
+                        <TextField v-area="'fromAmount'" field-name="From Amount" input-type="number"
                                     :class="{'disabled': !txnWorkingCopy.currentData.value!.fromContainer}"
                                     :override-theme-color="editTxnHook.isEnteredFromAmountValid ? undefined : 'red'"
                                     :text="txnWorkingCopy.currentData.value!.fromAmount ?? ''"
                                     @update:text="txnWorkingCopy.currentData.value!.fromAmount = $event"/>
 
-                        <custom-dropdown :options="selectableContainerOptions"
+                        <CustomDropdown :options="selectableContainerOptions"
                                         class="fullSize" v-area="'toContainer'" field-name="To Container"
                                         v-model:selected-option="txnWorkingCopy.currentData.value!.toContainer!" />
-                        <custom-dropdown v-area="'toCurrency'" :options="selectableCurrenciesOptions"
+                        <CustomDropdown v-area="'toCurrency'" :options="selectableCurrenciesOptions"
                                         :class="{'disabled': !txnWorkingCopy.currentData.value!.toContainer}"
                                         class="fullSize" field-name="To Currency"
                                         v-model:selected-option="txnWorkingCopy.currentData.value!.toCurrency!" />
-                        <text-field v-area="'toAmount'" field-name="To Amount" input-type="number"
+                        <TextField v-area="'toAmount'" field-name="To Amount" input-type="number"
                                     :class="{'disabled': !txnWorkingCopy.currentData.value!.toContainer}"
                                     :override-theme-color="editTxnHook.isEnteredToAmountValid ? undefined : 'red'"
                                     :text="txnWorkingCopy.currentData.value!.toAmount ?? ''"
                                     @update:text="txnWorkingCopy.currentData.value!.toAmount = $event"/>
 
-                        <text-field v-area="'desc'" id="descriptionTextField" field-name="Description" input-type="text"
+                        <TextField v-area="'desc'" id="descriptionTextField" field-name="Description" input-type="text"
                                     :text="txnWorkingCopy.currentData.value?.description ?? ''" always-float textarea-mode
                                     @update:text="txnWorkingCopy.currentData.value!.description = $event"/>
+
+                        <ChipsSelector field-name="Tags" v-area="'tags'" v-model:values="txnWorkingCopy.currentData.value!.tagIds"
+                                       :options="selectableTxnTagsOptions" />
 
                         <div id="resetSaveContainer" v-area="'actions'" v-if="txnWorkingCopy.currentData">
                             <div class="dummy"></div>
@@ -110,11 +110,12 @@ import NetworkCircularIndicator from '@/modules/core/components/data-display/Net
 import StaticNotice from '@/modules/core/components/data-display/StaticNotice.vue';
 import ViewTitle from '@/modules/core/components/data-display/ViewTitle.vue';
 import { computed, watch } from 'vue';
-import textField from '@/modules/core/components/inputs/TextField.vue';
-import customDropdown from '@/modules/core/components/inputs/CustomDropdown.vue';
 import { formatDate } from '@/modules/core/utils/date';
 import BaseButton from '@/modules/core/components/inputs/BaseButton.vue';
 import { DateFormatToShow, useAddTxn, useEditTxn } from '../composables/useEditAddTxn';
+import ChipsSelector, { type ChipOption } from '@/modules/core/components/inputs/ChipsSelector.vue';
+import TextField from '@/modules/core/components/inputs/TextField.vue';
+import CustomDropdown from '@/modules/core/components/inputs/CustomDropdown.vue';
 
 type AddHookReturnType = ReturnType<typeof useAddTxn>;
 type EditHookReturnType = ReturnType<typeof useEditTxn>;
@@ -150,8 +151,15 @@ const selectableCurrenciesOptions = computed(() =>
 });
 const selectableTxnTagsOptions = computed(() =>
 {
-    const items = editTxnHook.txnTags.lastSuccessfulData?.rangeItems;
-    return items?.map(x => ({ id: x.id, label: x.name, searchTerms: `${x.id} ${x.name}` })) ?? [];
+    const items = editTxnHook.txnTags.lastSuccessfulData?.rangeItems ?? [];
+    return items.map(item => {
+        return {
+            label: item.name,
+            value: item.id,
+            color: '#00FFFF33',
+            searchTerms: `${item.name} ${item.id}`
+        } satisfies ChipOption
+    });
 });
 const autoFillCurrentDateTime = () =>
 {
@@ -198,6 +206,17 @@ async function handleSaveBtn()
 <style lang="less" scoped>
 @import url('@/modules/core/stylesheets/globalStyle.less');
 
+fieldset
+{
+    border: 1px solid @border;
+    color: #606060;
+    font-family: @font;
+    font-weight: 100;
+    font-size: 12px;
+    background: #151515;
+    legend { margin-left: 10px; }
+}
+
 #txnTopDiv
 {
     container-name: currenciesPage;
@@ -223,6 +242,7 @@ async function handleSaveBtn()
         'fromAmount    fromAmount    toAmount      toAmount      ' minmax(0px, 45px)
         '_             _             _             _             ' 5px
         'desc          desc          desc          desc          ' 100px
+        'tags          tags          tags          tags          ' auto
         'error         error         error         error         ' auto
         'actions       actions       actions       actions       ' 35px
         / 1fr          1fr           1fr           1fr;
@@ -284,13 +304,13 @@ async function handleSaveBtn()
             'id              id              ' 45px
             'name            name            ' 45px
             'date            date            ' 45px
-            'txnTag         txnTag         ' 45px
             'fromContainer   fromContainer   ' minmax(0px, 45px)
             'fromAmount      fromCurrency    ' minmax(0px, 45px)
             'toContainer     toContainer     ' minmax(0px, 45px)
             'toAmount        toCurrency      ' minmax(0px, 45px)
             '_               _               ' 5px
             'desc            desc            ' minmax(0px, 100px)
+            'tags            tags            ' auto
             'error           error           ' auto
             'actions         actions         ' 45px
             / 0.6fr            1fr !important;
