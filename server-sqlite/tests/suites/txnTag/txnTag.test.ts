@@ -1,12 +1,12 @@
 import { IsArray, IsNumber, IsString, ValidateNested } from "class-validator";
-import { BodyGenerator } from "./lib/bodyGenerator.js";
-import { resetDatabase, serverURL, UnitTestEndpoints } from "./index.test.js";
-import { assertJSONEqual, assertStrictEqual, HTTPAssert } from "./lib/assert.js";
-import { Context } from "./lib/context.js";
-import { Generator } from "./shortcuts/generator.js";
-import { GetTxnTagsAPI, PostTxnTagsAPI, TxnTagsDTO } from "../../api-types/txnTag.js";
+import { BodyGenerator } from "../../lib/bodyGenerator.js";
+import { resetDatabase, serverURL, UnitTestEndpoints } from "../../index.test.js";
+import { assertJSONEqual, assertStrictEqual, HTTPAssert } from "../../lib/assert.js";
+import { Context } from "../../lib/context.js";
+import { Generator } from "../../shortcuts/generator.js";
+import { GetTxnTagsAPI, PostTxnTagsAPI, TxnTagsDTO } from "../../../../api-types/txnTag.js";
 import { Type } from "class-transformer";
-import { AuthHelpers } from "./auth.test.js";
+import { AuthHelpers } from "../auth/auth.test.js";
 
 export class TransactionTagsDTOClass implements TxnTagsDTO
 {

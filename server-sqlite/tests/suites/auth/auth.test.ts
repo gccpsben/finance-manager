@@ -1,11 +1,11 @@
 import { IsDateString, IsString } from "class-validator";
-import { BodyGenerator } from "./lib/bodyGenerator.js";
-import { serverURL, TestUserDict, TestUserEntry, UnitTestEndpoints } from "./index.test.js";
-import { HTTPAssert } from './lib/assert.js';
-import { Context } from "./lib/context.js";
-import { PostUserAPI } from "../../api-types/user.js";
-import { PostLoginAPI } from "../../api-types/auth.js";
-import { IsUTCDateInt } from "../server_source/db/validators.js";
+import { BodyGenerator } from "../../lib/bodyGenerator.js";
+import { serverURL, TestUserDict, TestUserEntry, UnitTestEndpoints } from "../../index.test.js";
+import { HTTPAssert } from '../../lib/assert.js';
+import { Context } from "../../lib/context.js";
+import { PostUserAPI } from "../../../../api-types/user.js";
+import { PostLoginAPI } from "../../../../api-types/auth.js";
+import { IsUTCDateInt } from "../../../server_source/db/validators.js";
 import { randomUUID } from "crypto";
 
 export namespace PostUserAPIClass

@@ -1,12 +1,12 @@
 import { IsArray, IsNumber, IsOptional, IsString, ValidateNested } from "class-validator";
-import { DeleteCurrencyRateSrcAPI, GetCurrencyRateSrcAPI, PostCurrencyRateSrcAPI } from "../../api-types/currencyRateSource.d.js";
+import { DeleteCurrencyRateSrcAPI, GetCurrencyRateSrcAPI, PostCurrencyRateSrcAPI } from "../../../../api-types/currencyRateSource.js";
 import { Type } from "class-transformer";
-import { Context } from "./lib/context.js";
-import { resetDatabase, serverURL, TestUserDict, UnitTestEndpoints } from "./index.test.js";
-import { AuthHelpers } from "./auth.test.js";
-import { BodyGenerator } from "./lib/bodyGenerator.js";
-import { assertBodyConfirmToModel, assertStrictEqual, HTTPAssert } from "./lib/assert.js";
-import { postBaseCurrency, postCurrency, PostCurrencyAPIClass } from "./currency.test.js";
+import { Context } from "../../lib/context.js";
+import { resetDatabase, serverURL, TestUserDict, UnitTestEndpoints } from "../../index.test.js";
+import { AuthHelpers } from "../auth/auth.test.js";
+import { BodyGenerator } from "../../lib/bodyGenerator.js";
+import { assertBodyConfirmToModel, assertStrictEqual, HTTPAssert } from "../../lib/assert.js";
+import { postBaseCurrency, postCurrency, PostCurrencyAPIClass } from "../currency/currency.test.js";
 import { Decimal } from "decimal.js";
 import { randomUUID } from "crypto";
 

@@ -1,19 +1,18 @@
 import { IsString, IsBoolean, IsOptional, IsNumber, IsArray, ValidateNested, IsNumberString } from "class-validator";
-import { IsDecimalJSString } from "../server_source/db/validators.js";
-import { Context } from "./lib/context.js";
-import { resetDatabase, serverURL, TestUserDict, TestUserEntry, UnitTestEndpoints } from "./index.test.js";
-import { Generator } from "./shortcuts/generator.js";
-import { assertBodyConfirmToModel, assertStrictEqual, HTTPAssert } from "./lib/assert.js";
-import { BodyGenerator } from "./lib/bodyGenerator.js";
+import { IsDecimalJSString } from "../../../server_source/db/validators.js";
+import { Context } from "../../lib/context.js";
+import { resetDatabase, serverURL, TestUserDict, TestUserEntry, UnitTestEndpoints } from "../../index.test.js";
+import { Generator } from "../../shortcuts/generator.js";
+import { assertBodyConfirmToModel, assertStrictEqual, HTTPAssert } from "../../lib/assert.js";
+import { BodyGenerator } from "../../lib/bodyGenerator.js";
 import { simpleFaker } from '@faker-js/faker';
 import { randomUUID } from "crypto";
 import { Decimal } from "decimal.js";
-import { fillArray } from "./lib/utils.js";
-import { CurrencyDTO, PostCurrencyAPI, GetCurrencyAPI, GetCurrencyRateHistoryAPI } from "../../api-types/currencies.d.js";
-import { PostCurrencyRateAPI } from "../../api-types/currencyRateDatum.js";
-import { PostCurrencyRateSrcAPI } from "../../api-types/currencyRateSource.js";
+import { fillArray } from "../../lib/utils.js";
+import { CurrencyDTO, PostCurrencyAPI, GetCurrencyAPI, GetCurrencyRateHistoryAPI } from "../../../../api-types/currencies.js";
+import { PostCurrencyRateAPI } from "../../../../api-types/currencyRateDatum.js";
 import { Type } from "class-transformer";
-import { AuthHelpers } from "./auth.test.js";
+import { AuthHelpers } from "../auth/auth.test.js";
 
 export class CurrencyDTOClass implements CurrencyDTO
 {

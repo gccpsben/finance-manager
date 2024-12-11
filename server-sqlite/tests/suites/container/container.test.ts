@@ -1,19 +1,19 @@
 import { randomUUID } from "crypto";
-import { resetDatabase, serverURL, TestUserEntry, UnitTestEndpoints } from "./index.test.js";
-import { assertBodyConfirmToModel, assertStrictEqual, HTTPAssert } from "./lib/assert.js";
-import { Context } from "./lib/context.js";
-import { BodyGenerator } from "./lib/bodyGenerator.js";
-import { Generator } from "./shortcuts/generator.js";
-import { BalancesHydratedContainerDTO, ContainerDTO, GetContainerAPI, PostContainerAPI, ValueHydratedContainerDTO } from "../../api-types/container.js";
+import { resetDatabase, serverURL, TestUserEntry, UnitTestEndpoints } from "../../index.test.js";
+import { assertBodyConfirmToModel, assertStrictEqual, HTTPAssert } from "../../lib/assert.js";
+import { Context } from "../../lib/context.js";
+import { BodyGenerator } from "../../lib/bodyGenerator.js";
+import { Generator } from "../../shortcuts/generator.js";
+import { BalancesHydratedContainerDTO, ContainerDTO, GetContainerAPI, PostContainerAPI, ValueHydratedContainerDTO } from "../../../../api-types/container.js";
 import { IsArray, IsDefined, IsNumber, IsString, ValidateNested } from "class-validator";
 import { Decimal } from "decimal.js";
 import { simpleFaker } from "@faker-js/faker";
-import { CurrencyHelpers, PostCurrencyRateDatumAPIClass } from "./currency.test.js";
-import { IsDecimalJSString, IsStringToDecimalJSStringDict, IsStringToStringDict, IsUTCDateInt } from "../server_source/db/validators.js";
+import { CurrencyHelpers, PostCurrencyRateDatumAPIClass } from "../currency/currency.test.js";
+import { IsDecimalJSString, IsStringToDecimalJSStringDict, IsStringToStringDict, IsUTCDateInt } from "../../../server_source/db/validators.js";
 import { Type } from "class-transformer";
-import { AuthHelpers } from "./auth.test.js";
-import { TransactionHelpers } from "./transaction.test.js";
-import { TxnTagHelpers } from "./txnTag.test.js";
+import { AuthHelpers } from "../auth/auth.test.js";
+import { TransactionHelpers } from "../transaction/transaction.test.js";
+import { TxnTagHelpers } from "../txnTag/txnTag.test.js";
 
 export class ContainerDTOClass implements ContainerDTO
 {
