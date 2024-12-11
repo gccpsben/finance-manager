@@ -236,7 +236,7 @@ fieldset
     gap: 15px;
     grid-template:
         'id            id            date          date          ' 45px
-        'name          name          txnTag       txnTag       ' 45px
+        'name          name          name          name          ' 45px
         'fromContainer fromContainer toContainer   toContainer   ' minmax(0px, 45px)
         'fromCurrency  fromCurrency  toCurrency    toCurrency    ' minmax(0px, 45px)
         'fromAmount    fromAmount    toAmount      toAmount      ' minmax(0px, 45px)
