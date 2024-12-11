@@ -1,39 +1,28 @@
 <template>
-    <div>
-        <fieldset class="rootFieldset" :class="{'float': shouldTextFloat, 'highlighted': shouldHighlight}"
-                  :style="fieldsetRootStyleOverrideObj">
-            <legend v-if="shouldTextFloat" ref="legend">{{ fieldName.get() }}</legend>
-            <div ref="contentPanel" class="contentPanel fullSize">
-                <div class="contentPanelInner fullSize" v-area="'main'">
-                    <component :is="textareaMode ? 'textarea' : 'input'"
-                               :type="inputType.get()" ref="textFieldInput"
-                               class="textFieldInput" :value="text.get()"
-                               :readonly="readonly.get()" :disabled="disabled.get()"
-                               @focus="$emit('focus')" @blur="$emit('blur')"
-                               @input="text.set(($event.target as HTMLInputElement).value!)"
-                               :placeholder="textFieldInputIsFocused ? placeholder.get() : ''"/>
-                    <div class="center">
-                        <slot name="fieldActions"></slot>
-                    </div>
-                </div>
-                <div ref="placeholderText" v-basic="'.placeholderText'" v-area="'main'"
-                     :style="placeholderTextStyleOverrideObj" >{{ fieldName.get() }}</div>
-                <div ref="unscaledPlaceholderText" v-basic="'.unscaledPlaceholderText'" v-area="'main'">
-                    {{ fieldName.get() }}
-                </div>
-            </div>
-        </fieldset>
+    <div class="fullSize">
+        <CustomFieldset :field-name="fieldName.get()"
+                        :override-theme-color="overrideThemeColor.get()"
+                        :should-text-float="shouldTextFloat"
+                        :should-highlight="shouldHighlight">
+            <template #content>
+                <component :is="textareaMode ? 'textarea' : 'input'"
+                           :type="inputType.get()" ref="textFieldInput"
+                           class="textFieldInput" :value="text.get()"
+                           :readonly="readonly.get()" :disabled="disabled.get()"
+                           @focus="$emit('focus')" @blur="$emit('blur')"
+                           @input="text.set(($event.target as HTMLInputElement).value!)"
+                           :placeholder="textFieldInputIsFocused ? placeholder.get() : ''"/>
+            </template>
+        </CustomFieldset>
     </div>
 </template>
 
 <script lang="ts" setup>
-import vBasic from '@/modules/core/directives/vBasic';
-import vArea from '@/modules/core/directives/vArea';
-import { useElementSize, useFocus } from '@vueuse/core';
+import { useFocus } from '@vueuse/core';
 import { ref, computed } from 'vue';
 import { defineProperty, Uncontrolled } from '../../utils/defineProperty';
 import type { HTMLInputType } from '@/shims-vue';
-import tinycolor from "tinycolor2";
+import CustomFieldset from '../data-display/CustomFieldset.vue';
 
 export type TextFieldProps =
 {
@@ -103,37 +92,9 @@ const alwaysFloat = defineProperty<boolean | undefined, "alwaysFloat", typeof pr
 
 const textFieldInput = ref(null);
 const placeholderText = ref(null);
-const unscaledPlaceholderText = ref(null);
-const contentPanel = ref(null);
-const legend = ref(null);
 
 const { focused:textFieldInputIsFocused } = useFocus(textFieldInput);
 const { focused:placeholderTextIsFocused } = useFocus(placeholderText);
-const { height: unscaledPlaceholderTextHeight } = useElementSize(unscaledPlaceholderText);
-const { height: legendHeight, width: legendWidth } = useElementSize(legend);
-const { height: contentPanelHeight } = useElementSize(contentPanel);
-
-const rootYOffsetStyle = computed(() => `translateY(-${legendHeight.value / 2}px)`);
-const rootHeightOffsetStyle = computed(() => `calc(100% + ${legendHeight.value / 2}px)`);
-const contentYOffsetStyle = computed(() => `translateY(-${legendHeight.value / 2}px)`);
-const contentHeightOffsetStyle = computed(() => `calc(100% + ${legendHeight.value / 2}px)`);
-const placeholderTextYOffsetStyle = computed(() =>
-{
-    if (shouldTextFloat.value) return "translateY(calc(-50% - 1px))";
-    return `translateY(${(contentPanelHeight.value - unscaledPlaceholderTextHeight.value) / 2}px)`
-});
-const fieldsetRootStyleOverrideObj = computed(() => // a style object overriding the style of fieldsetRoot base on props
-{
-    return overrideThemeColor.get() && shouldHighlight.value
-    ? { 'border-color': overrideThemeColor.get() }
-    : { };
-});
-const placeholderTextStyleOverrideObj = computed(() => // a style object overriding the style of placeholderText base on props
-{
-    return overrideThemeColor.get() && shouldHighlight.value
-    ? { 'color': "#" + tinycolor(overrideThemeColor.get()).lighten(30).toHex() }
-    : { };
-});
 
 const shouldTextFloat = computed(() =>
 {
@@ -150,105 +111,16 @@ const shouldHighlight = computed(() =>
 </script>
 
 <style lang="less" scoped>
-// Default variables, the @import below will override these if defined
-@textFieldFocusThemeColor: cyan;
-@textFieldLegendLeftPadding: 5px;
-@textFieldLegendRightPadding: 5px;
-@textFieldLegendLeftMargin: 5px;
-@textFieldInputLeftPadding: 10px;
-@textFieldInputRightPadding: 10px;
-@textFieldFloatingTextFontSize: 12px;
-@textFieldNonfloatingTextFontSize: 14px;
-@textFieldPlaceholderColor: #606060;
-
 @import "@/modules/core/stylesheets/globalStyle.less";
 
-.rootFieldset
+.textFieldInput
 {
-    height: v-bind(rootHeightOffsetStyle);
-    transform: v-bind(rootYOffsetStyle);
-    background: #151515;
-    border: 1px solid @border;
-    font-family: @font;
-    font-weight: 100;
-    transition: border-color 0.5s ease;
-    &.highlighted { border-color: @textFieldFocusThemeColor; }
-
-    input::placeholder { color: @textFieldPlaceholderColor; }
-
-    legend
-    {
-        // This element is invisible to the user, only to serve as the blocking element for the border
-        color: transparent;
-        font-size: @textFieldFloatingTextFontSize;
-        margin-left: @textFieldLegendLeftMargin;
-        padding-left: @textFieldLegendLeftPadding;
-        padding-right: @textFieldLegendRightPadding;
-        z-index: 999;
-        text-align: left;
-    }
-
-    .contentPanel
-    {
-        transform: v-bind(contentYOffsetStyle);
-        height: v-bind(contentHeightOffsetStyle);
-        display: grid; grid-template-columns: 1fr; grid-template-rows: 1fr; grid-template-areas: 'main';
-
-        .contentPanelInner
-        {
-            display: grid;
-            grid-template-columns: 1fr auto;
-            grid-template-rows: 1fr;
-        }
-
-        .textFieldInput
-        {
-            .fullSize;
-            outline: none;
-            appearance: none;
-            padding-left: @textFieldInputLeftPadding;
-            padding-right: @textFieldInputRightPadding;
-            resize: none; // for textarea mode
-            &:read-only { opacity: 0.4; }
-        }
-
-        .placeholderText
-        {
-            pointer-events: none;
-            padding-left: @textFieldInputLeftPadding;
-            padding-right: @textFieldInputRightPadding;
-            font-size: @textFieldNonfloatingTextFontSize;
-            height: fit-content;
-            width: fit-content;
-            transition: all 0.5s ease;
-            transform: v-bind(placeholderTextYOffsetStyle);
-            color: @textFieldPlaceholderColor;
-        }
-
-        .unscaledPlaceholderText
-        {
-            opacity: 0;
-            font-size: @textFieldNonfloatingTextFontSize;
-            height: fit-content;
-            width: fit-content;
-            pointer-events: none;
-        }
-    }
-
-    &.highlighted
-    {
-        .placeholderText
-        {
-            color: lighten(@textFieldFocusThemeColor, 30%);
-        }
-    }
-
-    &.float
-    {
-        .placeholderText
-        {
-            font-size: @textFieldFloatingTextFontSize;
-        }
-    }
+    .fullSize;
+    outline: none;
+    appearance: none;
+    padding-left: @textFieldInputLeftPadding;
+    padding-right: @textFieldInputRightPadding;
+    resize: none; // for textarea mode
+    &:read-only { opacity: 0.4; }
 }
 </style>
