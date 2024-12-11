@@ -3,64 +3,14 @@ import { resetDatabase, serverURL, TestUserEntry, UnitTestEndpoints } from "../.
 import { assertBodyConfirmToModel, assertStrictEqual, HTTPAssert } from "../../lib/assert.js";
 import { Context } from "../../lib/context.js";
 import { BodyGenerator } from "../../lib/bodyGenerator.js";
-import { Generator } from "../../shortcuts/generator.js";
-import { BalancesHydratedContainerDTO, ContainerDTO, GetContainerAPI, PostContainerAPI, ValueHydratedContainerDTO } from "../../../../api-types/container.js";
-import { IsArray, IsDefined, IsNumber, IsString, ValidateNested } from "class-validator";
 import { Decimal } from "decimal.js";
 import { simpleFaker } from "@faker-js/faker";
-import { CurrencyHelpers, PostCurrencyRateDatumAPIClass } from "../currency/currency.test.js";
-import { IsDecimalJSString, IsStringToDecimalJSStringDict, IsStringToStringDict, IsUTCDateInt } from "../../../server_source/db/validators.js";
-import { Type } from "class-transformer";
-import { AuthHelpers } from "../auth/auth.test.js";
-import { TransactionHelpers } from "../transaction/transaction.test.js";
-import { TxnTagHelpers } from "../txnTag/txnTag.test.js";
-
-export class ContainerDTOClass implements ContainerDTO
-{
-    @IsString() id: string;
-    @IsString() name: string;
-    @IsUTCDateInt() creationDate: number;
-    @IsString() owner: string;
-}
-
-export class BalancesValueHydratedContainerDTOClass extends ContainerDTOClass implements ValueHydratedContainerDTO, BalancesHydratedContainerDTO
-{
-    @IsDecimalJSString() value: string;
-
-    @IsDefined()
-    @IsStringToDecimalJSStringDict()
-    balances: { [currencyId: string]: string; };
-}
-
-export namespace GetContainerAPIClass
-{
-    export class RequestDTO implements GetContainerAPI.RequestDTO { }
-    export class ResponseDTO implements GetContainerAPI.ResponseDTO
-    {
-        @IsNumber() rateCalculatedToEpoch: number;
-        @IsNumber() totalItems: number;
-        @IsNumber() startingIndex: number;
-        @IsNumber() endingIndex: number;
-
-        @IsArray()
-        @ValidateNested({ each: true })
-        @Type(() => BalancesValueHydratedContainerDTOClass)
-        rangeItems: (ValueHydratedContainerDTO & BalancesHydratedContainerDTO)[];
-    }
-}
-
-export namespace PostContainerAPIClass
-{
-    export class RequestDTO implements PostContainerAPI.RequestDTO
-    {
-        @IsString() name: string;
-    }
-
-    export class ResponseDTO implements PostContainerAPI.ResponseDTO
-    {
-        @IsString() id: string;
-    }
-}
+import { ContainerHelpers } from "./helpers.js";
+import { AuthHelpers } from "../auth/helpers.js";
+import { CurrencyHelpers } from "../currency/helpers.js";
+import { PostCurrencyRateDatumAPIClass } from "../currency/classes.js";
+import { TransactionHelpers } from "../transaction/helpers.js";
+import { TxnTagHelpers } from "../txnTag/helpers.js";
 
 async function postCurrencyRateDatum(token:string, amount: string, refCurrencyId: string, refAmountCurrencyId: string, date: number)
 {
@@ -376,91 +326,4 @@ export default async function(this: Context)
             });
         });
     });
-}
-
-export namespace ContainerHelpers
-{
-    export async function postCreateContainer(config:
-    {
-        serverURL:string,
-        token:string,
-        body: Partial<PostContainerAPI.RequestDTO>,
-        assertBody?: boolean,
-        expectedCode?: number
-    })
-    {
-        const assertBody = config.assertBody === undefined ? true : config.assertBody;
-        const response = await HTTPAssert.assertFetch(UnitTestEndpoints.containersEndpoints['post'],
-        {
-            baseURL: config.serverURL, expectedStatus: config.expectedCode, method: "POST",
-            body: config.body,
-            headers: { "authorization": config.token },
-            expectedBodyType: assertBody ? PostContainerAPIClass.ResponseDTO : undefined
-        });
-        return {
-            ...response,
-            containerId: response.parsedBody?.id as string | undefined
-        };
-    }
-
-    /** Random tnx types with unique names */
-    export async function postRandomContainers(config:
-    {
-        serverURL:string,
-        token:string,
-        assertBody?: boolean,
-        expectedCode?: number,
-        containerCount: number
-    })
-    {
-        const usedNames: string[] = [];
-        const output: { containerId: string, containerName: string }[] = [];
-        for (let i = 0; i < config.containerCount; i++)
-        {
-            const randomName = Generator.randUniqueName(usedNames);
-            usedNames.push(randomName);
-            output.push(
-            {
-                containerId: (await ContainerHelpers.postCreateContainer(
-                {
-                    body         : { name: randomName },
-                    serverURL    : config.serverURL,
-                    token        : config.token,
-                    assertBody   : config.assertBody,
-                    expectedCode : config.expectedCode
-                })).containerId,
-                containerName: randomName
-            });
-        }
-        return output;
-    }
-
-    export async function getUserContainers(config:
-    {
-        serverURL: string,
-        token: string,
-        assertBody?: boolean,
-        expectedCode?: number,
-        dateEpoch?: number | undefined
-    })
-    {
-        const assertBody = config.assertBody === undefined ? true : config.assertBody;
-        const url = config.dateEpoch !== undefined ?
-            `${UnitTestEndpoints.containersEndpoints['get']}?currencyRateDate=${config.dateEpoch}` :
-            UnitTestEndpoints.containersEndpoints['get'];
-
-        const response = await HTTPAssert.assertFetch
-        (
-            url,
-            {
-                baseURL: config.serverURL, expectedStatus: config.expectedCode, method: "GET",
-                headers: { "authorization": config.token },
-                expectedBodyType: assertBody ? GetContainerAPIClass.ResponseDTO : undefined,
-            }
-        );
-        return {
-            res: response,
-            parsedBody: response.parsedBody
-        };
-    }
 }

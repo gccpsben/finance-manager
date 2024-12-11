@@ -1,68 +1,13 @@
-import { IsArray, IsNumber, IsOptional, IsString, ValidateNested } from "class-validator";
-import { DeleteCurrencyRateSrcAPI, GetCurrencyRateSrcAPI, PostCurrencyRateSrcAPI } from "../../../../api-types/currencyRateSource.js";
-import { Type } from "class-transformer";
 import { Context } from "../../lib/context.js";
-import { resetDatabase, serverURL, TestUserDict, UnitTestEndpoints } from "../../index.test.js";
-import { AuthHelpers } from "../auth/auth.test.js";
+import { resetDatabase, serverURL, UnitTestEndpoints } from "../../index.test.js";
 import { BodyGenerator } from "../../lib/bodyGenerator.js";
 import { assertBodyConfirmToModel, assertStrictEqual, HTTPAssert } from "../../lib/assert.js";
-import { postBaseCurrency, postCurrency, PostCurrencyAPIClass } from "../currency/currency.test.js";
 import { Decimal } from "decimal.js";
 import { randomUUID } from "crypto";
-
-export namespace DeleteCurrencyRateSrcAPIClass
-{
-    export class ResponseDTO implements DeleteCurrencyRateSrcAPI.ResponseDTO
-    {
-        @IsString() id: string;
-    }
-}
-
-export namespace GetCurrencyRateSrcAPIClass
-{
-    export class RequestDTO implements GetCurrencyRateSrcAPI.RequestDTO
-    {
-        @IsString()
-        targetCurrencyId: string;
-    }
-
-    export class ResponseCurrencyRateSrcDTO implements GetCurrencyRateSrcAPI.ResponseCurrencyRateSrcDTO
-    {
-        @IsString() refCurrencyId: string;
-        @IsString() refAmountCurrencyId: string;
-        @IsString() hostname: string;
-        @IsString() path: string;
-        @IsString() jsonQueryString: string;
-        @IsString() name: string;
-        @IsString() id: string;
-        @IsNumber() @IsOptional() lastExecuteTime: number;
-    }
-
-    export class ResponseDTO implements GetCurrencyRateSrcAPI.ResponseDTO
-    {
-        @IsArray()
-        @ValidateNested({ each: true })
-        @Type(() => ResponseCurrencyRateSrcDTO)
-        sources: ResponseCurrencyRateSrcDTO[];
-    }
-}
-
-export namespace PostCurrencyRateSourceAPIClass
-{
-    export class RequestDTO implements PostCurrencyRateSrcAPI.RequestDTO
-    {
-        @IsString() refCurrencyId: string;
-        @IsString() refAmountCurrencyId: string;
-        @IsString() hostname: string;
-        @IsString() path: string;
-        @IsString() jsonQueryString: string;
-        @IsString() name: string;
-    }
-    export class ResponseDTO implements PostCurrencyRateSrcAPI.ResponseDTO
-    {
-        @IsString() id: string;
-    }
-}
+import { AuthHelpers } from "../auth/helpers.js";
+import { postBaseCurrency, postCurrency } from "../currency/index.test.js";
+import { PostCurrencyAPIClass } from "../currency/classes.js";
+import { CurrencyRateSourceHelpers } from "./helpers.js";
 
 export default async function(this: Context)
 {
@@ -224,81 +169,4 @@ export default async function(this: Context)
             });
         })
     });
-}
-
-export namespace CurrencyRateSourceHelpers
-{
-    export async function postCreateCurrencyRateSource(config:
-    {
-        serverURL:string,
-        token:string,
-        body: Partial<PostCurrencyRateSrcAPI.RequestDTO>,
-        assertBody?: boolean,
-        expectedCode?: number
-    })
-    {
-        const assertBody = config.assertBody === undefined ? true : config.assertBody;
-        const response = await HTTPAssert.assertFetch(UnitTestEndpoints.currencyRateSourcesEndpoints['post'],
-        {
-            baseURL: config.serverURL, expectedStatus: config.expectedCode, method: "POST",
-            body: config.body,
-            headers: { "authorization": config.token },
-            expectedBodyType: assertBody ? PostCurrencyRateSourceAPIClass.ResponseDTO : undefined
-        });
-        return response;
-    }
-
-    export async function deleteCurrencySources(config:
-    {
-        serverURL: string,
-        token: string,
-        assertBody?: boolean,
-        expectedCode?: number,
-        currencySrcId: string
-    })
-    {
-        const assertBody = config.assertBody === undefined ? true : config.assertBody;
-        const url = UnitTestEndpoints.currencyRateSourcesEndpoints.delete(config.currencySrcId);
-
-        const response = await HTTPAssert.assertFetch
-        (
-            url,
-            {
-                baseURL: config.serverURL, expectedStatus: config.expectedCode, method: "DELETE",
-                headers: { "authorization": config.token },
-                expectedBodyType: assertBody ? DeleteCurrencyRateSrcAPIClass.ResponseDTO : undefined,
-            }
-        );
-        return {
-            res: response,
-            parsedBody: response.parsedBody
-        };
-    }
-
-    export async function getCurrencySources(config:
-    {
-        serverURL: string,
-        token: string,
-        assertBody?: boolean,
-        expectedCode?: number,
-        currencyId: string
-    })
-    {
-        const assertBody = config.assertBody === undefined ? true : config.assertBody;
-        const url = UnitTestEndpoints.currencyRateSourcesEndpoints.get(config.currencyId);
-
-        const response = await HTTPAssert.assertFetch
-        (
-            url,
-            {
-                baseURL: config.serverURL, expectedStatus: config.expectedCode, method: "GET",
-                headers: { "authorization": config.token },
-                expectedBodyType: assertBody ? GetCurrencyRateSrcAPIClass.ResponseDTO : undefined,
-            }
-        );
-        return {
-            res: response,
-            parsedBody: response.parsedBody
-        };
-    }
 }

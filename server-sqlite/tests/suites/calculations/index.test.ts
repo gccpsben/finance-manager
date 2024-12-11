@@ -1,61 +1,19 @@
 import { LinearInterpolator } from '../../../server_source/calculations/linearInterpolator.js';
 import { resetDatabase, serverURL, UnitTestEndpoints } from "../../index.test.js";
-import { assertJSONEqual, assertStrictEqual, HTTPAssert } from "../../lib/assert.js";
+import { assertJSONEqual, assertStrictEqual } from "../../lib/assert.js";
 import { Context } from "../../lib/context.js";
 import { Decimal } from "decimal.js";
 import { randomUUID } from "crypto";
 import { simpleFaker } from "@faker-js/faker";
-import { GetUserBalanceHistoryAPI, GetUserNetworthHistoryAPI, ResponseGetExpensesAndIncomesDTO } from "../../../../api-types/calculations.js";
-import { isDecimalJSString, IsDecimalJSString, IsEpochKeyedMap, IsPassing } from "../../../server_source/db/validators.js";
+import { GetUserBalanceHistoryAPI, GetUserNetworthHistoryAPI } from "../../../../api-types/calculations.js";
 import { shuffleArray } from '../../lib/utils.js';
-import { CurrencyHelpers, postCurrencyRateDatum } from '../currency/currency.test.js';
-import { AuthHelpers } from "../auth/auth.test.js";
-import { TransactionHelpers } from '../transaction/transaction.test.js';
-import { ContainerHelpers } from '../container/container.test.js';
-import { TxnTagHelpers } from '../txnTag/txnTag.test.js';
-
-export namespace GetUserBalanceHistoryAPIClass
-{
-    export class ResponseDTO implements GetUserBalanceHistoryAPI.ResponseDTO
-    {
-        @IsEpochKeyedMap()
-        @IsPassing(value =>
-        {
-            const val = value as { [epoch: string]: unknown };
-            for (const innerMap of Object.values(val))
-            {
-                if (Object.keys(innerMap).some(k => typeof k !== 'string')) return false;
-                if (Object.values(innerMap).some(v => !isDecimalJSString(v))) return false;
-            }
-            return true;
-        })
-        map: { [epoch: string]: { [currencyId: string]: string; }; };
-    }
-}
-
-export namespace GetUserNetworthHistoryAPIClass
-{
-    export class ResponseDTO implements GetUserNetworthHistoryAPI.ResponseDTO
-    {
-        @IsEpochKeyedMap()
-        @IsPassing(value =>
-        {
-            const val = value as { [epoch: string]: unknown };
-            if (Object.keys(value).some(k => typeof k !== 'string')) return false;
-            if (Object.values(value).some(v => !isDecimalJSString(v))) return false;
-            return true;
-        })
-        map: { [epoch: string]: string; };
-    }
-}
-
-export class ResponseGetExpensesAndIncomesDTOClass implements ResponseGetExpensesAndIncomesDTO
-{
-    @IsDecimalJSString() expenses30d: string;
-    @IsDecimalJSString() incomes30d: string;
-    @IsDecimalJSString() expenses7d: string;
-    @IsDecimalJSString() incomes7d: string;
-}
+import { AuthHelpers } from '../auth/helpers.js';
+import { CalculationsHelpers } from './helpers.js';
+import { ContainerHelpers } from '../container/helpers.js';
+import { TransactionHelpers } from '../transaction/helpers.js';
+import { CurrencyHelpers } from '../currency/helpers.js';
+import { TxnTagHelpers } from '../txnTag/helpers.js';
+import { postCurrencyRateDatum } from '../currency/index.test.js';
 
 function choice<T> (list: T[]) { return list[Math.floor((Math.random()*list.length))]; }
 
@@ -542,85 +500,4 @@ export async function testForCalculationsInternals(this: Context)
             }
         }).bind(this)();
     });
-}
-
-export namespace CalculationsHelpers
-{
-    export async function getUserExpensesAndIncomes(config:
-    {
-        serverURL:string,
-        token:string,
-        assertBody?: boolean,
-        expectedCode?: number
-    })
-    {
-        const assertBody = config.assertBody === undefined ? true : config.assertBody;
-        const response = await HTTPAssert.assertFetch
-        (
-            UnitTestEndpoints.calculationsEndpoints['expensesAndIncomes'],
-            {
-                baseURL: config.serverURL, expectedStatus: config.expectedCode, method: "GET",
-                headers: { "authorization": config.token },
-                expectedBodyType: assertBody ? ResponseGetExpensesAndIncomesDTOClass : undefined,
-            }
-        );
-        return {
-            res: response,
-            parsedBody: response.parsedBody
-        };
-    }
-
-    export async function getUserBalanceHistory(config:
-    {
-        serverURL:string,
-        token:string,
-        assertBody?: boolean,
-        expectedCode?: number,
-        startDate: number,
-        endDate: number,
-        division: number
-    })
-    {
-        const assertBody = config.assertBody === undefined ? true : config.assertBody;
-        const response = await HTTPAssert.assertFetch
-        (
-            `${UnitTestEndpoints.calculationsEndpoints['balanceHistory']}?startDate=${config.startDate}&endDate=${config.endDate}&division=${config.division}`,
-            {
-                baseURL: config.serverURL, expectedStatus: config.expectedCode, method: "GET",
-                headers: { "authorization": config.token },
-                expectedBodyType: assertBody ? GetUserBalanceHistoryAPIClass.ResponseDTO : undefined,
-            }
-        );
-        return {
-            res: response,
-            parsedBody: response.parsedBody
-        };
-    }
-
-    export async function getUserNetworthHistory(config:
-    {
-        serverURL:string,
-        token:string,
-        assertBody?: boolean,
-        expectedCode?: number,
-        startDate: number,
-        endDate: number,
-        division: number
-    })
-    {
-        const assertBody = config.assertBody === undefined ? true : config.assertBody;
-        const response = await HTTPAssert.assertFetch
-        (
-            `${UnitTestEndpoints.calculationsEndpoints['networthHistory']}?startDate=${config.startDate}&endDate=${config.endDate}&division=${config.division}`,
-            {
-                baseURL: config.serverURL, expectedStatus: config.expectedCode, method: "GET",
-                headers: { "authorization": config.token },
-                expectedBodyType: assertBody ? GetUserNetworthHistoryAPIClass.ResponseDTO : undefined,
-            }
-        );
-        return {
-            res: response,
-            parsedBody: response.parsedBody
-        };
-    }
 }

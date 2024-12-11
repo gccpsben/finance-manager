@@ -1,104 +1,15 @@
-import { IsString, IsBoolean, IsOptional, IsNumber, IsArray, ValidateNested, IsNumberString } from "class-validator";
-import { IsDecimalJSString } from "../../../server_source/db/validators.js";
-import { Context } from "../../lib/context.js";
+import { Context } from "vm";
+import { PostCurrencyAPI } from "../../../../api-types/currencies.js";
 import { resetDatabase, serverURL, TestUserDict, TestUserEntry, UnitTestEndpoints } from "../../index.test.js";
-import { Generator } from "../../shortcuts/generator.js";
 import { assertBodyConfirmToModel, assertStrictEqual, HTTPAssert } from "../../lib/assert.js";
+import { AuthHelpers } from "../auth/helpers.js";
+import { CurrencyHelpers } from "./helpers.js";
 import { BodyGenerator } from "../../lib/bodyGenerator.js";
-import { simpleFaker } from '@faker-js/faker';
-import { randomUUID } from "crypto";
-import { Decimal } from "decimal.js";
 import { fillArray } from "../../lib/utils.js";
-import { CurrencyDTO, PostCurrencyAPI, GetCurrencyAPI, GetCurrencyRateHistoryAPI } from "../../../../api-types/currencies.js";
-import { PostCurrencyRateAPI } from "../../../../api-types/currencyRateDatum.js";
-import { Type } from "class-transformer";
-import { AuthHelpers } from "../auth/auth.test.js";
-
-export class CurrencyDTOClass implements CurrencyDTO
-{
-    @IsString() id: string;
-    @IsString() name: string;
-    @IsOptional() @IsDecimalJSString() fallbackRateAmount: string;
-    @IsOptional() @IsString() fallbackRateCurrencyId: string;
-    @IsString() owner: string;
-    @IsBoolean() isBase: boolean;
-    @IsString() ticker: string;
-    @IsDecimalJSString() rateToBase: string;
-}
-
-export namespace GetCurrencyAPIClass
-{
-    export class ResponseDTO implements GetCurrencyAPI.ResponseDTO
-    {
-        @IsNumber() totalItems: number;
-        @IsNumber() startingIndex: number;
-        @IsNumber() endingIndex: number;
-
-        @IsArray()
-        @ValidateNested({ each: true })
-        @Type(() => CurrencyDTOClass)
-        rangeItems: CurrencyDTO[];
-    }
-}
-
-export namespace PostCurrencyAPIClass
-{
-    export class RequestDTO implements PostCurrencyAPI.RequestDTO
-    {
-        @IsString() name: string;
-        @IsOptional() @IsDecimalJSString() fallbackRateAmount: string;
-        @IsOptional() @IsString() fallbackRateCurrencyId: string;
-        @IsString() ticker: string;
-    }
-
-    export class ResponseDTO implements PostCurrencyAPI.ResponseDTO
-    {
-        @IsString() id: string;
-    }
-}
-
-export namespace PostCurrencyRateDatumAPIClass
-{
-    export class RequestDTO implements PostCurrencyRateAPI.RequestDTO
-    {
-        @IsDecimalJSString() amount: string;
-        @IsString() refCurrencyId: string;
-        @IsString() refAmountCurrencyId: string;
-        @IsNumber() date: number;
-    }
-    export class ResponseDTO implements PostCurrencyRateAPI.ResponseDTO
-    {
-        @IsString() id: string;
-    }
-}
-
-export namespace GetCurrencyRatesHistoryAPIClass
-{
-    export class RateDatumDTO implements GetCurrencyRateHistoryAPI.RateDatum
-    {
-        @IsNumber() date: number;
-        @IsDecimalJSString() value: string;
-    }
-
-    export class RequestQueryDTO implements GetCurrencyRateHistoryAPI.RequestQueryDTO
-    {
-        @IsString() id: string;
-        @IsOptional() @IsDecimalJSString() startDate?: string;
-        @IsOptional() @IsDecimalJSString() endDate?: string;
-    }
-
-    export class ResponseDTO implements GetCurrencyRateHistoryAPI.ResponseDTO
-    {
-        @IsOptional() @IsDecimalJSString() startDate: number;
-        @IsOptional() @IsDecimalJSString() endDate: number;
-        @IsBoolean() historyAvailable: boolean;
-
-        @IsArray()
-        @ValidateNested({ each: true })
-        @Type(() => RateDatumDTO)
-        datums: GetCurrencyRateHistoryAPI.RateDatum[];
-    }
-}
+import { randomUUID } from "crypto";
+import { simpleFaker } from "@faker-js/faker";
+import { GetCurrencyAPIClass, GetCurrencyRatesHistoryAPIClass, PostCurrencyAPIClass, PostCurrencyRateDatumAPIClass } from "./classes.js";
+import { Decimal } from "decimal.js";
 
 export function createBaseCurrencyPostBody(name: string, ticker: string)
 {
@@ -687,84 +598,4 @@ export default async function(this: Context)
             })
         });
     });
-}
-
-export namespace CurrencyHelpers
-{
-    export async function postCreateCurrency(config:
-    {
-        serverURL:string,
-        token:string,
-        body: Partial<PostCurrencyAPI.RequestDTO>,
-        assertBody?: boolean,
-        expectedCode?: number
-    })
-    {
-        const assertBody = config.assertBody === undefined ? true : config.assertBody;
-        const response = await HTTPAssert.assertFetch(UnitTestEndpoints.currenciesEndpoints['post'],
-        {
-            baseURL: config.serverURL, expectedStatus: config.expectedCode, method: "POST",
-            body: config.body,
-            headers: { "authorization": config.token },
-            expectedBodyType: assertBody ? PostCurrencyAPIClass.ResponseDTO : undefined
-        });
-        return {
-            ...response,
-            currencyId: response.parsedBody?.id as string | undefined
-        };
-    }
-
-    export async function postRandomRegularCurrencies(config:
-    {
-        serverURL:string,
-        token:string,
-        assertBody?: boolean,
-        expectedCode?: number,
-        currenciesCount: number,
-        usedNames?: string[] | undefined,
-        baseCurrencyId: string
-    })
-    {
-        function choice<T> (list: T[]) { return list[Math.floor((Math.random()*list.length))]; }
-
-        const output:
-        {
-            id: string,
-            name: string,
-            amount: Decimal,
-            refCurrencyId: string
-        }[] = [];
-
-        const usedNames: string[] = [ ...(config.usedNames ?? []) ];
-        for (let i = 0; i < config.currenciesCount; i++)
-        {
-            const randomName = Generator.randUniqueName(usedNames);
-            const amount = new Decimal(Math.random() * 100000);
-            const refCurrencyId = output.length === 0 ? config.baseCurrencyId : choice(output).refCurrencyId;
-
-            usedNames.push(randomName);
-
-            output.push(
-            {
-                id: (await CurrencyHelpers.postCreateCurrency(
-                {
-                    body:
-                    {
-                        name                   : randomName,
-                        fallbackRateAmount     : amount.toString(),
-                        fallbackRateCurrencyId : refCurrencyId,
-                        ticker                 : randomName
-                    },
-                    serverURL    : config.serverURL,
-                    token        : config.token,
-                    assertBody   : config.assertBody,
-                    expectedCode : config.expectedCode,
-                })).currencyId,
-                amount: amount,
-                name: randomName,
-                refCurrencyId: refCurrencyId
-            });
-        }
-        return output;
-    }
 }

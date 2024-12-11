@@ -2,90 +2,14 @@ import { resetDatabase, serverURL, UnitTestEndpoints } from "../../index.test.js
 import { AssertFetchReturns, assertStrictEqual, HTTPAssert } from "../../lib/assert.js";
 import { Context } from "../../lib/context.js";
 import { BodyGenerator } from "../../lib/bodyGenerator.js";
-import { IsString, IsNotEmpty, IsOptional, IsArray, ValidateNested, IsNumber } from "class-validator";
-import { IsDecimalJSString, IsUTCDateInt } from "../../../server_source/db/validators.js";
 import { simpleFaker } from "@faker-js/faker";
-import { GetTxnAPI, PostTxnAPI, PutTxnAPI } from "../../../../api-types/txn.js";
-import { PostContainerAPIClass } from "../container/container.test.js";
-import { PostCurrencyAPIClass } from "../currency/currency.test.js";
-import { Type } from "class-transformer";
-import { AuthHelpers } from "../auth/auth.test.js";
-import { TxnTagHelpers } from "../txnTag/txnTag.test.js";
-
-export namespace GetTxnAPIClass
-{
-    export class TxnDTOClass implements GetTxnAPI.TxnDTO
-    {
-        @IsString() id: string;
-        @IsString() title: string;
-        @IsOptional() @IsString() description: string;
-        @IsString() owner: string;
-        @IsOptional() @IsUTCDateInt()  creationDate: number;
-        @IsArray() tagIds: string[];
-        @IsOptional() @IsDecimalJSString() fromAmount: string;
-        @IsOptional() @IsString() fromCurrency: string;
-        @IsOptional() @IsString() fromContainer: string;
-        @IsOptional() @IsDecimalJSString() toAmount: string;
-        @IsOptional() @IsString() toCurrency: string;
-        @IsOptional() @IsString() toContainer: string;
-    }
-
-    export class ResponseDTOClass implements GetTxnAPI.ResponseDTO
-    {
-        @IsNumber() totalItems: number;
-        @IsNumber() startingIndex: number;
-        @IsNumber() endingIndex: number;
-
-        @IsArray()
-        @ValidateNested({ each: true })
-        @Type(() => TxnDTOClass)
-        rangeItems: GetTxnAPI.TxnDTO[];
-    }
-}
-
-export namespace PostTxnAPIClass
-{
-    export class RequestDTOClass implements PostTxnAPI.RequestDTO
-    {
-        @IsString() @IsNotEmpty() title: string;
-        @IsOptional() @IsUTCDateInt() creationDate?: number | undefined;
-        @IsOptional() @IsString() description?: string | undefined;
-        @IsArray() tagIds: string[];
-        @IsOptional() @IsDecimalJSString() fromAmount?: string | undefined;
-        @IsOptional() @IsString() fromContainerId?: string | undefined;
-        @IsOptional() @IsString() fromCurrencyId?: string | undefined;
-        @IsOptional() @IsDecimalJSString() toAmount?: string | undefined;
-        @IsOptional() @IsString() toContainerId?: string | undefined;
-        @IsOptional() @IsString() toCurrencyId?: string | undefined;
-    }
-
-    export class ResponseDTOClass implements PostTxnAPI.ResponseDTO
-    {
-        @IsString() id: string;
-    }
-}
-
-export namespace PutTxnAPIClass
-{
-    export class RequestBodyDTOClass implements PutTxnAPI.RequestBodyDTO
-    {
-        @IsString() @IsNotEmpty() title: string;
-        @IsOptional() @IsUTCDateInt() creationDate?: number | undefined;
-        @IsOptional() @IsString() description?: string | undefined;
-        @IsArray() tagIds: string[];
-        @IsOptional() @IsDecimalJSString() fromAmount?: string | undefined;
-        @IsOptional() @IsString() fromContainerId?: string | undefined;
-        @IsOptional() @IsString() fromCurrencyId?: string | undefined;
-        @IsOptional() @IsDecimalJSString() toAmount?: string | undefined;
-        @IsOptional() @IsString() toContainerId?: string | undefined;
-        @IsOptional() @IsString() toCurrencyId?: string | undefined;
-    }
-
-    export class RequestQueryDTOClass implements PutTxnAPI.RequestQueryDTO
-    {
-        @IsString() targetTxnId: string;
-    }
-}
+import { GetTxnAPI } from "../../../../api-types/txn.js";
+import { PostCurrencyAPIClass } from "../currency/classes.js";
+import { AuthHelpers } from "../auth/helpers.js";
+import { PostContainerAPIClass } from "../container/classes.js";
+import { PostTxnAPIClass } from "./classes.js";
+import { TransactionHelpers } from "./helpers.js";
+import { TxnTagHelpers } from "../txnTag/helpers.js";
 
 const createPostContainerBody = (name: string) => ({name: name});
 const createBaseCurrencyPostBody = (name: string, ticker: string) => ({ name: name, ticker: ticker });
@@ -352,85 +276,4 @@ export default async function(this: Context)
             })
         });
     });
-}
-
-export namespace TransactionHelpers
-{
-    export async function getTransaction(config:
-    {
-        serverURL: string,
-        token:string,
-        assertBody?: boolean,
-        expectedCode?: number,
-        start?: number,
-        end?: number,
-        id?: string
-    })
-    {
-        const searchParams: Record<any,any> = {  };
-        if (config.start !== undefined && config.start !== null) searchParams['start'] = config.start;
-        if (config.end !== undefined && config.end !== null) searchParams['end'] = config.end;
-        if (config.id !== undefined && config.id !== null) searchParams['id'] = config.id;
-
-        const assertBody = config.assertBody === undefined ? true : config.assertBody;
-        const response = await HTTPAssert.assertFetch
-        (
-            `${UnitTestEndpoints.transactionsEndpoints['get']}?${new URLSearchParams(searchParams).toString()}`,
-            {
-                baseURL: `${config.serverURL}`,
-                expectedStatus: config.expectedCode, method: "GET",
-                headers: { "authorization": config.token },
-                expectedBodyType: assertBody ? GetTxnAPIClass.ResponseDTOClass : undefined
-            }
-        );
-        const output = response;
-        return output as AssertFetchReturns<GetTxnAPI.ResponseDTO>;
-    }
-
-    export async function putTransaction(config:
-    {
-        serverURL: string,
-        token:string,
-        body: Partial<PutTxnAPI.RequestBodyDTO>,
-        targetTxnId: string,
-        expectedCode?: number,
-    })
-    {
-        const queryObj = { targetTxnId: config.targetTxnId } satisfies PutTxnAPI.RequestQueryDTO;
-        const response = await HTTPAssert.assertFetch
-        (
-            `${UnitTestEndpoints.transactionsEndpoints['put']}?${new URLSearchParams(queryObj).toString()}`,
-            {
-                baseURL: config.serverURL, expectedStatus: config.expectedCode, method: "PUT",
-                body: config.body,
-                headers: { "authorization": config.token },
-            }
-        );
-        return response as AssertFetchReturns<{}>;
-    }
-
-    export async function postCreateTransaction(config:
-    {
-        serverURL: string,
-        token:string,
-        body: Partial<PostTxnAPIClass.RequestDTOClass>,
-        assertBody?: boolean,
-        expectedCode?: number,
-    })
-    {
-        const assertBody = config.assertBody === undefined ? true : config.assertBody;
-        const response = await HTTPAssert.assertFetch(UnitTestEndpoints.transactionsEndpoints['post'],
-        {
-            baseURL: config.serverURL, expectedStatus: config.expectedCode, method: "POST",
-            body: config.body,
-            headers: { "authorization": config.token },
-            expectedBodyType: assertBody ? PostTxnAPIClass.ResponseDTOClass : undefined
-        });
-        const output =
-        {
-            ...response,
-            txnId: response.parsedBody?.id as string | undefined
-        };
-        return output as AssertFetchReturns<PostTxnAPIClass.ResponseDTOClass> & { txnId?: string | undefined };
-    }
 }
