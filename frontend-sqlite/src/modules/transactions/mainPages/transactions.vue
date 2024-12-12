@@ -21,7 +21,7 @@
                         <template #header>
                             <CustomTableRow class="headerRow fullSize" style="font-weight: bold;">
                                 <CustomTableCell grid-area="name" class="yCenter xLeft headerRowName">Name</CustomTableCell>
-                                <CustomTableCell grid-area="fromTo" class="yCenter xLeft headerRowFromTo">From / To</CustomTableCell>
+                                <CustomTableCell grid-area="fromTo" class="yCenter xLeft headerRowFromTo">From - To</CustomTableCell>
                                 <CustomTableCell grid-area="valueChange" class="yCenter xRight headerRowValueChange">Δ Value</CustomTableCell>
                             </CustomTableRow>
                         </template>
@@ -37,18 +37,18 @@
                                                 </TxnTooltip>
                                             </div>
                                         </div>
-                                        <div class="xLeft yTop" style="color: #777;">
+                                        <div class="xLeft yTop" style="color: #555;">
                                             <DateTooltip :date="item.creationDate">{{ getDateAge(item.creationDate) }} ago</DateTooltip>
                                         </div>
                                     </CustomTableCell>
                                     <CustomTableCell grid-area="fromTo" class="bodyRowFromToGrid">
                                         <div class="xLeft yBottom">
                                             <template v-if="item.fromContainer">{{ findContainerById(item.fromContainer)?.name }}</template>
-                                            <template v-else>/</template>
+                                            <template v-else>-</template>
                                         </div>
-                                        <div class="xLeft yTop" style="color: #777;">
+                                        <div class="xLeft yTop">
                                             <template v-if="item.toContainer">{{ findContainerById(item.toContainer)?.name }}</template>
-                                            <template v-else>/</template>
+                                            <template v-else>-</template>
                                         </div>
                                     </CustomTableCell>
                                     <CustomTableCell grid-area="valueChange" class="bodyRowValueChange"
@@ -101,13 +101,6 @@ import NetworkCircularIndicator from '@/modules/core/components/data-display/Net
 const { authGet, updateAll: mainStoreUpdateAll } = useMainStore();
 const { findContainerById } = useContainersStore();
 
-const changeToClass = (changeInValue: string) =>
-{
-    const value = parseFloat(changeInValue);
-    if (value > 0) return 'increase';
-    else if (value < 0) return 'decrease';
-    else return 'noChange';
-};
 const currentPageIndex = ref(0);
 const itemsInPage = 50;
 const searchText = ref("");
@@ -146,6 +139,7 @@ const uiRangeText = computed(() =>
     if (start === end || totalItems === 0) return "No Results";
     return `Showing ${start} - ${end} of ${totalItems}`;
 });
+
 function onSearchTextChange()
 {
     mainPagination.update();
@@ -159,6 +153,13 @@ function viewTransaction(txnId: string)
         params: { id: txnId }
     });
 }
+const changeToClass = (changeInValue: string) =>
+{
+    const value = parseFloat(changeInValue);
+    if (value > 0) return 'increase';
+    else if (value < 0) return 'decrease';
+    else return 'noChange';
+};
 onMounted(async () => await mainStoreUpdateAll());
 </script>
 
@@ -232,6 +233,7 @@ onMounted(async () => await mainStoreUpdateAll());
                 .horiPadding(@desktopPagePadding);
                 grid-template-columns: 1fr 130px 85px;
                 overflow: hidden;
+                box-shadow: 0px 0px 5px black;
             }
 
             .noTxnFoundNotice
@@ -249,6 +251,7 @@ onMounted(async () => await mainStoreUpdateAll());
 
             .bodyRowFromToGrid
             {
+                font-size: 12px;
                 display: grid;
                 grid-template-columns: 1fr;
                 grid-template-rows: 1fr 1fr;
