@@ -285,6 +285,7 @@ export default async function(this: Context)
                     assertStrictEqual(txnCreated.parsedBody.rangeItems[0].tagIds[0], testContext.txnTagId1);
                     assertStrictEqual(txnCreated.parsedBody.rangeItems[0].id, createdTxnId);
                     assertStrictEqual(txnCreated.parsedBody.rangeItems[0].title, randTxnBaseBody.title);
+                    assertStrictEqual(txnCreated.parsedBody.rangeItems[0].changeInValue, "0");
                 });
 
                 await this.test(`Updating existing txn`, async function()
@@ -330,6 +331,7 @@ export default async function(this: Context)
                     assertStrictEqual(txnAfterMutated.parsedBody.rangeItems[0].creationDate, txnCreated.parsedBody.rangeItems[0].creationDate);
                     assertStrictEqual(txnAfterMutated.parsedBody.rangeItems[0].description, "changed desc");
                     assertStrictEqual(txnAfterMutated.parsedBody.rangeItems[0].title, "changed title");
+                    assertStrictEqual(txnAfterMutated.parsedBody.rangeItems[0].changeInValue, "-171");
                 })
             })
         });

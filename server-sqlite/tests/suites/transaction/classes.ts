@@ -19,6 +19,7 @@ export namespace GetTxnAPIClass
         @IsOptional() @IsDecimalJSString() toAmount: string;
         @IsOptional() @IsString() toCurrency: string;
         @IsOptional() @IsString() toContainer: string;
+        @IsNotEmpty() @IsDecimalJSString() changeInValue: string;
     }
 
     export class ResponseDTOClass implements GetTxnAPI.ResponseDTO

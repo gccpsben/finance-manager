@@ -13,6 +13,7 @@ import { TxnTagNotFoundError } from '../../db/services/txnTag.service.js';
 import { ContainerNotFoundError } from '../../db/services/container.service.js';
 import { Database } from '../../db/db.js';
 import { Type } from 'class-transformer';
+import { unwrap } from '../../std_errors/monadError.js';
 
 const router = new TypesafeRouter(express.Router());
 
@@ -191,20 +192,24 @@ router.get<GetTxnAPI.ResponseDTO>(`/api/v1/transactions`,
             totalItems: response.totalItems,
             endingIndex: response.endingIndex,
             startingIndex: response.startingIndex,
-            rangeItems: response.rangeItems.map(item => (
+            rangeItems: await Promise.all(response.rangeItems.map(async item =>
             {
-                id: item.id!,
-                title: item.title,
-                description: item.description ?? '',
-                owner: item.ownerId,
-                creationDate: item.creationDate,
-                tagIds: item.tagIds,
-                fromAmount: item.fromAmount ?? null,
-                fromCurrency: item.fromCurrencyId ?? null,
-                fromContainer: item.fromContainerId ?? null,
-                toAmount: item.toAmount ?? null,
-                toCurrency: item.toCurrencyId ?? null,
-                toContainer: item.toContainerId ?? null
+                const txnChangeInValue = unwrap(await TransactionService.getTxnIncreaseInValue(item.ownerId, item)).increaseInValue;
+                return {
+                    id: item.id!,
+                    title: item.title,
+                    description: item.description ?? '',
+                    owner: item.ownerId,
+                    creationDate: item.creationDate,
+                    tagIds: item.tagIds,
+                    fromAmount: item.fromAmount ?? null,
+                    fromCurrency: item.fromCurrencyId ?? null,
+                    fromContainer: item.fromContainerId ?? null,
+                    toAmount: item.toAmount ?? null,
+                    toCurrency: item.toCurrencyId ?? null,
+                    toContainer: item.toContainerId ?? null,
+                    changeInValue: txnChangeInValue.toString()
+                }
             }))
         };
     }

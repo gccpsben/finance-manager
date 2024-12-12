@@ -46,6 +46,7 @@ export namespace GetTxnAPI
         toAmount: string | null;
         toCurrency: string | null;
         toContainer: string | null;
+        changeInValue: string;
     }
     export type RequestDTO = {};
     export type ResponseDTO = PaginationAPIResponse<TxnDTO>;
