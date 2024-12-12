@@ -1,77 +1,76 @@
 <template>
 
-    <div class="topDivTxn">
+    <div id="transactionsTopDiv">
+        <div id="transactionsTopDivInner">
+            <div id="titleArea">
+                <ViewTitle :title="'Transactions'"/>
+            </div>
 
-        <ViewTitle :title="'Transactions'"/>
-        <br /><br />
+            <div id="searchArea">
+                <input placeholder="Search for transactions..."
+                       v-model="searchText"
+                       @change="onSearchTextChange"/>
+            </div>
 
-        <div>
-
-            <div id="mainCell">
-
-                <div v-basic="'#panel.gridBase.tight'">
-                    <div class="pageSelector">
-                        <div class="xLeft yCenter">
-                            <FaIcon class="optionIcon" icon="fa-solid fa-rotate" />
-                            <input v-basic="'#searchInput.fullHeight.minTextarea'"
-                                   type="text"
-                                   placeholder="Search for name..."
-                                   v-model="searchText"
-                                   @change="onSearchTextChange">
-                        </div>
-                        <div class="xRight">
-                            <div v-basic="'#summaryContainer.yCenter'">
-                                <h2 class="uiRangeText">{{ uiRangeText }}</h2>
+            <div id="contentArea">
+                <OverlapArea class="fullSize">
+                    <CustomTable v-if="mainPagination.lastCallResult.value && mainPagination.lastCallResult.value.rangeItems?.length != 0"
+                                 class="allTransactionsTable" rows="50px auto" columns="1fr" rowRows="1fr"
+                                 :style="{ opacity: mainPagination.isLoading.value ? 0.3 : 1 }"
+                                 rowColumns="1fr 100px 85px" rowAreas="'name fromTo valueChange'" bodyRows="min-content">
+                        <template #header>
+                            <CustomTableRow class="headerRow fullSize" style="font-weight: bold;">
+                                <CustomTableCell grid-area="name" class="yCenter xLeft headerRowName">Name</CustomTableCell>
+                                <CustomTableCell grid-area="fromTo" class="yCenter xLeft headerRowFromTo">From / To</CustomTableCell>
+                                <CustomTableCell grid-area="valueChange" class="yCenter xRight headerRowValueChange">Δ Value</CustomTableCell>
+                            </CustomTableRow>
+                        </template>
+                        <template #bodyOuter>
+                            <div style="overflow-y: scroll;">
+                                <CustomTableRow v-for="item in mainPagination.lastCallResult.value.rangeItems" class="bodyRows"
+                                                @click="viewTransaction(item.id)">
+                                    <CustomTableCell grid-area="name" class="bodyRowNameGrid">
+                                        <div class="xLeft yBottom">
+                                            <div class="ellipsis">
+                                                <TxnTooltip :txn="{ ...item, tagIds: [...item.tagIds] }">
+                                                    {{ item.title }}
+                                                </TxnTooltip>
+                                            </div>
+                                        </div>
+                                        <div class="xLeft yTop" style="color: #777;">
+                                            <DateTooltip :date="item.creationDate">{{ getDateAge(item.creationDate) }} ago</DateTooltip>
+                                        </div>
+                                    </CustomTableCell>
+                                    <CustomTableCell grid-area="fromTo" class="bodyRowFromToGrid">
+                                        <div class="xLeft yBottom">
+                                            <template v-if="item.fromContainer">{{ findContainerById(item.fromContainer)?.name }}</template>
+                                            <template v-else>/</template>
+                                        </div>
+                                        <div class="xLeft yTop" style="color: #777;">
+                                            <template v-if="item.toContainer">{{ findContainerById(item.toContainer)?.name }}</template>
+                                            <template v-else>/</template>
+                                        </div>
+                                    </CustomTableCell>
+                                    <CustomTableCell grid-area="valueChange" class="bodyRowValueChange"
+                                                     :class="{ [changeToClass(item.changeInValue)]: true }">
+                                        {{ parseFloat(item.changeInValue).toFixed(2) }}
+                                    </CustomTableCell>
+                                </CustomTableRow>
                             </div>
-                            <div class="center">
-                                <NumberPagination id="tablePagination"
-                                                  v-model="currentPageIndex"
-                                                  :min-page-readable="1"
-                                                  :max-page-readable="mainPagination.lastCallMaxPageIndex.value + 1" />
-                            </div>
-                        </div>
+                        </template>
+                    </CustomTable>
+                    <div v-else class="noTxnFoundNotice" :style="{ opacity: mainPagination.isLoading.value ? 0.3 : 1 }">
+                        No Transactions Found
                     </div>
-                    <div class="rel">
-                        <div class="fullSize abs" :class="{'darkened': mainPagination.isLoading.value}"
-                        style="display:grid; grid-template-rows: repeat(15,1fr);">
-                            <div class="row tight" style="font-size:14px;" @click="viewTransaction(item?.id)"
-                                 v-for="item in mainPagination.lastCallResult.value?.rangeItems ?? []">
-                                <div v-area.class="'checkbox'">
-                                    <div class="checkbox">
-                                        <input type="checkbox"/>
-                                    </div>
-                                </div>
-                                <div v-area.class="'txnName'">
-                                    <TxnTooltip :txn="item">
-                                        {{ item?.title }}
-                                    </TxnTooltip>
-                                </div>
-                                <div v-area.class="'txnAge'" class="tight yCenter ellipsisContainer">
-                                    <DateTooltip :date="item.creationDate" v-if="item.creationDate">
-                                        {{ getDateAge(item?.creationDate) }} ago
-                                    </DateTooltip>
-                                </div>
-                                <div v-area.class="'txnTag'" class="tight yCenter ellipsisContainer">
-                                    <div>
-                                        {{ getTxnTypeNameById(item?.txnTag, txnTypes.lastSuccessfulData?.rangeItems ?? []) }}
-                                    </div>
-                                </div>
-                                <div v-area.class="'txnFrom'" class="xRight">
-                                    <div v-if="item?.fromContainer">
-                                        {{ getContainerNameById(item?.fromContainer, containers.lastSuccessfulData?.rangeItems ?? []) }}
-                                    </div>
-                                </div>
-                                <div v-area.class="'arrowIcon'" class="center">
-                                    <fa-icon icon="fa-solid fa-arrow-right" />
-                                </div>
-                                <div v-area.class="'txnTo'" class="xLeft">
-                                    <div v-if="item?.toContainer">
-                                        {{ getContainerNameById(item?.toContainer, containers.lastSuccessfulData?.rangeItems ?? []) }}
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
+                    <NetworkCircularIndicator v-if="mainPagination.isLoading.value" :isLoading="mainPagination.isLoading.value" />
+                </OverlapArea>
+            </div>
+
+            <div id="paginationArea">
+                <div class="xLeft yCenter">{{ uiRangeText }}</div>
+                <div class="xRight yCenter">
+                    <NumberPagination :max-page-readable="mainPagination.lastCallMaxPageIndex.value + 1"
+                                      v-model:model-value="mainPagination.currentPage.value" />
                 </div>
             </div>
         </div>
@@ -81,30 +80,36 @@
 <script lang="ts" setup>
 import ViewTitle from '@/modules/core/components/data-display/ViewTitle.vue';
 import {API_TRANSACTIONS_PATH } from "@/apiPaths";
-import { getContainerNameById } from '@/modules/containers/utils/containers';
 import useNetworkPaginationNew, { type UpdaterReturnType } from "@/modules/core/composables/useNetworkedPagination";
-import vArea from "@/modules/core/directives/vArea";
 import { useMainStore } from "@/modules/core/stores/store";
 import { isNullOrUndefined } from "@/modules/core/utils/equals";
 import { buildSearchParams } from "@/modules/core/utils/urlParams";
-import { getTxnTypeNameById } from '@/modules/txnTypes/utils/transactionTypes';
 import router from "@/router";
 import { computed, onMounted, ref } from 'vue';
 import { type GetTxnAPI } from '../../../../../api-types/txn';
 import { useContainersStore } from '../../containers/stores/useContainersStore';
-import { useTxnTagsStore } from '../../txnTypes/stores/useTxnTypesStore';
-import FaIcon from '@/modules/core/components/decorations/FaIcon.vue';
 import NumberPagination from '@/modules/core/components/data-display/NumberPagination.vue';
 import { getDateAge } from '@/modules/core/utils/date';
 import DateTooltip from '@/modules/core/components/data-display/DateTooltip.vue';
 import TxnTooltip from '../components/TxnTooltip.vue';
+import OverlapArea from '@/modules/core/components/layout/OverlapArea.vue';
+import CustomTableRow from '@/modules/core/components/tables/CustomTableRow.vue';
+import CustomTableCell from '@/modules/core/components/tables/CustomTableCell.vue';
+import CustomTable from '@/modules/core/components/tables/CustomTable.vue';
+import NetworkCircularIndicator from '@/modules/core/components/data-display/NetworkCircularIndicator.vue';
 
 const { authGet, updateAll: mainStoreUpdateAll } = useMainStore();
-const { containers } = useContainersStore();
-const { txnTags: txnTypes } = useTxnTagsStore();
+const { findContainerById } = useContainersStore();
 
+const changeToClass = (changeInValue: string) =>
+{
+    const value = parseFloat(changeInValue);
+    if (value > 0) return 'increase';
+    else if (value < 0) return 'decrease';
+    else return 'noChange';
+};
 const currentPageIndex = ref(0);
-const itemsInPage = 15;
+const itemsInPage = 50;
 const searchText = ref("");
 const mainPagination = useNetworkPaginationNew<GetTxnAPI.TxnDTO>(
 {
@@ -138,7 +143,7 @@ const uiRangeText = computed(() =>
     const start = mainPagination.viewportStartIndex.value + 1;
     const end = Math.min(mainPagination.lastCallResult.value.totalItems, mainPagination.viewportEndIndex.value + 1);
     const totalItems = mainPagination.lastCallResult.value.totalItems;
-    if (start === end || totalItems === 0) return "Showing 0 - 0 of 0";
+    if (start === end || totalItems === 0) return "No Results";
     return `Showing ${start} - ${end} of ${totalItems}`;
 });
 function onSearchTextChange()
@@ -159,220 +164,133 @@ onMounted(async () => await mainStoreUpdateAll());
 
 <style lang="less" scoped>
 @import '@/modules/core/stylesheets/globalStyle.less';
+* { box-sizing: border-box; overflow: hidden; }
+@mobileCutoffWidth: 650px;
 
-* { box-sizing: border-box }
-
-.checkbox
+#transactionsTopDiv
 {
-    .rel; .center;
+    container-name: transactionsPage;
+    container-type: size;
 
-    span // Checkmark
-    {
-        position: absolute;
-        border: 1px solid @border;
-        border-radius: 5px;
-
-        .size(20px, 20px);
-        .center;
-
-        &:after
-        {
-            width: 12px;
-            height: 12px;
-            content: '';
-            border-radius: 2px;
-            background: fade(@focus, 50%);
-        }
-        &:hover { background: fade(gray, 70%); }
-        &:hover:after { background: fade(@focus, 100%); }
-    }
-}
-
-.arrowHighlight
-{
-    &:hover { background: @surfaceHigh; }
-}
-
-#panel
-{
-    padding:0px; box-sizing:border-box; gap:15px;
-    grid-template-columns: minmax(0,1fr);
-    grid-template-rows: auto minmax(0,1fr);
-
-    #searchInput { width: 50%; }
-    .fullSize; box-sizing:border-box;
-
-    .pageSelector
-    {
-        color:gray !important; transform: translateY(-3px);
-        display:grid;
-        grid-template-columns: 1fr 1fr;
-        grid-template-rows: 1fr;
-    }
-    #tablePagination { margin-left:5px; }
-
-    #currentPage { .horiMargin(15px); .vertMargin(5px); font-size:16px; min-width:15px; display:inline-block; text-align: center; }
-    .disabled { pointer-events: none; opacity:0.2; }
-
-    @media only screen and (max-width: 1200px)
-    {
-        #summaryContainer { display:none; }
-        #searchInput { width: 100%; }
-        .pageSelector { grid-template-columns: 1fr auto; }
-    }
-
-    .uiRangeText
-    {
-        .tight;
-        font-size:14px; display:inline; padding-right:15px;
-    }
-}
-
-.ellipsisContainer
-{
-    overflow:hidden; display:flex;
-    & > div { overflow:hidden; height:fit-content; white-space: nowrap; text-overflow:ellipsis; }
-}
-
-.darkened { opacity: 0.4; }
-
-.topDivTxn
-{
-    padding: @desktopPagePadding;
-    box-sizing: border-box;
-    overflow-x:hidden; .fullSize;
+    overflow-x:hidden;
+    .fullSize;
     font-family: @font;
 
-    .botChip
-    {
-        color: #a38ffd;
-        background:#282055;
-        width: fit-content; height: fit-content;
-        padding:5px; cursor:pointer;
-        border-radius: 5px;
-    }
-
-    .row
-    {
-        color:gray;
-        box-sizing: border-box;
-        border-bottom: 1px solid @border;
-        display:grid;
-
-        gap: 15px;
-        grid-template-columns:  30px     150fr   100px  150fr   50fr          150fr   50px      150fr 100fr;
-        grid-template-areas:   'checkbox txnName txnAge txnTag txnValueChange txnFrom arrowIcon txnTo chips';
-        grid-template-rows: 1fr; .horiPadding(15px); cursor:pointer;
-
-        & > div { .tight; .yCenter; .ellipsisContainer; }
-
-        &:hover
-        {
-            background: @focusDark;
-            color: @focus;
-        }
-
-        @media only screen and (max-width: 1400px)
-        {
-            &
-            {
-                grid-template-columns:  30px     150fr   100px  50fr           150fr   50px      150fr 100fr !important;
-                grid-template-areas:   'checkbox txnName txnAge txnValueChange txnFrom arrowIcon txnTo chips' !important;
-
-                & > div.txnTag
-                {
-                    overflow:hidden !important;
-                    display:none !important;
-                }
-            }
-        }
-
-        @media only screen and (max-width: 1200px)
-        {
-            &
-            {
-                grid-template-columns:  25px     200fr   40fr  100px  100px            !important;
-                grid-template-areas:   'checkbox txnName chips txnAge txnValueChange ' !important;
-
-                & > div:not(.checkbox, .txnName, .chips, .txnAge, .txnValueChange)
-                {
-                    overflow:hidden;
-                    display:none;
-                }
-
-                .txnValueChange, .txnAge { .xRight; }
-            }
-        }
-
-        @media only screen and (max-width: 900px)
-        {
-            &
-            {
-                grid-template-columns:  25px     200fr   100px  100px            !important;
-                grid-template-areas:   'checkbox txnName txnAge txnValueChange ' !important;
-
-                & > div:not(.checkbox, .txnName, .txnAge, .txnValueChange)
-                {
-                    overflow:hidden;
-                    display:none;
-                }
-
-                .txnValueChange, .txnAge { .xRight; }
-            }
-        }
-
-        @media only screen and (max-width: 600px)
-        {
-            &
-            {
-                grid-template-columns:  1fr     auto   50px   !important;
-                grid-template-areas:   'txnName txnAge txnValueChange' !important;
-
-                & > div:not(.txnName, .txnAge, .txnValueChange)
-                {
-                    overflow:hidden;
-                    display:none;
-                }
-
-                .txnValueChange { .xRight; }
-            }
-        }
-    }
-
-    #mainCell
+    #transactionsTopDivInner
     {
         .fullSize;
-        height: 700px;
+        display: grid;
+        grid-template:
+            "title" auto
+            "search" auto
+            "content" 1fr
+            "pagination" auto
+            / 1fr;
 
-        @media only screen and (min-height: 750px)
+        #titleArea
         {
-            height:calc(100svh - 190px);
+            padding: @desktopPagePadding;
+            grid-area: title;
         }
-    }
 
-    #mainGrid
-    {
-        display:grid;
-        padding:50px; box-sizing: border-box; gap:15px;
-        .fullSize; grid-template-columns: 1fr 1fr 1fr 1fr;
-        grid-template-rows:100px 250px 1fr 1fr;
-        height:2000px;
+        #searchArea
+        {
+            border-top: 1px solid @border;
+            border-bottom: 1px solid @border;
+            padding: 15px;
+            padding-left: @desktopPagePadding;
+            grid-area: search;
+            input { .fullSize; appearance: none; outline: none; }
+        }
 
-        grid-template-areas:
-        'expensesPanel incomesPanel totalValuePanel netChangePanel'
-        '30dExpensesList 30dIncomesList ContainersList TotalValueGraph';
+        #contentArea
+        {
+            .fullSize;
+            grid-area: content;
 
-        .listItemTitle { color:gray; font-size:14px; overflow:hidden; white-space: nowrap; text-overflow: ellipsis; }
+            .headerRow, .bodyRows { border-bottom: 1px solid @border; }
+
+            .bodyRows
+            {
+                &:hover
+                {
+                    background: @focusDark;
+                    color: @focus;
+                }
+
+                .horiPadding(calc(@desktopPagePadding));
+                cursor: pointer;
+                user-select: none;
+                white-space: nowrap;
+                height: 60px;
+                grid-template-columns: 1fr 130px 85px;
+                overflow: hidden;
+            }
+
+            .headerRow
+            {
+                .horiPadding(@desktopPagePadding);
+                grid-template-columns: 1fr 130px 85px;
+                overflow: hidden;
+            }
+
+            .noTxnFoundNotice
+            {
+                .center;
+                color: @foreground;
+            }
+
+            .bodyRowNameGrid
+            {
+                display: grid;
+                grid-template-columns: 1fr;
+                grid-template-rows: 1fr 1fr;
+            }
+
+            .bodyRowFromToGrid
+            {
+                display: grid;
+                grid-template-columns: 1fr;
+                grid-template-rows: 1fr 1fr;
+                div:nth-child(1) { align-content: end; }
+                div { .ellipsis; text-align: start; }
+            }
+
+            .bodyRowValueChange
+            {
+                font-size: 18px;
+                .xRight; .yCenter;
+                &.decrease { color: @error; }
+                &.increase { color: @success; }
+                &.noChange { color: orange; }
+            }
+        }
+
+        #paginationArea
+        {
+            box-shadow: 0px 0px 5px black;
+            border-top: 1px solid @border;
+            padding: 14px;
+            .horiPadding(@desktopPagePadding);
+            color: @foreground;
+            grid-area: pagination;
+            .leftRightGrid(1fr, auto);
+            gap: 14px;
+            white-space: nowrap;
+            div:nth-child(1) { .ellipsis; text-align: start; }
+        }
     }
 }
 
-@media only screen and (max-width: 1400px)
+@container transactionsPage (width <= @mobileCutoffWidth)
 {
-    .row
-    {
-        grid-template-columns:  150fr   100px  150fr   50fr           50fr  0px     0px       0px !important;
-        grid-template-areas:   'txnName txnAge txnTag txnValueChange chips txnFrom arrowIcon txnTo' !important;
-        grid-template-rows: 1fr; .horiPadding(15px); cursor:pointer;
-    }
+    // Hide the column "from / to"
+    .bodyRows, .headerRow { grid-template-columns: 1fr 0px 85px !important; }
+    .bodyRowFromToGrid, .headerRowFromTo { display: none; }
+    .bodyRows { .horiPadding(@mobilePagePadding) !important; }
+    #paginationArea { .horiPadding(@mobilePagePadding) !important; }
+    #titleArea { padding: @mobilePagePadding !important; }
+    #searchArea { padding-left: @mobilePagePadding !important; }
+    .headerRow { .horiPadding(@mobilePagePadding) !important; }
 }
 </style>

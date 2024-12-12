@@ -12,6 +12,7 @@
 .circle(@size) { .squareSize(@size); border-radius: calc(@size / 2); }
 .roundSquare(@size, @radius) { .squareSize(@size); border-radius: @radius; }
 .leftRightGrid(@size) { display:grid; grid-template-columns: @size @size; }
+.leftRightGrid(@sizeLeft, @sizeRight) { display:grid; grid-template-columns: @sizeLeft @sizeRight; }
 
 /* Alignment */
 .topLeft { display:flex; justify-content:flex-start; align-items: start; }
@@ -69,8 +70,24 @@ input[type="number"] { appearance: textfield !important; }
 .consoleFont { font-family: Consolas; }
 
 /* Debug */
-.debug { background:red; border:1px solid darkred; }
 .debug2 { background:blue; border:1px solid darkblue; }
+.debug
+{
+    box-sizing: border-box;
+    border:1px solid darkred;
+    background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg"><line x1="0%" y1="0%" x2="100%" y2="100%" stroke="black" stroke-width="2" /><line x1="0%" y1="100%" x2="100%" y2="0%" stroke="black" stroke-width="2" /><line x1="50%" y1="0%" x2="50%" y2="100%" stroke="black" stroke-width="2" /><line x1="0%" y1="50%" x2="100%" y2="50%" stroke="black" stroke-width="2" /></svg>');
+    background-size: cover; /* Adjust as needed */
+    background-repeat: no-repeat; /* Prevent repeating */
+    animation-name: flashingDebug !important;
+    animation-duration: 1s;
+    animation-iteration-count: infinite;
+}
+@keyframes flashingDebug
+{
+    0% { opacity: 1; background-color: hsl(249, 100%, 30%) }
+    50% { opacity: 0.5; background-color: hsl(0, 100%, 30%) }
+    100% { opacity: 1; background-color: hsl(249, 100%, 30%) }
+}
 
 /* Colors */
 .bg(@parameter) { background:@parameter; }
