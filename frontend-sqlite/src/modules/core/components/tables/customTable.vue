@@ -3,9 +3,11 @@
         <div v-if="'header' in $slots" class="fullSize">
             <slot name="header"></slot>
         </div>
-        <div v-if="'body' in $slots" class="fullSize" style="display: grid;" :style="{'gridAutoRows': bodyRows}">
-            <slot name="body"></slot>
-        </div>
+        <slot name="bodyOuter">
+            <div v-if="'body' in $slots" class="fullSize" style="display: grid;" :style="{'gridAutoRows': bodyRows}">
+                <slot name="body"></slot>
+            </div>
+        </slot>
         <div v-if="'footer' in $slots" class="fullSize">
             <slot name="footer"></slot>
         </div>

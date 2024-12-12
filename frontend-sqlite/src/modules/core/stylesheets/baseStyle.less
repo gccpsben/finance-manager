@@ -11,6 +11,7 @@
 .squareSize(@size) { width:@size; height:@size; }
 .circle(@size) { .squareSize(@size); border-radius: calc(@size / 2); }
 .roundSquare(@size, @radius) { .squareSize(@size); border-radius: @radius; }
+.leftRightGrid(@size) { display:grid; grid-template-columns: @size @size; }
 
 /* Alignment */
 .topLeft { display:flex; justify-content:flex-start; align-items: start; }
