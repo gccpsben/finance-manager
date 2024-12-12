@@ -46,7 +46,7 @@ export default
                     </div>
                 </div>
                 <div class="xRight yCenter abs fullSize" style="pointer-events:none">
-                    <div id="sideBarButton" @click="store.mainViewSidebarVisible = !store.mainViewSidebarVisible" class="debug" style="pointer-events:all">
+                    <div id="sideBarButton" @click="store.mainViewSidebarVisible = !store.mainViewSidebarVisible" style="pointer-events:all">
                         <fa-icon v-if="store.mainViewSidebarVisible" icon="fa-solid fa-chevron-left"></fa-icon>
                         <fa-icon v-else icon="fa-solid fa-chevron-right"></fa-icon>
                     </div>
