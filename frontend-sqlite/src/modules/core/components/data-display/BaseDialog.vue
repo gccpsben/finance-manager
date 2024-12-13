@@ -75,7 +75,7 @@ const isOpen = defineProperty<boolean | typeof Uncontrolled, "isOpen", typeof pr
 {
     pointer-events: all;
     padding: 18px;
-    min-width: 500px;
+    min-width: min(500px, 80vw);
     min-height: 150px;
     background: @background;
     border-radius: 5px;
