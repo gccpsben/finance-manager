@@ -51,3 +51,9 @@ export namespace GetTxnAPI
     export type RequestDTO = {};
     export type ResponseDTO = PaginationAPIResponse<TxnDTO>;
 }
+
+export namespace DeleteTxnAPI
+{
+    export type RequestQueryDTO = { id: string }
+    export type ResponseDTO = { };
+}

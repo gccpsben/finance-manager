@@ -82,4 +82,25 @@ export namespace TransactionHelpers
         };
         return output as AssertFetchReturns<PostTxnAPIClass.ResponseDTOClass> & { txnId?: string[] | undefined };
     }
+
+    export async function deleteTransaction(config:
+    {
+        serverURL: string,
+        token: string,
+        txnId?: string,
+        expectedCode?: number
+    })
+    {
+        const searchParams = config.txnId === undefined ? '' : "?" + new URLSearchParams({ id: config.txnId }).toString();
+        const response = await HTTPAssert.assertFetch
+        (
+            `${UnitTestEndpoints.transactionsEndpoints['delete']}${searchParams}`,
+            {
+                baseURL: config.serverURL, expectedStatus: config.expectedCode, method: "DELETE",
+                headers: { "authorization": config.token }
+            }
+        );
+
+        return response;
+    }
 }

@@ -1,6 +1,6 @@
 import { IsArray, IsNotEmpty, IsOptional, IsString, ValidateNested } from 'class-validator';
 import express from 'express';
-import { type PutTxnAPI, type GetTxnAPI, type PostTxnAPI } from '../../../../api-types/txn.js';
+import { type PutTxnAPI, type GetTxnAPI, type PostTxnAPI, type DeleteTxnAPI } from '../../../../api-types/txn.js';
 import { AccessTokenService, InvalidLoginTokenError } from '../../db/services/accessToken.service.js';
 import { TransactionService, TxnMissingContainerOrCurrency, TxnMissingFromToAmountError, TxnNotFoundError } from '../../db/services/transaction.service.js';
 import { IsDecimalJSString, IsIntString, IsUTCDateInt } from '../../db/validators.js';
@@ -212,6 +212,32 @@ router.get<GetTxnAPI.ResponseDTO>(`/api/v1/transactions`,
                 }
             }))
         };
+    }
+});
+
+router.delete<DeleteTxnAPI.ResponseDTO>(`/api/v1/transactions`,
+{
+    handler: async (req: express.Request, res: express.Response) =>
+    {
+        class query implements DeleteTxnAPI.RequestQueryDTO
+        {
+            @IsNotEmpty() @IsString() id: string;
+        }
+
+        const now = Date.now();
+        const authResult = await AccessTokenService.validateRequestTokenValidated(req, now);
+        if (authResult instanceof InvalidLoginTokenError) throw createHttpError(401);
+        const parsedQuery = await ExpressValidations.validateBodyAgainstModel<query>(query, req.query);
+
+        const transactionContext = await Database.startTransaction();
+        const deleteResult = await TransactionService.deleteTransactions([parsedQuery.id], transactionContext.queryRunner);
+        if (deleteResult.affected === 0)
+        {
+            await transactionContext.endFailure();
+            throw createHttpError(404);
+        }
+        await transactionContext.endSuccess();
+        return {};
     }
 });
 

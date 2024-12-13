@@ -65,6 +65,15 @@ export class Database
 {
     public static AppDataSource: DataSource | undefined = undefined;
 
+    public static async startTransaction()
+    {
+        const queryRunner = Database.AppDataSource!.createQueryRunner();
+        await queryRunner.startTransaction();
+        const endFailure = async () => { queryRunner.rollbackTransaction(); queryRunner.release(); };
+        const endSuccess = async () => { queryRunner.commitTransaction(); queryRunner.release(); };
+        return { endFailure, endSuccess, queryRunner };
+    }
+
     /** Create a Database data source from the env file. */
     public static createAppDataSource(): DataSource | CreateAppDataSourceError<SqliteFilePathMissingError>
     {

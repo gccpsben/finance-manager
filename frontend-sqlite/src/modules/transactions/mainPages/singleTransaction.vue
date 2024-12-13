@@ -64,6 +64,11 @@
                                        :options="selectableTxnTagsOptions" />
 
                         <div id="resetSaveContainer" v-area="'actions'" v-if="txnWorkingCopy.currentData">
+                            <div class="center">
+                                <BaseButton @click="isDeleteDialogOpen = true" class="fullSize">
+                                    Delete
+                                </BaseButton>
+                            </div>
                             <div class="dummy"></div>
                             <BaseButton @click="editTxnHook.txnToBeEdited.reset()"
                                         :disabled="!editTxnHook.readyToReset.value">
@@ -100,6 +105,29 @@
                 <NetworkCircularIndicator isLoading :error="editTxnHook.txnSavingError.value" />
             </div>
 
+            <BaseDialog v-model:is-open="isDeleteDialogOpen">
+                <template #headerTitle>Confirm Deletion</template>
+                <template #content>
+                    <div class="">
+                        Are you sure you want to delete this transaction? <br /> <br />
+                        <div class="leftRightGrid">
+                            <div class="xLeft">
+                                <BaseButton @click="isDeleteDialogOpen = false">Cancel</BaseButton>
+                            </div>
+                            <div class="xRight">
+                                <BaseButton @click="deleteTxn">
+                                        <NetworkCircularIndicator v-if="deleteTxnNetworkHook.isTxnDeleting.value || deleteTxnNetworkHook.txnDeletionError.value"
+                                                                    style="width:23px; height:23px;"
+                                                                    :is-loading="deleteTxnNetworkHook.isTxnDeleting.value"
+                                                                    :error="deleteTxnNetworkHook.txnDeletionError.value"/>
+                                        <div v-if="!deleteTxnNetworkHook.isTxnDeleting.value && !deleteTxnNetworkHook.txnDeletionError.value">Delete</div>
+                                </BaseButton>
+                            </div>
+                        </div>
+                    </div>
+                </template>
+            </BaseDialog>
+
         </div>
     </div>
 </template>
@@ -109,13 +137,16 @@ import router, { ROUTER_NAME_ALL_TRANSACTIONS, ROUTER_NAME_CREATE_NEW_TXN } from
 import NetworkCircularIndicator from '@/modules/core/components/data-display/NetworkCircularIndicator.vue';
 import StaticNotice from '@/modules/core/components/data-display/StaticNotice.vue';
 import ViewTitle from '@/modules/core/components/data-display/ViewTitle.vue';
-import { computed, watch } from 'vue';
+import { computed, ref, watch } from 'vue';
 import { formatDate } from '@/modules/core/utils/date';
 import BaseButton from '@/modules/core/components/inputs/BaseButton.vue';
 import { DateFormatToShow, useAddTxn, useEditTxn } from '../composables/useEditAddTxn';
 import ChipsSelector, { type ChipOption } from '@/modules/core/components/inputs/ChipsSelector.vue';
 import TextField from '@/modules/core/components/inputs/TextField.vue';
 import CustomDropdown from '@/modules/core/components/inputs/CustomDropdown.vue';
+import { useDeleteTxn } from '../composables/useDeleteTxn';
+import BaseDialog from '@/modules/core/components/data-display/BaseDialog.vue';
+import { wait } from '@/modules/core/utils/wait';
 
 type AddHookReturnType = ReturnType<typeof useAddTxn>;
 type EditHookReturnType = ReturnType<typeof useEditTxn>;
@@ -133,6 +164,7 @@ const ensureIsEditMode = (hook: AddOrEditHookReturnType): hook is EditHookReturn
     return true;
 };
 
+const isDeleteDialogOpen = ref(false);
 const isAddMode = computed(() => router.currentRoute.value.name === ROUTER_NAME_CREATE_NEW_TXN);
 
 /** The current editing txn id. This will be NULL when in ADD mode. */
@@ -201,6 +233,21 @@ async function handleSaveBtn()
     }
     if (ensureIsEditMode(editTxnHook)) editTxnHook.submitSave();
 }
+
+const deleteTxnNetworkHook = useDeleteTxn();
+async function deleteTxn()
+{
+    if (txnId.value === null) return;
+    await deleteTxnNetworkHook.deleteTxn(txnId.value);
+
+    // Error occurred, do not redirect.
+    if (deleteTxnNetworkHook.txnDeletionError.value) return;
+
+    isDeleteDialogOpen.value = false;
+
+    await wait(500);
+    router.push({ name: ROUTER_NAME_ALL_TRANSACTIONS });
+}
 </script>
 
 <style lang="less" scoped>
@@ -260,7 +307,7 @@ fieldset
     #resetSaveContainer
     {
         display: grid;
-        grid-template-columns: 1fr auto auto;
+        grid-template-columns: auto 1fr auto auto;
         grid-template-rows: 1fr;
         height: 100%;
         gap: 8px;

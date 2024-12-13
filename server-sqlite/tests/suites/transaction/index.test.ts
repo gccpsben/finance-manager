@@ -238,10 +238,10 @@ export default async function(this: Context)
                 });
             });
 
+            let createdTxnId = undefined as undefined | string;
             await this.describe(`get & put`, async function()
             {
                 const randTxnBaseBody = getRandTxnBaseBody();
-                let createdTxnId = undefined as undefined | string;
 
                 await this.test(`Creating txn with valid body and token`, async function()
                 {
@@ -333,7 +333,51 @@ export default async function(this: Context)
                     assertStrictEqual(txnAfterMutated.parsedBody.rangeItems[0].title, "changed title");
                     assertStrictEqual(txnAfterMutated.parsedBody.rangeItems[0].changeInValue, "-171");
                 })
-            })
+            });
+
+            await this.describe(`delete`, async function()
+            {
+                await this.test(`Deleting without query`, async function ()
+                {
+                    await TransactionHelpers.deleteTransaction({
+                        serverURL: serverURL,
+                        token: firstUser.token,
+                        expectedCode: 400,
+                        txnId: undefined
+                    });
+                });
+
+                await this.test(`Deleting non-existent txn`, async function ()
+                {
+                    await TransactionHelpers.deleteTransaction({
+                        serverURL: serverURL,
+                        token: firstUser.token,
+                        expectedCode: 404,
+                        txnId: createdTxnId + "123"
+                    });
+                });
+
+                await this.test(`Deleting existent txn`, async function ()
+                {
+                    await TransactionHelpers.deleteTransaction({
+                        serverURL: serverURL,
+                        token: firstUser.token,
+                        expectedCode: 200,
+                        txnId: createdTxnId
+                    });
+
+                    const response = await TransactionHelpers.getTransaction(
+                    {
+                        serverURL: serverURL,
+                        token: firstUser.token,
+                        assertBody: true,
+                        expectedCode: 200,
+                        id: createdTxnId
+                    });
+
+                    assertStrictEqual(response.parsedBody.totalItems, 0);
+                });
+            });
         });
     });
 }

@@ -10,7 +10,7 @@ import { nameof, ServiceUtils } from "../servicesUtils.js";
 import { isNullOrUndefined } from "../../router/validation.js";
 import { MonadError, panic, unwrap } from "../../std_errors/monadError.js";
 import { TxnTag } from "../entities/txnTag.entity.js";
-import { QueryRunner } from "typeorm/browser";
+import { DeleteResult, QueryRunner } from "typeorm/browser";
 
 export class TxnMissingContainerOrCurrency extends MonadError<typeof TxnMissingFromToAmountError.ERROR_SYMBOL>
 {
@@ -57,6 +57,16 @@ const nameofT = (x: keyof Transaction) => nameof<Transaction>(x);
 
 export class TransactionService
 {
+    public static async deleteTransactions
+    (
+        txnIds: string[],
+        queryRunner: QueryRunner
+    ): Promise<DeleteResult>
+    {
+        const deletedTxn = await queryRunner.manager.getRepository(Transaction).delete(txnIds);
+        return deletedTxn;
+    }
+
     /**
      * Validate if a provided transaction is valid or not.
      * This returns an unsaved version of the txn.
