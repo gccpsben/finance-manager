@@ -11,3 +11,11 @@ export function waitUntil(predicate: () => boolean, interval: number): Promise<v
         checkCondition();
     });
 }
+
+export function wait(interval: number): Promise<void>
+{
+    return new Promise(resolve =>
+    {
+        setTimeout(() => resolve(), interval);
+    });
+}
