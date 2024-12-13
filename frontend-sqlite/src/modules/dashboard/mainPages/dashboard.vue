@@ -9,6 +9,7 @@
                 <number-cell :noItemsText="'No Data'" v-area="'expensesPanel'"
                              style="background: linear-gradient(-45deg, rgba(213, 51, 105, 0.13) 0%, rgba(218, 81, 81, 0.42) 100%); color:white;"
                              :option-values="userExpenses"
+                             initial-selected-option="M"
                              :isLoading="store.userExpensesIncomes.isLoading"
                              :networkError="store.userExpensesIncomes.error">
                     <template #title>
@@ -28,6 +29,7 @@
                 <number-cell :noItemsText="'No Data'" v-area="'incomesPanel'"
                              style="background: linear-gradient(-45deg, rgba(56, 213, 51, 0.09) 0%, rgba(81, 218, 90, 0.35) 100%); color:white;"
                              :option-values="userIncomes"
+                             initial-selected-option="M"
                              :isLoading="store.userExpensesIncomes.isLoading"
                              :networkError="store.userExpensesIncomes.error">
                     <template #title>

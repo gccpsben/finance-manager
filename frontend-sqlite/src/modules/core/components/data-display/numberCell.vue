@@ -31,6 +31,7 @@ export type NumberCellProps =
     icon?: { type: IconType, name: string },
     insetMode?: boolean,
     selectedOption?: string | typeof Uncontrolled,
+    initialSelectedOption?: string | undefined,
     optionValues: {[option: string]: number}
 };
 
@@ -44,7 +45,8 @@ const props = withDefaults(defineProps<NumberCellProps>(),
     icon: undefined,
     insetMode: false,
     networkError: undefined,
-    selectedOption: Uncontrolled
+    selectedOption: Uncontrolled,
+    initialSelectedOption: undefined
 });
 
 const emit = defineEmits<NumberCellEmits>();
@@ -52,7 +54,7 @@ const selectedOption = defineProperty<string, "selectedOption", typeof props>("s
 {
     emitFunc: emit,
     props: props,
-    default: Object.keys(props.optionValues)[0]
+    default: props.initialSelectedOption ?? Object.keys(props.optionValues)[0]
 });
 
 const currentValue = computed(() => props.optionValues[selectedOption.get()]);
