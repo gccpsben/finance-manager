@@ -11,6 +11,7 @@ import { CurrencyRateDatumService } from "./currencyRateDatum.service.js";
 import { Decimal } from "decimal.js";
 import { CurrencyRateDatum } from "../entities/currencyRateDatum.entity.js";
 import type { IdBound } from "../../index.d.js";
+import { QueryRunner } from "typeorm";
 
 export class InvalidNumberError extends MonadError<typeof InvalidNumberError.ERROR_SYMBOL>
 {
@@ -209,6 +210,7 @@ export class CurrencyRateSourceService
         return newlySavedSrc as IdBound<typeof newlySavedSrc>;
     }
 
+    // TODO: Separate this function into Execute and Save.
     /**
      * Execute a currency rate source.
      * This will attempt to fetch the resources via the given source's URL.
@@ -217,8 +219,9 @@ export class CurrencyRateSourceService
     (
         ownerId: string,
         currencySource: CurrencyRateSource,
-        nowEpoch: number
-    ): Promise<CurrencyRateDatum |
+        nowEpoch: number,
+        queryRunner: QueryRunner
+    ): Promise<CurrencyRateDatum[] |
         ExecuteCurrencyRateSourceError<
             Error |
             CurrencyNotFoundError |
@@ -254,20 +257,25 @@ export class CurrencyRateSourceService
             if (extractedItem === null || extractedItem === undefined || Number.isNaN(parsedFloat))
                 return new ExecuteCurrencyRateSourceError(new InvalidNumberError(extractedItem, ownerId), refCurrencyId, ownerId);
 
-            const rateDatum = await CurrencyRateDatumService.createCurrencyRateDatum
+            const rateDatums = await CurrencyRateDatumService.createCurrencyRateDatum
             (
-                ownerId,
-                new Decimal(parsedFloat).toString(),
-                nowEpoch,
-                currencyObj.id,
-                currencySource.refAmountCurrencyId
+                [
+                    {
+                        amount: new Decimal(parsedFloat).toString(),
+                        date: nowEpoch,
+                        currencyId: currencyObj.id,
+                        amountCurrencyId: currencySource.refAmountCurrencyId,
+                        userId: ownerId
+                    }
+                ],
+                queryRunner
             );
-            if (rateDatum instanceof CurrencyNotFoundError) return createError(new CurrencyNotFoundError(refCurrencyId, ownerId));
+            if (rateDatums instanceof CurrencyNotFoundError) return createError(new CurrencyNotFoundError(refCurrencyId, ownerId));
 
             currencySource.lastExecuteTime = nowEpoch;
             await CurrencyRateSourceRepository.getInstance().save(currencySource);
 
-            return unwrap(rateDatum, "rate datum: owner id mismatch.");
+            return unwrap(rateDatums, "rate datum: owner id mismatch.");
         }
         catch(e)
         {

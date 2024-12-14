@@ -5,6 +5,8 @@ import { Decimal } from "decimal.js";
 import { CurrencyRateDatum } from "../entities/currencyRateDatum.entity.js";
 import { panic, unwrap } from "../../std_errors/monadError.js";
 import { IdBound } from "../../index.d.js";
+import { QueryRunner } from "typeorm";
+import { User } from "../entities/user.entity.js";
 
 
 function minAndMax<T> (array: T[], getter: (obj:T) => number)
@@ -37,33 +39,51 @@ export class CurrencyRateDatumService
 {
     public static async createCurrencyRateDatum
     (
-        userId: string,
-        amount: string,
-        date: number,
-        currencyId: string,
-        amountCurrencyId: string
-    ): Promise<IdBound<CurrencyRateDatum> | UserNotFoundError | CurrencyNotFoundError>
+        datums:
+        {
+            userId: string,
+            amount: string,
+            date: number,
+            currencyId: string,
+            amountCurrencyId: string
+        }[],
+        queryRunner: QueryRunner
+    ): Promise<IdBound<CurrencyRateDatum>[] | UserNotFoundError | CurrencyNotFoundError>
     {
-        const newRate = CurrencyRateDatumRepository.getInstance().create();
-        newRate.amount = amount.toString();
-        newRate.date = date;
+        let savedDatums: IdBound<CurrencyRateDatum>[] = [];
+        let uniqueUserIds = [...new Set(datums.map(x => x.userId))];
+        let userIdToObjMap: { [userID: string]: User } = {};
 
-        const owner = await UserService.getUserById(userId);
-        if (owner === null) return new UserNotFoundError(userId);
-        newRate.owner = owner;
+        // Check for user-ids
+        for (let userId of uniqueUserIds)
+        {
+            const owner = await UserService.getUserById(userId);
+            if (owner === null) return new UserNotFoundError(userId);
+            userIdToObjMap[userId] = owner;
+        }
 
-        const refCurrency = await CurrencyService.getCurrencyWithoutCache(userId, { id: currencyId });
-        const refAmountCurrency = await CurrencyService.getCurrencyWithoutCache(userId, { id: amountCurrencyId });
-        if (refAmountCurrency instanceof UserNotFoundError) return refAmountCurrency;
-        if (refCurrency instanceof UserNotFoundError) return refCurrency;
-        if (refCurrency === null) return new CurrencyNotFoundError(userId, currencyId);
-        if (refAmountCurrency === null) return new CurrencyNotFoundError(userId, amountCurrencyId);
+        for (let datum of datums)
+        {
+            const newRate = queryRunner.manager.getRepository(CurrencyRateDatum).create();
+            newRate.amount = datum.amount.toString();
+            newRate.date = datum.date;
+            newRate.owner = userIdToObjMap[datum.userId];
 
-        newRate.refCurrency = refCurrency;
-        newRate.refAmountCurrency = refAmountCurrency;
-        const newlySavedDatum = await CurrencyRateDatumRepository.getInstance().save(newRate);
-        if (!newlySavedDatum.id) throw panic(`Newly saved currency rate datum contains falsy IDs.`);
-        return newlySavedDatum as IdBound<typeof newlySavedDatum>;
+            const refCurrency = await CurrencyService.getCurrencyWithoutCache(datum.userId, { id: datum.currencyId });
+            const refAmountCurrency = await CurrencyService.getCurrencyWithoutCache(datum.userId, { id: datum.amountCurrencyId });
+            if (refAmountCurrency instanceof UserNotFoundError) return refAmountCurrency;
+            if (refCurrency instanceof UserNotFoundError) return refCurrency;
+            if (refCurrency === null) return new CurrencyNotFoundError(datum.userId, datum.currencyId);
+            if (refAmountCurrency === null) return new CurrencyNotFoundError(datum.userId, datum.amountCurrencyId);
+
+            newRate.refCurrency = refCurrency;
+            newRate.refAmountCurrency = refAmountCurrency;
+            const newlySavedDatum = await CurrencyRateDatumRepository.getInstance().save(newRate);
+            if (!newlySavedDatum.id) throw panic(`Newly saved currency rate datum contains falsy IDs.`);
+            savedDatums.push(newlySavedDatum as IdBound<typeof newlySavedDatum>);
+        }
+
+        return savedDatums;
     }
 
     public static async getCurrencyRateHistory

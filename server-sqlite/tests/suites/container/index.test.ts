@@ -11,17 +11,7 @@ import { CurrencyHelpers } from "../currency/helpers.js";
 import { PostCurrencyRateDatumAPIClass } from "../currency/classes.js";
 import { TransactionHelpers } from "../transaction/helpers.js";
 import { TxnTagHelpers } from "../txnTag/helpers.js";
-
-async function postCurrencyRateDatum(token:string, amount: string, refCurrencyId: string, refAmountCurrencyId: string, date: number)
-{
-    const response = await HTTPAssert.assertFetch(UnitTestEndpoints.currencyRateDatumsEndpoints['post'],
-    {
-        baseURL: serverURL, expectedStatus: undefined, method: "POST",
-        body: { amount, refCurrencyId, refAmountCurrencyId, date } as PostCurrencyRateDatumAPIClass.RequestDTO,
-        headers: { "authorization": token }
-    });
-    return response;
-}
+import { postCurrencyRateDatum } from "../currency/index.test.js";
 
 function choice<T> (list: T[]) { return list[Math.floor((Math.random()*list.length))]; }
 

@@ -49,16 +49,23 @@ export namespace PostCurrencyAPIClass
 
 export namespace PostCurrencyRateDatumAPIClass
 {
-    export class RequestDTO implements PostCurrencyRateAPI.RequestDTO
+    export class RequestItemDTO implements PostCurrencyRateAPI.RequestItemDTO
     {
         @IsDecimalJSString() amount: string;
         @IsString() refCurrencyId: string;
         @IsString() refAmountCurrencyId: string;
         @IsNumber() date: number;
     }
+    export class RequestDTO implements PostCurrencyRateAPI.RequestDTO
+    {
+        @IsArray()
+        @ValidateNested({ each: true })
+        @Type(() => RequestItemDTO)
+        datums: PostCurrencyRateAPI.RequestItemDTO[];
+    }
     export class ResponseDTO implements PostCurrencyRateAPI.ResponseDTO
     {
-        @IsString() id: string;
+        @IsString({ each: true }) ids: string[];
     }
 }
 

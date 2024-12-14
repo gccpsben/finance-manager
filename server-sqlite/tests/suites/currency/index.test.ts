@@ -60,7 +60,7 @@ export async function postCurrencyRateDatum(token:string, amount: string, refCur
     const response = await HTTPAssert.assertFetch(UnitTestEndpoints.currencyRateDatumsEndpoints['post'],
     {
         baseURL: serverURL, expectedStatus: undefined, method: "POST",
-        body: { amount, refCurrencyId, refAmountCurrencyId, date } as PostCurrencyRateDatumAPIClass.RequestDTO,
+        body: { datums: [ { amount, refCurrencyId, refAmountCurrencyId, date } ] } as PostCurrencyRateDatumAPIClass.RequestDTO,
         headers: { "authorization": token }
     });
     return response;

@@ -19,6 +19,7 @@ export class CurrencyRateDatum extends EntityClass
     amount: string;
 
     @Column( { nullable: false })
+    @Index()
     refCurrencyId: string;
 
     @ManyToOne(type => Currency, { nullable: false })

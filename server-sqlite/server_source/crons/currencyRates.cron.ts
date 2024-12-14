@@ -1,3 +1,4 @@
+import { Database } from "../db/db.js";
 import { CurrencyRepository } from "../db/repositories/currency.repository.js";
 import { CurrencyRateSourceRepository } from "../db/repositories/currencyRateSource.repository.js";
 import { CurrencyNotFoundError, CurrencyService } from "../db/services/currency.service.js";
@@ -51,10 +52,19 @@ export class CurrencyRatesCRON implements CronService
                     await CurrencyRepository.getInstance().save(currencyObj);
 
                     ExtendedLog.logCyan(`Fetching rate of ticker='${currency.ticker}', hostname='${fullRateSrc.hostname}', path='${fullRateSrc.path}' using source name='${src.name}'`);
-                    const fetchResult = await CurrencyRateSourceService.executeCurrencyRateSource(currency.ownerId, fullRateSrc, now);
+
+                    const transactionContext = await Database.startTransaction();
+                    const fetchResult = await CurrencyRateSourceService.executeCurrencyRateSource
+                    (
+                        currency.ownerId,
+                        fullRateSrc,
+                        now,
+                        transactionContext.queryRunner
+                    );
 
                     if (fetchResult instanceof ExecuteCurrencyRateSourceError)
                     {
+                        await transactionContext.endFailure();
                         ExtendedLog.logCyan(`Error fetching ticker='${currency.ticker}', hostname='${fullRateSrc.hostname}', path='${fullRateSrc.path}': ${fetchResult.message}`);
                         if (fetchResult.error instanceof CurrencyNotFoundError) continue;
                         if (fetchResult.error instanceof UserNotFoundError) continue;
@@ -63,6 +73,7 @@ export class CurrencyRatesCRON implements CronService
                     }
                     else
                     {
+                        await transactionContext.endSuccess();
                         ExtendedLog.logGreen(`Successfully fetched latest rate of ${currency.ticker} (id='${currency.id}').`);
                         break;
                     }
