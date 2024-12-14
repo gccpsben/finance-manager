@@ -3,7 +3,12 @@
     <div id="transactionsTopDiv">
         <div id="transactionsTopDivInner">
             <div id="titleArea">
-                <ViewTitle :title="'Transactions'"/>
+                <div class="leftRightGridLMax">
+                    <ViewTitle :title="'Transactions'" />
+                    <div class="yCenter xRight">
+                        <BaseButton icon="add_circle" @click="redirect(['ADD_TXN'])">Add Transaction</BaseButton>
+                    </div>
+                </div>
             </div>
 
             <div id="searchArea">
@@ -28,7 +33,7 @@
                         <template #bodyOuter>
                             <div style="overflow-y: scroll;">
                                 <CustomTableRow v-for="item in mainPagination.lastCallResult.value.rangeItems" class="bodyRows"
-                                                @click="viewTransaction(item.id)">
+                                                @click="redirect(['VIEW_TXN', item.id])">
                                     <CustomTableCell grid-area="name" class="bodyRowNameGrid">
                                         <div class="xLeft yBottom">
                                             <div class="ellipsis">
@@ -84,7 +89,7 @@ import useNetworkPaginationNew, { type UpdaterReturnType } from "@/modules/core/
 import { useMainStore } from "@/modules/core/stores/store";
 import { isNullOrUndefined } from "@/modules/core/utils/equals";
 import { buildSearchParams } from "@/modules/core/utils/urlParams";
-import router from "@/router";
+import router, { ROUTER_NAME_CREATE_NEW_TXN, ROUTER_NAME_SINGLE_TXN } from "@/router";
 import { computed, onMounted, ref } from 'vue';
 import { type GetTxnAPI } from '../../../../../api-types/txn';
 import { useContainersStore } from '../../containers/stores/useContainersStore';
@@ -97,6 +102,7 @@ import CustomTableRow from '@/modules/core/components/tables/CustomTableRow.vue'
 import CustomTableCell from '@/modules/core/components/tables/CustomTableCell.vue';
 import CustomTable from '@/modules/core/components/tables/CustomTable.vue';
 import NetworkCircularIndicator from '@/modules/core/components/data-display/NetworkCircularIndicator.vue';
+import BaseButton from '@/modules/core/components/inputs/BaseButton.vue';
 
 const { authGet, updateAll: mainStoreUpdateAll } = useMainStore();
 const { findContainerById } = useContainersStore();
@@ -145,14 +151,13 @@ function onSearchTextChange()
     mainPagination.update();
     currentPageIndex.value = 0;
 }
-function viewTransaction(txnId: string)
+
+function redirect(target: ["VIEW_TXN", string] | ["ADD_TXN"])
 {
-    router.push(
-    {
-        name: "singleTransaction",
-        params: { id: txnId }
-    });
+    if (target[0] === 'ADD_TXN') router.push( { name: ROUTER_NAME_CREATE_NEW_TXN });
+    else router.push({ name: ROUTER_NAME_SINGLE_TXN, params: { id: target[1] } });
 }
+
 const changeToClass = (changeInValue: string) =>
 {
     const value = parseFloat(changeInValue);

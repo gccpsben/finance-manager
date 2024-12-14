@@ -1,10 +1,18 @@
 import { createRouter, createWebHistory } from 'vue-router'
 
+export const ROUTER_NAME_SINGLE_TXN = `singleTransaction`;
 export const ROUTER_NAME_CREATE_NEW_TXN = `createNewTransaction`;
 export const ROUTER_NAME_CREATE_NEW_CONTAINER = `createNewContainer`;
 export const ROUTER_NAME_ALL_TRANSACTIONS = `transactions`;
 export const ROUTER_NAME_ALL_CONTAINERS = `containers`;
+export const ROUTER_NAME_LOGIN = `login`;
 export const ROUTER_NAME_SINGLE_CONTAINER = `singleContainer`;
+export const ROUTER_NAME_ADD_CONTAINER = `addContainer`;
+export const ROUTER_NAME_ADD_TYPE = `addType`;
+export const ROUTER_NAME_ADD_CURRENCY = `addCurrency`;
+export const ROUTER_NAME_DASHBOARD = `dashboard`;
+export const ROUTER_NAME_ALL_CURRENCIES = `currencies`;
+export const ROUTER_NAME_SINGLE_CURRENCY = `singleCurrency`;
 
 const router = createRouter(
 {
@@ -23,7 +31,7 @@ const router = createRouter(
             [
                 {
                     path: 'dashboard',
-                    name: 'dashboard',
+                    name: ROUTER_NAME_DASHBOARD,
                     component: () => import("@/modules/dashboard/mainPages/Dashboard.vue")
                 },
                 {
@@ -32,12 +40,12 @@ const router = createRouter(
                     [
                         {
                             path: '',
-                            name: 'currencies',
+                            name: ROUTER_NAME_ALL_CURRENCIES,
                             component: () => import('@/modules/currencies/mainPages/Currencies.vue'),
                         },
                         {
                             path: ":cid",
-                            name: 'singleCurrency',
+                            name: ROUTER_NAME_SINGLE_CURRENCY,
                             component: () => import(`@/modules/currencies/mainPages/singleCurrency/components/SingleCurrency.vue`),
                         },
                     ]
@@ -58,7 +66,7 @@ const router = createRouter(
                         },
                         {
                             path: ":id",
-                            name: 'singleTransaction',
+                            name: ROUTER_NAME_SINGLE_TXN,
                             component: () => import(`@/modules/transactions/mainPages/SingleTransaction.vue`),
                         },
                     ]
@@ -93,29 +101,24 @@ const router = createRouter(
 		},
         {
             path: '/login',
-            name: 'login',
+            name: ROUTER_NAME_LOGIN,
             component: () => import("@/modules/core/pages/LoginView.vue")
         },
         {
             path: '/containers/add',
-            name: 'addContainer',
+            name: ROUTER_NAME_ADD_CONTAINER,
             component: () => import("@/modules/containers/pages/AddContainerView.vue")
         },
         {
             path: '/types/add',
-            name: 'addType',
+            name: ROUTER_NAME_ADD_TYPE,
             component: () => import("@/modules/txnTypes/pages/AddTypeView.vue")
         },
         {
             path: '/currencies/add',
-            name: 'addCurrency',
+            name: ROUTER_NAME_ADD_CURRENCY,
             component: () => import("@/modules/currencies/pages/AddCurrencyView.vue")
-        },
-        {
-            path: '/transactions/resolve',
-            name: 'resolveTransaction',
-            component: () => import('@/modules/transactions/pages/ResolveTransactionView.vue')
-        },
+        }
 	]
 })
 
