@@ -1,5 +1,5 @@
 import { PostCurrencyRateSrcAPI } from "../../../../api-types/currencyRateSource.js";
-import { UnitTestEndpoints } from "../../index.test.js";
+import { TESTS_ENDPOINTS } from "../../index.test.js";
 import { HTTPAssert } from "../../lib/assert.js";
 import { DeleteCurrencyRateSrcAPIClass, GetCurrencyRateSrcAPIClass, PostCurrencyRateSourceAPIClass } from "./classes.js";
 
@@ -15,7 +15,7 @@ export namespace CurrencyRateSourceHelpers
     })
     {
         const assertBody = config.assertBody === undefined ? true : config.assertBody;
-        const response = await HTTPAssert.assertFetch(UnitTestEndpoints.currencyRateSourcesEndpoints['post'],
+        const response = await HTTPAssert.assertFetch(TESTS_ENDPOINTS['currencyRateSources']['post'],
         {
             baseURL: config.serverURL, expectedStatus: config.expectedCode, method: "POST",
             body: config.body,
@@ -35,7 +35,7 @@ export namespace CurrencyRateSourceHelpers
     })
     {
         const assertBody = config.assertBody === undefined ? true : config.assertBody;
-        const url = UnitTestEndpoints.currencyRateSourcesEndpoints.delete(config.currencySrcId);
+        const url = TESTS_ENDPOINTS['currencyRateSources']['delete'](config.currencySrcId);
 
         const response = await HTTPAssert.assertFetch
         (
@@ -62,7 +62,7 @@ export namespace CurrencyRateSourceHelpers
     })
     {
         const assertBody = config.assertBody === undefined ? true : config.assertBody;
-        const url = UnitTestEndpoints.currencyRateSourcesEndpoints.get(config.currencyId);
+        const url = TESTS_ENDPOINTS['currencyRateSources']['get'](config.currencyId);
 
         const response = await HTTPAssert.assertFetch
         (

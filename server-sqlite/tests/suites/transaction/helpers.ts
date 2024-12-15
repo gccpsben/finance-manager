@@ -1,7 +1,7 @@
-import { UnitTestEndpoints } from "../../index.test.js";
 import { AssertFetchReturns, HTTPAssert } from "../../lib/assert.js";
 import { GetTxnAPI, PutTxnAPI } from "../../../../api-types/txn.js";
 import { GetTxnAPIClass, PostTxnAPIClass } from "./classes.js";
+import { TESTS_ENDPOINTS } from "../../index.test.js";
 
 export namespace TransactionHelpers
 {
@@ -24,7 +24,7 @@ export namespace TransactionHelpers
         const assertBody = config.assertBody === undefined ? true : config.assertBody;
         const response = await HTTPAssert.assertFetch
         (
-            `${UnitTestEndpoints.transactionsEndpoints['get']}?${new URLSearchParams(searchParams).toString()}`,
+            `${TESTS_ENDPOINTS['transactions']['get']}?${new URLSearchParams(searchParams).toString()}`,
             {
                 baseURL: `${config.serverURL}`,
                 expectedStatus: config.expectedCode, method: "GET",
@@ -48,7 +48,7 @@ export namespace TransactionHelpers
         const queryObj = { targetTxnId: config.targetTxnId } satisfies PutTxnAPI.RequestQueryDTO;
         const response = await HTTPAssert.assertFetch
         (
-            `${UnitTestEndpoints.transactionsEndpoints['put']}?${new URLSearchParams(queryObj).toString()}`,
+            `${TESTS_ENDPOINTS['transactions']['put']}?${new URLSearchParams(queryObj).toString()}`,
             {
                 baseURL: config.serverURL, expectedStatus: config.expectedCode, method: "PUT",
                 body: config.body,
@@ -68,7 +68,7 @@ export namespace TransactionHelpers
     })
     {
         const assertBody = config.assertBody === undefined ? true : config.assertBody;
-        const response = await HTTPAssert.assertFetch(UnitTestEndpoints.transactionsEndpoints['post'],
+        const response = await HTTPAssert.assertFetch(TESTS_ENDPOINTS['transactions']['post'],
         {
             baseURL: config.serverURL, expectedStatus: config.expectedCode, method: "POST",
             body: config.body,
@@ -94,7 +94,7 @@ export namespace TransactionHelpers
         const searchParams = config.txnId === undefined ? '' : "?" + new URLSearchParams({ id: config.txnId }).toString();
         const response = await HTTPAssert.assertFetch
         (
-            `${UnitTestEndpoints.transactionsEndpoints['delete']}${searchParams}`,
+            `${TESTS_ENDPOINTS['transactions']['delete']}${searchParams}`,
             {
                 baseURL: config.serverURL, expectedStatus: config.expectedCode, method: "DELETE",
                 headers: { "authorization": config.token }

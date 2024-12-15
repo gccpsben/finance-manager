@@ -15,6 +15,7 @@ import currencyRateSrcs from './suites/currencyRateSource/index.test.js';
 import calculationsTest, { testForCalculationsInternals } from './suites/calculations/index.test.js';
 import { exit } from 'process';
 import { GetCurrencyRateSrcAPI, DeleteCurrencyRateSrcAPI } from '../../api-types/currencyRateSource.js';
+import { GetUserBalanceHistoryAPI, GetUserNetworthHistoryAPI } from '../../api-types/calculations.js';
 export type HTTPMethod = "GET" | "PATCH" | "POST" | "DELETE";
 
 export type TestUserEntry =
@@ -29,56 +30,63 @@ export type TestUserDict =
     [key: string]: TestUserEntry
 };
 
-export class UnitTestEndpoints
+export const TESTS_ENDPOINTS =
 {
-    public static userEndpoints = { "post": "/api/v1/users", };
-    public static loginEndpoints = { "post": `/api/v1/auth/login` };
-    public static containersEndpoints =
+    "users": { "post": "/api/v1/users" },
+    "login": { "post": `/api/v1/auth/login` },
+    "containers":
     {
         "post": `/api/v1/containers`,
         "get": `/api/v1/containers`
-    };
-    public static calculationsEndpoints =
+    },
+    "calculations-expensesAndIncomes":
     {
-        "expensesAndIncomes": `/api/v1/calculations/expensesAndIncomes`,
-        "balanceHistory":  `/api/v1/calculations/balanceHistory`,
-        "networthHistory":  `/api/v1/calculations/networthHistory`
-    };
-    public static currenciesEndpoints =
+        "get": `/api/v1/calculations/expensesAndIncomes`
+    },
+    "calculations-balanceHistory":
+    {
+        get: (startDate: number, endDate: number, division: number) =>
+            `/api/v1/calculations/balanceHistory?startDate=${startDate}&endDate=${endDate}&division=${division}` satisfies GetUserBalanceHistoryAPI.Path<string>,
+        getWithoutParams: () =>
+            `/api/v1/calculations/balanceHistory` satisfies GetUserBalanceHistoryAPI.Path<string>,
+    },
+    "calculations-networthHistory":
+    {
+        get: (startDate: number, endDate: number, division: number) =>
+            `/api/v1/calculations/networthHistory?startDate=${startDate}&endDate=${endDate}&division=${division}` satisfies GetUserNetworthHistoryAPI.Path<string>,
+        getWithoutParams: () =>
+            `/api/v1/calculations/networthHistory` satisfies GetUserNetworthHistoryAPI.Path<string>,
+    },
+    "currencies":
     {
         "post": `/api/v1/currencies`,
         "get": `/api/v1/currencies`
-    };
-    public static currenciesRateHistoryEndpoints =
-    {
+    },
+    "currencies-rate-history": {
         "get": "/api/v1/currencies/history"
-    };
-    public static currencyRateDatumsEndpoints =
-    {
-        "post": `/api/v1/currencyRateDatums`
-    };
-    public static transactionTagsEndpoints =
+    },
+    "currencyRateDatums": { "post": `/api/v1/currencyRateDatums` },
+    "transactionTags":
     {
         "post": `/api/v1/transactionTags`,
         "get": `/api/v1/transactionTags`,
-    };
-    public static transactionsEndpoints =
+    },
+    "transactions":
     {
         "post": `/api/v1/transactions`,
         "get": `/api/v1/transactions`,
         "put": `/api/v1/transactions`,
         "delete": `/api/v1/transactions`
-    };
-    public static currencyRateSourcesEndpoints =
+    },
+    "currencyRateSources":
     {
         "post": `/api/v1/currencyRateSources`,
-        get: <T extends string>(cid: T) => {
-            return `/api/v1/${cid}/currencyRateSources` satisfies GetCurrencyRateSrcAPI.Path<T>
-        },
-        delete: <T extends string>(cid: T) => {
-            return `/api/v1/currencyRateSources/${cid}` satisfies DeleteCurrencyRateSrcAPI.Path<T>
-        }
-    };
+        get: <T extends string>(cid: T) =>
+            `/api/v1/${cid}/currencyRateSources` satisfies GetCurrencyRateSrcAPI.Path<T>
+        ,
+        delete: <T extends string>(cid: T) =>
+            `/api/v1/currencyRateSources/${cid}` satisfies DeleteCurrencyRateSrcAPI.Path<T>
+    }
 }
 
 export async function resetDatabase()

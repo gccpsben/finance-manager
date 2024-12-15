@@ -1,5 +1,5 @@
 import { Context } from "../../lib/context.js";
-import { resetDatabase, serverURL, UnitTestEndpoints } from "../../index.test.js";
+import { resetDatabase, serverURL, TESTS_ENDPOINTS } from "../../index.test.js";
 import { BodyGenerator } from "../../lib/bodyGenerator.js";
 import { assertBodyConfirmToModel, assertStrictEqual, HTTPAssert } from "../../lib/assert.js";
 import { Decimal } from "decimal.js";
@@ -13,7 +13,7 @@ export default async function(this: Context)
 {
     await this.module("Currencies Rates Sources", async function()
     {
-        await this.module(UnitTestEndpoints.currencyRateSourcesEndpoints['post'], async function()
+        await this.module(TESTS_ENDPOINTS['currencyRateSources']['post'], async function()
         {
             // Setup environment
             await resetDatabase();

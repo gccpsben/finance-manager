@@ -21,6 +21,8 @@ export namespace GetExpensesAndIncomesAPI
 
 export namespace GetUserBalanceHistoryAPI
 {
+    export type Path<Params extends string> = `/api/v1/calculations/balanceHistory${Params}`;
+
     export type RequestQueryDTO =
     {
         startDate: string | undefined;
@@ -39,6 +41,8 @@ export namespace GetUserBalanceHistoryAPI
 
 export namespace GetUserNetworthHistoryAPI
 {
+    export type Path<Params extends string> = `/api/v1/calculations/networthHistory${Params}`;
+
     export type RequestQueryDTO =
     {
         startDate: string | undefined;

@@ -1,6 +1,6 @@
 import { Context } from "vm";
 import { PostCurrencyAPI } from "../../../../api-types/currencies.js";
-import { resetDatabase, serverURL, TestUserDict, TestUserEntry, UnitTestEndpoints } from "../../index.test.js";
+import { resetDatabase, serverURL, TESTS_ENDPOINTS, TestUserDict, TestUserEntry } from "../../index.test.js";
 import { assertBodyConfirmToModel, assertStrictEqual, HTTPAssert } from "../../lib/assert.js";
 import { AuthHelpers } from "../auth/helpers.js";
 import { CurrencyHelpers } from "./helpers.js";
@@ -34,7 +34,7 @@ export function createCurrencyPostBody(name: string, ticker: string, refCurrency
 /** This does not perform assertion */
 export async function postBaseCurrency(token:string, name: string, ticker: string)
 {
-    const response = await HTTPAssert.assertFetch(UnitTestEndpoints.currenciesEndpoints['post'],
+    const response = await HTTPAssert.assertFetch(TESTS_ENDPOINTS['currencies']['post'],
     {
         baseURL: serverURL, expectedStatus: undefined, method: "POST",
         body: createBaseCurrencyPostBody(name, ticker),
@@ -46,7 +46,7 @@ export async function postBaseCurrency(token:string, name: string, ticker: strin
 /** This does not perform assertion */
 export async function postCurrency(token:string, name: string, ticker: string, refCurrencyId: string, amount: string)
 {
-    const response = await HTTPAssert.assertFetch(UnitTestEndpoints.currenciesEndpoints['post'],
+    const response = await HTTPAssert.assertFetch(TESTS_ENDPOINTS['currencies']['post'],
     {
         baseURL: serverURL, expectedStatus: undefined, method: "POST",
         body: createCurrencyPostBody(name, ticker, refCurrencyId, amount),
@@ -57,7 +57,7 @@ export async function postCurrency(token:string, name: string, ticker: string, r
 
 export async function postCurrencyRateDatum(token:string, amount: string, refCurrencyId: string, refAmountCurrencyId: string, date: number)
 {
-    const response = await HTTPAssert.assertFetch(UnitTestEndpoints.currencyRateDatumsEndpoints['post'],
+    const response = await HTTPAssert.assertFetch(TESTS_ENDPOINTS['currencyRateDatums']['post'],
     {
         baseURL: serverURL, expectedStatus: undefined, method: "POST",
         body: { datums: [ { amount, refCurrencyId, refAmountCurrencyId, date } ] } as PostCurrencyRateDatumAPIClass.RequestDTO,
@@ -71,7 +71,7 @@ export async function getCurrencyById(token:string, id: string, date?: number|un
 {
     const response = await HTTPAssert.assertFetch
     (
-        `${UnitTestEndpoints.currenciesEndpoints['get']}?id=${id}${date ? "&date=" + date : ""}`,
+        `${TESTS_ENDPOINTS['currencies']['get']}?id=${id}${date ? "&date=" + date : ""}`,
         {
             baseURL: serverURL, expectedStatus: undefined, method: "GET",
             headers: { "authorization": token }
@@ -84,7 +84,7 @@ export default async function(this: Context)
 {
     await this.module("Currencies", async function()
     {
-        await this.module(UnitTestEndpoints.currenciesEndpoints['get'], async function()
+        await this.module(TESTS_ENDPOINTS['currencies']['get'], async function()
         {
             await this.module(`post`, async function()
             {
@@ -97,7 +97,7 @@ export default async function(this: Context)
 
                     await this.test(`Forbid base currencies without name - ${user.username}`, async function()
                     {
-                        await HTTPAssert.assertFetch(UnitTestEndpoints.currenciesEndpoints['post'],
+                        await HTTPAssert.assertFetch(TESTS_ENDPOINTS['currencies']['post'],
                         {
                             baseURL: serverURL, expectedStatus: 400, method: "POST",
                             body: { ticker: "USER-TICKER" },
@@ -107,7 +107,7 @@ export default async function(this: Context)
 
                     await this.test(`Forbid create base Currencies without ticker - ${user.username}`, async function()
                     {
-                        await HTTPAssert.assertFetch(UnitTestEndpoints.currenciesEndpoints['post'],
+                        await HTTPAssert.assertFetch(TESTS_ENDPOINTS['currencies']['post'],
                         {
                             baseURL: serverURL, expectedStatus: 400, method: "POST",
                             body: { name: "CURR-NAME" },
@@ -117,7 +117,7 @@ export default async function(this: Context)
 
                     await this.test(`Forbid create base Currencies without token`, async function()
                     {
-                        await HTTPAssert.assertFetch(UnitTestEndpoints.currenciesEndpoints['post'],
+                        await HTTPAssert.assertFetch(TESTS_ENDPOINTS['currencies']['post'],
                         {
                             baseURL: serverURL, expectedStatus: 401, method: "POST",
                             body: createBaseCurrencyPostBody(`User-Currency`, `USER-TICKER`)
@@ -282,7 +282,7 @@ export default async function(this: Context)
                         {
                             await HTTPAssert.assertFetch
                             (
-                                `${UnitTestEndpoints.currenciesEndpoints['get']}?id=${cID}`,
+                                `${TESTS_ENDPOINTS['currencies']['get']}?id=${cID}`,
                                 {
                                     baseURL: serverURL, method: "GET", expectedStatus: 200,
                                     headers: { "authorization": firstUser.token }
@@ -291,7 +291,7 @@ export default async function(this: Context)
 
                             const response = await HTTPAssert.assertFetch
                             (
-                                `${UnitTestEndpoints.currenciesEndpoints['get']}?id=${cID}`,
+                                `${TESTS_ENDPOINTS['currencies']['get']}?id=${cID}`,
                                 {
                                     baseURL: serverURL, method: "GET", expectedStatus: 200,
                                     headers: { "authorization": firstUser.token }
@@ -544,7 +544,7 @@ export default async function(this: Context)
                     {
                         const historyResponse = await HTTPAssert.assertFetch
                         (
-                            `${UnitTestEndpoints.currenciesRateHistoryEndpoints['get']}?id=${secondCurrencyID}&division=${testCase.division}`,
+                            `${TESTS_ENDPOINTS['currencies-rate-history']['get']}?id=${secondCurrencyID}&division=${testCase.division}`,
                             {
                                 baseURL: serverURL, method: "GET", expectedStatus: 200,
                                 headers: { "authorization": firstUserToken },
@@ -580,7 +580,7 @@ export default async function(this: Context)
                     {
                         const historyResponse = await HTTPAssert.assertFetch
                         (
-                            `${UnitTestEndpoints.currenciesRateHistoryEndpoints['get']}?id=${secondCurrencyID}&division=${testCase.division}`,
+                            `${TESTS_ENDPOINTS['currencies-rate-history']['get']}?id=${secondCurrencyID}&division=${testCase.division}`,
                             {
                                 baseURL: serverURL, method: "GET", expectedStatus: 200,
                                 headers: { "authorization": firstUserToken },

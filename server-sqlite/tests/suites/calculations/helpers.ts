@@ -1,4 +1,4 @@
-import { UnitTestEndpoints } from "../../index.test.js";
+import { TESTS_ENDPOINTS } from "../../index.test.js";
 import { HTTPAssert } from "../../lib/assert.js";
 import { GetExpensesAndIncomesAPIClass, GetUserBalanceHistoryAPIClass, GetUserNetworthHistoryAPIClass } from "./classes.js";
 
@@ -22,7 +22,7 @@ export namespace CalculationsHelpers
         const assertBody = config.assertBody === undefined ? true : config.assertBody;
         const response = await HTTPAssert.assertFetch
         (
-            `${UnitTestEndpoints.calculationsEndpoints['expensesAndIncomes']}?${searchParams.toString()}`,
+            `${TESTS_ENDPOINTS['calculations-expensesAndIncomes']['get']}?${searchParams.toString()}`,
             {
                 baseURL: config.serverURL, expectedStatus: config.expectedCode, method: "GET",
                 headers: { "authorization": config.token },
@@ -46,10 +46,11 @@ export namespace CalculationsHelpers
         division: number
     })
     {
+        const params: [number, number, number] = [config.startDate, config.endDate, config.division];
         const assertBody = config.assertBody === undefined ? true : config.assertBody;
         const response = await HTTPAssert.assertFetch
         (
-            `${UnitTestEndpoints.calculationsEndpoints['balanceHistory']}?startDate=${config.startDate}&endDate=${config.endDate}&division=${config.division}`,
+            `${TESTS_ENDPOINTS["calculations-balanceHistory"]['get'](...params)}`,
             {
                 baseURL: config.serverURL, expectedStatus: config.expectedCode, method: "GET",
                 headers: { "authorization": config.token },
@@ -73,10 +74,11 @@ export namespace CalculationsHelpers
         division: number
     })
     {
+        const params: [number, number, number] = [config.startDate, config.endDate, config.division];
         const assertBody = config.assertBody === undefined ? true : config.assertBody;
         const response = await HTTPAssert.assertFetch
         (
-            `${UnitTestEndpoints.calculationsEndpoints['networthHistory']}?startDate=${config.startDate}&endDate=${config.endDate}&division=${config.division}`,
+            `${TESTS_ENDPOINTS["calculations-networthHistory"]['get'](...params)}`,
             {
                 baseURL: config.serverURL, expectedStatus: config.expectedCode, method: "GET",
                 headers: { "authorization": config.token },

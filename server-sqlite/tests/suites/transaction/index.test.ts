@@ -1,4 +1,4 @@
-import { resetDatabase, serverURL, UnitTestEndpoints } from "../../index.test.js";
+import { resetDatabase, serverURL, TESTS_ENDPOINTS } from "../../index.test.js";
 import { AssertFetchReturns, assertStrictEqual, HTTPAssert } from "../../lib/assert.js";
 import { Context } from "../../lib/context.js";
 import { BodyGenerator } from "../../lib/bodyGenerator.js";
@@ -36,7 +36,7 @@ export default async function(this: Context)
 {
     await this.module("Transactions", async function()
     {
-        await this.module(UnitTestEndpoints.transactionsEndpoints['get'], async function()
+        await this.module(TESTS_ENDPOINTS['transactions']['get'], async function()
         {
             await resetDatabase();
 
@@ -55,7 +55,7 @@ export default async function(this: Context)
             // Register base currency for first user
             await (async function()
             {
-                const response = await HTTPAssert.assertFetch(UnitTestEndpoints.currenciesEndpoints['post'],
+                const response = await HTTPAssert.assertFetch(TESTS_ENDPOINTS['currencies']['post'],
                 {
                     baseURL: serverURL, expectedStatus: 200, method: "POST",
                     body: createBaseCurrencyPostBody(`User-Currency`, `USER-TICKER`),
@@ -68,7 +68,7 @@ export default async function(this: Context)
             // Register secondary currency for first user
             await (async function()
             {
-                const response = await HTTPAssert.assertFetch(UnitTestEndpoints.currenciesEndpoints['post'],
+                const response = await HTTPAssert.assertFetch(TESTS_ENDPOINTS['currencies']['post'],
                 {
                     baseURL: serverURL, expectedStatus: 200, method: "POST",
                     body: createCurrencyPostBody(`User-Currency2`, `USER-TICKER2`, testContext.baseCurrId, testContext.secCurrAmountToBase),
@@ -81,7 +81,7 @@ export default async function(this: Context)
             // Register container for first user
             await (async function()
             {
-                const response = await HTTPAssert.assertFetch(UnitTestEndpoints.containersEndpoints['post'],
+                const response = await HTTPAssert.assertFetch(TESTS_ENDPOINTS['containers']['post'],
                 {
                     baseURL: serverURL, expectedStatus: 200, method: "POST",
                     body: createPostContainerBody(`Container1`),

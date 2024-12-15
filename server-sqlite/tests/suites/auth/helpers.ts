@@ -1,4 +1,4 @@
-import { TestUserDict, TestUserEntry, UnitTestEndpoints } from "../../index.test.js";
+import { TESTS_ENDPOINTS, TestUserDict, TestUserEntry } from "../../index.test.js";
 import { HTTPAssert } from '../../lib/assert.js';
 import { randomUUID } from "crypto";
 import { PostLoginAPIClass } from "./classes.js";
@@ -23,7 +23,7 @@ export namespace AuthHelpers
         {
             await HTTPAssert.assertFetch
             (
-                UnitTestEndpoints.userEndpoints['post'],
+                TESTS_ENDPOINTS['users']['post'],
                 {
                     expectedStatus: 200,
                     baseURL: serverURL,
@@ -34,7 +34,7 @@ export namespace AuthHelpers
 
             const loginResponse = await HTTPAssert.assertFetch
             (
-                UnitTestEndpoints.loginEndpoints['post'],
+                TESTS_ENDPOINTS['login']['post'],
                 {
                     expectedStatus: 200,
                     baseURL: serverURL,
@@ -55,7 +55,7 @@ export namespace AuthHelpers
         {
             await HTTPAssert.assertFetch
             (
-                UnitTestEndpoints.userEndpoints['post'],
+                TESTS_ENDPOINTS['users']['post'],
                 {
                     expectedStatus: 200,
                     baseURL: serverURL,
@@ -66,7 +66,7 @@ export namespace AuthHelpers
 
             const loginResponse = await HTTPAssert.assertFetch
             (
-                UnitTestEndpoints.loginEndpoints['post'],
+                TESTS_ENDPOINTS['login']['post'],
                 {
                     expectedStatus: 200,
                     baseURL: serverURL,

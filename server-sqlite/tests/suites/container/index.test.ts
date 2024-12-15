@@ -1,5 +1,5 @@
 import { randomUUID } from "crypto";
-import { resetDatabase, serverURL, TestUserEntry, UnitTestEndpoints } from "../../index.test.js";
+import { resetDatabase, serverURL, TESTS_ENDPOINTS, TestUserEntry } from "../../index.test.js";
 import { assertBodyConfirmToModel, assertStrictEqual, HTTPAssert } from "../../lib/assert.js";
 import { Context } from "../../lib/context.js";
 import { BodyGenerator } from "../../lib/bodyGenerator.js";
@@ -22,20 +22,20 @@ export default async function(this: Context)
 
     await this.module("Containers", async function()
     {
-        await this.module(UnitTestEndpoints.containersEndpoints['get'], async function()
+        await this.module(TESTS_ENDPOINTS['containers']['get'], async function()
         {
             await this.module(`post`, async function()
             {
                 await resetDatabase();
                 await this.test(`Forbid creating containers without / wrong tokens`, async function()
                 {
-                    await HTTPAssert.assertFetch(UnitTestEndpoints.containersEndpoints["post"],
+                    await HTTPAssert.assertFetch(TESTS_ENDPOINTS['containers']['post'],
                     {
                         baseURL: serverURL,
                         expectedStatus: 401, method: "POST"
                     });
 
-                    await HTTPAssert.assertFetch(UnitTestEndpoints.containersEndpoints["post"],
+                    await HTTPAssert.assertFetch(TESTS_ENDPOINTS['containers']['post'],
                     {
                         baseURL: serverURL, expectedStatus: 401, method: "POST",
                         init: { headers: { "authorization": randomUUID() } }
@@ -78,13 +78,13 @@ export default async function(this: Context)
 
                 await this.test(`Forbid getting containers without / wrong tokens`, async function()
                 {
-                    await HTTPAssert.assertFetch(UnitTestEndpoints.containersEndpoints["post"],
+                    await HTTPAssert.assertFetch(TESTS_ENDPOINTS['containers']['post'],
                     {
                         baseURL: serverURL,
                         expectedStatus: 401, method: "GET"
                     });
 
-                    await HTTPAssert.assertFetch(UnitTestEndpoints.containersEndpoints["post"],
+                    await HTTPAssert.assertFetch(TESTS_ENDPOINTS['containers']['post'],
                     {
                         baseURL: serverURL, expectedStatus: 401, method: "GET",
                         init: { headers: { "authorization": randomUUID() } }

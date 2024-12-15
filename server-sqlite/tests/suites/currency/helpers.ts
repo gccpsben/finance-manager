@@ -1,9 +1,9 @@
-import { UnitTestEndpoints } from "../../index.test.js";
 import { Generator } from "../../shortcuts/generator.js";
 import { HTTPAssert } from "../../lib/assert.js";
 import { Decimal } from "decimal.js";
 import { PostCurrencyAPI } from "../../../../api-types/currencies.js";
 import { PostCurrencyAPIClass } from "./classes.js";
+import { TESTS_ENDPOINTS } from "../../index.test.js";
 
 export namespace CurrencyHelpers
 {
@@ -17,7 +17,7 @@ export namespace CurrencyHelpers
     })
     {
         const assertBody = config.assertBody === undefined ? true : config.assertBody;
-        const response = await HTTPAssert.assertFetch(UnitTestEndpoints.currenciesEndpoints['post'],
+        const response = await HTTPAssert.assertFetch(TESTS_ENDPOINTS['currencies']['post'],
         {
             baseURL: config.serverURL, expectedStatus: config.expectedCode, method: "POST",
             body: config.body,

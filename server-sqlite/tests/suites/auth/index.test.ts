@@ -1,5 +1,5 @@
 import { BodyGenerator } from "../../lib/bodyGenerator.js";
-import { serverURL, TestUserDict, TestUserEntry, UnitTestEndpoints } from "../../index.test.js";
+import { serverURL, TESTS_ENDPOINTS } from "../../index.test.js";
 import { HTTPAssert } from '../../lib/assert.js';
 import { Context } from "../../lib/context.js";
 import { PostUserAPIClass } from "./classes.js";
@@ -8,7 +8,7 @@ export default async function(this: Context)
 {
     await this.module("Auth", async function()
     {
-        await this.module(UnitTestEndpoints.loginEndpoints['post'], async function()
+        await this.module(TESTS_ENDPOINTS['users']['post'], async function()
         {
             await this.module(`post`, async function()
             {
@@ -21,7 +21,7 @@ export default async function(this: Context)
                     {
                         await HTTPAssert.assertFetch
                         (
-                            `${UnitTestEndpoints.userEndpoints.post}`,
+                            `${TESTS_ENDPOINTS['users']['post']}`,
                             {
                                 method: "POST",
                                 body: obj,
@@ -38,7 +38,7 @@ export default async function(this: Context)
                 {
                     const response = await HTTPAssert.assertFetch
                     (
-                        `${UnitTestEndpoints.userEndpoints.post}`,
+                        `${TESTS_ENDPOINTS['users']['post']}`,
                         {
                             method: "POST",
                             body: { username: correctUsername, password: correctPassword },

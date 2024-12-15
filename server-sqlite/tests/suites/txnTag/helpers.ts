@@ -1,8 +1,8 @@
-import { UnitTestEndpoints } from "../../index.test.js";
 import { HTTPAssert } from "../../lib/assert.js";
 import { Generator } from "../../shortcuts/generator.js";
 import { PostTxnTagsAPI } from "../../../../api-types/txnTag.js";
 import { ResponsePostTxnTagsDTOBody } from "./classes.js";
+import { TESTS_ENDPOINTS } from "../../index.test.js";
 
 export namespace TxnTagHelpers
 {
@@ -16,7 +16,7 @@ export namespace TxnTagHelpers
     })
     {
         const assertBody = config.assertBody === undefined ? true : config.assertBody;
-        const response = await HTTPAssert.assertFetch(UnitTestEndpoints.transactionTagsEndpoints['post'],
+        const response = await HTTPAssert.assertFetch(TESTS_ENDPOINTS['transactionTags']['post'],
         {
             baseURL: config.serverURL, expectedStatus: config.expectedCode, method: "POST",
             body: config.body,

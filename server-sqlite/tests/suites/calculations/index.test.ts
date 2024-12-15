@@ -1,5 +1,5 @@
 import { LinearInterpolator } from '../../../server_source/calculations/linearInterpolator.js';
-import { resetDatabase, serverURL, UnitTestEndpoints } from "../../index.test.js";
+import { resetDatabase, serverURL, TESTS_ENDPOINTS } from "../../index.test.js";
 import { assertJSONEqual, assertStrictEqual } from "../../lib/assert.js";
 import { Context } from "../../lib/context.js";
 import { Decimal } from "decimal.js";
@@ -26,7 +26,7 @@ export default async function(this: Context)
 
     await this.module("Calculations", async function()
     {
-        await this.module(UnitTestEndpoints.calculationsEndpoints.expensesAndIncomes, async function()
+        await this.module(TESTS_ENDPOINTS['calculations-expensesAndIncomes']['get'], async function()
         {
             await resetDatabase();
 
@@ -121,7 +121,7 @@ export default async function(this: Context)
             })
         });
 
-        await this.module(UnitTestEndpoints.calculationsEndpoints.balanceHistory, async function ()
+        await this.module(TESTS_ENDPOINTS['calculations-balanceHistory']['getWithoutParams'](), async function ()
         {
             await resetDatabase();
 
@@ -296,7 +296,7 @@ export default async function(this: Context)
             });
         });
 
-        await this.module(UnitTestEndpoints.calculationsEndpoints.networthHistory, async function ()
+        await this.module(TESTS_ENDPOINTS['calculations-networthHistory']['getWithoutParams'](), async function ()
         {
             await resetDatabase();
 

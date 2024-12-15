@@ -1,8 +1,8 @@
-import { UnitTestEndpoints } from "../../index.test.js";
 import { HTTPAssert } from "../../lib/assert.js";
 import { Generator } from "../../shortcuts/generator.js";
 import { PostContainerAPI } from "../../../../api-types/container.js";
 import { GetContainerAPIClass, PostContainerAPIClass } from "./classes.js";
+import { TESTS_ENDPOINTS } from "../../index.test.js";
 
 export namespace ContainerHelpers
 {
@@ -16,7 +16,7 @@ export namespace ContainerHelpers
     })
     {
         const assertBody = config.assertBody === undefined ? true : config.assertBody;
-        const response = await HTTPAssert.assertFetch(UnitTestEndpoints.containersEndpoints['post'],
+        const response = await HTTPAssert.assertFetch(TESTS_ENDPOINTS['containers']['post'],
         {
             baseURL: config.serverURL, expectedStatus: config.expectedCode, method: "POST",
             body: config.body,
@@ -72,8 +72,8 @@ export namespace ContainerHelpers
     {
         const assertBody = config.assertBody === undefined ? true : config.assertBody;
         const url = config.dateEpoch !== undefined ?
-            `${UnitTestEndpoints.containersEndpoints['get']}?currencyRateDate=${config.dateEpoch}` :
-            UnitTestEndpoints.containersEndpoints['get'];
+            `${TESTS_ENDPOINTS['containers']['get']}?currencyRateDate=${config.dateEpoch}` :
+            TESTS_ENDPOINTS['containers']['get'];
 
         const response = await HTTPAssert.assertFetch
         (

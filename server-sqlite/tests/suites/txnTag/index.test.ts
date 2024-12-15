@@ -1,5 +1,5 @@
 import { BodyGenerator } from "../../lib/bodyGenerator.js";
-import { resetDatabase, serverURL, UnitTestEndpoints } from "../../index.test.js";
+import { resetDatabase, serverURL, TESTS_ENDPOINTS } from "../../index.test.js";
 import { assertJSONEqual, assertStrictEqual, HTTPAssert } from "../../lib/assert.js";
 import { Context } from "../../lib/context.js";
 import { AuthHelpers } from "../auth/helpers.js";
@@ -14,7 +14,7 @@ export default async function(this: Context)
 
     await this.module("Txn Tags", async function()
     {
-        await this.module(UnitTestEndpoints.transactionTagsEndpoints['get'], async function()
+        await this.module(TESTS_ENDPOINTS['transactionTags']['get'], async function()
         {
             const userCreds = await AuthHelpers.registerRandMockUsers(serverURL, 1);
             const { username:firstUserName, token:firstUserToken } = Object.values(userCreds)[0];
@@ -25,7 +25,7 @@ export default async function(this: Context)
             {
                 await this.test(`Forbid creating txn tags without token`, async function()
                 {
-                    await HTTPAssert.assertFetch(UnitTestEndpoints.transactionTagsEndpoints['post'],
+                    await HTTPAssert.assertFetch(TESTS_ENDPOINTS['transactionTags']['post'],
                     {
                         baseURL: serverURL, expectedStatus: 401, method: "POST",
                         body: baseValidObj
@@ -36,7 +36,7 @@ export default async function(this: Context)
                 {
                     await this.test(`Forbid creating txn tags without ${testCase.fieldMissed}`, async function()
                     {
-                        await HTTPAssert.assertFetch(UnitTestEndpoints.transactionTagsEndpoints['post'],
+                        await HTTPAssert.assertFetch(TESTS_ENDPOINTS['transactionTags']['post'],
                         {
                             baseURL: serverURL, expectedStatus: 400, method: "POST",
                             body: testCase.obj,
@@ -47,7 +47,7 @@ export default async function(this: Context)
 
                 await this.test(`Allow creating txn tags with valid body`, async function()
                 {
-                    const response = await HTTPAssert.assertFetch(UnitTestEndpoints.transactionTagsEndpoints['post'],
+                    const response = await HTTPAssert.assertFetch(TESTS_ENDPOINTS['transactionTags']['post'],
                     {
                         baseURL: serverURL, expectedStatus: 200, method: "POST",
                         headers: { "authorization": firstUserToken },
@@ -62,7 +62,7 @@ export default async function(this: Context)
             {
                 await this.test(`Check for missing props on posted tags`, async function()
                 {
-                    const response = await HTTPAssert.assertFetch(UnitTestEndpoints.transactionTagsEndpoints['get'],
+                    const response = await HTTPAssert.assertFetch(TESTS_ENDPOINTS['transactionTags']['get'],
                     {
                         baseURL: serverURL, expectedStatus: 200, method: "GET",
                         headers: { "authorization": firstUserToken },
