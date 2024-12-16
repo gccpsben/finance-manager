@@ -7,6 +7,7 @@ import { panic, unwrap } from "../../std_errors/monadError.js";
 import { IdBound } from "../../index.d.js";
 import { QueryRunner } from "typeorm";
 import { User } from "../entities/user.entity.js";
+import { CurrencyToBaseRateCache, GlobalCurrencyToBaseRateCache } from "../caches/currencyToBaseRate.cache.js";
 
 
 function minAndMax<T> (array: T[], getter: (obj:T) => number)
@@ -47,7 +48,8 @@ export class CurrencyRateDatumService
             currencyId: string,
             amountCurrencyId: string
         }[],
-        queryRunner: QueryRunner
+        queryRunner: QueryRunner,
+        cache: CurrencyToBaseRateCache | undefined = GlobalCurrencyToBaseRateCache
     ): Promise<IdBound<CurrencyRateDatum>[] | UserNotFoundError | CurrencyNotFoundError>
     {
         let savedDatums: IdBound<CurrencyRateDatum>[] = [];
@@ -64,6 +66,8 @@ export class CurrencyRateDatumService
 
         for (let datum of datums)
         {
+            cache?.invalidateCurrencyToBase(datum.userId, datum.currencyId);
+
             const newRate = queryRunner.manager.getRepository(CurrencyRateDatum).create();
             newRate.amount = datum.amount.toString();
             newRate.date = datum.date;

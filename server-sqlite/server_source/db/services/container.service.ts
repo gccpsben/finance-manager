@@ -10,6 +10,7 @@ import { Currency } from "../entities/currency.entity.js";
 import { GlobalCurrencyCache } from "../caches/currencyListCache.cache.js";
 import { UserNotFoundError, UserService } from "./user.service.js";
 import { MonadError, panic, unwrap } from "../../std_errors/monadError.js";
+import { CurrencyToBaseRateCache, GlobalCurrencyToBaseRateCache } from "../caches/currencyToBaseRate.cache.js";
 
 export class ContainerNotFoundError extends MonadError<typeof ContainerNotFoundError.ERROR_SYMBOL>
 {
@@ -166,7 +167,8 @@ export class ContainerService
     (
         ownerId: string,
         containers: IdBound<SQLitePrimitiveOnly<Container>>[] | string[],
-        currencyRateDateToUse: number | undefined = undefined
+        currencyRateDateToUse: number | undefined = undefined,
+        cache: CurrencyToBaseRateCache | undefined = GlobalCurrencyToBaseRateCache,
     )
     {
         const innerRateEpoch = currencyRateDateToUse === undefined ? Date.now() : currencyRateDateToUse;
@@ -214,7 +216,8 @@ export class ContainerService
                 (
                     ownerId,
                     relevantCurrencies[currencyId],
-                    innerRateDateObj
+                    innerRateDateObj,
+                    cache
                 ));
             }
             return output;

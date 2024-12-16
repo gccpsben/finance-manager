@@ -14,6 +14,7 @@ import { ContainerNotFoundError } from '../../db/services/container.service.js';
 import { Database } from '../../db/db.js';
 import { Type } from 'class-transformer';
 import { unwrap } from '../../std_errors/monadError.js';
+import { GlobalCurrencyToBaseRateCache } from '../../db/caches/currencyToBaseRate.cache.js';
 
 const router = new TypesafeRouter(express.Router());
 
@@ -194,7 +195,7 @@ router.get<GetTxnAPI.ResponseDTO>(`/api/v1/transactions`,
             startingIndex: response.startingIndex,
             rangeItems: await Promise.all(response.rangeItems.map(async item =>
             {
-                const txnChangeInValue = unwrap(await TransactionService.getTxnIncreaseInValue(item.ownerId, item)).increaseInValue;
+                const txnChangeInValue = unwrap(await TransactionService.getTxnIncreaseInValue(item.ownerId, item, GlobalCurrencyToBaseRateCache)).increaseInValue;
                 return {
                     id: item.id!,
                     title: item.title,

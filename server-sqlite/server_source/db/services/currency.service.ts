@@ -11,6 +11,7 @@ import { GlobalCurrencyRateDatumsCache } from '../caches/currencyRateDatumsCache
 import { GlobalCurrencyCache } from "../caches/currencyListCache.cache.js";
 import { UserNotFoundError, UserService } from "./user.service.js";
 import { MonadError, panic, unwrap } from "../../std_errors/monadError.js";
+import { CurrencyToBaseRateCache, GlobalCurrencyToBaseRateCache } from "../caches/currencyToBaseRate.cache.js";
 
 export class CurrencyNotFoundError extends MonadError<typeof CurrencyNotFoundError.ERROR_SYMBOL>
 {
@@ -58,14 +59,19 @@ export class CurrencyTickerTakenError extends MonadError<typeof CurrencyTickerTa
 
 export class CurrencyCalculator
 {
-    public static async currencyToCurrencyRate(ownerId:string, from: Currency & { id: string }, to: Currency & { id: string })
+    public static async currencyToCurrencyRate
+    (
+        ownerId:string,
+        from: Currency & { id: string }, to: Currency & { id: string },
+        cache: CurrencyToBaseRateCache | undefined = GlobalCurrencyToBaseRateCache,
+    )
     {
         // Ensure user exists
         const userFetchResult = await UserService.getUserById(ownerId);
         if (userFetchResult === null) return new UserNotFoundError(ownerId);
 
-        const fromRate = unwrap(await this.currencyToBaseRate(ownerId, from));
-        const toRate = unwrap(await this.currencyToBaseRate(ownerId, to));
+        const fromRate = unwrap(await this.currencyToBaseRate(ownerId, from, undefined, cache));
+        const toRate = unwrap(await this.currencyToBaseRate(ownerId, to, undefined, cache));
         return fromRate.dividedBy(toRate);
     }
 
@@ -77,14 +83,24 @@ export class CurrencyCalculator
     (
         ownerId: string,
         from: IdBound<SQLitePrimitiveOnly<Currency>>,
-        date: Date = new Date()
+        date: Date = new Date(),
+        cache: CurrencyToBaseRateCache | undefined = GlobalCurrencyToBaseRateCache,
     ): Promise<Decimal | UserNotFoundError>
     {
         if (from.isBase) return new Decimal(`1`);
 
+        const cacheResult = cache?.queryCurrencyToBaseRate(ownerId, from.id, date.getTime());
+        if (cacheResult !== null && cacheResult !== undefined)
+            return cacheResult;
+
         // Ensure user exists
         const userFetchResult = await UserService.getUserById(ownerId);
         if (userFetchResult === null) return new UserNotFoundError(ownerId);
+
+        const cacheResultIfPossible = (result: Decimal) => {
+            if (cache)
+                cache.cacheCurrencyToBase(ownerId, from.id, date.getTime(), result);
+        };
 
         const getCurrById = async (id: string) =>
         {
@@ -110,7 +126,8 @@ export class CurrencyCalculator
             (
                 ownerId,
                 unwrap(await getCurrById(from.fallbackRateCurrencyId!))!,
-                date
+                date,
+                cache
             )!;
             return currencyBaseAmount.mul(unwrap(currencyBaseAmountUnitToBaseRate));
         }
@@ -122,7 +139,8 @@ export class CurrencyCalculator
             (
                 ownerId,
                 unwrap(await getCurrById(d1.refAmountCurrencyId))!,
-                new Date(d1.date)
+                new Date(d1.date),
+                cache
             )!);
             return unwrap(datumAmount.mul(datumUnitToBaseRate));
         }
@@ -137,19 +155,24 @@ export class CurrencyCalculator
             (
                 ownerId,
                 D1Currency,
-                new Date(d1.date)
+                new Date(d1.date),
+                cache
             )!);
             const D2CurrBaseRate = unwrap(await CurrencyCalculator.currencyToBaseRate
             (
                 ownerId,
                 D2Currency,
-                new Date(d2.date)
+                new Date(d2.date),
+                cache
             ))!;
 
             let valLeft = new Decimal(d1.amount).mul(D1CurrBaseRate);
             let valRight = new Decimal(d2.amount).mul(D2CurrBaseRate);
-            if (isDateBeforeD1D2 || isDateAfterD1D2) return valLeft;
-            if (valLeft === valRight) return valLeft;
+            if (isDateBeforeD1D2 || isDateAfterD1D2 || valLeft === valRight)
+            {
+                if (cache) cacheResultIfPossible(valLeft);
+                return valLeft;
+            }
 
             const midPt = LinearInterpolator.fromEntries
             (
@@ -160,6 +183,9 @@ export class CurrencyCalculator
                 item => new Decimal(item.key),
                 item => item.value
             ).getValue(new Decimal(date.getTime()));
+
+            if (cache) cacheResultIfPossible(midPt!);
+
             return midPt!;
         }
     }
@@ -171,7 +197,8 @@ export class CurrencyCalculator
         userId:string,
         currencyId: string,
         startDate?: Date,
-        endDate?: Date
+        endDate?: Date,
+        cache: CurrencyToBaseRateCache | undefined = GlobalCurrencyToBaseRateCache,
     ): Promise<LinearInterpolator | UserNotFoundError>
     {
         // Ensure user exists
@@ -212,7 +239,8 @@ export class CurrencyCalculator
                         (
                             userId,
                             datumUnitCurrency,
-                            new Date(datum.date)
+                            new Date(datum.date),
+                            cache
                         ))
                     )
                 });
@@ -356,7 +384,8 @@ export class CurrencyService
     (
         userId:string,
         currencies: IdBound<SQLitePrimitiveOnly<Currency>>[],
-        date: number | undefined = undefined
+        date: number | undefined = undefined,
+        cache: CurrencyToBaseRateCache | undefined = GlobalCurrencyToBaseRateCache,
     )
     {
         type outputType = { currency: IdBound<SQLitePrimitiveOnly<Currency>>, rateToBase: string };
@@ -366,7 +395,8 @@ export class CurrencyService
             (
                 userId,
                 c,
-                new Date(date ?? 0)
+                new Date(date ?? 0),
+                cache
             )
         ).toString();
 

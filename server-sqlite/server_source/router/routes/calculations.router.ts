@@ -12,6 +12,7 @@ import { InvalidLoginTokenError } from '../../db/services/accessToken.service.js
 import createHttpError from 'http-errors';
 import { UserNotFoundError } from '../../db/services/user.service.js';
 import { ArgsComparisonError, ConstantComparisonError } from '../../std_errors/argsErrors.js';
+import { GlobalCurrencyToBaseRateCache } from '../../db/caches/currencyToBaseRate.cache.js';
 
 const router = new TypesafeRouter(express.Router());
 
@@ -44,7 +45,8 @@ router.get<GetExpensesAndIncomesAPI.ResponseDTO>("/api/v1/calculations/expensesA
                 [_currentMonthKey]: { epoch: parseInt(parsedQuery.currentMonthStartEpoch), mode: 'AT_OR_AFTER' },
                 [_currentWeekKey]: { epoch: parseInt(parsedQuery.currentWeekStartEpoch), mode: 'AT_OR_AFTER' }
             },
-            now
+            now,
+            GlobalCurrencyToBaseRateCache
         );
         return {
             expenses30d: calResults[_30dKey].expenses.toString(),
@@ -96,7 +98,8 @@ router.get<GetUserNetworthHistoryAPI.ResponseDTO>(`/api/v1/calculations/networth
             authResults.ownerUserId,
             input.startDate,
             input.endDate,
-            input.division
+            input.division,
+            GlobalCurrencyToBaseRateCache
         );
 
         if (resultMap instanceof UserNotFoundError) throw createHttpError(401);

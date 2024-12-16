@@ -11,6 +11,7 @@ import { UserNotFoundError, UserService } from "./user.service.js";
 import { panic, unwrap } from "../../std_errors/monadError.js";
 import { ArgsComparisonError, ConstantComparisonError } from "../../std_errors/argsErrors.js";
 import { isInt } from "class-validator";
+import { CurrencyToBaseRateCache, GlobalCurrencyToBaseRateCache } from "../caches/currencyToBaseRate.cache.js";
 
 /** An object that represents a query of a time range. */
 export type TimeRangeQuery =
@@ -34,7 +35,8 @@ export class CalculationsService
     (
         userId: string,
         queryLines: { [queryName: string]: TimeRangeQuery },
-        nowEpoch: number
+        nowEpoch: number,
+        cache: CurrencyToBaseRateCache | undefined = GlobalCurrencyToBaseRateCache
     )
     {
         if (!isInt(nowEpoch)) throw panic(`nowEpoch must be an integer.`);
@@ -82,7 +84,8 @@ export class CalculationsService
                 unwrap(await TransactionService.getTxnIncreaseInValue
                 (
                     userId,
-                    txn
+                    txn,
+                    cache
                 ));
 
             const isValueDecreased = increaseInValue.lessThanOrEqualTo(new Decimal('0'));
@@ -181,7 +184,8 @@ export class CalculationsService
         userId: string,
         startDate: number,
         endDate: number,
-        division: number
+        division: number,
+        cache: CurrencyToBaseRateCache | undefined = GlobalCurrencyToBaseRateCache,
     ): Promise<{[epoch: string]:string} | UserNotFoundError | ArgsComparisonError<number> | ConstantComparisonError<number>>
     {
         type cInterpolatorMap = { [currencyId: string]: LinearInterpolator };
@@ -193,25 +197,19 @@ export class CalculationsService
         const balanceHistory = await CalculationsService.getUserBalanceHistory(userId, startDate, endDate, division);
         if (balanceHistory instanceof ArgsComparisonError) return balanceHistory;
         if (balanceHistory instanceof ConstantComparisonError) return balanceHistory;
-
-        const currenciesIdsInvolved = Object.keys(balanceHistory.currenciesEarliestPresentEpoch);
-
-        const currenciesInterpolators: cInterpolatorMap = await (async () =>
+        const currenciesInterpolators: cInterpolatorMap = {};
+        const getInterpolatorForCurrency = async (cId: string) =>
         {
-            const output: cInterpolatorMap = {};
-            for (const cId of currenciesIdsInvolved)
-            {
-                const interpolator = unwrap(await CurrencyCalculator.getCurrencyToBaseRateInterpolator
-                (
-                    userId,
-                    cId,
-                    new Date(startDate),
-                    new Date(endDate)
-                ));
-                output[cId] = interpolator;
-            }
-            return output;
-        })();
+            const interpolator = unwrap(await CurrencyCalculator.getCurrencyToBaseRateInterpolator
+            (
+                userId,
+                cId,
+                new Date(startDate),
+                new Date(endDate),
+                cache
+            ));
+            return interpolator;
+        };
 
         /** After obtaining the balance history, map each entry in the history to the actual value at that epoch. */
         const balanceToNetworthEntries: [ string, string ][] = [];
@@ -229,7 +227,17 @@ export class CalculationsService
                     return fetchedResult;
                 })();
 
-                let currencyRateToBase = currenciesInterpolators[currencyID].getValue(new Decimal(epoch));
+                let currencyRateToBase = await (async () =>
+                {
+                    // Check if this is available in cache first
+                    const cacheResult = cache?.queryCurrencyToBaseRate(userId, currencyID, parseInt(epoch));
+                    if (cacheResult !== null && cacheResult !== undefined) return cacheResult;
+
+                    // If not available, load the entire interpolator and use the interpolator output.
+                    if (!currenciesInterpolators[currencyID])
+                        currenciesInterpolators[currencyID] = await getInterpolatorForCurrency(currencyID);
+                    return currenciesInterpolators[currencyID].getValue(new Decimal(epoch));
+                })();
 
                 // Happens when the rate is unavailable at the given epoch (first rate is after the given epoch)
                 // when this happen, use base rate instead.
@@ -239,7 +247,8 @@ export class CalculationsService
                     (
                         userId,
                         currencyObject!,
-                        new Date(parseInt(epoch))
+                        new Date(parseInt(epoch)),
+                        cache
                     ));
                 }
                 const currencyValue = currencyRateToBase.mul(balanceHistory.historyMap[epoch][currencyID]);

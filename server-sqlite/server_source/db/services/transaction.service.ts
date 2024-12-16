@@ -11,6 +11,7 @@ import { isNullOrUndefined } from "../../router/validation.js";
 import { MonadError, panic, unwrap } from "../../std_errors/monadError.js";
 import { TxnTag } from "../entities/txnTag.entity.js";
 import { DeleteResult, QueryRunner } from "typeorm/browser";
+import { CurrencyToBaseRateCache, GlobalCurrencyToBaseRateCache } from "../caches/currencyToBaseRate.cache.js";
 
 export class TxnMissingContainerOrCurrency extends MonadError<typeof TxnMissingFromToAmountError.ERROR_SYMBOL>
 {
@@ -318,6 +319,7 @@ export class TransactionService
             toCurrencyId?: string | null | undefined,
             creationDate: number
         },
+        cache: CurrencyToBaseRateCache | undefined = GlobalCurrencyToBaseRateCache,
     ): Promise<{ increaseInValue: Decimal } | UserNotFoundError>
     {
         // Ensure user exists
@@ -326,18 +328,28 @@ export class TransactionService
 
         const amountToBaseValue = async (amount: string, currencyId: string) =>
         {
-            let currencyRate: Decimal;
-            const currencyRefetched = unwrap(await CurrencyService.getCurrencyWithoutCache(userId, { id: currencyId }));
-            const rate =
-            (
-                await CurrencyService.rateHydrateCurrency
+            let currencyRate: Decimal = await (async () =>
+            {
+                // Try getting the currency rate to base at txn's epoch from cache first.
+                const amountToBaseValueCacheResult = cache?.queryCurrencyToBaseRate(userId, currencyId, transaction.creationDate);
+                if (amountToBaseValueCacheResult) return amountToBaseValueCacheResult;
+
+                // If not available, compute the rate uncached. And finally save the result into cache.
+                const currencyRefetched = unwrap(await CurrencyService.getCurrencyWithoutCache(userId, { id: currencyId }));
+                const rate =
                 (
-                    userId,
-                    [currencyRefetched!],
-                    transaction.creationDate
-                )
-            )[0].rateToBase;
-            currencyRate = new Decimal(rate);
+                    await CurrencyService.rateHydrateCurrency
+                    (
+                        userId,
+                        [currencyRefetched!],
+                        transaction.creationDate,
+                        cache
+                    )
+                )[0].rateToBase;
+
+                if (cache) cache.cacheCurrencyToBase(userId, currencyRefetched!.id, transaction.creationDate, new Decimal(rate));
+                return new Decimal(rate);
+            })();
 
             return new Decimal(amount).mul(currencyRate);
         };
