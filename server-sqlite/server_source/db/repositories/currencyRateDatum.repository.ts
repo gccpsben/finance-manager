@@ -12,27 +12,6 @@ export type DifferenceHydratedCurrencyRateDatum = SQLitePrimitiveOnly<CurrencyRa
 
 const nameofD = (k: keyof CurrencyRateDatum) => k;
 
-export class CurrencyRateDatumsCache extends RepositoryCache
-{
-    private _datumsList: { [currId: string]: SQLitePrimitiveOnly<CurrencyRateDatum>[] } = {};
-    public constructor(ownerId: string) { super(ownerId); }
-
-    public getCurrenciesRateDatumsList(currId: string) { return this._datumsList[currId]; }
-    public setCurrenciesRateDatumsList(currId: string, list: SQLitePrimitiveOnly<CurrencyRateDatum>[])
-    {
-        if (list.find(x => x.ownerId !== this._ownerId))
-            throw new Error(`DataCache owner mismatch: Data inserted into DataCache must only belong to one user.`);
-        this._datumsList[currId] = list;
-    }
-    public async ensureCurrenciesRateDatumsList(currId: string)
-    {
-        const ratesDatums = await CurrencyRateDatumRepository.getInstance().getCurrencyDatums(this._ownerId, currId);
-        this.setCurrenciesRateDatumsList(currId, ratesDatums);
-        return ratesDatums;
-    }
-    public getRawDatumsList() { return this._datumsList }
-}
-
 class CurrencyRateDatumRepositoryExtension
 {
     /**
