@@ -11,7 +11,8 @@ import { CurrencyRateDatumService } from "./currencyRateDatum.service.js";
 import { Decimal } from "decimal.js";
 import { CurrencyRateDatum } from "../entities/currencyRateDatum.entity.js";
 import type { IdBound } from "../../index.d.js";
-import { QueryRunner } from "typeorm";
+import { QueryRunner, Relation } from "typeorm";
+import { User } from "../entities/user.entity.js";
 
 export class InvalidNumberError extends MonadError<typeof InvalidNumberError.ERROR_SYMBOL>
 {
@@ -218,7 +219,16 @@ export class CurrencyRateSourceService
     public static async executeCurrencyRateSource
     (
         ownerId: string,
-        currencySource: CurrencyRateSource,
+        currencySource:
+        {
+            refCurrencyId: string,
+            ownerId: string | undefined,
+            hostname: string,
+            path: string,
+            jsonQueryString: string,
+            refAmountCurrencyId: string,
+            lastExecuteTime: number | null
+        },
         nowEpoch: number,
         queryRunner: QueryRunner
     ): Promise<CurrencyRateDatum[] |
@@ -237,7 +247,6 @@ export class CurrencyRateSourceService
             const createError = <T extends Error>(err: T) =>
                 new ExecuteCurrencyRateSourceError(err, currencySource.refCurrencyId, ownerId);
 
-            ServiceUtils.ensureEntityOwnership(currencySource, ownerId);
             const currencyObj = await CurrencyService.getCurrencyByIdWithoutCache(ownerId, refCurrencyId);
             if (currencyObj instanceof UserNotFoundError) return createError(currencyObj);
             if (currencyObj === null) return createError(new CurrencyNotFoundError(refCurrencyId, ownerId));

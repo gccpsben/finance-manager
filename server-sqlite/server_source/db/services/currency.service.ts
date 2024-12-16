@@ -82,7 +82,14 @@ export class CurrencyCalculator
     public static async currencyToBaseRate
     (
         ownerId: string,
-        from: IdBound<SQLitePrimitiveOnly<Currency>>,
+        from:
+        {
+            id:string,
+            isBase: boolean,
+            fallbackRateAmount?: string | null | undefined,
+            fallbackRateCurrencyId?: string | null | undefined,
+
+        },
         date: Date = new Date(),
         cache: CurrencyToBaseRateCache | undefined = GlobalCurrencyToBaseRateCache,
     ): Promise<Decimal | UserNotFoundError>

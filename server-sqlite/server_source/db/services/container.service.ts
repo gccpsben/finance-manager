@@ -11,6 +11,7 @@ import { GlobalCurrencyCache } from "../caches/currencyListCache.cache.js";
 import { UserNotFoundError, UserService } from "./user.service.js";
 import { MonadError, panic, unwrap } from "../../std_errors/monadError.js";
 import { CurrencyToBaseRateCache, GlobalCurrencyToBaseRateCache } from "../caches/currencyToBaseRate.cache.js";
+import { TimeDiffer } from "../../debug/performance.js";
 
 export class ContainerNotFoundError extends MonadError<typeof ContainerNotFoundError.ERROR_SYMBOL>
 {
@@ -133,7 +134,7 @@ export class ContainerService
     public static async getContainersBalance
     (
         ownerId: string,
-        containers: IdBound<SQLitePrimitiveOnly<Container>>[] | string[]
+        containers: { id: string }[] | string[]
     )
     {
         let relevantTxns = await TransactionService.getContainersTransactions(ownerId, containers);
@@ -166,7 +167,7 @@ export class ContainerService
     public static async valueHydrateContainers
     (
         ownerId: string,
-        containers: IdBound<SQLitePrimitiveOnly<Container>>[] | string[],
+        containers: { id: string }[] | string[],
         currencyRateDateToUse: number | undefined = undefined,
         cache: CurrencyToBaseRateCache | undefined = GlobalCurrencyToBaseRateCache,
     )
