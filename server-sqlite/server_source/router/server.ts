@@ -14,6 +14,7 @@ import { readFileSync } from 'fs';
 import { createServer as createHttpServer, Server as HTTPServer } from 'http';
 import { createServer as createHttpsServer, Server as HTTPSServer } from 'https';
 import helmet from "helmet";
+import compression from 'compression';
 
 export type StartServerConfig =
 {
@@ -152,6 +153,7 @@ export class Server
             Server.expressApp = express();
             Server.expressApp.use(helmet());
             Server.expressApp.use(express.json());
+            Server.expressApp.use(compression());
 
             if (shouldAttachMorgan)
                 Server.expressApp.use(Server.getMorganLoggerMiddleware

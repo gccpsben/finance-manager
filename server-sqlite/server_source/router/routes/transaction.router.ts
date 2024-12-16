@@ -1,5 +1,5 @@
 import { IsArray, IsNotEmpty, IsOptional, IsString, ValidateNested } from 'class-validator';
-import express from 'express';
+import Express from 'express';
 import { type PutTxnAPI, type GetTxnAPI, type PostTxnAPI, type DeleteTxnAPI } from '../../../../api-types/txn.js';
 import { AccessTokenService, InvalidLoginTokenError } from '../../db/services/accessToken.service.js';
 import { TransactionService, TxnMissingContainerOrCurrency, TxnMissingFromToAmountError, TxnNotFoundError } from '../../db/services/transaction.service.js';
@@ -20,7 +20,7 @@ const router = new TypesafeRouter(express.Router());
 
 router.post<PostTxnAPI.ResponseDTO>("/api/v1/transactions",
 {
-    handler: async (req: express.Request, res: express.Express) =>
+    handler: async (req: Express.Request, res: Express.Response) =>
     {
         class bodyItem implements PostTxnAPI.RequestItemDTO
         {
@@ -90,7 +90,7 @@ router.post<PostTxnAPI.ResponseDTO>("/api/v1/transactions",
 
 router.put<PutTxnAPI.ResponseDTO>("/api/v1/transactions",
 {
-    handler: async (req: express.Request, res: express.Express) =>
+    handler: async (req: Express.Request, res: Express.Response) =>
     {
         class body implements PutTxnAPI.RequestBodyDTO
         {
@@ -151,7 +151,7 @@ router.put<PutTxnAPI.ResponseDTO>("/api/v1/transactions",
 
 router.get<GetTxnAPI.ResponseDTO>(`/api/v1/transactions`,
 {
-    handler: async (req: express.Request, res: express.Response) =>
+    handler: async (req: Express.Request, res: Express.Response) =>
     {
         class query extends OptionalPaginationAPIQueryRequest
         {
@@ -218,7 +218,7 @@ router.get<GetTxnAPI.ResponseDTO>(`/api/v1/transactions`,
 
 router.delete<DeleteTxnAPI.ResponseDTO>(`/api/v1/transactions`,
 {
-    handler: async (req: express.Request, res: express.Response) =>
+    handler: async (req: Express.Request, res: Express.Response) =>
     {
         class query implements DeleteTxnAPI.RequestQueryDTO
         {
