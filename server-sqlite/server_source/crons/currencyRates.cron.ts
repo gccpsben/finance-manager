@@ -53,7 +53,7 @@ export class CurrencyRatesCRON implements CronService
 
                     ExtendedLog.logCyan(`Fetching rate of ticker='${currency.ticker}', hostname='${fullRateSrc.hostname}', path='${fullRateSrc.path}' using source name='${src.name}'`);
 
-                    const transactionContext = await Database.startTransaction();
+                    const transactionContext = await Database.createTransactionalContext();
                     const fetchResult = await CurrencyRateSourceService.executeCurrencyRateSource
                     (
                         currency.ownerId,

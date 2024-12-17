@@ -2,7 +2,7 @@ import express, { NextFunction, Router } from "express";
 
 export type TypesafeRouteConfig<BodyType> =
 {
-    handler: (req: Express.Request, res: Express.Response) => Promise<BodyType> | never
+    handler: (req: express.Request, res: express.Response) => Promise<BodyType> | never
 }
 
 export class TypesafeRouter

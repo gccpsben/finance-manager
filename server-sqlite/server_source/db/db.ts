@@ -1,4 +1,4 @@
-import { DataSource } from "typeorm";
+import { DataSource, QueryRunner } from "typeorm";
 import { User } from "./entities/user.entity.js";
 import { AccessToken } from "./entities/accessToken.entity.js";
 import { EnvManager } from "../env.js";
@@ -61,17 +61,89 @@ export class SqliteFilePathMissingError extends MonadError<typeof SqliteFilePath
     }
 }
 
+export class AsyncQueue
+{
+    private running = false;
+    private callbacks: Function[] = [];
+    public async addToQueue(callback: () => Promise<void>)
+    {
+        this.callbacks.push(callback);
+        this.run();
+    }
+    private async run()
+    {
+        if (this.running) return;
+        while(true)
+        {
+            if (this.callbacks.length === 0) return void(this.running = false);
+            this.running = true;
+            await this.callbacks[0]();
+            this.callbacks.shift();
+        }
+    }
+}
+
 export class Database
 {
+    private static transactionsQueue = new AsyncQueue();
     public static AppDataSource: DataSource | undefined = undefined;
-
-    public static async startTransaction()
+    /**
+     * Create a context for a single transaction. Each context represent a single transaction.
+     * Any functions using the query runner inside this context will be included in the same transaction.
+     * The initial caller of the chains of method is responsible for calling `endFailure` and `endSuccess` after handling error / success.
+     * All of the transactions created using this function will be put into a queue to overcome SQLite/TypeORM single connection limitation.
+     * ```
+     * ```
+     * ***WARN: The database will be locked in a transaction until the `endFailure` and `endSuccess` methods are called.***
+     */
+    public static async createTransactionalContext()
     {
-        const queryRunner = Database.AppDataSource!.createQueryRunner();
-        await queryRunner.startTransaction();
-        const endFailure = async () => { queryRunner.rollbackTransaction(); queryRunner.release(); };
-        const endSuccess = async () => { queryRunner.commitTransaction(); queryRunner.release(); };
-        return { endFailure, endSuccess, queryRunner };
+        type ReturnType = {
+            endFailure: () => Promise<void>,
+            endSuccess: () => Promise<void>,
+            queryRunner: QueryRunner,
+            attachEndSuccessCallback: (callback: Function) => number,
+            getIsTransactionEnded: () => boolean
+        };
+
+        return new Promise<ReturnType>(async resolve =>
+        {
+            this.transactionsQueue.addToQueue(async () =>
+            {
+                return new Promise<void>(async resolveInner =>
+                {
+                    let isEnded = false;
+                    const runner = Database.AppDataSource!.createQueryRunner();
+                    const endSuccessCallbacks: Function[] = [];
+                    const endFailure = async () =>
+                    {
+                        if (isEnded) return;
+                        await runner.rollbackTransaction();
+                        await runner.release();
+                        resolveInner();
+                        isEnded = true;
+                    };
+                    const endSuccess = async () =>
+                    {
+                        if (isEnded) return;
+                        await runner.commitTransaction();
+                        await runner.release();
+                        for (const callback of endSuccessCallbacks) callback();
+                        resolveInner();
+                        isEnded = true;
+                    };
+                    await runner.startTransaction();
+                    return resolve(
+                    {
+                        "endFailure": endFailure,
+                        "endSuccess": endSuccess,
+                        "queryRunner": runner,
+                        attachEndSuccessCallback: (callback: Function) => endSuccessCallbacks.push(callback),
+                        getIsTransactionEnded: () => isEnded
+                    });
+                });
+            });
+        });
     }
 
     /** Create a Database data source from the env file. */

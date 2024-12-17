@@ -39,7 +39,7 @@ router.post<PostCurrencyRateAPI.ResponseDTO>(`/api/v1/currencyRateDatums`,
         const authResult = await AccessTokenService.validateRequestTokenValidated(req, now);
         if (authResult instanceof InvalidLoginTokenError) throw createHttpError(401);
         const parsedBody = await ExpressValidations.validateBodyAgainstModel<body>(body, req.body);
-        const transactionContext = await Database.startTransaction();
+        const transactionContext = await Database.createTransactionalContext();
 
         const newRateDatums = await CurrencyRateDatumService.createCurrencyRateDatum
         (

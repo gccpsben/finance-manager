@@ -89,7 +89,7 @@ export class Context
 
     public async test(name: string, fn: (this: Context) => Promise<void>, config = undefined as undefined | TestConfig)
     {
-        const defaultTimeout = 2000;
+        const defaultTimeout = 10000;
         let self = this;
 
         const startDate = new Date().getTime();

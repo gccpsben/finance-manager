@@ -2,7 +2,7 @@ import { randomUUID } from "crypto";
 import { AccessTokenRepository } from "../repositories/accessToken.repository.js";
 import { EnvManager } from "../../env.js";
 import { AccessToken } from '../entities/accessToken.entity.js';
-import * as express from 'express';
+import * as Express from 'express';
 import { UserRepository } from "../repositories/user.repository.js";
 import { SQLitePrimitiveOnly } from "../../index.d.js";
 import { MonadError, panic } from "../../std_errors/monadError.js";
@@ -83,7 +83,7 @@ export class AccessTokenService
     /** Ensure an express request object has proper token in its header. */
     public static async validateRequestTokenValidated
     (
-        request: express.Request,
+        request: Express.Request,
         nowEpoch: number
     ) : Promise<
         InvalidLoginTokenError |

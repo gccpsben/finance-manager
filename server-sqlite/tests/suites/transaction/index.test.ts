@@ -10,6 +10,7 @@ import { PostContainerAPIClass } from "../container/classes.js";
 import { PostTxnAPIClass } from "./classes.js";
 import { TransactionHelpers } from "./helpers.js";
 import { TxnTagHelpers } from "../txnTag/helpers.js";
+import { executeInRandomOrder, fillArray } from "../../lib/utils.js";
 
 const createPostContainerBody = (name: string) => ({name: name});
 const createBaseCurrencyPostBody = (name: string, ticker: string) => ({ name: name, ticker: ticker });
@@ -201,7 +202,7 @@ export default async function(this: Context)
                     assertStrictEqual(allTxnAfterBatchPOST.parsedBody.rangeItems.length - allTxnBeforeBatchPOST.parsedBody.rangeItems.length, 3);
                 });
 
-                await this.test(`Test if transactional query is working in creating txns in batch `, async function()
+                await this.test(`Test if transactional query is working in creating txns in batch with bursts`, async function()
                 {
                     const txnCountBeforeBatchPOST = (await TransactionHelpers.getTransaction(
                     {
@@ -209,23 +210,64 @@ export default async function(this: Context)
                         assertBody: true, expectedCode: 200,
                     })).parsedBody.rangeItems.length;
 
-                    await TransactionHelpers.postCreateTransaction(
+                    const burstCount = 50;
+
                     {
-                        serverURL: serverURL,token: firstUser.token, assertBody: false, expectedCode: 400,
-                        body:
+                        const invalidRequestsPOST = fillArray(burstCount, () =>
                         {
-                            transactions:
-                            [
-                                baseObj,
-                                baseObj,
+                            return async () => await TransactionHelpers.postCreateTransaction(
+                            {
+                                serverURL: serverURL,token: firstUser.token, assertBody: false, expectedCode: 400,
+                                body:
                                 {
-                                    ...baseObj,
-                                    // @ts-expect-error
-                                    creationDate: "this value should fail validations"
+                                    transactions:
+                                    [
+                                        baseObj,
+                                        baseObj,
+                                        {
+                                            ...baseObj,
+                                            // @ts-expect-error
+                                            creationDate: "this value should fail validations"
+                                        }
+                                    ]
                                 }
-                            ]
-                        }
-                    });
+                            })
+                        });
+
+                        const validRequestsPOST = fillArray(burstCount, () =>
+                        {
+                            return async () =>
+                            {
+                                await TransactionHelpers.postCreateTransaction(
+                                {
+                                    serverURL: serverURL,token: firstUser.token, assertBody: false, expectedCode: 200,
+                                    body: { transactions: [ baseObj, baseObj, ] }
+                                });
+                            };
+                        });
+
+                        const validRequestsGET = fillArray(burstCount, () =>
+                        {
+                            return async () =>
+                            {
+                                return new Promise<void>(resolve =>
+                                {
+                                    setTimeout(async () =>
+                                    {
+                                        await TransactionHelpers.getTransaction(
+                                        {
+                                            serverURL: serverURL, token: firstUser.token,
+                                            assertBody: true, expectedCode: 200,
+                                        });
+
+                                        resolve();
+                                    }, Math.random() * 1000);
+                                });
+                            }
+                        });
+
+                        await executeInRandomOrder([...invalidRequestsPOST, ...validRequestsPOST, ...validRequestsGET]);
+                    }
 
                     const txnCountAfterBatchPOST = (await TransactionHelpers.getTransaction(
                     {
@@ -233,8 +275,8 @@ export default async function(this: Context)
                         assertBody: true, expectedCode: 200,
                     })).parsedBody.rangeItems.length;
 
-                    // Assert that no txns are added
-                    assertStrictEqual(txnCountBeforeBatchPOST - txnCountAfterBatchPOST, 0);
+                    // Assert that only valid txns are added
+                    assertStrictEqual(txnCountAfterBatchPOST - txnCountBeforeBatchPOST, burstCount * 2);
                 });
             });
 

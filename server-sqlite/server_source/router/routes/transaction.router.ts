@@ -16,75 +16,81 @@ import { Type } from 'class-transformer';
 import { unwrap } from '../../std_errors/monadError.js';
 import { GlobalCurrencyToBaseRateCache } from '../../db/caches/currencyToBaseRate.cache.js';
 
-const router = new TypesafeRouter(express.Router());
+const router = new TypesafeRouter(Express.Router());
 
 router.post<PostTxnAPI.ResponseDTO>("/api/v1/transactions",
 {
     handler: async (req: Express.Request, res: Express.Response) =>
     {
-        class bodyItem implements PostTxnAPI.RequestItemDTO
+        let transactionalContext: null | Awaited<ReturnType<typeof Database.createTransactionalContext>> = null;
+        try
         {
-            @IsString() @IsNotEmpty() title: string;
-            @IsOptional() @IsUTCDateInt() creationDate?: number | undefined;
-            @IsOptional() @IsString() description?: string | undefined;
-            @IsArray() @IsNotEmpty() tagIds: string[];
-            @IsOptional() @IsDecimalJSString() fromAmount: string | undefined;
-            @IsOptional() @IsString() fromContainerId: string | undefined;
-            @IsOptional() @IsString() fromCurrencyId: string | undefined;
-            @IsOptional() @IsDecimalJSString() toAmount: string | undefined;
-            @IsOptional() @IsString() toContainerId: string | undefined;
-            @IsOptional() @IsString() toCurrencyId: string | undefined;
-        }
-
-        class body implements PostTxnAPI.RequestDTO
-        {
-            @IsArray()
-            @ValidateNested({ each: true })
-            @Type(() => bodyItem)
-            transactions: bodyItem[];
-        }
-
-        // Check for auth
-        const now = Date.now();
-        const authResult = await AccessTokenService.validateRequestTokenValidated(req, now);
-        if (authResult instanceof InvalidLoginTokenError) throw createHttpError(401);
-
-        const queryRunner = Database.AppDataSource!.createQueryRunner();
-        queryRunner.startTransaction();
-        const endFailure = async () => { queryRunner.rollbackTransaction(); queryRunner.release(); };
-        const endSuccess = async () => { queryRunner.commitTransaction(); queryRunner.release(); };
-
-        const parsedBody = await ExpressValidations.validateBodyAgainstModel<body>(body, req.body);
-        const idsCreated: string[] = [];
-
-        for (const item of parsedBody.transactions)
-        {
-            let transactionCreated = await TransactionService.createTransaction(authResult.ownerUserId,
+            class bodyItem implements PostTxnAPI.RequestItemDTO
             {
-                creationDate: item.creationDate ? item.creationDate : now,
-                title: item.title,
-                description: item.description ?? "",
-                txnTagIds: item.tagIds,
-                fromAmount: item.fromAmount,
-                fromContainerId: item.fromContainerId,
-                fromCurrencyId: item.fromCurrencyId,
-                toAmount: item.toAmount,
-                toContainerId: item.toContainerId,
-                toCurrencyId: item.toCurrencyId
-            }, queryRunner);
+                @IsString() @IsNotEmpty() title: string;
+                @IsOptional() @IsUTCDateInt() creationDate?: number | undefined;
+                @IsOptional() @IsString() description?: string | undefined;
+                @IsArray() @IsNotEmpty() tagIds: string[];
+                @IsOptional() @IsDecimalJSString() fromAmount: string | undefined;
+                @IsOptional() @IsString() fromContainerId: string | undefined;
+                @IsOptional() @IsString() fromCurrencyId: string | undefined;
+                @IsOptional() @IsDecimalJSString() toAmount: string | undefined;
+                @IsOptional() @IsString() toContainerId: string | undefined;
+                @IsOptional() @IsString() toCurrencyId: string | undefined;
+            }
 
-            if (transactionCreated instanceof UserNotFoundError) { await endFailure(); throw createHttpError(401) };
-            if (transactionCreated instanceof TxnTagNotFoundError) { await endFailure();  throw createHttpError(400, transactionCreated.message); }
-            if (transactionCreated instanceof ContainerNotFoundError) { await endFailure(); throw createHttpError(400, transactionCreated.message); }
-            if (transactionCreated instanceof TxnMissingFromToAmountError) { await endFailure(); throw createHttpError(400, transactionCreated.message); }
-            if (transactionCreated instanceof TxnMissingContainerOrCurrency) { await endFailure(); throw createHttpError(400, transactionCreated.message); }
+            class body implements PostTxnAPI.RequestDTO
+            {
+                @IsArray()
+                @ValidateNested({ each: true })
+                @Type(() => bodyItem)
+                transactions: bodyItem[];
+            }
 
-            idsCreated.push(transactionCreated.id);
+            // Check for auth
+            const now = Date.now();
+            const authResult = await AccessTokenService.validateRequestTokenValidated(req, now);
+            if (authResult instanceof InvalidLoginTokenError) throw createHttpError(401);
+
+            transactionalContext = await Database.createTransactionalContext();
+
+            const parsedBody = await ExpressValidations.validateBodyAgainstModel<body>(body, req.body);
+            const idsCreated: string[] = [];
+
+            for (const item of parsedBody.transactions)
+            {
+                let transactionCreated = await TransactionService.createTransaction(authResult.ownerUserId,
+                {
+                    creationDate: item.creationDate ? item.creationDate : now,
+                    title: item.title,
+                    description: item.description ?? "",
+                    txnTagIds: item.tagIds,
+                    fromAmount: item.fromAmount,
+                    fromContainerId: item.fromContainerId,
+                    fromCurrencyId: item.fromCurrencyId,
+                    toAmount: item.toAmount,
+                    toContainerId: item.toContainerId,
+                    toCurrencyId: item.toCurrencyId
+                }, transactionalContext.queryRunner);
+
+                if (transactionCreated instanceof UserNotFoundError) throw createHttpError(401);
+                if (transactionCreated instanceof TxnTagNotFoundError)  throw createHttpError(400, transactionCreated.message);
+                if (transactionCreated instanceof ContainerNotFoundError) throw createHttpError(400, transactionCreated.message);
+                if (transactionCreated instanceof TxnMissingFromToAmountError) throw createHttpError(400, transactionCreated.message);
+                if (transactionCreated instanceof TxnMissingContainerOrCurrency) throw createHttpError(400, transactionCreated.message);
+
+                idsCreated.push(transactionCreated.id);
+            }
+
+            await transactionalContext.endSuccess();
+            return { id: idsCreated };
         }
-
-        await endSuccess();
-
-        return { id: idsCreated };
+        catch(e)
+        {
+            // Rollback transaction on any error
+            await transactionalContext?.endFailure();
+            throw e;
+        }
     }
 });
 
@@ -92,60 +98,66 @@ router.put<PutTxnAPI.ResponseDTO>("/api/v1/transactions",
 {
     handler: async (req: Express.Request, res: Express.Response) =>
     {
-        class body implements PutTxnAPI.RequestBodyDTO
+        let transactionalContext: null | Awaited<ReturnType<typeof Database.createTransactionalContext>> = null;
+        try
         {
-            @IsString() @IsNotEmpty() title: string;
-            @IsOptional() @IsUTCDateInt() creationDate?: number | undefined;
-            @IsOptional() @IsString() description?: string | undefined;
-            @IsArray() @IsNotEmpty() tagIds: string[];
-            @IsOptional() @IsDecimalJSString() fromAmount: string | undefined;
-            @IsOptional() @IsString() fromContainerId: string | undefined;
-            @IsOptional() @IsString() fromCurrencyId: string | undefined;
-            @IsOptional() @IsDecimalJSString() toAmount: string | undefined;
-            @IsOptional() @IsString() toContainerId: string | undefined;
-            @IsOptional() @IsString() toCurrencyId: string | undefined;
+            class body implements PutTxnAPI.RequestBodyDTO
+            {
+                @IsString() @IsNotEmpty() title: string;
+                @IsOptional() @IsUTCDateInt() creationDate?: number | undefined;
+                @IsOptional() @IsString() description?: string | undefined;
+                @IsArray() @IsNotEmpty() tagIds: string[];
+                @IsOptional() @IsDecimalJSString() fromAmount: string | undefined;
+                @IsOptional() @IsString() fromContainerId: string | undefined;
+                @IsOptional() @IsString() fromCurrencyId: string | undefined;
+                @IsOptional() @IsDecimalJSString() toAmount: string | undefined;
+                @IsOptional() @IsString() toContainerId: string | undefined;
+                @IsOptional() @IsString() toCurrencyId: string | undefined;
+            }
+
+            class query implements PutTxnAPI.RequestQueryDTO
+            {
+                @IsString() @IsNotEmpty() targetTxnId: string;
+            }
+
+            const now = Date.now();
+            const authResult = await AccessTokenService.validateRequestTokenValidated(req, now);
+            if (authResult instanceof InvalidLoginTokenError) throw createHttpError(401);
+            const parsedBody = await ExpressValidations.validateBodyAgainstModel<body>(body, req.body);
+            const parsedQuery = await ExpressValidations.validateBodyAgainstModel<query>(query, req.query);
+
+            transactionalContext = await Database.createTransactionalContext();
+
+            const updatedTxn = await TransactionService.updateTransaction(authResult.ownerUserId, parsedQuery.targetTxnId,
+            {
+                creationDate: parsedBody.creationDate ? parsedBody.creationDate : now,
+                title: parsedBody.title,
+                description: parsedBody.description ?? "",
+                tagIds: parsedBody.tagIds,
+                fromAmount: parsedBody.fromAmount,
+                fromContainerId: parsedBody.fromContainerId,
+                fromCurrencyId: parsedBody.fromCurrencyId,
+                toAmount: parsedBody.toAmount,
+                toContainerId: parsedBody.toContainerId,
+                toCurrencyId: parsedBody.toCurrencyId
+            }, transactionalContext.queryRunner);
+
+            if (updatedTxn instanceof UserNotFoundError) throw createHttpError(401);
+            if (updatedTxn instanceof TxnNotFoundError) throw createHttpError(404);
+            if (updatedTxn instanceof TxnTagNotFoundError) throw createHttpError(400, updatedTxn.message);
+            if (updatedTxn instanceof ContainerNotFoundError) throw createHttpError(400, updatedTxn.message);
+            if (updatedTxn instanceof TxnMissingFromToAmountError) throw createHttpError(400, updatedTxn.message);
+            if (updatedTxn instanceof TxnMissingContainerOrCurrency) throw createHttpError(400, updatedTxn.message);
+
+            await transactionalContext.endSuccess();
+            return {};
         }
-
-        class query implements PutTxnAPI.RequestQueryDTO
+        catch(e)
         {
-            @IsString() @IsNotEmpty() targetTxnId: string;
+            // Rollback transaction on any error
+            await transactionalContext?.endFailure();
+            throw e;
         }
-
-        const now = Date.now();
-        const authResult = await AccessTokenService.validateRequestTokenValidated(req, now);
-        if (authResult instanceof InvalidLoginTokenError) throw createHttpError(401);
-        const parsedBody = await ExpressValidations.validateBodyAgainstModel<body>(body, req.body);
-        const parsedQuery = await ExpressValidations.validateBodyAgainstModel<query>(query, req.query);
-
-        const queryRunner = Database.AppDataSource!.createQueryRunner();
-        queryRunner.startTransaction();
-        const endFailure = async () => { queryRunner.rollbackTransaction(); queryRunner.release(); };
-        const endSuccess = async () => { queryRunner.commitTransaction(); queryRunner.release(); };
-
-        const updatedTxn = await TransactionService.updateTransaction(authResult.ownerUserId, parsedQuery.targetTxnId,
-        {
-            creationDate: parsedBody.creationDate ? parsedBody.creationDate : now,
-            title: parsedBody.title,
-            description: parsedBody.description ?? "",
-            tagIds: parsedBody.tagIds,
-            fromAmount: parsedBody.fromAmount,
-            fromContainerId: parsedBody.fromContainerId,
-            fromCurrencyId: parsedBody.fromCurrencyId,
-            toAmount: parsedBody.toAmount,
-            toContainerId: parsedBody.toContainerId,
-            toCurrencyId: parsedBody.toCurrencyId
-        }, queryRunner);
-
-        if (updatedTxn instanceof UserNotFoundError) { await endFailure(); throw createHttpError(401); }
-        if (updatedTxn instanceof TxnNotFoundError) { await endFailure(); throw createHttpError(404); }
-        if (updatedTxn instanceof TxnTagNotFoundError) { await endFailure(); throw createHttpError(400, updatedTxn.message); }
-        if (updatedTxn instanceof ContainerNotFoundError) { await endFailure(); throw createHttpError(400, updatedTxn.message); }
-        if (updatedTxn instanceof TxnMissingFromToAmountError) { await endFailure(); throw createHttpError(400, updatedTxn.message); }
-        if (updatedTxn instanceof TxnMissingContainerOrCurrency) { await endFailure(); throw createHttpError(400, updatedTxn.message); }
-
-        await endSuccess();
-
-        return {};
     }
 });
 
@@ -220,25 +232,31 @@ router.delete<DeleteTxnAPI.ResponseDTO>(`/api/v1/transactions`,
 {
     handler: async (req: Express.Request, res: Express.Response) =>
     {
-        class query implements DeleteTxnAPI.RequestQueryDTO
+        let transactionalContext: null | Awaited<ReturnType<typeof Database.createTransactionalContext>> = null;
+        try
         {
-            @IsNotEmpty() @IsString() id: string;
+            class query implements DeleteTxnAPI.RequestQueryDTO
+            {
+                @IsNotEmpty() @IsString() id: string;
+            }
+
+            const now = Date.now();
+            const authResult = await AccessTokenService.validateRequestTokenValidated(req, now);
+            if (authResult instanceof InvalidLoginTokenError) throw createHttpError(401);
+
+            const parsedQuery = await ExpressValidations.validateBodyAgainstModel<query>(query, req.query);
+            transactionalContext = await Database.createTransactionalContext();
+
+            const deleteResult = await TransactionService.deleteTransactions([parsedQuery.id], transactionalContext.queryRunner);
+            if (deleteResult.affected === 0) throw createHttpError(404);
+            await transactionalContext.endSuccess();
+            return {};
         }
-
-        const now = Date.now();
-        const authResult = await AccessTokenService.validateRequestTokenValidated(req, now);
-        if (authResult instanceof InvalidLoginTokenError) throw createHttpError(401);
-        const parsedQuery = await ExpressValidations.validateBodyAgainstModel<query>(query, req.query);
-
-        const transactionContext = await Database.startTransaction();
-        const deleteResult = await TransactionService.deleteTransactions([parsedQuery.id], transactionContext.queryRunner);
-        if (deleteResult.affected === 0)
+        catch(e)
         {
-            await transactionContext.endFailure();
-            throw createHttpError(404);
+            await transactionalContext?.endFailure();
+            throw e;
         }
-        await transactionContext.endSuccess();
-        return {};
     }
 });
 

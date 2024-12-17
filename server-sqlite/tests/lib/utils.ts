@@ -21,3 +21,10 @@ export function shuffleArray(array: unknown[])
         [array[i], array[j]] = [array[j], array[i]];
     }
 }
+
+export async function executeInRandomOrder(promises: (() => Promise<any>)[])
+{
+    const shuffledPromises = [...promises];
+    shuffleArray(shuffledPromises);
+    return await Promise.all(shuffledPromises.map(promiseFn => promiseFn()));
+}
