@@ -11,6 +11,7 @@ import { CurrencyRateDatum } from "./entities/currencyRateDatum.entity.js";
 import { CurrencyRateSource } from "./entities/currencyRateSource.entity.js";
 import { MonadError, NestableError, NestableErrorSymbol } from "../std_errors/monadError.js";
 import { CurrencyRepository } from "./repositories/currency.repository.js";
+import { AccessTokenRepository } from "./repositories/accessToken.repository.js";
 
 export class DatabaseInitError<T extends Error> extends MonadError<typeof DatabaseInitError.ERROR_SYMBOL> implements NestableError
 {
@@ -87,6 +88,8 @@ export class AsyncQueue
 export class Database
 {
     private static currencyRepository: CurrencyRepository | null;
+    private static accessTokenRepository: AccessTokenRepository | null;
+
     private static transactionsQueue = new AsyncQueue();
     public static AppDataSource: DataSource | undefined = undefined;
 
@@ -177,6 +180,7 @@ export class Database
         {
             const dataSource = await Database.AppDataSource.initialize();
             Database.currencyRepository =  new CurrencyRepository(dataSource);
+            Database.accessTokenRepository =  new AccessTokenRepository(dataSource);
             return dataSource;
         }
         catch(e)
@@ -188,4 +192,5 @@ export class Database
     }
 
     public static getCurrencyRepository() { return this.currencyRepository; }
+    public static getAccessTokenRepository() { return this.accessTokenRepository; }
 }

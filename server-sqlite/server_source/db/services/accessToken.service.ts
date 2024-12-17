@@ -1,12 +1,7 @@
-import { randomUUID } from "crypto";
-import { AccessTokenRepository } from "../repositories/accessToken.repository.js";
-import { EnvManager } from "../../env.js";
-import { AccessToken } from '../entities/accessToken.entity.js';
 import * as Express from 'express';
-import { UserRepository } from "../repositories/user.repository.js";
-import { SQLitePrimitiveOnly } from "../../index.d.js";
 import { MonadError, panic } from "../../std_errors/monadError.js";
-import { UserNotFoundError } from "./user.service.js";
+import { Database } from "../db.js";
+import { QUERY_IGNORE } from "../../symbols.js";
 
 export class InvalidLoginTokenError extends MonadError<typeof InvalidLoginTokenError.ERROR_SYMBOL>
 {
@@ -21,24 +16,6 @@ export class InvalidLoginTokenError extends MonadError<typeof InvalidLoginTokenE
 
 export class AccessTokenService
 {
-    public static async generateTokenForUser(userId: string, nowEpoch: number)
-    {
-        // @ts-expect-error
-        if (!EnvManager.tokenExpiryMs) return panic(`AccessTokenService.generateTokenForUser: EnvManager.tokenExpiryMs is not defined.`) as AccessToken;
-
-        const targetUser = await UserRepository.getInstance().findOne({where: {id: userId}});
-        if (!targetUser) return new UserNotFoundError(userId);
-
-        const newToken = AccessTokenRepository.getInstance().create();
-        newToken.token = randomUUID();
-        newToken.owner = targetUser;
-        newToken.creationDate = nowEpoch;
-        newToken.expiryDate = newToken.creationDate + EnvManager.tokenExpiryMs;
-        const newlySavedToken = await AccessTokenRepository.getInstance().save(newToken);
-        if (!newlySavedToken.token) throw panic(`Newly saved token contains falsy token column.`);
-        return newToken as (typeof newToken & { token: string });
-    }
-
     /** Check if a token is valid, and which user it refers to. */
     public static async validateToken
     (
@@ -46,11 +23,12 @@ export class AccessTokenService
         nowEpoch: number
     ): Promise<{isTokenValid: boolean, tokenFound: boolean, ownerUserId: string | undefined}>
     {
-        const tokenInDatabase = await AccessTokenRepository.getInstance().findOne({ where: { token: tokenRaw }, relations: { owner: true } });
-        if (!tokenRaw || tokenInDatabase === null) return { isTokenValid: false, tokenFound: false, ownerUserId: undefined };
+        const tokenInDatabase = (await Database.getAccessTokenRepository()!.getAccessTokens(QUERY_IGNORE, tokenRaw))[0];
+
+        if (!tokenRaw || tokenInDatabase === undefined) return { isTokenValid: false, tokenFound: false, ownerUserId: undefined };
         if (nowEpoch >= tokenInDatabase.expiryDate)
         {
-            await AccessTokenRepository.getInstance().delete({ token: tokenInDatabase.token });
+            await Database.getAccessTokenRepository()!.deleteToken(tokenRaw);
             return {
                 isTokenValid: false,
                 tokenFound: true,
@@ -62,22 +40,6 @@ export class AccessTokenService
             tokenFound: true,
             ownerUserId: tokenInDatabase.ownerId
         }
-    }
-
-    public static async getAccessTokensOfUser(userId: string)
-    {
-        return (await AccessTokenRepository
-        .getInstance()
-        .find( { where: { owner: { id: userId } } }))
-        .map(incompleteRow =>
-        {
-            return {
-                expiryDate: incompleteRow.expiryDate,
-                creationDate: incompleteRow.creationDate,
-                token: incompleteRow.token,
-                ownerId: userId
-            } satisfies SQLitePrimitiveOnly<AccessToken>
-        });
     }
 
     /** Ensure an express request object has proper token in its header. */
@@ -108,12 +70,5 @@ export class AccessTokenService
             tokenFound: true,
             ownerUserId: validationResult.ownerUserId!
         };
-    }
-
-    public static async deleteTokensOfUser(userId: string)
-    {
-        const result = await AccessTokenRepository.getInstance()
-        .delete({ owner: { id: userId ?? null } });
-        return result;
     }
 }

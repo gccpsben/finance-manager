@@ -1,8 +1,8 @@
 import argon2 from "argon2";
 import { UserRepository } from "../repositories/user.repository.js";
 import { User } from "../entities/user.entity.js";
-import { AccessTokenService } from "./accessToken.service.js";
 import { MonadError } from "../../std_errors/monadError.js";
+import { Database } from "../db.js";
 
 const nameofU = (x: keyof User) => x;
 
@@ -54,7 +54,7 @@ export class UserService
     {
         const targetUser = await UserRepository.getInstance().findOne({where: { id: userId }});
         if (targetUser === null) return { successful: false, userFound: false };
-        await AccessTokenService.deleteTokensOfUser(targetUser.id); // delete access tokens
+        await Database.getAccessTokenRepository()!.deleteTokensOfUser(targetUser.id); // delete access tokens
         await UserRepository.getInstance().delete({ id: userId });
         return { successful: true, userFound: true };
     }
