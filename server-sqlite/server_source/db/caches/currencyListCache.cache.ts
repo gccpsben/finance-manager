@@ -2,23 +2,28 @@ import NodeCache from "node-cache";
 import { Currency } from "../entities/currency.entity.js";
 import { IdBound } from "../../index.d.js";
 
+export type CurrencyCacheEntry = {
+    id: string,
+    ownerId: string,
+    fallbackRateCurrencyId: string | undefined,
+    fallbackRateAmount: string | undefined,
+    isBase: boolean,
+    ticker: string
+};
+
 export class CurrencyCache
 {
     #nodeCache = new NodeCache( { stdTTL: 50, checkperiod: 5, useClones: false } );
 
-    public makeEntryKey(userId: string, currencyId: string)
-    {
-        return `${userId}-${currencyId}`;
-    }
+    public makeEntryKey(userId: string, currencyId: string) { return `${userId}-${currencyId}`; }
 
     public cacheCurrency
     (
         userId: string,
-        currencyId: string,
-        datums: IdBound<Currency>
+        currency: CurrencyCacheEntry
     )
     {
-        this.#nodeCache.set(this.makeEntryKey(userId, currencyId), datums);
+        this.#nodeCache.set(this.makeEntryKey(userId, currency.id), currency);
     }
 
     public invalidateCurrency
@@ -34,7 +39,7 @@ export class CurrencyCache
     (
         userId: string,
         currencyId: string
-    ): IdBound<Currency> | undefined
+    ): CurrencyCacheEntry | undefined
     {
         return this.#nodeCache.get(this.makeEntryKey(userId, currencyId));
     }

@@ -194,7 +194,7 @@ export class ContainerService
 
         const relevantCurrencies = await (async () =>
         {
-            const output: { [currencyId: string]: IdBound<SQLitePrimitiveOnly<Currency>> } = {};
+            const output: { [currencyId: string]: IdBound<Partial<Currency>> } = {};
             const getCurrById = async (id: string) =>
             {
                 const cacheResult = GlobalCurrencyCache.queryCurrency(ownerId, id);
@@ -218,7 +218,12 @@ export class ContainerService
                 output[currencyId] = unwrap(await CurrencyCalculator.currencyToBaseRate
                 (
                     ownerId,
-                    relevantCurrencies[currencyId],
+                    {
+                        id: relevantCurrencies[currencyId].id,
+                        isBase: relevantCurrencies[currencyId].isBase!,
+                        fallbackRateAmount: relevantCurrencies[currencyId].fallbackRateAmount,
+                        fallbackRateCurrencyId: relevantCurrencies[currencyId].fallbackRateCurrencyId
+                    },
                     innerRateEpoch,
                     cache
                 ));

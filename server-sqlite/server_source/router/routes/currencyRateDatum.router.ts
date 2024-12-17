@@ -43,14 +43,16 @@ router.post<PostCurrencyRateAPI.ResponseDTO>(`/api/v1/currencyRateDatums`,
 
         const newRateDatums = await CurrencyRateDatumService.createCurrencyRateDatum
         (
-            parsedBody.datums.map(datum => (
+            parsedBody.datums.map(datum =>
             {
-                userId: authResult.ownerUserId,
-                amount: datum.amount,
-                date: datum.date,
-                currencyId: datum.refCurrencyId,
-                amountCurrencyId: datum.refAmountCurrencyId,
-            })),
+                return {
+                    userId: authResult.ownerUserId,
+                    amount: datum.amount,
+                    date: datum.date,
+                    currencyId: datum.refCurrencyId,
+                    amountCurrencyId: datum.refAmountCurrencyId,
+                }
+            }),
             transactionContext.queryRunner
         );
 

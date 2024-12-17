@@ -8,6 +8,7 @@ import { nameof, ServiceUtils } from "../servicesUtils.js";
 import { UserRepository } from "./user.repository.js";
 import { IdBound } from "../../index.d.js";
 import { UserNotFoundError } from "../services/user.service.js";
+import { CurrencyCache, GlobalCurrencyCache } from "../caches/currencyListCache.cache.js";
 
 export class CurrencyRepository
 {
@@ -35,9 +36,29 @@ export class CurrencyRepository
         ownerId: string,
         currencyId: string | typeof QUERY_IGNORE,
         currencyName: string | typeof QUERY_IGNORE,
-        currencyTicker: string | typeof QUERY_IGNORE
+        currencyTicker: string | typeof QUERY_IGNORE,
+        cache: CurrencyCache | null = GlobalCurrencyCache
     )
     {
+        const makeOutput = (curr: Partial<Currency>) => {
+            return {
+                fallbackRateCurrencyId: curr.fallbackRateCurrencyId === undefined ? null : curr.fallbackRateCurrencyId,
+                id: curr.id!,
+                isBase: curr.isBase!,
+                name: curr.name!,
+                ownerId: curr.ownerId!,
+                ticker: curr.ticker!,
+                fallbackRateAmount: curr.fallbackRateAmount === undefined ? null : curr.fallbackRateAmount,
+                lastRateCronUpdateTime: curr.lastRateCronUpdateTime === undefined ? null : curr.lastRateCronUpdateTime,
+            }
+        };
+
+        if (cache && currencyId !== QUERY_IGNORE)
+        {
+            const cacheResult = cache.queryCurrency(ownerId, currencyId);
+            if (!!cacheResult) return makeOutput(cacheResult);
+        }
+
         const whereQuery = (() =>
         {
             const output: {[key: string]: any} = { owner: { id: ownerId } };
@@ -54,16 +75,16 @@ export class CurrencyRepository
         });
         if (!currency) return null;
 
-        return {
-            fallbackRateCurrencyId: currency.fallbackRateCurrencyId === undefined ? null : currency.fallbackRateCurrencyId,
+        cache?.cacheCurrency(ownerId, {
+            fallbackRateAmount: currency.fallbackRateAmount ?? undefined,
+            fallbackRateCurrencyId: currency.fallbackRateCurrencyId ?? undefined,
             id: currency.id!,
             isBase: currency.isBase!,
-            name: currency.name!,
             ownerId: currency.ownerId!,
             ticker: currency.ticker!,
-            fallbackRateAmount: currency.fallbackRateAmount === undefined ? null : currency.fallbackRateAmount,
-            lastRateCronUpdateTime: currency.lastRateCronUpdateTime === undefined ? null : currency.lastRateCronUpdateTime,
-        };
+        });
+
+        return makeOutput(currency);
     }
 
     public async updateCurrency
@@ -78,7 +99,8 @@ export class CurrencyRepository
             isBase: boolean | typeof PATCH_IGNORE,
             ticker: string | typeof PATCH_IGNORE,
             lastRateCronUpdateTime: number | null | typeof PATCH_IGNORE
-        }
+        },
+        cache: CurrencyCache | null = GlobalCurrencyCache
     )
     {
         const saveResult = await this.#repository.save(
@@ -94,6 +116,15 @@ export class CurrencyRepository
             ownerId: currencyObj.ownerId === PATCH_IGNORE ? undefined : currencyObj.ownerId,
             ticker: currencyObj.ticker === PATCH_IGNORE ? undefined : currencyObj.ticker,
         }) as Currency;
+
+        cache?.cacheCurrency(saveResult.ownerId, {
+            fallbackRateAmount: saveResult.fallbackRateAmount ?? undefined,
+            fallbackRateCurrencyId: saveResult.fallbackRateCurrencyId ?? undefined,
+            id: saveResult.id!,
+            isBase: saveResult.isBase,
+            ownerId: saveResult.ownerId,
+            ticker: saveResult.ticker
+        });
 
         return {
             id: saveResult.id!,
@@ -124,7 +155,8 @@ export class CurrencyRepository
             isBase: boolean,
             ticker: string,
             lastRateCronUpdateTime?: number | null
-        }
+        },
+        cache: CurrencyCache | null = GlobalCurrencyCache
     )
     {
         const newCurrency = this.#repository.create(currencyObj);
@@ -144,6 +176,15 @@ export class CurrencyRepository
         });
 
         if (!savedNewCurrency.id) throw panic(`Currencies saved into database contain falsy IDs.`);
+
+        cache?.cacheCurrency(currencyObj.ownerId, {
+            fallbackRateAmount: savedNewCurrency.fallbackRateAmount ?? undefined,
+            fallbackRateCurrencyId: savedNewCurrency.fallbackRateCurrencyId ?? undefined,
+            id: savedNewCurrency.id,
+            isBase: savedNewCurrency.isBase,
+            ownerId: savedNewCurrency.ownerId,
+            ticker: savedNewCurrency.ticker
+        });
 
         return {
             id: savedNewCurrency.id!,
