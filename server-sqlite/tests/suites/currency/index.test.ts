@@ -201,7 +201,7 @@ export default async function(this: Context)
                     await (async function(this: Context)
                     {
                         // Register base currency for first user
-                        (async function()
+                        await (async function()
                         {
                             const response = await CurrencyHelpers.postCreateCurrency(
                             {
@@ -218,7 +218,7 @@ export default async function(this: Context)
                         (
                             `${firstUser.username}Currency`,
                             `${firstUser.username}_TICKER`,
-                            firstUser.baseCurrencyId!,
+                            firstUser.baseCurrencyId,
                             "100"
                         );
 
