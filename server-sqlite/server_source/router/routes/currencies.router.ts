@@ -104,17 +104,20 @@ router.get<GetCurrencyAPI.ResponseDTO>(`/api/v1/currencies`,
                     sqlPrimitiveCurrencies.rangeItems,
                     userQuery.requestedRateDate
                 );
-                return rateHydratedCurrencies.map(c => (
+                return rateHydratedCurrencies.map(c =>
                 {
-                    fallbackRateAmount: c.currency.fallbackRateAmount ?? null,
-                    id: c.currency.id,
-                    isBase: c.currency.isBase,
-                    name: c.currency.name,
-                    owner: c.currency.ownerId,
-                    rateToBase: c.rateToBase,
-                    fallbackRateCurrencyId: c.currency.fallbackRateCurrencyId ?? null,
-                    ticker: c.currency.ticker
-                }));
+                    const curr = sqlPrimitiveCurrencies.rangeItems.find(x => x.id === c.currency.id)!;
+                    return {
+                        fallbackRateAmount: c.currency.fallbackRateAmount ?? null,
+                        id: c.currency.id,
+                        isBase: c.currency.isBase,
+                        name: curr.name,
+                        owner: curr.ownerId,
+                        rateToBase: c.rateToBase,
+                        fallbackRateCurrencyId: c.currency.fallbackRateCurrencyId ?? null,
+                        ticker: curr.ticker
+                    }
+                });
             })()
         }
     }

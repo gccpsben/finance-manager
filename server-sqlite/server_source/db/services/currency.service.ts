@@ -88,7 +88,6 @@ export class CurrencyCalculator
             isBase: boolean,
             fallbackRateAmount?: string | null | undefined,
             fallbackRateCurrencyId?: string | null | undefined,
-
         },
         date: number = Date.now(),
         cache: CurrencyToBaseRateCache | undefined = GlobalCurrencyToBaseRateCache,
@@ -390,29 +389,39 @@ export class CurrencyService
     public static async rateHydrateCurrency
     (
         userId:string,
-        currencies: IdBound<SQLitePrimitiveOnly<Currency>>[],
+        currencies:
+        {
+            id: string;
+            isBase: boolean;
+            fallbackRateAmount?: string | null | undefined;
+            fallbackRateCurrencyId?: string | null | undefined;
+        }[],
         date: number | undefined = undefined,
         cache: CurrencyToBaseRateCache | undefined = GlobalCurrencyToBaseRateCache,
     )
     {
-        type outputType = { currency: IdBound<SQLitePrimitiveOnly<Currency>>, rateToBase: string };
-        const getRateToBase = async (c: IdBound<SQLitePrimitiveOnly<Currency>>) =>
-        (
-            await CurrencyCalculator.currencyToBaseRate
-            (
-                userId,
-                c,
-                date ?? 0,
-                cache
-            )
-        ).toString();
+        type outputType =
+        {
+            currency: {
+                id: string;
+                isBase: boolean;
+                fallbackRateAmount?: string | null | undefined;
+                fallbackRateCurrencyId?: string | null | undefined;
+            }, rateToBase: string
+        };
 
         const output: outputType[] = [];
         for (const currency of currencies)
         {
             output.push({
                 currency: currency,
-                rateToBase: await getRateToBase(currency)
+                rateToBase: (await CurrencyCalculator.currencyToBaseRate
+                (
+                    userId,
+                    currency,
+                    date ?? 0,
+                    cache
+                )).toString()
             });
         }
         return output;
