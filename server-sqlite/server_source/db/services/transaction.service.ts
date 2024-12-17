@@ -1,6 +1,6 @@
 import { TransactionRepository } from "../repositories/transaction.repository.js";
 import { ContainerNotFoundError, ContainerService } from "./container.service.js";
-import { CurrencyService } from "./currency.service.js";
+import { CurrencyNotFoundError, CurrencyService } from "./currency.service.js";
 import { TransactionTagService, TxnTagNotFoundError } from "./txnTag.service.js";
 import { UserNotFoundError, UserService } from "./user.service.js";
 import { Transaction } from "../entities/transaction.entity.js";
@@ -8,10 +8,12 @@ import { Decimal } from "decimal.js";
 import type { PartialNull, SQLitePrimitiveOnly } from "../../index.d.js";
 import { nameof, ServiceUtils } from "../servicesUtils.js";
 import { isNullOrUndefined } from "../../router/validation.js";
-import { MonadError, panic, unwrap } from "../../std_errors/monadError.js";
+import { MonadError, panic } from "../../std_errors/monadError.js";
 import { TxnTag } from "../entities/txnTag.entity.js";
-import { DeleteResult, QueryRunner } from "typeorm/browser";
+import { DeepPartial, DeleteResult, QueryRunner } from "typeorm/browser";
 import { CurrencyToBaseRateCache, GlobalCurrencyToBaseRateCache } from "../caches/currencyToBaseRate.cache.js";
+import { QUERY_IGNORE } from "../../symbols.js";
+import { Database } from "../db.js";
 
 export class TxnMissingContainerOrCurrency extends MonadError<typeof TxnMissingFromToAmountError.ERROR_SYMBOL>
 {
@@ -94,7 +96,8 @@ export class TransactionService
         TxnTagNotFoundError |
         ContainerNotFoundError |
         TxnMissingFromToAmountError |
-        TxnMissingContainerOrCurrency
+        TxnMissingContainerOrCurrency |
+        CurrencyNotFoundError
     >
     {
         // NOTICE when using TypeORM's `save` method.
@@ -104,22 +107,29 @@ export class TransactionService
         const userFetchResult = await UserService.getUserById(userId);
         if (userFetchResult === null) return new UserNotFoundError(userId);
 
+        const currRepo = Database.getCurrencyRepository()!;
+
         const newTxn: PartialNull<Transaction> = TransactionRepository.getInstance().create();
         newTxn.creationDate = obj.creationDate;
         newTxn.description = obj.description;
 
         newTxn.title = obj.title;
-        if (obj.fromAmount) newTxn.fromAmount = obj.fromAmount;
-        if (obj.fromContainerId)
+
+        // From Amount
         {
-            const container = await ContainerService.tryGetContainerById(userId, obj.fromContainerId);
-            if (!container.containerFound) return new ContainerNotFoundError(obj.fromContainerId, userId);
-            newTxn.fromContainer = container.container;
-        }
-        if (obj.fromCurrencyId)
-        {
-            const currency = unwrap(await CurrencyService.getCurrencyWithoutCache(userId,{ id: obj.fromCurrencyId }));
-            newTxn.fromCurrency = currency;
+            if (obj.fromAmount) newTxn.fromAmount = obj.fromAmount;
+            if (obj.fromContainerId)
+            {
+                const container = await ContainerService.tryGetContainerById(userId, obj.fromContainerId);
+                if (!container.containerFound) return new ContainerNotFoundError(obj.fromContainerId, userId);
+                newTxn.fromContainer = container.container;
+            }
+            if (obj.fromCurrencyId)
+            {
+                const currency = await currRepo.findCurrencyByIdNameTickerOne(userId, obj.fromCurrencyId, QUERY_IGNORE, QUERY_IGNORE);
+                if (!currency) return new CurrencyNotFoundError(obj.fromCurrencyId, userId);
+                newTxn.fromCurrencyId = obj.fromCurrencyId;
+            }
         }
 
         // To Amount
@@ -137,8 +147,9 @@ export class TransactionService
 
             if (obj.toCurrencyId)
             {
-                const currency = unwrap(await CurrencyService.getCurrencyWithoutCache(userId,{ id: obj.toCurrencyId }));
-                newTxn.toCurrency = currency;
+                const currency = await currRepo.findCurrencyByIdNameTickerOne(userId, obj.toCurrencyId, QUERY_IGNORE, QUERY_IGNORE);
+                if (!currency) return new CurrencyNotFoundError(obj.toCurrencyId, userId);
+                newTxn.toCurrencyId = obj.toCurrencyId;
             }
             else { newTxn.toCurrencyId = null; newTxn.toCurrency = null; }
         }
@@ -188,10 +199,13 @@ export class TransactionService
         queryRunner: QueryRunner
     )
     {
+        const currRepo = Database.getCurrencyRepository()!;
+
         // Ensure user exists
         const userFetchResult = await UserService.getUserById(userId);
         if (userFetchResult === null) return new UserNotFoundError(userId);
 
+        // TODO: Stop using type `Transaction`, this is problematic, temp fix via DeepPartial
         const oldTxn = await queryRunner.manager.getRepository(Transaction).findOne(
         {
             where:
@@ -199,7 +213,7 @@ export class TransactionService
                 id: targetTxnId ?? null,
                 ownerId: userId ?? null
             }
-        });
+        }) as DeepPartial<Transaction> | null ;
 
         if (!oldTxn) return new TxnNotFoundError(targetTxnId, userId);
 
@@ -212,26 +226,34 @@ export class TransactionService
             oldTxn.fromAmount = isNullOrUndefined(obj.fromAmount) ? null : obj.fromAmount;
 
             oldTxn.fromContainerId = obj.fromContainerId ?? null;
-            oldTxn.fromContainer = !oldTxn.fromContainerId ? null : await ContainerService.getOneContainer(oldTxn.ownerId, { id: obj.fromContainerId });
+            oldTxn.fromContainer = !oldTxn.fromContainerId ? null : await ContainerService.getOneContainer(oldTxn.ownerId!, { id: obj.fromContainerId });
 
             oldTxn.fromCurrencyId = obj.fromCurrencyId ?? null;
-            oldTxn.fromCurrency = !oldTxn.fromCurrencyId ? null : unwrap(await CurrencyService.getCurrencyByIdWithoutCache
-            (
-                oldTxn.ownerId,
-                oldTxn.fromCurrencyId
-            ));
+            oldTxn.fromCurrency = !oldTxn.fromCurrencyId ? undefined : {
+                id: (await currRepo.findCurrencyByIdNameTickerOne
+                (
+                    oldTxn.ownerId!,
+                    oldTxn.fromCurrencyId,
+                    QUERY_IGNORE,
+                    QUERY_IGNORE
+                ))!.id
+            };
 
             oldTxn.toAmount = isNullOrUndefined(obj.toAmount) ? null : obj.toAmount;
 
             oldTxn.toContainerId = obj.toContainerId ?? null;
-            oldTxn.toContainer = !oldTxn.toContainerId ? null : await ContainerService.getOneContainer(oldTxn.ownerId, { id: obj.toContainerId });
+            oldTxn.toContainer = !oldTxn.toContainerId ? null : await ContainerService.getOneContainer(oldTxn.ownerId!, { id: obj.toContainerId });
 
             oldTxn.toCurrencyId = obj.toCurrencyId ?? null;
-            oldTxn.toCurrency = !oldTxn.toCurrencyId ? null : unwrap(await CurrencyService.getCurrencyByIdWithoutCache
-            (
-                oldTxn.ownerId,
-                oldTxn.toCurrencyId
-            ));
+            oldTxn.toCurrency = !oldTxn.toCurrencyId ? undefined : {
+                id: (await currRepo.findCurrencyByIdNameTickerOne
+                (
+                    oldTxn.ownerId!,
+                    oldTxn.toCurrencyId,
+                    QUERY_IGNORE,
+                    QUERY_IGNORE
+                ))!.id
+            };
 
             {
                 let tagObjs: TxnTag[] = [];
@@ -239,7 +261,7 @@ export class TransactionService
                 {
                     for (const txnTagId of obj.tagIds)
                     {
-                        const txnTagObj = await TransactionTagService.getTxnTagById(oldTxn.ownerId, txnTagId);
+                        const txnTagObj = await TransactionTagService.getTxnTagById(oldTxn.ownerId!, txnTagId);
                         if (txnTagObj instanceof UserNotFoundError) return txnTagObj;
                         if (txnTagObj instanceof TxnTagNotFoundError) return txnTagObj;
                         tagObjs.push(txnTagObj);
@@ -251,7 +273,7 @@ export class TransactionService
 
         const txnValidationResults = await TransactionService.validateTransaction(userId, {
             creationDate: oldTxn.creationDate,
-            txnTagIds: oldTxn.tags.map(t => t.id),
+            txnTagIds: oldTxn.tags.map(t => t.id!),
             description: oldTxn.description ?? '',
             title: oldTxn.title,
             fromAmount: oldTxn.fromAmount ?? undefined,
@@ -296,6 +318,7 @@ export class TransactionService
         if (newTxn instanceof TxnMissingFromToAmountError) return newTxn;
         if (newTxn instanceof ContainerNotFoundError) return newTxn;
         if (newTxn instanceof TxnMissingContainerOrCurrency) return newTxn;
+        if (newTxn instanceof CurrencyNotFoundError) return newTxn;
         const savedObj = await queryRunner.manager.getRepository(Transaction).save(newTxn);
 
         if (!savedObj.id)
@@ -342,6 +365,7 @@ export class TransactionService
         // Ensure user exists
         const userFetchResult = await UserService.getUserById(userId);
         if (userFetchResult === null) return new UserNotFoundError(userId);
+        const currRepo = Database.getCurrencyRepository()!;
 
         const getRate = async (currencyId: string) =>
         {
@@ -352,7 +376,7 @@ export class TransactionService
                 if (amountToBaseValueCacheResult) return amountToBaseValueCacheResult.toString();
 
                 // If not available, compute the rate uncached. And finally save the result into cache.
-                const currencyRefetched = unwrap(await CurrencyService.getCurrencyWithoutCache(userId, { id: currencyId }));
+                const currencyRefetched = await currRepo.findCurrencyByIdNameTickerOne(userId, currencyId, QUERY_IGNORE, QUERY_IGNORE);
                 const rate =
                 (
                     await CurrencyService.rateHydrateCurrency

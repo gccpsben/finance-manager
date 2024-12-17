@@ -10,6 +10,7 @@ import { TxnTag } from "./entities/txnTag.entity.js";
 import { CurrencyRateDatum } from "./entities/currencyRateDatum.entity.js";
 import { CurrencyRateSource } from "./entities/currencyRateSource.entity.js";
 import { MonadError, NestableError, NestableErrorSymbol } from "../std_errors/monadError.js";
+import { CurrencyRepository } from "./repositories/currency.repository.js";
 
 export class DatabaseInitError<T extends Error> extends MonadError<typeof DatabaseInitError.ERROR_SYMBOL> implements NestableError
 {
@@ -85,8 +86,10 @@ export class AsyncQueue
 
 export class Database
 {
+    private static currencyRepository: CurrencyRepository | null;
     private static transactionsQueue = new AsyncQueue();
     public static AppDataSource: DataSource | undefined = undefined;
+
     /**
      * Create a context for a single transaction. Each context represent a single transaction.
      * Any functions using the query runner inside this context will be included in the same transaction.
@@ -172,7 +175,9 @@ export class Database
 
         try
         {
-            return await Database.AppDataSource.initialize();
+            const dataSource = await Database.AppDataSource.initialize();
+            Database.currencyRepository =  new CurrencyRepository(dataSource);
+            return dataSource;
         }
         catch(e)
         {
@@ -181,4 +186,6 @@ export class Database
             return new DatabaseInitError(e);
         }
     }
+
+    public static getCurrencyRepository() { return this.currencyRepository; }
 }

@@ -2,16 +2,35 @@ import { Decimal } from "decimal.js";
 import { CurrencyRepository } from "../repositories/currency.repository.js";
 import { UserRepository } from "../repositories/user.repository.js";
 import { Currency } from "../entities/currency.entity.js";
-import { FindOptionsWhere } from "typeorm";
 import { CurrencyRateDatumRepository } from "../repositories/currencyRateDatum.repository.js";
 import { LinearInterpolator } from "../../calculations/linearInterpolator.js";
-import { IdBound, SQLitePrimitiveOnly } from "../../index.d.js";
-import { nameof, ServiceUtils } from "../servicesUtils.js";
+import { IdBound } from "../../index.d.js";
+import { nameof } from "../servicesUtils.js";
 import { GlobalCurrencyRateDatumsCache } from '../caches/currencyRateDatumsCache.cache.js';
 import { GlobalCurrencyCache } from "../caches/currencyListCache.cache.js";
 import { UserNotFoundError, UserService } from "./user.service.js";
-import { MonadError, panic, unwrap } from "../../std_errors/monadError.js";
+import { MonadError, unwrap } from "../../std_errors/monadError.js";
 import { CurrencyToBaseRateCache, GlobalCurrencyToBaseRateCache } from "../caches/currencyToBaseRate.cache.js";
+import { Database } from "../db.js";
+import { QUERY_IGNORE } from "../../symbols.js";
+
+export class CurrencyRefCurrencyIdAmountTupleError extends MonadError<typeof CurrencyRefCurrencyIdAmountTupleError.ERROR_SYMBOL>
+{
+    static readonly ERROR_SYMBOL: unique symbol;
+    public amount: string | undefined;
+    public currencyId: string | undefined;
+    public userId: string;
+
+    constructor(currencyId: string | undefined, userId: string, amount: string | undefined)
+    {
+        const nameofC = nameof<Currency>;
+        super(CurrencyRefCurrencyIdAmountTupleError.ERROR_SYMBOL, `If ${nameofC('fallbackRateCurrency')} is given, ${nameofC('fallbackRateAmount')} must also be specified.`);
+        this.name = this.constructor.name;
+        this.currencyId = currencyId;
+        this.userId = userId;
+        this.amount = amount;
+    }
+}
 
 export class CurrencyNotFoundError extends MonadError<typeof CurrencyNotFoundError.ERROR_SYMBOL>
 {
@@ -95,6 +114,8 @@ export class CurrencyCalculator
     {
         if (from.isBase) return new Decimal(`1`);
 
+        const currRepo = Database.getCurrencyRepository()!;
+
         const cacheResult = cache?.queryCurrencyToBaseRate(ownerId, from.id, date);
         if (cacheResult !== null && cacheResult !== undefined)
             return cacheResult;
@@ -112,8 +133,7 @@ export class CurrencyCalculator
         {
             const cacheResult = GlobalCurrencyCache.queryCurrency(ownerId, id);
             if (cacheResult) return cacheResult as (IdBound<typeof fetchedResult>);
-            const fetchedResult = await CurrencyService.getCurrencyByIdWithoutCache(ownerId, id);
-            GlobalCurrencyCache.cacheCurrency(ownerId, id, unwrap(fetchedResult)!);
+            const fetchedResult = await currRepo.findCurrencyByIdNameTickerOne(ownerId, id, QUERY_IGNORE, QUERY_IGNORE);
             return fetchedResult as IdBound<typeof fetchedResult>;
         };
 
@@ -207,6 +227,8 @@ export class CurrencyCalculator
         cache: CurrencyToBaseRateCache | undefined = GlobalCurrencyToBaseRateCache,
     ): Promise<LinearInterpolator | UserNotFoundError>
     {
+        const currRepo = await Database.getCurrencyRepository()!;
+
         // Ensure user exists
         const userFetchResult = await UserService.getUserById(userId);
         if (userFetchResult === null) return new UserNotFoundError(userId);
@@ -224,8 +246,7 @@ export class CurrencyCalculator
         {
             const cacheResult = GlobalCurrencyCache.queryCurrency(userId, id);
             if (cacheResult) return cacheResult;
-            const fetchedResult = await CurrencyService.getCurrencyByIdWithoutCache(userId, id);
-            GlobalCurrencyCache.cacheCurrency(userId, id, unwrap(fetchedResult)!);
+            const fetchedResult = await currRepo.findCurrencyByIdNameTickerOne(userId, id, QUERY_IGNORE, QUERY_IGNORE);
             return fetchedResult;
         };
 
@@ -259,131 +280,65 @@ export class CurrencyCalculator
 
 export class CurrencyService
 {
-    public static async tryGetUserBaseCurrency(userId: string)
-    {
-        const user = await UserRepository.getInstance().findOne({where: { id: userId ?? null }});
-        if (!user) return new UserNotFoundError(userId);
-
-        return await CurrencyRepository.getInstance().findOne(
-        {
-            where:
-            {
-                owner: { id: userId },
-                isBase: true,
-            },
-            relations: { owner: true, fallbackRateCurrency: true }
-        });
-    }
-
-    public static async getUserAllCurrencies(userId: string)
-    {
-        const user = await UserRepository.getInstance().findOne({where: { id: userId ?? null }});
-        if (!user) return new UserNotFoundError(userId);
-
-        const results = await CurrencyRepository.getInstance()
-        .createQueryBuilder(`currency`)
-        .where(`currency.${nameof<Currency>('ownerId')} = :ownerId`, { ownerId: userId })
-        .getMany();
-
-        return results;
-    }
-
-    public static async getManyCurrencies
+    public static async createCurrency
     (
-        ownerId: string,
-        query:
-        {
-            startIndex?: number | undefined, endIndex?: number | undefined,
-            name?: string | undefined, id?: string | undefined
-        }
-    ): Promise<{ totalCount: number, rangeItems: IdBound<Currency>[] } | UserNotFoundError>
-    {
-        const user = await UserRepository.getInstance().findOne({where: { id: ownerId ?? null }});
-        if (!user) return new UserNotFoundError(ownerId);
-
-        let dbQuery = CurrencyRepository.getInstance()
-        .createQueryBuilder(`curr`)
-        .where(`${nameof<Currency>('ownerId')} = :ownerId`, { ownerId: ownerId ?? null });
-
-        if (query.name) dbQuery = dbQuery.andWhere("name = :name", { name: query.name ?? null })
-        if (query.id) dbQuery = dbQuery.andWhere("id = :id", { id: query.id ?? null })
-        dbQuery = ServiceUtils.paginateQuery(dbQuery, query);
-
-        const queryResult = await dbQuery.getManyAndCount();
-        if (queryResult[0].some(x => !x.id)) throw panic(`Currencies queried from database contain falsy IDs`);
-
-        return {
-            totalCount: queryResult[1],
-            rangeItems: queryResult[0] as (typeof queryResult[0][0] & { id: string })[]
-        }
-    }
-
-    public static async getCurrencyByIdWithoutCache(userId:string, currencyId: string): Promise<
-        null |
-        UserNotFoundError |
-        IdBound<Currency>
-    >
-    {
-        return await this.getCurrencyWithoutCache(userId, { id: currencyId ?? null });
-    }
-
-    public static async getCurrencyWithoutCache(userId: string, where: Omit<FindOptionsWhere<Currency>, 'owner'>): Promise<
-        null |
-        UserNotFoundError |
-        IdBound<Currency>
-    >
-    {
-        const user = await UserRepository.getInstance().findOne({where: { id: userId ?? null }});
-        if (!user) return new UserNotFoundError(userId);
-
-        const result = await CurrencyRepository.getInstance().findOne(
-        {
-            where: { ...where, owner: { id: userId } },
-            relations: { owner: true, fallbackRateCurrency: true }
-        });
-
-        if (!result) return null;
-        if (!result.id) throw panic(`Currency queried from database contains falsy IDs`);
-
-        return result as IdBound<typeof result>;
-    }
-
-    public static async createCurrency(userId: string,
+        userId: string,
         name: string,
         amount: Decimal | undefined,
         refCurrencyId: string | undefined,
         ticker: string
-    ): Promise<IdBound<Currency> | CurrencyNotFoundError | CurrencyNameTakenError | CurrencyTickerTakenError | UserNotFoundError>
+    ): Promise<
+        ReturnType<CurrencyRepository['saveNewCurrency']> |
+        CurrencyNotFoundError |
+        CurrencyNameTakenError |
+        CurrencyTickerTakenError |
+        UserNotFoundError |
+        CurrencyRefCurrencyIdAmountTupleError
+    >
     {
+        const cRepo = Database.getCurrencyRepository()!;
+
         // Check refCurrencyId exists if refCurrencyId is defined.
-        if (refCurrencyId && !(await CurrencyRepository.getInstance().isCurrencyByIdExists(refCurrencyId, userId)))
-            return new CurrencyNotFoundError(refCurrencyId, userId);
+        refCurrencyCheck:
+        {
+            if (refCurrencyId === undefined) break refCurrencyCheck;
+            const refCurrency = await cRepo.findCurrencyByIdNameTickerOne(userId,refCurrencyId,QUERY_IGNORE,QUERY_IGNORE);
+            if (!refCurrency) return new CurrencyNotFoundError(refCurrencyId, userId);
+        }
 
-        if (!!(await CurrencyRepository.getInstance().isCurrencyByNameExists(name, userId)))
-            return new CurrencyNameTakenError(name, userId);
+        // Check for repeated currency name.
+        {
+            const currencyWithName = await cRepo.findCurrencyByIdNameTickerOne(userId,QUERY_IGNORE,name,QUERY_IGNORE);
+            if (!!currencyWithName) return new CurrencyNameTakenError(name, userId);
+        }
 
-        if (!!(await CurrencyRepository.getInstance().isCurrencyByTickerExists(ticker, userId)))
-            return new CurrencyTickerTakenError(ticker, userId);
+        // Check for repeated ticker
+        {
+            const currencyWithTicker = await cRepo.findCurrencyByIdNameTickerOne(userId, QUERY_IGNORE, QUERY_IGNORE, ticker);
+            if (!!currencyWithTicker) return new CurrencyTickerTakenError(ticker, userId);
+        }
+
+        if ((amount !== undefined && refCurrencyId === undefined) || (amount === undefined && refCurrencyId !== undefined))
+            return new CurrencyRefCurrencyIdAmountTupleError(refCurrencyId, userId, amount?.toString());
 
         const user = await UserRepository.getInstance().findOne({where:{id: userId}});
         if (user === null)
             return new UserNotFoundError(userId);
 
-        const newCurrency = CurrencyRepository.getInstance().create(
-        {
-            name,
-            owner: user,
-            ticker: ticker
-        });
+        const savedNewCurrency = Database.getCurrencyRepository()!.saveNewCurrency
+        (
+            {
+                name: name,
+                isBase: (amount === undefined && refCurrencyId === undefined),
+                ownerId: user.id,
+                ticker: ticker,
+                fallbackRateAmount: amount == undefined ? undefined : amount.toFixed(),
+                fallbackRateCurrencyId: refCurrencyId,
+                lastRateCronUpdateTime: undefined
+            }
+        );
 
-        if (refCurrencyId) newCurrency.fallbackRateCurrency = await CurrencyRepository.getInstance().findOne({where:{id: refCurrencyId}});
-        newCurrency.isBase = (amount === undefined && refCurrencyId === undefined);
-        newCurrency.fallbackRateAmount = amount == undefined ? undefined : amount.toFixed();
-
-        const savedNewCurrency = await CurrencyRepository.getInstance().save(newCurrency);
-        if (!savedNewCurrency.id) throw panic(`Currencies saved into database contain falsy IDs.`);
-
-        return savedNewCurrency as IdBound<typeof savedNewCurrency>;
+        return savedNewCurrency;
     }
 
     public static async rateHydrateCurrency

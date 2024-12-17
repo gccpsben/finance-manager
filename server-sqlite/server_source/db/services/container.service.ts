@@ -12,6 +12,8 @@ import { UserNotFoundError, UserService } from "./user.service.js";
 import { MonadError, panic, unwrap } from "../../std_errors/monadError.js";
 import { CurrencyToBaseRateCache, GlobalCurrencyToBaseRateCache } from "../caches/currencyToBaseRate.cache.js";
 import { TimeDiffer } from "../../debug/performance.js";
+import { Database } from "../db.js";
+import { QUERY_IGNORE } from "../../symbols.js";
 
 export class ContainerNotFoundError extends MonadError<typeof ContainerNotFoundError.ERROR_SYMBOL>
 {
@@ -172,6 +174,8 @@ export class ContainerService
         cache: CurrencyToBaseRateCache | undefined = GlobalCurrencyToBaseRateCache,
     )
     {
+        const currRepo = Database.getCurrencyRepository()!;
+
         const innerRateEpoch = currencyRateDateToUse === undefined ? Date.now() : currencyRateDateToUse;
         const containerBalances = await ContainerService.getContainersBalance(ownerId, containers);
 
@@ -195,8 +199,7 @@ export class ContainerService
             {
                 const cacheResult = GlobalCurrencyCache.queryCurrency(ownerId, id);
                 if (cacheResult) return cacheResult;
-                const fetchedResult = unwrap(await CurrencyService.getCurrencyByIdWithoutCache(ownerId, id));
-                GlobalCurrencyCache.cacheCurrency(ownerId, id, fetchedResult!);
+                const fetchedResult = unwrap(await currRepo.findCurrencyByIdNameTickerOne(ownerId, id, QUERY_IGNORE, QUERY_IGNORE));
                 return fetchedResult;
             };
 

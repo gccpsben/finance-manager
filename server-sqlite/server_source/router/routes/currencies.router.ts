@@ -1,6 +1,6 @@
 import express from 'express';
 import { AccessTokenService, InvalidLoginTokenError } from '../../db/services/accessToken.service.js';
-import { CurrencyNameTakenError, CurrencyNotFoundError, CurrencyService, CurrencyTickerTakenError } from '../../db/services/currency.service.js';
+import { CurrencyNameTakenError, CurrencyNotFoundError, CurrencyRefCurrencyIdAmountTupleError, CurrencyService, CurrencyTickerTakenError } from '../../db/services/currency.service.js';
 import { Decimal } from 'decimal.js';
 import { IsNumberString, IsOptional, IsString } from 'class-validator';
 import { ExpressValidations } from '../validation.js';
@@ -14,6 +14,7 @@ import { CurrencyRateDatumService } from '../../db/services/currencyRateDatum.se
 import { unwrap } from '../../std_errors/monadError.js';
 import { UserNotFoundError } from '../../db/services/user.service.js';
 import type { IdBound } from '../../index.d.js';
+import { Database } from '../../db/db.js';
 
 const router = new TypesafeRouter(express.Router());
 
@@ -46,6 +47,7 @@ router.post<PostCurrencyAPI.ResponseDTO>(`/api/v1/currencies`,
         if (newCurrency instanceof CurrencyNameTakenError) throw createHttpError(400, newCurrency.message);
         if (newCurrency instanceof CurrencyNotFoundError) throw createHttpError(400, newCurrency.message);
         if (newCurrency instanceof CurrencyTickerTakenError) throw createHttpError(400, newCurrency.message);
+        if (newCurrency instanceof CurrencyRefCurrencyIdAmountTupleError) throw createHttpError(400, newCurrency.message);
         if (newCurrency instanceof UserNotFoundError) throw createHttpError(401);
 
         return { id: newCurrency.id }
@@ -84,7 +86,7 @@ router.get<GetCurrencyAPI.ResponseDTO>(`/api/v1/currencies`,
 
         const sqlPrimitiveCurrencies = await PaginationAPIResponseClass.prepareFromQueryItems<IdBound<Currency>>
         (
-            unwrap(await CurrencyService.getManyCurrencies(authResult.ownerUserId,
+            unwrap(await Database.getCurrencyRepository()!.getCurrencies(authResult.ownerUserId,
             {
                 startIndex: userQuery.start,
                 endIndex: userQuery.end,

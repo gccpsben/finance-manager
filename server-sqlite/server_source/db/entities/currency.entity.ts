@@ -4,7 +4,6 @@ import { ManyToOne } from "typeorm";
 import { User } from "./user.entity.js";
 import { IsBoolean, IsNotEmpty, IsOptional, IsString, MaxLength, ValidationError } from "class-validator";
 import { EntityClass } from "../dbEntityBase.js";
-import { CurrencyRepository } from "../repositories/currency.repository.js";
 import { EnsureNotPlainForeignKey, IsDecimalJSString } from "../validators.js";
 import { SQLitePrimitiveOnly } from "../../index.d.js";
 import { CurrencyRateSource } from "./currencyRateSource.entity.js";
@@ -66,42 +65,7 @@ export class Currency extends EntityClass
 
     @BeforeInsert()
     @BeforeUpdate()
-    public override async validate()
-    {
-        await super.validate();
-
-        if (!!this.fallbackRateCurrency !== (!!this.fallbackRateAmount))
-        {
-            const error = new ValidationError();
-            error.target = this;
-            error.constraints = { "AmountAndRefCurrency": `Amount and refCurrency must be defined along with each other if one of them is defined.` }
-            throw error;
-        }
-
-        // Ensure only 1 base currency is for each user.
-        if (this.isBase && await CurrencyRepository.getInstance().count
-        (
-            {
-                where:
-                {
-                    owner: { id: this.ownerId },
-                    isBase: true
-                },
-                relations: { owner: true }
-            }
-        ) >= 1)
-        {
-            const error = new ValidationError();
-            error.target = this;
-            error.constraints = { "RepeatedBaseCurrency": `Each user should have only 1 base currency.` }
-            throw error;
-        }
-    }
-
-    public isCurrencyBase()
-    {
-        return this.fallbackRateAmount === null || this.fallbackRateAmount === undefined;
-    }
+    public override async validate() { await super.validate(); }
 }
 
 export type RateHydratedCurrency =

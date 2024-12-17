@@ -6,6 +6,7 @@ import { CurrencyRateSourceService, ExecuteCurrencyRateSourceError } from "../db
 import { UserNotFoundError } from "../db/services/user.service.js";
 import { ExtendedLog } from "../debug/extendedLog.js";
 import { CronService } from "./cronService.js";
+import { QUERY_IGNORE } from "../symbols.js";
 
 export class CurrencyRatesCRON implements CronService
 {
@@ -21,13 +22,14 @@ export class CurrencyRatesCRON implements CronService
     {
         this.#isRunning = true;
         ExtendedLog.logCyan(`Starting currency rates CRON.`);
+        const currRepo = Database.getCurrencyRepository()!;
 
         this.mainIntervalId = setInterval(async () =>
         {
             const now = Date.now();
 
             // Fetch all currencies (using repository)
-            const allCurrenciesToBeUpdated = await CurrencyRepository.getInstance().getAllUsersCurrWithSources();
+            const allCurrenciesToBeUpdated = await Database.getCurrencyRepository()!.getAllUsersCurrWithSources();
             for (const [_currencyId, { currency, rateSources }] of Object.entries(allCurrenciesToBeUpdated))
             {
                 if (rateSources.length === 0) continue;
@@ -38,7 +40,7 @@ export class CurrencyRatesCRON implements CronService
                 const sourcesSortedByLeastUsed = rateSources.sort();
                 sourcesSortedByLeastUsed.sort((a,b) => (a.lastExecuteTime ?? 0) - (b.lastExecuteTime ?? 0));
 
-                const currencyObj = (await CurrencyService.getCurrencyByIdWithoutCache(currency.ownerId, currency.id));
+                const currencyObj = (await currRepo.findCurrencyByIdNameTickerOne(currency.ownerId, currency.id, QUERY_IGNORE, QUERY_IGNORE));
                 if (currencyObj instanceof UserNotFoundError) continue;
                 if (currencyObj === null) continue;
 
@@ -49,7 +51,7 @@ export class CurrencyRatesCRON implements CronService
                     if (!fullRateSrc) continue;
 
                     currencyObj.lastRateCronUpdateTime = now;
-                    await CurrencyRepository.getInstance().save(currencyObj);
+                    await Database.getCurrencyRepository()!.updateCurrency(currencyObj);
 
                     ExtendedLog.logCyan(`Fetching rate of ticker='${currency.ticker}', hostname='${fullRateSrc.hostname}', path='${fullRateSrc.path}' using source name='${src.name}'`);
 

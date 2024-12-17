@@ -8,6 +8,8 @@ import { IdBound } from "../../index.d.js";
 import { QueryRunner } from "typeorm";
 import { User } from "../entities/user.entity.js";
 import { CurrencyToBaseRateCache, GlobalCurrencyToBaseRateCache } from "../caches/currencyToBaseRate.cache.js";
+import { Database } from "../db.js";
+import { QUERY_IGNORE } from "../../symbols.js";
 
 
 function minAndMax<T> (array: T[], getter: (obj:T) => number)
@@ -56,6 +58,8 @@ export class CurrencyRateDatumService
         let uniqueUserIds = [...new Set(datums.map(x => x.userId))];
         let userIdToObjMap: { [userID: string]: User } = {};
 
+        const currRepo = Database.getCurrencyRepository()!;
+
         // Check for user-ids
         for (let userId of uniqueUserIds)
         {
@@ -73,15 +77,15 @@ export class CurrencyRateDatumService
             newRate.date = datum.date;
             newRate.owner = userIdToObjMap[datum.userId];
 
-            const refCurrency = await CurrencyService.getCurrencyWithoutCache(datum.userId, { id: datum.currencyId });
-            const refAmountCurrency = await CurrencyService.getCurrencyWithoutCache(datum.userId, { id: datum.amountCurrencyId });
+            const refCurrency = await currRepo.findCurrencyByIdNameTickerOne(datum.userId, datum.currencyId, QUERY_IGNORE, QUERY_IGNORE);
+            const refAmountCurrency = await currRepo.findCurrencyByIdNameTickerOne(datum.userId, datum.amountCurrencyId, QUERY_IGNORE, QUERY_IGNORE);
             if (refAmountCurrency instanceof UserNotFoundError) return refAmountCurrency;
             if (refCurrency instanceof UserNotFoundError) return refCurrency;
             if (refCurrency === null) return new CurrencyNotFoundError(datum.userId, datum.currencyId);
             if (refAmountCurrency === null) return new CurrencyNotFoundError(datum.userId, datum.amountCurrencyId);
 
-            newRate.refCurrency = refCurrency;
-            newRate.refAmountCurrency = refAmountCurrency;
+            newRate.refCurrencyId = refCurrency.id;
+            newRate.refAmountCurrencyId = refAmountCurrency.id;
             const newlySavedDatum = await CurrencyRateDatumRepository.getInstance().save(newRate);
             if (!newlySavedDatum.id) throw panic(`Newly saved currency rate datum contains falsy IDs.`);
             savedDatums.push(newlySavedDatum as IdBound<typeof newlySavedDatum>);

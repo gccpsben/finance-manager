@@ -2,8 +2,7 @@ import path from "path";
 import { MonadError, NestableError, NestableErrorSymbol, panic, unwrap } from "../../std_errors/monadError.js";
 import { CurrencyRateSource } from "../entities/currencyRateSource.entity.js";
 import { CurrencyRateSourceRepository } from "../repositories/currencyRateSource.repository.js";
-import { ServiceUtils } from "../servicesUtils.js";
-import { CurrencyNotFoundError, CurrencyService } from "./currency.service.js";
+import { CurrencyNotFoundError } from "./currency.service.js";
 import { UserNotFoundError } from "./user.service.js";
 import { FetchError } from "../../std_errors/netErrors.js";
 import jmespath from 'jmespath';
@@ -13,6 +12,8 @@ import { CurrencyRateDatum } from "../entities/currencyRateDatum.entity.js";
 import type { IdBound } from "../../index.d.js";
 import { QueryRunner, Relation } from "typeorm";
 import { User } from "../entities/user.entity.js";
+import { Database } from "../db.js";
+import { QUERY_IGNORE } from "../../symbols.js";
 
 export class InvalidNumberError extends MonadError<typeof InvalidNumberError.ERROR_SYMBOL>
 {
@@ -127,8 +128,10 @@ export class CurrencyRateSourceService
         if (!src.refAmountCurrencyId) return "MissingAmountCurrency";
         if (!src.refCurrencyId) return "MissingRefCurrency";
 
-        const refCurrency = await CurrencyService.getCurrencyByIdWithoutCache(src.ownerId, src.refCurrencyId);
-        const refAmountCurrency = await CurrencyService.getCurrencyByIdWithoutCache(src.ownerId, src.refAmountCurrencyId);
+        const currRepo = Database.getCurrencyRepository()!;
+
+        const refCurrency = await currRepo.findCurrencyByIdNameTickerOne(src.ownerId, src.refCurrencyId, QUERY_IGNORE, QUERY_IGNORE);
+        const refAmountCurrency = await currRepo.findCurrencyByIdNameTickerOne(src.ownerId, src.refAmountCurrencyId, QUERY_IGNORE, QUERY_IGNORE);
 
         if (refCurrency === null) return "RefCurrencyNotFound";
         if (refAmountCurrency === null) return "RefAmountCurrencyNotFound";
@@ -241,13 +244,14 @@ export class CurrencyRateSourceService
     >
     {
         const refCurrencyId = currencySource.refCurrencyId;
+        const currRepo = Database.getCurrencyRepository()!;
 
         try
         {
             const createError = <T extends Error>(err: T) =>
                 new ExecuteCurrencyRateSourceError(err, currencySource.refCurrencyId, ownerId);
 
-            const currencyObj = await CurrencyService.getCurrencyByIdWithoutCache(ownerId, refCurrencyId);
+            const currencyObj = await currRepo.findCurrencyByIdNameTickerOne(ownerId, refCurrencyId, QUERY_IGNORE, QUERY_IGNORE);
             if (currencyObj instanceof UserNotFoundError) return createError(currencyObj);
             if (currencyObj === null) return createError(new CurrencyNotFoundError(refCurrencyId, ownerId));
 

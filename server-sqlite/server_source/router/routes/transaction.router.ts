@@ -15,6 +15,7 @@ import { Database } from '../../db/db.js';
 import { Type } from 'class-transformer';
 import { unwrap } from '../../std_errors/monadError.js';
 import { GlobalCurrencyToBaseRateCache } from '../../db/caches/currencyToBaseRate.cache.js';
+import { CurrencyNotFoundError } from '../../db/services/currency.service.js';
 
 const router = new TypesafeRouter(Express.Router());
 
@@ -78,6 +79,7 @@ router.post<PostTxnAPI.ResponseDTO>("/api/v1/transactions",
                 if (transactionCreated instanceof ContainerNotFoundError) throw createHttpError(400, transactionCreated.message);
                 if (transactionCreated instanceof TxnMissingFromToAmountError) throw createHttpError(400, transactionCreated.message);
                 if (transactionCreated instanceof TxnMissingContainerOrCurrency) throw createHttpError(400, transactionCreated.message);
+                if (transactionCreated instanceof CurrencyNotFoundError) throw createHttpError(400, transactionCreated.message);
 
                 idsCreated.push(transactionCreated.id);
             }

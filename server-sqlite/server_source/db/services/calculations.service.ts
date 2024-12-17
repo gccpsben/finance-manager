@@ -12,6 +12,8 @@ import { panic, unwrap } from "../../std_errors/monadError.js";
 import { ArgsComparisonError, ConstantComparisonError } from "../../std_errors/argsErrors.js";
 import { isInt } from "class-validator";
 import { CurrencyToBaseRateCache, GlobalCurrencyToBaseRateCache } from "../caches/currencyToBaseRate.cache.js";
+import { Database } from "../db.js";
+import { QUERY_IGNORE } from "../../symbols.js";
 
 /** An object that represents a query of a time range. */
 export type TimeRangeQuery =
@@ -190,6 +192,8 @@ export class CalculationsService
     {
         type cInterpolatorMap = { [currencyId: string]: LinearInterpolator };
 
+        const currRepo = Database.getCurrencyRepository()!;
+
         // Ensure user exists
         const userFetchResult = await UserService.getUserById(userId);
         if (userFetchResult === null) return new UserNotFoundError(userId);
@@ -222,8 +226,7 @@ export class CalculationsService
                 {
                     const cacheResult = GlobalCurrencyCache.queryCurrency(userId, currencyID);
                     if (cacheResult) return cacheResult;
-                    const fetchedResult = unwrap(await CurrencyService.getCurrencyByIdWithoutCache(userId, currencyID));
-                    GlobalCurrencyCache.cacheCurrency(userId, currencyID, fetchedResult!);
+                    const fetchedResult = await currRepo.findCurrencyByIdNameTickerOne(userId, currencyID, QUERY_IGNORE, QUERY_IGNORE);
                     return fetchedResult;
                 })();
 
