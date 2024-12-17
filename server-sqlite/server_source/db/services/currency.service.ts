@@ -90,13 +90,13 @@ export class CurrencyCalculator
             fallbackRateCurrencyId?: string | null | undefined,
 
         },
-        date: Date = new Date(),
+        date: number = Date.now(),
         cache: CurrencyToBaseRateCache | undefined = GlobalCurrencyToBaseRateCache,
     ): Promise<Decimal | UserNotFoundError>
     {
         if (from.isBase) return new Decimal(`1`);
 
-        const cacheResult = cache?.queryCurrencyToBaseRate(ownerId, from.id, date.getTime());
+        const cacheResult = cache?.queryCurrencyToBaseRate(ownerId, from.id, date);
         if (cacheResult !== null && cacheResult !== undefined)
             return cacheResult;
 
@@ -106,7 +106,7 @@ export class CurrencyCalculator
 
         const cacheResultIfPossible = (result: Decimal) => {
             if (cache)
-                cache.cacheCurrencyToBase(ownerId, from.id, date.getTime(), result);
+                cache.cacheCurrencyToBase(ownerId, from.id, date, result);
         };
 
         const getCurrById = async (id: string) =>
@@ -146,7 +146,7 @@ export class CurrencyCalculator
             (
                 ownerId,
                 unwrap(await getCurrById(d1.refAmountCurrencyId))!,
-                new Date(d1.date),
+                d1.date,
                 cache
             )!);
             return unwrap(datumAmount.mul(datumUnitToBaseRate));
@@ -154,22 +154,22 @@ export class CurrencyCalculator
 
         else // if (nearestTwoDatums.length === 2)
         {
-            const isDateBeforeD1D2 = date.getTime() < d1.date && date.getTime() < d2.date; // ....^..|....|........
-            const isDateAfterD1D2 = date.getTime() > d1.date && date.getTime() > d2.date;  // .......|....|...^....
+            const isDateBeforeD1D2 = date < d1.date && date < d2.date; // ....^..|....|........
+            const isDateAfterD1D2 = date > d1.date && date > d2.date;  // .......|....|...^....
             const D1Currency = unwrap(await getCurrById(d1.refAmountCurrencyId))!;
             const D2Currency = d1.refAmountCurrencyId === d2.refAmountCurrencyId ? D1Currency : unwrap(await getCurrById(d2.refAmountCurrencyId))!;
             const D1CurrBaseRate = unwrap(await CurrencyCalculator.currencyToBaseRate
             (
                 ownerId,
                 D1Currency,
-                new Date(d1.date),
+                d1.date,
                 cache
             )!);
             const D2CurrBaseRate = unwrap(await CurrencyCalculator.currencyToBaseRate
             (
                 ownerId,
                 D2Currency,
-                new Date(d2.date),
+                d2.date,
                 cache
             ))!;
 
@@ -189,7 +189,7 @@ export class CurrencyCalculator
                 ],
                 item => new Decimal(item.key),
                 item => item.value
-            ).getValue(new Decimal(date.getTime()));
+            ).getValue(new Decimal(date));
 
             if (cache) cacheResultIfPossible(midPt!);
 
@@ -246,7 +246,7 @@ export class CurrencyCalculator
                         (
                             userId,
                             datumUnitCurrency,
-                            new Date(datum.date),
+                            datum.date,
                             cache
                         ))
                     )
@@ -402,7 +402,7 @@ export class CurrencyService
             (
                 userId,
                 c,
-                new Date(date ?? 0),
+                date ?? 0,
                 cache
             )
         ).toString();

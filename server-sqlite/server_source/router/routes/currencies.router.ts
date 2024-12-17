@@ -141,8 +141,8 @@ router.get<GetCurrencyRateHistoryAPI.ResponseDTO>(`/api/v1/currencies/history`,
         (
             authResult.ownerUserId,
             parsedQuery.id,
-            parsedQuery.startDate ? new Date(parseInt(parsedQuery.startDate)) : undefined,
-            parsedQuery.endDate ? new Date(parseInt(parsedQuery.endDate)) : undefined,
+            parsedQuery.startDate ? parseInt(parsedQuery.startDate) : undefined,
+            parsedQuery.endDate ? parseInt(parsedQuery.endDate) : undefined,
             parsedQuery.division ? parseInt(parsedQuery.division) : 128
         ));
 

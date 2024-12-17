@@ -247,7 +247,7 @@ export class CalculationsService
                     (
                         userId,
                         currencyObject!,
-                        new Date(parseInt(epoch)),
+                        parseInt(epoch),
                         cache
                     ));
                 }

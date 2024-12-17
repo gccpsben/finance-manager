@@ -94,7 +94,8 @@ export class CurrencyRateDatumService
     (
         ownerId: string,
         currencyId: string,
-        startDate: Date | undefined = undefined, endDate: Date | undefined = undefined,
+        startDate: number | undefined = undefined,
+        endDate: number | undefined = undefined,
         division: number = 10
     )
     {

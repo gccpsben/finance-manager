@@ -23,7 +23,7 @@ class CurrencyRateDatumRepositoryExtension
     (
         this: Repository<CurrencyRateDatum>,
         userId: string,
-        currencyId: string, date: Date,
+        currencyId: string, date: number,
     ): Promise<DifferenceHydratedCurrencyRateDatum[]>
     {
         const cachedTwoDatums = GlobalCurrencyRateDatumsCache.findTwoNearestDatum(userId, currencyId, date);
@@ -32,7 +32,7 @@ class CurrencyRateDatumRepositoryExtension
         let query = this.createQueryBuilder(`datum`);
         query = query.where(`ownerId = :ownerId`, { ownerId: userId ?? null });
         query = query.andWhere(`refCurrencyId = :refCurrencyId`, { refCurrencyId: currencyId ?? null });
-        query = query.setParameter("_target_date_", date.getTime());
+        query = query.setParameter("_target_date_", date);
         query = query.select(`abs(datum.date - :_target_date_)`, `difference`);
         query = query.orderBy("difference", 'ASC');
         query = query.addSelect("*");
@@ -47,8 +47,8 @@ class CurrencyRateDatumRepositoryExtension
         this: Repository<CurrencyRateDatum>,
         userId:string,
         currencyId: string,
-        startDate: Date | undefined = undefined,
-        endDate: Date | undefined = undefined
+        startDate: number | undefined = undefined,
+        endDate: number | undefined = undefined
     )
     {
         let query = this
@@ -56,8 +56,8 @@ class CurrencyRateDatumRepositoryExtension
         .where(`${nameofD('ownerId')} = :ownerId`, { ownerId: userId ?? null });
         query = query.andWhere(`${nameofD('refCurrencyId')} = :refCurrencyId`, { refCurrencyId: currencyId ?? null });
         query = query.addSelect("*");
-        if (startDate) query = query.andWhere(`${nameofD('date')} >= :startDate`, { startDate: startDate.getTime() });
-        if (endDate) query = query.andWhere(`${nameofD('date')} <= :endDate`, { endDate: endDate.getTime() });
+        if (startDate) query = query.andWhere(`${nameofD('date')} >= :startDate`, { startDate: startDate });
+        if (endDate) query = query.andWhere(`${nameofD('date')} <= :endDate`, { endDate: endDate });
 
         const results = await query.getMany();
         return results as (SQLitePrimitiveOnly<CurrencyRateDatum>)[];

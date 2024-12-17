@@ -173,7 +173,6 @@ export class ContainerService
     )
     {
         const innerRateEpoch = currencyRateDateToUse === undefined ? Date.now() : currencyRateDateToUse;
-        const innerRateDateObj = new Date(innerRateEpoch);
         const containerBalances = await ContainerService.getContainersBalance(ownerId, containers);
 
         // Ensure user exists
@@ -217,7 +216,7 @@ export class ContainerService
                 (
                     ownerId,
                     relevantCurrencies[currencyId],
-                    innerRateDateObj,
+                    innerRateEpoch,
                     cache
                 ));
             }
