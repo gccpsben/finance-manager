@@ -305,6 +305,23 @@ export class TransactionService
         return savedObj as (typeof savedObj & { id: string });
     }
 
+    public static getTxnValueIncreaseRaw
+    (
+        from: { amount: string, rate: string } | null,
+        to: { amount: string, rate: string } | null
+    )
+    {
+        let fromValue: Decimal | null = null;
+        let toValue: Decimal | null = null;
+
+        if (from)
+            fromValue = new Decimal(from.amount).mul(new Decimal(from.rate));
+        if (to)
+            toValue = new Decimal(to.amount).mul(new Decimal(to.rate));
+
+        return (toValue ?? new Decimal('0')).sub(fromValue ?? new Decimal("0"));
+    }
+
     /**
      * Get the change in value of a transaction in base currency value.
      */
@@ -326,13 +343,13 @@ export class TransactionService
         const userFetchResult = await UserService.getUserById(userId);
         if (userFetchResult === null) return new UserNotFoundError(userId);
 
-        const amountToBaseValue = async (amount: string, currencyId: string) =>
+        const getRate = async (currencyId: string) =>
         {
-            let currencyRate: Decimal = await (async () =>
+            let currencyRate = await (async () =>
             {
                 // Try getting the currency rate to base at txn's epoch from cache first.
                 const amountToBaseValueCacheResult = cache?.queryCurrencyToBaseRate(userId, currencyId, transaction.creationDate);
-                if (amountToBaseValueCacheResult) return amountToBaseValueCacheResult;
+                if (amountToBaseValueCacheResult) return amountToBaseValueCacheResult.toString();
 
                 // If not available, compute the rate uncached. And finally save the result into cache.
                 const currencyRefetched = unwrap(await CurrencyService.getCurrencyWithoutCache(userId, { id: currencyId }));
@@ -348,30 +365,24 @@ export class TransactionService
                 )[0].rateToBase;
 
                 if (cache) cache.cacheCurrencyToBase(userId, currencyRefetched!.id, transaction.creationDate, new Decimal(rate));
-                return new Decimal(rate);
+                return rate;
             })();
 
-            return new Decimal(amount).mul(currencyRate);
+            return currencyRate;
         };
-
-        if (transaction.fromAmount && transaction.toAmount === null && transaction.fromCurrencyId)
-        {
-            return {
-                increaseInValue:  (await amountToBaseValue(transaction.fromAmount, transaction.fromCurrencyId)).neg(),
-            }
-        }
-
-        if (transaction.fromAmount === null && transaction.toAmount && transaction.toCurrencyId)
-        {
-            return {
-                increaseInValue: await amountToBaseValue(transaction.toAmount, transaction.toCurrencyId),
-            }
-        }
 
         return {
-            increaseInValue: (await amountToBaseValue(transaction.toAmount!, transaction.toCurrencyId!))
-                .sub(await amountToBaseValue(transaction.fromAmount!, transaction.fromCurrencyId!)),
-        };
+            increaseInValue: this.getTxnValueIncreaseRaw(
+                !!transaction.fromCurrencyId && !!transaction.fromAmount ? {
+                    amount: transaction.fromAmount,
+                    rate: await getRate(transaction.fromCurrencyId)
+                } : null,
+                !!transaction.toCurrencyId && !!transaction.toAmount ? {
+                    amount: transaction.toAmount ,
+                    rate: await getRate(transaction.toCurrencyId)
+                } : null
+            )
+        }
     }
 
     public static async getTransactions
