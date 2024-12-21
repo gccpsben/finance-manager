@@ -160,7 +160,7 @@ export class Database
 
         Database.AppDataSource = new DataSource(
         {
-            type: "sqlite",
+            type: "better-sqlite3",
             entities: [User, AccessToken, Currency, Container, Transaction, TxnTag, CurrencyRateDatum, CurrencyRateSource],
             database: EnvManager.sqliteInMemory ? ":memory:" : EnvManager.sqliteFilePath!,
             synchronize: true,
