@@ -114,12 +114,13 @@
     // Styles for mobile friendly dropdown
     #dropdownPanelContainer
     {
+        transition: none;
         position: fixed;
         bottom:0px;
         left:0px;
         right:0px;
         clip-path: inset(100% 0 0 0);
-        max-height: calc(100vh - @expandedFieldHeight * 2);
+        max-height: calc(100svh - @expandedFieldHeight * 2);
 
         &.expanded
         {

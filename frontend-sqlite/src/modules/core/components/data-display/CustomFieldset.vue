@@ -156,6 +156,7 @@ const placeholderTextStyleOverrideObj = computed(() => // a style object overrid
             transition: all 0.5s ease;
             transform: v-bind(placeholderTextYOffsetStyle);
             color: @customFieldsetPlaceholderColor;
+            white-space: nowrap;
         }
 
         .unscaledPlaceholderText

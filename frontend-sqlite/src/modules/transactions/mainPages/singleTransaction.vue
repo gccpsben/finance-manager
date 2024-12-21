@@ -1,14 +1,9 @@
 <template>
     <div id="txnTopDiv">
         <div id="txnTopDivInner">
+            <ViewTitle :title="isAddMode ? `Add Transaction` : `Edit Transaction`"
+                        hasBackButton @back="router.back()" class="pageTitle"/>
             <div v-if="shouldDisplayMainEditor">
-                <div>
-                    <ViewTitle :title="isAddMode ? `Add Transaction` : `Edit Transaction`"
-                                hasBackButton @back="router.back()"/>
-                </div>
-                <div>
-                    <br /><br />
-                </div>
                 <div class="fullSize">
                     <div id="viewTxnGrid">
 
@@ -33,11 +28,11 @@
                         <CustomDropdown :options="selectableContainerOptions"
                                         class="fullSize" v-area="'fromContainer'" field-name="From Container"
                                         v-model:selected-option="txnWorkingCopy.currentData.value!.fromContainer!" />
-                        <CustomDropdown :options="selectableCurrenciesOptions"
+                        <CustomDropdown :options="selectableCurrenciesOptions" class="currencyDropdown fullSize"
                                         :class="{'disabled': !txnWorkingCopy.currentData.value!.fromContainer}"
-                                        class="fullSize" v-area="'fromCurrency'" field-name="From Currency"
+                                        v-area="'fromCurrency'" field-name="From Currency"
                                         v-model:selected-option="txnWorkingCopy.currentData.value!.fromCurrency!" />
-                        <TextField v-area="'fromAmount'" field-name="From Amount" input-type="number"
+                        <TextField  v-area="'fromAmount'" field-name="From Amount" input-type="number"
                                     :class="{'disabled': !txnWorkingCopy.currentData.value!.fromContainer}"
                                     :override-theme-color="editTxnHook.isEnteredFromAmountValid ? undefined : 'red'"
                                     :text="txnWorkingCopy.currentData.value!.fromAmount ?? ''"
@@ -48,7 +43,7 @@
                                         v-model:selected-option="txnWorkingCopy.currentData.value!.toContainer!" />
                         <CustomDropdown v-area="'toCurrency'" :options="selectableCurrenciesOptions"
                                         :class="{'disabled': !txnWorkingCopy.currentData.value!.toContainer}"
-                                        class="fullSize" field-name="To Currency"
+                                        field-name="To Currency" class="currencyDropdown fullSize"
                                         v-model:selected-option="txnWorkingCopy.currentData.value!.toCurrency!" />
                         <TextField v-area="'toAmount'" field-name="To Amount" input-type="number"
                                     :class="{'disabled': !txnWorkingCopy.currentData.value!.toContainer}"
@@ -179,7 +174,7 @@ const selectableContainerOptions = computed(() =>
 const selectableCurrenciesOptions = computed(() =>
 {
     const items = editTxnHook.currencies.lastSuccessfulData?.rangeItems;
-    return items?.map(x => ({ id: x.id, label: x.name, searchTerms: `${x.id} ${x.name}` })) ?? [];
+    return items?.map(x => ({ id: x.id, label: x.ticker, searchTerms: `${x.id} ${x.name} ${x.ticker}` })) ?? [];
 });
 const selectableTxnTagsOptions = computed(() =>
 {
@@ -343,7 +338,12 @@ fieldset
 
 @media only screen and (max-width: 500px)
 {
-    .topDivTxn { padding: @mobilePagePadding; }
+    #txnTopDivInner { padding: @mobilePagePadding !important; }
+
+    .pageTitle
+    {
+        margin-bottom: @mobilePagePadding !important;
+    }
 
     #viewTxnGrid
     {
@@ -360,7 +360,7 @@ fieldset
             'tags            tags            ' auto
             'error           error           ' auto
             'actions         actions         ' 45px
-            / 0.6fr            1fr !important;
+            / 1fr            0.4fr !important;
     }
 }
 </style>
