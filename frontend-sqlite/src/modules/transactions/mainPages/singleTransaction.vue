@@ -270,6 +270,11 @@ fieldset
         padding: @desktopPagePadding;
         overflow: scroll;
     }
+
+    .pageTitle
+    {
+        margin-bottom: @desktopPagePadding !important;
+    }
 }
 
 #viewTxnGrid
