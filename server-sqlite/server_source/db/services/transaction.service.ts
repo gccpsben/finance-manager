@@ -8,12 +8,14 @@ import { Decimal } from "decimal.js";
 import type { PartialNull, SQLitePrimitiveOnly } from "../../index.d.js";
 import { nameof, ServiceUtils } from "../servicesUtils.js";
 import { isNullOrUndefined } from "../../router/validation.js";
-import { MonadError, panic } from "../../std_errors/monadError.js";
+import { MonadError, panic, unwrap } from "../../std_errors/monadError.js";
 import { TxnTag } from "../entities/txnTag.entity.js";
 import { DeepPartial, DeleteResult, QueryRunner } from "typeorm/browser";
 import { CurrencyToBaseRateCache, GlobalCurrencyToBaseRateCache } from "../caches/currencyToBaseRate.cache.js";
 import { QUERY_IGNORE } from "../../symbols.js";
 import { Database } from "../db.js";
+import { CurrencyCache, GlobalCurrencyCache } from "../caches/currencyListCache.cache.js";
+import jsonata from "jsonata";
 
 export class TxnMissingContainerOrCurrency extends MonadError<typeof TxnMissingFromToAmountError.ERROR_SYMBOL>
 {
@@ -54,6 +56,48 @@ export class TxnNotFoundError extends MonadError<typeof TxnNotFoundError.ERROR_S
         this.txnId = txnId;
         this.userId = userId;
     }
+}
+
+export class JSONQueryError extends MonadError<typeof JSONQueryError.ERROR_SYMBOL>
+{
+    static readonly ERROR_SYMBOL: unique symbol;
+    public jsonQuery: string;
+    public queryErrorMessage: string;
+    public userId: string;
+
+    constructor(userId: string, queryErrorMessage: string, jsonQuery: string)
+    {
+        super(JSONQueryError.ERROR_SYMBOL, `The given query "${jsonQuery}" failed with message "${queryErrorMessage}"`);
+        this.name = this.constructor.name;
+        this.queryErrorMessage = queryErrorMessage;
+        this.jsonQuery = jsonQuery;
+        this.userId = userId;
+    }
+}
+
+export type TransactionJSONQueryCurrency =
+{
+    fallbackRateAmount: string | null;
+    fallbackRateCurrencyId: string | null;
+    id: string;
+    isBase: boolean;
+    ticker: string;
+};
+
+export type TransactionJSONQueryItem =
+{
+    title: string,
+    creationDate: number,
+    description: string | null,
+    fromAmount: string | null,
+    fromContainerId: string | null,
+    fromCurrencyId: string | null,
+    fromCurrency: null | TransactionJSONQueryCurrency,
+    id: string,
+    toAmount: string | null,
+    toContainerId: string | null,
+    toCurrency: null | TransactionJSONQueryCurrency,
+    tagIds: string[]
 }
 
 const nameofT = (x: keyof Transaction) => nameof<Transaction>(x);
@@ -407,6 +451,96 @@ export class TransactionService
                 } : null
             )
         }
+    }
+
+    public static async getTransactionsJSONQuery
+    (
+        userId: string,
+        query: string,
+        cache: CurrencyCache | undefined = GlobalCurrencyCache,
+        baseRateCache: CurrencyToBaseRateCache | undefined = GlobalCurrencyToBaseRateCache,
+        startIndex: number | null, endIndex: number | null
+    )
+    {
+        const currRepo = Database.getCurrencyRepository()!;
+        const findCurrById = async (cId: string): Promise<TransactionJSONQueryCurrency | null> =>
+        {
+            const queryResult = await currRepo.findCurrencyByIdNameTickerOne(userId, cId, QUERY_IGNORE, QUERY_IGNORE, cache);
+            if (queryResult)
+            {
+                queryResult.fallbackRateAmount
+                return {
+                    fallbackRateAmount: queryResult.fallbackRateAmount,
+                    fallbackRateCurrencyId: queryResult.fallbackRateCurrencyId,
+                    id: queryResult.id,
+                    isBase: queryResult.isBase,
+                    ticker: queryResult.ticker,
+                };
+            }
+            return null;
+        };
+
+        const now = Date.now();
+        const alias = 'txn';
+        let sqlQuery = TransactionRepository.getInstance().createQueryBuilder(alias);
+        sqlQuery = sqlQuery.leftJoinAndSelect(`${alias}.${nameofT('tags')}`, "txn_tag")
+        sqlQuery = sqlQuery.where(`${alias}.${nameofT('ownerId')} = :ownerId`, { ownerId: userId });
+        const sqlResults = await sqlQuery.getManyAndCount();
+
+        // Check if id are all defined.
+        if (sqlResults[0].some(x => !x.id))
+            throw panic(`Some of the transactions queried from database has falsy primary keys.`);
+
+        const matchedResults: TransactionJSONQueryItem[] = [];
+        for (const txn of sqlResults[0].reverse())
+        {
+            try
+            {
+                const objToBeMatched =
+                {
+                    title: txn.title!,
+                    creationDate: txn.creationDate!,
+                    description: txn.description,
+                    fromAmount: txn.fromAmount,
+                    fromContainerId: txn.fromContainerId,
+                    fromCurrencyId: txn.fromCurrencyId,
+                    fromCurrency: txn.fromCurrencyId ? await findCurrById(txn.fromCurrencyId) : null,
+                    id: txn.id!,
+                    toAmount: txn.toAmount,
+                    toContainerId: txn.toContainerId,
+                    toCurrency: txn.toCurrencyId ? await findCurrById(txn.toCurrencyId) : null,
+                    toCurrencyId: txn.toCurrencyId,
+                    tagIds: (txn.tags as { id: string }[]).map(x => x.id) ?? [],
+                    changeInValue: 0
+                };
+                objToBeMatched.changeInValue = unwrap(await TransactionService.getTxnIncreaseInValue(userId, objToBeMatched, baseRateCache)).increaseInValue.toNumber();
+
+                const expression = jsonata(query);
+                expression.assign("TITLE", objToBeMatched.title);
+                expression.assign("TITLE_LOWER", objToBeMatched.title.toLowerCase());
+                expression.assign("TITLE_UPPER", objToBeMatched.title.toUpperCase());
+                expression.assign("AGE_MS", now - objToBeMatched.creationDate);
+                expression.assign("DELTA", objToBeMatched.changeInValue);
+                expression.assign("DELTA_NEG", objToBeMatched.changeInValue * -1);
+                expression.assign("DELTA_POS", objToBeMatched.changeInValue);
+                expression.assign("IS_TRANSFER", (objToBeMatched.fromContainerId && objToBeMatched.toContainerId) ? 1 : 0);
+                expression.assign("IS_FROM", (objToBeMatched.fromContainerId && !objToBeMatched.toContainerId) ? 1 : 0);
+                expression.assign("IS_TO", (!objToBeMatched.fromContainerId && objToBeMatched.toContainerId) ? 1 : 0);
+
+                if (await expression.evaluate(objToBeMatched) === true)
+                    matchedResults.push(objToBeMatched);
+            }
+            catch(e) { return new JSONQueryError(userId, `${e.message}`, query); }
+        }
+
+        return {
+            totalItems: matchedResults.length,
+            rangeItems: matchedResults.slice
+            (
+                startIndex ?? 0,
+                endIndex === null ? matchedResults.length + 1 : endIndex + 1
+            )
+        };
     }
 
     public static async getTransactions

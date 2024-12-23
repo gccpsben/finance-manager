@@ -1,8 +1,8 @@
 import { IsArray, IsNotEmpty, IsOptional, IsString, ValidateNested } from 'class-validator';
 import Express from 'express';
-import { type PutTxnAPI, type GetTxnAPI, type PostTxnAPI, type DeleteTxnAPI } from '../../../../api-types/txn.js';
+import { type PutTxnAPI, type GetTxnAPI, type PostTxnAPI, type DeleteTxnAPI, GetTxnJsonQueryAPI } from '../../../../api-types/txn.js';
 import { AccessTokenService, InvalidLoginTokenError } from '../../db/services/accessToken.service.js';
-import { TransactionService, TxnMissingContainerOrCurrency, TxnMissingFromToAmountError, TxnNotFoundError } from '../../db/services/transaction.service.js';
+import { JSONQueryError, TransactionService, TxnMissingContainerOrCurrency, TxnMissingFromToAmountError, TxnNotFoundError } from '../../db/services/transaction.service.js';
 import { IsDecimalJSString, IsIntString, IsUTCDateInt } from '../../db/validators.js';
 import { OptionalPaginationAPIQueryRequest, PaginationAPIResponseClass } from '../pagination.js';
 import { TypesafeRouter } from '../typescriptRouter.js';
@@ -16,6 +16,7 @@ import { Type } from 'class-transformer';
 import { unwrap } from '../../std_errors/monadError.js';
 import { GlobalCurrencyToBaseRateCache } from '../../db/caches/currencyToBaseRate.cache.js';
 import { CurrencyNotFoundError } from '../../db/services/currency.service.js';
+import { GlobalCurrencyCache } from '../../db/caches/currencyListCache.cache.js';
 
 const router = new TypesafeRouter(Express.Router());
 
@@ -160,6 +161,67 @@ router.put<PutTxnAPI.ResponseDTO>("/api/v1/transactions",
             await transactionalContext?.endFailure();
             throw e;
         }
+    }
+});
+
+router.get<GetTxnAPI.ResponseDTO>(`/api/v1/transactions/json-query`,
+{
+    handler: async (req: Express.Request, res: Express.Response) =>
+    {
+        class query implements GetTxnJsonQueryAPI.QueryDTO
+        {
+            @IsNotEmpty() @IsString() query: string;
+            @IsOptional() @IsIntString() startIndex: string | undefined;
+            @IsOptional() @IsIntString() endIndex: string | undefined;
+        }
+
+        const now = Date.now();
+        const authResult = await AccessTokenService.validateRequestTokenValidated(req, now);
+        if (authResult instanceof InvalidLoginTokenError) throw createHttpError(401);
+        const parsedQuery = await ExpressValidations.validateBodyAgainstModel<query>(query, req.query);
+        const userQuery =
+        {
+            query: parsedQuery.query,
+            startIndex: parsedQuery.startIndex === undefined ? null : parseInt(parsedQuery.startIndex),
+            endIndex: parsedQuery.endIndex === undefined ? null : parseInt(parsedQuery.endIndex)
+        };
+
+        const matchedResults = await TransactionService.getTransactionsJSONQuery
+        (
+            authResult.ownerUserId,
+            parsedQuery.query,
+            GlobalCurrencyCache,
+            GlobalCurrencyToBaseRateCache,
+            userQuery.startIndex,
+            userQuery.endIndex,
+        );
+
+        if (matchedResults instanceof JSONQueryError) throw createHttpError(400, matchedResults.message);
+
+        return {
+            endingIndex: Math.min(matchedResults.totalItems, userQuery.endIndex === null ? Number.POSITIVE_INFINITY : userQuery.endIndex),
+            startingIndex: Math.min(matchedResults.totalItems, userQuery.startIndex === null ? Number.POSITIVE_INFINITY : userQuery.startIndex),
+            rangeItems: await Promise.all(matchedResults.rangeItems.map(async item =>
+            {
+                const txnChangeInValue = unwrap(await TransactionService.getTxnIncreaseInValue(authResult.ownerUserId, item, GlobalCurrencyToBaseRateCache)).increaseInValue;
+                return {
+                    id: item.id!,
+                    title: item.title,
+                    description: item.description ?? '',
+                    owner: authResult.ownerUserId,
+                    creationDate: item.creationDate,
+                    tagIds: item.tagIds,
+                    fromAmount: item.fromAmount ?? null,
+                    fromCurrency: item.fromCurrency?.id ?? null,
+                    fromContainer: item.fromContainerId ?? null,
+                    toAmount: item.toAmount ?? null,
+                    toCurrency: item.toCurrency?.id ?? null,
+                    toContainer: item.toContainerId ?? null,
+                    changeInValue: txnChangeInValue.toString()
+                }
+            })),
+            totalItems: matchedResults.totalItems
+        } satisfies GetTxnJsonQueryAPI.ResponseDTO
     }
 });
 

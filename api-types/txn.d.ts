@@ -52,6 +52,18 @@ export namespace GetTxnAPI
     export type ResponseDTO = PaginationAPIResponse<TxnDTO>;
 }
 
+export namespace GetTxnJsonQueryAPI
+{
+    export type TxnDTO = GetTxnAPI.TxnDTO;
+    export type QueryDTO =
+    {
+        query: string;
+        startIndex: string | undefined;
+        endIndex: string | undefined;
+    };
+    export type ResponseDTO = PaginationAPIResponse<TxnDTO>;
+}
+
 export namespace DeleteTxnAPI
 {
     export type RequestQueryDTO = { id: string }

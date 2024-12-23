@@ -2,6 +2,7 @@ export const API_LOGIN_PATH = "./api/v1/auth/login";
 export const API_SUMMARY_PATH = "/api/v1/summary";
 export const API_NET_WORTH_GRAPH_PATH = "/api/v1/calculations/networthHistory";
 export const API_TRANSACTIONS_PATH = "/api/v1/transactions";
+export const API_TRANSACTIONS_JSON_QUERY_PATH = "/api/v1/transactions/json-query";
 export const API_CURRENCIES_PATH = "/api/v1/currencies";
 export const API_CONTAINERS_PATH = "/api/v1/containers";
 export const API_POST_CONTAINERS_PATH = "/api/v1/containers";
