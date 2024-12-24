@@ -1,17 +1,13 @@
-import { ContainerRepository } from "../repositories/container.repository.js";
 import { UserRepository } from "../repositories/user.repository.js";
-import { IdBound, SQLitePrimitiveOnly } from "../../index.d.js";
-import { Container } from "../entities/container.entity.js";
-import { nameof, ServiceUtils } from "../servicesUtils.js";
+import { IdBound } from "../../index.d.js";
 import { TransactionService } from "./transaction.service.js";
 import { Decimal } from "decimal.js";
-import { CurrencyCalculator, CurrencyService } from "./currency.service.js";
+import { CurrencyCalculator } from "./currency.service.js";
 import { Currency } from "../entities/currency.entity.js";
 import { GlobalCurrencyCache } from "../caches/currencyListCache.cache.js";
 import { UserNotFoundError, UserService } from "./user.service.js";
-import { MonadError, panic, unwrap } from "../../std_errors/monadError.js";
+import { MonadError, unwrap } from "../../std_errors/monadError.js";
 import { CurrencyToBaseRateCache, GlobalCurrencyToBaseRateCache } from "../caches/currencyToBaseRate.cache.js";
-import { TimeDiffer } from "../../debug/performance.js";
 import { Database } from "../db.js";
 import { QUERY_IGNORE } from "../../symbols.js";
 
@@ -46,90 +42,21 @@ export class ContainerExistsError extends MonadError<typeof ContainerExistsError
 
 export class ContainerService
 {
-    public static async tryGetContainerByName(ownerId: string, name: string)
-    {
-        const container = await ContainerRepository.getInstance().findOne(
-        {
-            where: {name: name, owner: { id: ownerId } },
-            relations: { owner: true }
-        });
-        return {
-            containerFound: container !== null,
-            container: container
-        }
-    }
-
-    public static async tryGetContainerById(ownerId: string, id: string)
-    {
-        const container = await ContainerRepository.getInstance().findOne(
-        {
-            where: {id: id, owner: { id: ownerId } },
-            relations: { owner: true }
-        });
-        return {
-            containerFound: container !== null,
-            container: container
-        }
-    }
-
     public static async createContainer(ownerId: string, name: string, creationDate: number = Date.now())
-        : Promise<IdBound<Container> | UserNotFoundError | ContainerExistsError>
+    : Promise<{id: string, name: string, creationDate: number} | UserNotFoundError | ContainerExistsError>
     {
-        const containerWithSameName = await ContainerService.tryGetContainerByName(ownerId, name);
-        if (containerWithSameName.containerFound) return new ContainerExistsError(name, ownerId);
+        const contRepo = Database.getContainerRepository()!;
+
+        const containerWithSameName = await contRepo.getContainer(ownerId, QUERY_IGNORE, name);
+        if (containerWithSameName) return new ContainerExistsError(name, ownerId);
         const owner = await UserRepository.getInstance().findOne({where: {id: ownerId}});
         if (owner === null) return new UserNotFoundError(ownerId);
-        const newContainer = ContainerRepository.getInstance().create();
-        newContainer.creationDate = creationDate;
-        newContainer.name = name;
-        newContainer.owner = owner;
-        const savedNewContainer = await ContainerRepository.getInstance().save(newContainer);
-        if (!savedNewContainer.id) throw panic(`Container saved to database contain falsy IDs.`);
-        return savedNewContainer as (IdBound<typeof savedNewContainer>);
-    }
 
-    public static async getOneContainer(ownerId: string, query: {
-        name? : string | undefined,
-        id? : string | undefined
-    }): Promise<IdBound<Container> | null>
-    {
-        const fetchedContainer = await ContainerRepository.getInstance().findOne(
-        {
-            where:
-            {
-                id: query.id,
-                name: query.name,
-                owner: {id: ownerId}
-            }
-        });
-        return fetchedContainer as (IdBound<typeof fetchedContainer>);
-    }
-
-    public static async getManyContainers
-    (
-        ownerId: string,
-        query:
-        {
-            startIndex?: number | undefined, endIndex?: number | undefined,
-            name?: string | undefined,
-            id?: string | undefined
-        }
-    ): Promise<{ totalCount: number, rangeItems: IdBound<SQLitePrimitiveOnly<Container>>[] }>
-    {
-        let dbQuery = ContainerRepository.getInstance()
-        .createQueryBuilder(`con`)
-        .where(`${nameof<Container>("ownerId")} = :ownerId`, { ownerId: ownerId });
-
-        if (query.name) dbQuery = dbQuery.andWhere(`${nameof<Container>("name")} = :name`, { name: query.name })
-        if (query.id) dbQuery = dbQuery.andWhere(`${nameof<Container>("id")} = :id`, { id: query.id })
-        dbQuery = ServiceUtils.paginateQuery(dbQuery, query);
-
-        const queryResult = await dbQuery.getManyAndCount();
-        if (queryResult[0].some(x => !x.id)) throw panic(`Containers queried from database contain falsy IDs.`);
-
+        const savedNewContainer = await contRepo.saveNewContainer(ownerId, name, creationDate);
         return {
-            totalCount: queryResult[1],
-            rangeItems: queryResult[0] as (IdBound<typeof queryResult[0][0]>)[]
+            id: savedNewContainer.id,
+            name: savedNewContainer.name,
+            creationDate: savedNewContainer.creationDate
         }
     }
 

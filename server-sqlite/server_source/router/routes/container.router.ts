@@ -12,9 +12,8 @@ import { Decimal } from 'decimal.js';
 import createHttpError from 'http-errors';
 import { unwrap } from '../../std_errors/monadError.js';
 import { UserNotFoundError } from '../../db/services/user.service.js';
-import type { SQLitePrimitiveOnly } from '../../index.d.js';
-import { Container } from '../../db/entities/container.entity.js';
-import type { IdBound } from '../../index.d.js';
+import { Database } from '../../db/db.js';
+import { QUERY_IGNORE } from '../../symbols.js';
 
 const router = new TypesafeRouter(express.Router());
 
@@ -28,8 +27,8 @@ router.get<GetContainerAPI.ResponseDTO>(`/api/v1/containers`,
 
         class query extends OptionalPaginationAPIQueryRequest
         {
-            @IsOptional() @IsString() id: string;
-            @IsOptional() @IsString() name: string;
+            @IsOptional() @IsString() id: string | undefined;
+            @IsOptional() @IsString() name: string | undefined;
 
             /** If this is set, the value of each container will use the rate of each currency's rate at the given date. This defaults to now. */
             @IsOptional() @IsUTCDateIntString() currencyRateDate: string;
@@ -45,15 +44,15 @@ router.get<GetContainerAPI.ResponseDTO>(`/api/v1/containers`,
             currencyRateDate: parsedQuery.currencyRateDate ? parseInt(parsedQuery.currencyRateDate) : now
         };
 
-        const response = await PaginationAPIResponseClass.prepareFromQueryItems<IdBound<SQLitePrimitiveOnly<Container>>>
+        const response = await PaginationAPIResponseClass.prepareFromQueryItems
         (
-            await ContainerService.getManyContainers(authResult.ownerUserId,
-            {
-                startIndex: userQuery.start,
-                endIndex: userQuery.end,
-                id: userQuery.id,
-                name: userQuery.name
-            }),
+            await Database.getContainerRepository()!.getManyContainers(
+                authResult.ownerUserId,
+                userQuery.id === undefined ? QUERY_IGNORE : userQuery.id,
+                userQuery.name === undefined ? QUERY_IGNORE : userQuery.name,
+                userQuery.start,
+                userQuery.end
+            ),
             userQuery.start
         );
 

@@ -1,5 +1,5 @@
 import { TransactionRepository } from "../repositories/transaction.repository.js";
-import { ContainerNotFoundError, ContainerService } from "./container.service.js";
+import { ContainerNotFoundError } from "./container.service.js";
 import { CurrencyNotFoundError, CurrencyService } from "./currency.service.js";
 import { TransactionTagService, TxnTagNotFoundError } from "./txnTag.service.js";
 import { UserNotFoundError, UserService } from "./user.service.js";
@@ -165,9 +165,9 @@ export class TransactionService
             if (obj.fromAmount) newTxn.fromAmount = obj.fromAmount;
             if (obj.fromContainerId)
             {
-                const container = await ContainerService.tryGetContainerById(userId, obj.fromContainerId);
-                if (!container.containerFound) return new ContainerNotFoundError(obj.fromContainerId, userId);
-                newTxn.fromContainer = container.container;
+                const container = await Database.getContainerRepository()!.getContainer(userId, obj.fromContainerId, QUERY_IGNORE);
+                if (!container) return new ContainerNotFoundError(obj.fromContainerId, userId);
+                newTxn.fromContainerId = container.id;
             }
             if (obj.fromCurrencyId)
             {
@@ -184,9 +184,9 @@ export class TransactionService
 
             if (obj.toContainerId)
             {
-                const container = await ContainerService.tryGetContainerById(userId, obj.toContainerId);
-                if (!container.containerFound) return new ContainerNotFoundError(obj.toContainerId, userId);
-                newTxn.toContainer = container.container;
+                const container = await Database.getContainerRepository()!.getContainer(userId, obj.toContainerId, QUERY_IGNORE);
+                if (!container) return new ContainerNotFoundError(obj.toContainerId, userId);
+                newTxn.toContainerId = container.id;
             }
             else { newTxn.toContainerId = null; newTxn.toContainer = null; }
 
@@ -245,6 +245,7 @@ export class TransactionService
     )
     {
         const currRepo = Database.getCurrencyRepository()!;
+        const contRepo = Database.getContainerRepository()!;
 
         // Ensure user exists
         const userFetchResult = await UserService.getUserById(userId);
@@ -271,7 +272,7 @@ export class TransactionService
             oldTxn.fromAmount = isNullOrUndefined(obj.fromAmount) ? null : obj.fromAmount;
 
             oldTxn.fromContainerId = obj.fromContainerId ?? null;
-            oldTxn.fromContainer = !oldTxn.fromContainerId ? null : await ContainerService.getOneContainer(oldTxn.ownerId!, { id: obj.fromContainerId });
+            oldTxn.fromContainer = !oldTxn.fromContainerId ? null : await contRepo.getContainer(oldTxn.ownerId!, obj.fromContainerId ?? '', QUERY_IGNORE);
 
             oldTxn.fromCurrencyId = obj.fromCurrencyId ?? null;
             oldTxn.fromCurrency = !oldTxn.fromCurrencyId ? undefined : {
@@ -287,7 +288,7 @@ export class TransactionService
             oldTxn.toAmount = isNullOrUndefined(obj.toAmount) ? null : obj.toAmount;
 
             oldTxn.toContainerId = obj.toContainerId ?? null;
-            oldTxn.toContainer = !oldTxn.toContainerId ? null : await ContainerService.getOneContainer(oldTxn.ownerId!, { id: obj.toContainerId });
+            oldTxn.toContainer = !oldTxn.toContainerId ? null : await contRepo.getContainer(oldTxn.ownerId!, obj.toContainerId ?? '', QUERY_IGNORE);
 
             oldTxn.toCurrencyId = obj.toCurrencyId ?? null;
             oldTxn.toCurrency = !oldTxn.toCurrencyId ? undefined : {
