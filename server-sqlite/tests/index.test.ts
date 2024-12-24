@@ -16,6 +16,7 @@ import calculationsTest, { testForCalculationsInternals } from './suites/calcula
 import { exit } from 'process';
 import { GetCurrencyRateSrcAPI, DeleteCurrencyRateSrcAPI } from '../../api-types/currencyRateSource.js';
 import { GetUserBalanceHistoryAPI, GetUserNetworthHistoryAPI } from '../../api-types/calculations.js';
+import { GetTxnJsonQueryAPI } from '../../api-types/txn.js';
 export type HTTPMethod = "GET" | "PATCH" | "POST" | "DELETE";
 
 export type TestUserEntry =
@@ -76,7 +77,8 @@ export const TESTS_ENDPOINTS =
         "post": `/api/v1/transactions`,
         "get": `/api/v1/transactions`,
         "put": `/api/v1/transactions`,
-        "delete": `/api/v1/transactions`
+        "delete": `/api/v1/transactions`,
+        "get-jsonquery": `/api/v1/transactions/json-query` satisfies GetTxnJsonQueryAPI.Path
     },
     "currencyRateSources":
     {

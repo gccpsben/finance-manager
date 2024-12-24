@@ -377,6 +377,70 @@ export default async function(this: Context)
                 })
             });
 
+            await this.describe(`get via JSON Query`, async function()
+            {
+                await this.test(`Getting the posted txn by id`, async function ()
+                {
+                    const txns = await TransactionHelpers.getTransactionJSONQuery(
+                    {
+                        serverURL: serverURL,
+                        token: firstUser.token,
+                        assertBody: true,
+                        expectedCode: 200,
+                        query: `id = "${createdTxnId}"`
+                    });
+
+                    assertStrictEqual(txns.parsedBody.rangeItems.length, 1);
+                    assertStrictEqual(txns.parsedBody.rangeItems[0].id, createdTxnId);
+                    assertStrictEqual(txns.parsedBody.rangeItems[0].changeInValue, "-171");
+                });
+
+                await this.test(`Getting the posted txn without matches`, async function ()
+                {
+                    const txns = await TransactionHelpers.getTransactionJSONQuery(
+                    {
+                        serverURL: serverURL,
+                        token: firstUser.token,
+                        assertBody: true,
+                        expectedCode: 200,
+                        query: `id = "${createdTxnId}" and 1 = 2`
+                    });
+
+                    assertStrictEqual(txns.parsedBody.rangeItems.length, 0);
+                });
+
+                await this.test(`Disallow function bindings`, async function ()
+                {
+                    await TransactionHelpers.getTransactionJSONQuery(
+                    {
+                        serverURL: serverURL,
+                        token: firstUser.token,
+                        assertBody: false,
+                        expectedCode: 400,
+                        query: `
+                            (
+                                $b := function($x) {( $a($x) )};
+                                1 = 1
+                            )
+                        `
+                    });
+                });
+
+                await this.test(`Getting the posted txn by changeInValue`, async function ()
+                {
+                    const txns = await TransactionHelpers.getTransactionJSONQuery(
+                    {
+                        serverURL: serverURL,
+                        token: firstUser.token,
+                        assertBody: true,
+                        expectedCode: 200,
+                        query: `$DELTA=-171`
+                    });
+
+                    assertStrictEqual(txns.parsedBody.rangeItems.length, 1);
+                })
+            });
+
             await this.describe(`delete`, async function()
             {
                 await this.test(`Deleting without query`, async function ()

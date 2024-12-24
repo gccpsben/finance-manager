@@ -1,7 +1,40 @@
 import { IsString, IsNotEmpty, IsOptional, IsArray, ValidateNested, IsNumber } from "class-validator";
 import { IsDecimalJSString, IsUTCDateInt } from "../../../server_source/db/validators.js";
-import { GetTxnAPI, PostTxnAPI, PutTxnAPI } from "../../../../api-types/txn.js";
+import { GetTxnAPI, GetTxnJsonQueryAPI, PostTxnAPI, PutTxnAPI } from "../../../../api-types/txn.js";
 import { Type } from "class-transformer";
+
+
+export namespace GetTxnJSONQueryAPIClass
+{
+    export class TxnDTOClass implements GetTxnJsonQueryAPI.TxnDTO
+    {
+        @IsString() id: string;
+        @IsString() title: string;
+        @IsOptional() @IsString() description: string;
+        @IsString() owner: string;
+        @IsOptional() @IsUTCDateInt()  creationDate: number;
+        @IsArray() tagIds: string[];
+        @IsOptional() @IsDecimalJSString() fromAmount: string;
+        @IsOptional() @IsString() fromCurrency: string;
+        @IsOptional() @IsString() fromContainer: string;
+        @IsOptional() @IsDecimalJSString() toAmount: string;
+        @IsOptional() @IsString() toCurrency: string;
+        @IsOptional() @IsString() toContainer: string;
+        @IsNotEmpty() @IsDecimalJSString() changeInValue: string;
+    }
+
+    export class ResponseDTOClass implements GetTxnJsonQueryAPI.ResponseDTO
+    {
+        @IsNumber() totalItems: number;
+        @IsNumber() startingIndex: number;
+        @IsNumber() endingIndex: number;
+
+        @IsArray()
+        @ValidateNested({ each: true })
+        @Type(() => TxnDTOClass)
+        rangeItems: GetTxnAPI.TxnDTO[];
+    }
+}
 
 export namespace GetTxnAPIClass
 {

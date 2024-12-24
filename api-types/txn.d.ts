@@ -54,6 +54,7 @@ export namespace GetTxnAPI
 
 export namespace GetTxnJsonQueryAPI
 {
+    export type Path = `/api/v1/transactions/json-query`;
     export type TxnDTO = GetTxnAPI.TxnDTO;
     export type QueryDTO =
     {

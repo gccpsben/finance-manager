@@ -1,6 +1,6 @@
 import { AssertFetchReturns, HTTPAssert } from "../../lib/assert.js";
-import { GetTxnAPI, PutTxnAPI } from "../../../../api-types/txn.js";
-import { GetTxnAPIClass, PostTxnAPIClass } from "./classes.js";
+import { GetTxnAPI, GetTxnJsonQueryAPI, PutTxnAPI } from "../../../../api-types/txn.js";
+import { GetTxnAPIClass, GetTxnJSONQueryAPIClass, PostTxnAPIClass } from "./classes.js";
 import { TESTS_ENDPOINTS } from "../../index.test.js";
 
 export namespace TransactionHelpers
@@ -34,6 +34,37 @@ export namespace TransactionHelpers
         );
         const output = response;
         return output as AssertFetchReturns<GetTxnAPI.ResponseDTO>;
+    }
+
+    export async function getTransactionJSONQuery(config:
+    {
+        serverURL: string,
+        token:string,
+        assertBody?: boolean,
+        expectedCode?: number,
+        query: string,
+        start?: number,
+        end?: number,
+    })
+    {
+        const searchParams: Record<any,any> = {  };
+        if (config.start !== undefined && config.start !== null) searchParams['start'] = config.start;
+        if (config.end !== undefined && config.end !== null) searchParams['end'] = config.end;
+        if (config.query !== undefined && config.query !== null) searchParams['query'] = config.query;
+
+        const assertBody = config.assertBody === undefined ? true : config.assertBody;
+        const response = await HTTPAssert.assertFetch
+        (
+            `${TESTS_ENDPOINTS['transactions']['get-jsonquery']}?${new URLSearchParams(searchParams).toString()}`,
+            {
+                baseURL: `${config.serverURL}`,
+                expectedStatus: config.expectedCode, method: "GET",
+                headers: { "authorization": config.token },
+                expectedBodyType: assertBody ? GetTxnJSONQueryAPIClass.ResponseDTOClass : undefined
+            }
+        );
+        const output = response;
+        return output as AssertFetchReturns<GetTxnJsonQueryAPI.ResponseDTO>;
     }
 
     export async function putTransaction(config:
