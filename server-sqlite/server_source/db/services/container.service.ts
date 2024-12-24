@@ -4,12 +4,13 @@ import { TransactionService } from "./transaction.service.js";
 import { Decimal } from "decimal.js";
 import { CurrencyCalculator } from "./currency.service.js";
 import { Currency } from "../entities/currency.entity.js";
-import { GlobalCurrencyCache } from "../caches/currencyListCache.cache.js";
+import { CurrencyCache, GlobalCurrencyCache } from "../caches/currencyListCache.cache.js";
 import { UserNotFoundError, UserService } from "./user.service.js";
 import { MonadError, unwrap } from "../../std_errors/monadError.js";
 import { CurrencyToBaseRateCache, GlobalCurrencyToBaseRateCache } from "../caches/currencyToBaseRate.cache.js";
 import { Database } from "../db.js";
 import { QUERY_IGNORE } from "../../symbols.js";
+import { CurrencyRateDatumsCache } from '../caches/currencyRateDatumsCache.cache.js';
 
 export class ContainerNotFoundError extends MonadError<typeof ContainerNotFoundError.ERROR_SYMBOL>
 {
@@ -98,7 +99,9 @@ export class ContainerService
         ownerId: string,
         containers: { id: string }[] | string[],
         currencyRateDateToUse: number | undefined = undefined,
-        cache: CurrencyToBaseRateCache | undefined = GlobalCurrencyToBaseRateCache,
+        currencyRateDatumsCache: CurrencyRateDatumsCache | null,
+        currencyToBaseRateCache: CurrencyToBaseRateCache | null,
+        currencyCache: CurrencyCache | null
     )
     {
         const currRepo = Database.getCurrencyRepository()!;
@@ -126,7 +129,14 @@ export class ContainerService
             {
                 const cacheResult = GlobalCurrencyCache.queryCurrency(ownerId, id);
                 if (cacheResult) return cacheResult;
-                const fetchedResult = unwrap(await currRepo.findCurrencyByIdNameTickerOne(ownerId, id, QUERY_IGNORE, QUERY_IGNORE));
+                const fetchedResult = unwrap(await currRepo.findCurrencyByIdNameTickerOne
+                (
+                    ownerId,
+                    id,
+                    QUERY_IGNORE,
+                    QUERY_IGNORE,
+                    currencyCache
+                ));
                 return fetchedResult;
             };
 
@@ -152,7 +162,9 @@ export class ContainerService
                         fallbackRateCurrencyId: relevantCurrencies[currencyId].fallbackRateCurrencyId
                     },
                     innerRateEpoch,
-                    cache
+                    currencyRateDatumsCache,
+                    currencyToBaseRateCache,
+                    currencyCache
                 ));
             }
             return output;

@@ -17,6 +17,7 @@ import { Database } from "../db.js";
 import { CurrencyCache, GlobalCurrencyCache } from "../caches/currencyListCache.cache.js";
 import jsonata from "jsonata";
 import { TxnQueryASTCalculator } from "../../calculations/txnAST.js";
+import { CurrencyRateDatumsCache } from '../caches/currencyRateDatumsCache.cache.js';
 
 export class TxnMissingContainerOrCurrency extends MonadError<typeof TxnMissingFromToAmountError.ERROR_SYMBOL>
 {
@@ -134,7 +135,8 @@ export class TransactionService
             toContainerId?: string | null,
             toCurrencyId?: string | null,
             txnTagIds: string[]
-        }
+        },
+        currencyListCache: CurrencyCache | null
     ): Promise<
         Transaction |
         UserNotFoundError |
@@ -171,7 +173,7 @@ export class TransactionService
             }
             if (obj.fromCurrencyId)
             {
-                const currency = await currRepo.findCurrencyByIdNameTickerOne(userId, obj.fromCurrencyId, QUERY_IGNORE, QUERY_IGNORE);
+                const currency = await currRepo.findCurrencyByIdNameTickerOne(userId, obj.fromCurrencyId, QUERY_IGNORE, QUERY_IGNORE, currencyListCache);
                 if (!currency) return new CurrencyNotFoundError(obj.fromCurrencyId, userId);
                 newTxn.fromCurrencyId = obj.fromCurrencyId;
             }
@@ -192,7 +194,7 @@ export class TransactionService
 
             if (obj.toCurrencyId)
             {
-                const currency = await currRepo.findCurrencyByIdNameTickerOne(userId, obj.toCurrencyId, QUERY_IGNORE, QUERY_IGNORE);
+                const currency = await currRepo.findCurrencyByIdNameTickerOne(userId, obj.toCurrencyId, QUERY_IGNORE, QUERY_IGNORE, currencyListCache);
                 if (!currency) return new CurrencyNotFoundError(obj.toCurrencyId, userId);
                 newTxn.toCurrencyId = obj.toCurrencyId;
             }
@@ -241,7 +243,8 @@ export class TransactionService
             toCurrencyId?: string | undefined,
             tagIds: string[]
         },
-        queryRunner: QueryRunner
+        queryRunner: QueryRunner,
+        currencyListCache: CurrencyCache | null
     )
     {
         const currRepo = Database.getCurrencyRepository()!;
@@ -281,7 +284,8 @@ export class TransactionService
                     oldTxn.ownerId!,
                     oldTxn.fromCurrencyId,
                     QUERY_IGNORE,
-                    QUERY_IGNORE
+                    QUERY_IGNORE,
+                    currencyListCache
                 ))!.id
             };
 
@@ -297,7 +301,8 @@ export class TransactionService
                     oldTxn.ownerId!,
                     oldTxn.toCurrencyId,
                     QUERY_IGNORE,
-                    QUERY_IGNORE
+                    QUERY_IGNORE,
+                    currencyListCache
                 ))!.id
             };
 
@@ -328,7 +333,7 @@ export class TransactionService
             toAmount: oldTxn.toAmount,
             toContainerId: oldTxn.toContainerId,
             toCurrencyId: oldTxn.toCurrencyId
-        });
+        }, currencyListCache);
 
         if (txnValidationResults instanceof UserNotFoundError) return txnValidationResults;
         if (txnValidationResults instanceof TxnTagNotFoundError) return txnValidationResults;
@@ -355,10 +360,11 @@ export class TransactionService
             toCurrencyId?: string | undefined,
             txnTagIds: string[]
         },
-        queryRunner: QueryRunner
+        queryRunner: QueryRunner,
+        currencyListCache: CurrencyCache | null
     )
     {
-        const newTxn = await TransactionService.validateTransaction(userId, obj);
+        const newTxn = await TransactionService.validateTransaction(userId, obj, currencyListCache);
         if (newTxn instanceof UserNotFoundError) return newTxn;
         if (newTxn instanceof TxnTagNotFoundError) return newTxn;
         if (newTxn instanceof TxnMissingFromToAmountError) return newTxn;
@@ -405,7 +411,10 @@ export class TransactionService
             toCurrencyId?: string | null | undefined,
             creationDate: number
         },
-        cache: CurrencyToBaseRateCache | undefined = GlobalCurrencyToBaseRateCache,
+        currencyRateDatumsCache: CurrencyRateDatumsCache | null,
+        currencyToBaseRateCache: CurrencyToBaseRateCache | null,
+        currencyListCache: CurrencyCache | null
+
     ): Promise<{ increaseInValue: Decimal } | UserNotFoundError>
     {
         // Ensure user exists
@@ -418,11 +427,18 @@ export class TransactionService
             let currencyRate = await (async () =>
             {
                 // Try getting the currency rate to base at txn's epoch from cache first.
-                const amountToBaseValueCacheResult = cache?.queryCurrencyToBaseRate(userId, currencyId, transaction.creationDate);
+                const amountToBaseValueCacheResult = currencyToBaseRateCache?.queryCurrencyToBaseRate(userId, currencyId, transaction.creationDate);
                 if (amountToBaseValueCacheResult) return amountToBaseValueCacheResult.toString();
 
                 // If not available, compute the rate uncached. And finally save the result into cache.
-                const currencyRefetched = await currRepo.findCurrencyByIdNameTickerOne(userId, currencyId, QUERY_IGNORE, QUERY_IGNORE);
+                const currencyRefetched = await currRepo.findCurrencyByIdNameTickerOne
+                (
+                    userId,
+                    currencyId,
+                    QUERY_IGNORE,
+                    QUERY_IGNORE,
+                    currencyListCache
+                );
                 const rate =
                 (
                     await CurrencyService.rateHydrateCurrency
@@ -430,11 +446,13 @@ export class TransactionService
                         userId,
                         [currencyRefetched!],
                         transaction.creationDate,
-                        cache
+                        currencyRateDatumsCache,
+                        currencyToBaseRateCache,
+                        currencyListCache
                     )
                 )[0].rateToBase;
 
-                if (cache) cache.cacheCurrencyToBase(userId, currencyRefetched!.id, transaction.creationDate, new Decimal(rate));
+                if (currencyToBaseRateCache) currencyToBaseRateCache.cacheCurrencyToBase(userId, currencyRefetched!.id, transaction.creationDate, new Decimal(rate));
                 return rate;
             })();
 
@@ -459,8 +477,9 @@ export class TransactionService
     (
         userId: string,
         query: string,
-        cache: CurrencyCache | undefined = GlobalCurrencyCache,
-        baseRateCache: CurrencyToBaseRateCache | undefined = GlobalCurrencyToBaseRateCache,
+        currencyRateDatumsCache: CurrencyRateDatumsCache | null,
+        baseRateCache: CurrencyToBaseRateCache | null,
+        currencyListCache: CurrencyCache | null,
         startIndex: number | null, endIndex: number | null
     )
     {
@@ -470,7 +489,7 @@ export class TransactionService
         const currRepo = Database.getCurrencyRepository()!;
         const findCurrById = async (cId: string): Promise<TransactionJSONQueryCurrency | null> =>
         {
-            const queryResult = await currRepo.findCurrencyByIdNameTickerOne(userId, cId, QUERY_IGNORE, QUERY_IGNORE, cache);
+            const queryResult = await currRepo.findCurrencyByIdNameTickerOne(userId, cId, QUERY_IGNORE, QUERY_IGNORE, currencyListCache);
             return queryResult ? {
                 fallbackRateAmount: queryResult.fallbackRateAmount,
                 fallbackRateCurrencyId: queryResult.fallbackRateCurrencyId,
@@ -514,7 +533,9 @@ export class TransactionService
                     tagNames: (txn.tags as { name: string }[]).map(x => x.name) ?? [],
                     changeInValue: 0
                 };
-                objToBeMatched.changeInValue = unwrap(await TransactionService.getTxnIncreaseInValue(userId, objToBeMatched, baseRateCache)).increaseInValue.toNumber();
+                objToBeMatched.changeInValue = unwrap(
+                    await TransactionService.getTxnIncreaseInValue(userId, objToBeMatched, currencyRateDatumsCache, baseRateCache, currencyListCache)
+                ).increaseInValue.toNumber();
 
                 const expression = jsonata(query);
                 expression.assign("TITLE", objToBeMatched.title);

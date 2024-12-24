@@ -12,6 +12,8 @@ import { UserNotFoundError } from '../../db/services/user.service.js';
 import { CurrencyNotFoundError } from '../../db/services/currency.service.js';
 import { Type } from 'class-transformer';
 import { Database } from '../../db/db.js';
+import { GlobalCurrencyToBaseRateCache } from '../../db/caches/currencyToBaseRate.cache.js';
+import { GlobalCurrencyCache } from '../../db/caches/currencyListCache.cache.js';
 
 const router = new TypesafeRouter(express.Router());
 
@@ -53,7 +55,9 @@ router.post<PostCurrencyRateAPI.ResponseDTO>(`/api/v1/currencyRateDatums`,
                     amountCurrencyId: datum.refAmountCurrencyId,
                 }
             }),
-            transactionContext.queryRunner
+            transactionContext.queryRunner,
+            GlobalCurrencyToBaseRateCache,
+            GlobalCurrencyCache
         );
 
         if (newRateDatums instanceof UserNotFoundError) throw createHttpError(401);

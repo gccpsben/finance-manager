@@ -6,6 +6,8 @@ import { QueryRunner } from "typeorm";
 import { User } from "../entities/user.entity.js";
 import { CurrencyToBaseRateCache, GlobalCurrencyToBaseRateCache } from "../caches/currencyToBaseRate.cache.js";
 import { Database } from "../db.js";
+import { CurrencyCache } from "../caches/currencyListCache.cache.js";
+import { CurrencyRateDatumsCache } from "../caches/currencyRateDatumsCache.cache.js";
 
 
 function minAndMax<T> (array: T[], getter: (obj:T) => number)
@@ -47,7 +49,8 @@ export class CurrencyRateDatumService
             amountCurrencyId: string
         }[],
         queryRunner: QueryRunner,
-        cache: CurrencyToBaseRateCache | undefined = GlobalCurrencyToBaseRateCache
+        currencyToBaseRateCache: CurrencyToBaseRateCache | null,
+        currencyCache: CurrencyCache | null
     ): Promise<{
             amount: string,
             date: number,
@@ -68,7 +71,7 @@ export class CurrencyRateDatumService
             userIdToObjMap[userId] = owner;
         }
 
-        return await Database.getCurrencyRateDatumRepository()!.createCurrencyRateDatum(datums, queryRunner, cache);
+        return await Database.getCurrencyRateDatumRepository()!.createCurrencyRateDatum(datums, queryRunner, currencyToBaseRateCache, currencyCache);
     }
 
     public static async getCurrencyRateHistory
@@ -77,6 +80,9 @@ export class CurrencyRateDatumService
         currencyId: string,
         startDate: number | undefined = undefined,
         endDate: number | undefined = undefined,
+        currencyRateDatumsCache: CurrencyRateDatumsCache | null,
+        currencyToBaseRateCache: CurrencyToBaseRateCache | null,
+        currencyCache: CurrencyCache | null,
         division: number = 10
     )
     {
@@ -96,7 +102,7 @@ export class CurrencyRateDatumService
         }
 
         const datumsStat = minAndMax(datumsWithinRange, x => x.date);
-        const interpolator = unwrap(await CurrencyCalculator.getCurrencyToBaseRateInterpolator(ownerId, currencyId, undefined, undefined));
+        const interpolator = unwrap(await CurrencyCalculator.getCurrencyToBaseRateInterpolator(ownerId, currencyId, currencyRateDatumsCache, currencyToBaseRateCache, currencyCache));
 
         const output: {date: number, rateToBase: Decimal}[] = [];
         const minDate = new Decimal(datumsStat.min);

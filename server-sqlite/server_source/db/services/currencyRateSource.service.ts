@@ -12,6 +12,8 @@ import type { IdBound } from "../../index.d.js";
 import { QueryRunner, Relation } from "typeorm";
 import { Database } from "../db.js";
 import { QUERY_IGNORE } from "../../symbols.js";
+import { CurrencyCache } from "../caches/currencyListCache.cache.js";
+import { CurrencyToBaseRateCache } from "../caches/currencyToBaseRate.cache.js";
 
 export class InvalidNumberError extends MonadError<typeof InvalidNumberError.ERROR_SYMBOL>
 {
@@ -93,6 +95,7 @@ export class CurrencyRateSourceService
         path: string,
         refAmountCurrencyId: string,
         refCurrencyId: string,
+        currencyCache: CurrencyCache | null
     ): Promise<IdBound<CurrencyRateSource> | CurrencyNotFoundError>
     {
         const newCurrencyRateSource = CurrencyRateSourceRepository.getInstance().create();
@@ -104,7 +107,7 @@ export class CurrencyRateSourceService
         newCurrencyRateSource.refAmountCurrencyId = refAmountCurrencyId;
         newCurrencyRateSource.refCurrencyId = refCurrencyId;
 
-        const validationResult = await CurrencyRateSourceService.validateCurrencyRateSource(newCurrencyRateSource);
+        const validationResult = await CurrencyRateSourceService.validateCurrencyRateSource(newCurrencyRateSource, currencyCache);
 
         if (validationResult === 'RefCurrencyNotFound' || validationResult === 'MissingRefCurrency')
             return new CurrencyNotFoundError(refCurrencyId, ownerId);
@@ -118,7 +121,10 @@ export class CurrencyRateSourceService
         return newlySavedSrc as IdBound<typeof newlySavedSrc>;
     }
 
-    public static async validateCurrencyRateSource(src: CurrencyRateSource): Promise<
+    public static async validateCurrencyRateSource(
+        src: CurrencyRateSource,
+        currencyCache: CurrencyCache | null
+    ): Promise<
         "RefCurrencyNotFound" | "RefAmountCurrencyNotFound" |
         "MissingRefCurrency" | "MissingAmountCurrency" | null
     >
@@ -128,8 +134,8 @@ export class CurrencyRateSourceService
 
         const currRepo = Database.getCurrencyRepository()!;
 
-        const refCurrency = await currRepo.findCurrencyByIdNameTickerOne(src.ownerId, src.refCurrencyId, QUERY_IGNORE, QUERY_IGNORE);
-        const refAmountCurrency = await currRepo.findCurrencyByIdNameTickerOne(src.ownerId, src.refAmountCurrencyId, QUERY_IGNORE, QUERY_IGNORE);
+        const refCurrency = await currRepo.findCurrencyByIdNameTickerOne(src.ownerId, src.refCurrencyId, QUERY_IGNORE, QUERY_IGNORE, currencyCache);
+        const refAmountCurrency = await currRepo.findCurrencyByIdNameTickerOne(src.ownerId, src.refAmountCurrencyId, QUERY_IGNORE, QUERY_IGNORE, currencyCache);
 
         if (refCurrency === null) return "RefCurrencyNotFound";
         if (refAmountCurrency === null) return "RefAmountCurrencyNotFound";
@@ -190,7 +196,8 @@ export class CurrencyRateSourceService
             name: string,
             path: string,
             refAmountCurrencyId: string
-        }>>
+        }>>,
+        currencyCache: CurrencyCache | null
     )
     {
         const originalSrc = await CurrencyRateSourceRepository
@@ -205,7 +212,7 @@ export class CurrencyRateSourceService
         if (patchArgs.path) originalSrc.path = patchArgs.path;
         if (patchArgs.refAmountCurrencyId) originalSrc.refAmountCurrencyId = patchArgs.refAmountCurrencyId;
 
-        const validationResult = await CurrencyRateSourceService.validateCurrencyRateSource(originalSrc);
+        const validationResult = await CurrencyRateSourceService.validateCurrencyRateSource(originalSrc, currencyCache);
         if (validationResult !== null) return new PatchCurrencySrcValidationError(patchArgs.id, validationResult);
 
         const newlySavedSrc = await CurrencyRateSourceRepository.getInstance().save(originalSrc);
@@ -231,7 +238,9 @@ export class CurrencyRateSourceService
             lastExecuteTime: number | null
         },
         nowEpoch: number,
-        queryRunner: QueryRunner
+        queryRunner: QueryRunner,
+        currencyToBaseRateCache: CurrencyToBaseRateCache | null,
+        currencyCache: CurrencyCache | null
     ): Promise<{
         amount: string,
         date: number,
@@ -256,7 +265,7 @@ export class CurrencyRateSourceService
             const createError = <T extends Error>(err: T) =>
                 new ExecuteCurrencyRateSourceError(err, currencySource.refCurrencyId, ownerId);
 
-            const currencyObj = await currRepo.findCurrencyByIdNameTickerOne(ownerId, refCurrencyId, QUERY_IGNORE, QUERY_IGNORE);
+            const currencyObj = await currRepo.findCurrencyByIdNameTickerOne(ownerId, refCurrencyId, QUERY_IGNORE, QUERY_IGNORE, currencyCache);
             if (currencyObj instanceof UserNotFoundError) return createError(currencyObj);
             if (currencyObj === null) return createError(new CurrencyNotFoundError(refCurrencyId, ownerId));
 
@@ -286,7 +295,9 @@ export class CurrencyRateSourceService
                         userId: ownerId
                     }
                 ],
-                queryRunner
+                queryRunner,
+                currencyToBaseRateCache,
+                currencyCache
             );
             if (rateDatums instanceof CurrencyNotFoundError) return createError(new CurrencyNotFoundError(refCurrencyId, ownerId));
 

@@ -7,6 +7,7 @@ import createHttpError from "http-errors";
 import { ExpressValidations } from "../validation.js";
 import { CurrencyRateSourceService, CurrencySrcNotFoundError, PatchCurrencySrcValidationError } from "../../db/services/currencyRateSource.service.js";
 import { CurrencyNotFoundError } from "../../db/services/currency.service.js";
+import { GlobalCurrencyCache } from "../../db/caches/currencyListCache.cache.js";
 
 const router = new TypesafeRouter(express.Router());
 
@@ -89,7 +90,8 @@ router.patch<PatchCurrencyRateSrcAPI.ResponseDTO>(`/api/v1/currencyRateSources`,
                 name: parsedBody.name,
                 path: parsedBody.path,
                 refAmountCurrencyId: parsedBody.refAmountCurrencyId
-            }
+            },
+            GlobalCurrencyCache
         );
 
         if (newlyPatchRateSrc instanceof CurrencySrcNotFoundError) throw createHttpError(400, newlyPatchRateSrc.message);
@@ -148,7 +150,8 @@ router.post<PostCurrencyRateSrcAPI.ResponseDTO>(`/api/v1/currencyRateSources`,
             parsedBody.jsonQueryString,
             parsedBody.path,
             parsedBody.refAmountCurrencyId,
-            parsedBody.refCurrencyId
+            parsedBody.refCurrencyId,
+            GlobalCurrencyCache
         );
 
         if (newRateSrc instanceof CurrencyNotFoundError) throw createHttpError(400, newRateSrc.message);

@@ -2,12 +2,13 @@ import { DataSource, QueryRunner, Repository } from "typeorm";
 import { CurrencyRateDatum } from "../entities/currencyRateDatum.entity.js";
 import { Database } from "../db.js";
 import { SQLitePrimitiveOnly } from "../../index.d.js";
-import { GlobalCurrencyRateDatumsCache } from "../caches/currencyRateDatumsCache.cache.js";
+import { CurrencyRateDatumsCache, GlobalCurrencyRateDatumsCache } from "../caches/currencyRateDatumsCache.cache.js";
 import { panic } from "../../std_errors/monadError.js";
 import { CurrencyToBaseRateCache, GlobalCurrencyToBaseRateCache } from "../caches/currencyToBaseRate.cache.js";
 import { CurrencyNotFoundError } from "../services/currency.service.js";
 import { UserNotFoundError } from "../services/user.service.js";
 import { QUERY_IGNORE } from "../../symbols.js";
+import { CurrencyCache } from "../caches/currencyListCache.cache.js";
 
 export type DifferenceHydratedCurrencyRateDatum = SQLitePrimitiveOnly<CurrencyRateDatum> &
 { difference: number }
@@ -28,9 +29,10 @@ export class CurrencyRateDatumRepository
     (
         userId: string,
         currencyId: string, date: number,
+        cache: CurrencyRateDatumsCache | null
     ): Promise<DifferenceHydratedCurrencyRateDatum[]>
     {
-        const cachedTwoDatums = GlobalCurrencyRateDatumsCache.findTwoNearestDatum(userId, currencyId, date);
+        const cachedTwoDatums = cache?.findTwoNearestDatum(userId, currencyId, date);
         if (cachedTwoDatums !== undefined) return cachedTwoDatums;
 
         let query = this.#repository.createQueryBuilder(`datum`);
@@ -42,7 +44,7 @@ export class CurrencyRateDatumRepository
         query = query.addSelect("*");
 
         const results = await query.getRawMany() as (SQLitePrimitiveOnly<CurrencyRateDatum> & { difference: number })[];
-        GlobalCurrencyRateDatumsCache.cacheRateDatums(userId, currencyId, results);
+        cache?.cacheRateDatums(userId, currencyId, results);
         return results.slice(0,2);
     }
 
@@ -77,7 +79,8 @@ export class CurrencyRateDatumRepository
             amountCurrencyId: string
         }[],
         queryRunner: QueryRunner,
-        cache: CurrencyToBaseRateCache | undefined = GlobalCurrencyToBaseRateCache
+        currencyToBaseRateCache: CurrencyToBaseRateCache | null,
+        currencyListCache: CurrencyCache | null
     ): Promise<{
             amount: string,
             date: number,
@@ -100,15 +103,15 @@ export class CurrencyRateDatumRepository
 
         for (let datum of datums)
         {
-            cache?.invalidateCurrencyToBase(datum.userId, datum.currencyId);
+            currencyToBaseRateCache?.invalidateCurrencyToBase(datum.userId, datum.currencyId);
 
             const newRate = queryRunner.manager.getRepository(CurrencyRateDatum).create();
             newRate.amount = datum.amount.toString();
             newRate.date = datum.date;
             newRate.ownerId = datum.userId;
 
-            const refCurrency = await currRepo.findCurrencyByIdNameTickerOne(datum.userId, datum.currencyId, QUERY_IGNORE, QUERY_IGNORE);
-            const refAmountCurrency = await currRepo.findCurrencyByIdNameTickerOne(datum.userId, datum.amountCurrencyId, QUERY_IGNORE, QUERY_IGNORE);
+            const refCurrency = await currRepo.findCurrencyByIdNameTickerOne(datum.userId, datum.currencyId, QUERY_IGNORE, QUERY_IGNORE, currencyListCache);
+            const refAmountCurrency = await currRepo.findCurrencyByIdNameTickerOne(datum.userId, datum.amountCurrencyId, QUERY_IGNORE, QUERY_IGNORE, currencyListCache);
             if (refAmountCurrency instanceof UserNotFoundError) return refAmountCurrency;
             if (refCurrency instanceof UserNotFoundError) return refCurrency;
             if (refCurrency === null) return new CurrencyNotFoundError(datum.userId, datum.currencyId);

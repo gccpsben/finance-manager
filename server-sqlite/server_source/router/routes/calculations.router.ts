@@ -13,6 +13,8 @@ import createHttpError from 'http-errors';
 import { UserNotFoundError } from '../../db/services/user.service.js';
 import { ArgsComparisonError, ConstantComparisonError } from '../../std_errors/argsErrors.js';
 import { GlobalCurrencyToBaseRateCache } from '../../db/caches/currencyToBaseRate.cache.js';
+import { GlobalCurrencyCache } from '../../db/caches/currencyListCache.cache.js';
+import { GlobalCurrencyRateDatumsCache } from '../../db/caches/currencyRateDatumsCache.cache.js';
 
 const router = new TypesafeRouter(express.Router());
 
@@ -43,10 +45,12 @@ router.get<GetExpensesAndIncomesAPI.ResponseDTO>("/api/v1/calculations/expensesA
                 [_30dKey]: { epoch: now - 2.592e+9, mode: 'AT_OR_AFTER' },
                 [_7dKey]: { epoch: now - 6.048e+8, mode: 'AT_OR_AFTER' },
                 [_currentMonthKey]: { epoch: parseInt(parsedQuery.currentMonthStartEpoch), mode: 'AT_OR_AFTER' },
-                [_currentWeekKey]: { epoch: parseInt(parsedQuery.currentWeekStartEpoch), mode: 'AT_OR_AFTER' }
+                [_currentWeekKey]: { epoch: parseInt(parsedQuery.currentWeekStartEpoch), mode: 'AT_OR_AFTER' },
             },
             now,
-            GlobalCurrencyToBaseRateCache
+            GlobalCurrencyRateDatumsCache,
+            GlobalCurrencyToBaseRateCache,
+            GlobalCurrencyCache
         );
         return {
             expenses30d: calResults[_30dKey].expenses.toString(),
@@ -99,7 +103,9 @@ router.get<GetUserNetworthHistoryAPI.ResponseDTO>(`/api/v1/calculations/networth
             input.startDate,
             input.endDate,
             input.division,
-            GlobalCurrencyToBaseRateCache
+            GlobalCurrencyRateDatumsCache,
+            GlobalCurrencyToBaseRateCache,
+            GlobalCurrencyCache
         );
 
         if (resultMap instanceof UserNotFoundError) throw createHttpError(401);

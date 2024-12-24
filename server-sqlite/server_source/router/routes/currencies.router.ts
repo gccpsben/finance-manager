@@ -15,6 +15,9 @@ import { unwrap } from '../../std_errors/monadError.js';
 import { UserNotFoundError } from '../../db/services/user.service.js';
 import type { IdBound } from '../../index.d.js';
 import { Database } from '../../db/db.js';
+import { GlobalCurrencyToBaseRateCache } from '../../db/caches/currencyToBaseRate.cache.js';
+import { GlobalCurrencyCache } from '../../db/caches/currencyListCache.cache.js';
+import { GlobalCurrencyRateDatumsCache } from '../../db/caches/currencyRateDatumsCache.cache.js';
 
 const router = new TypesafeRouter(express.Router());
 
@@ -41,7 +44,8 @@ router.post<PostCurrencyAPI.ResponseDTO>(`/api/v1/currencies`,
             parsedBody.name,
             parsedBody.fallbackRateAmount ? new Decimal(parsedBody.fallbackRateAmount) : undefined,
             parsedBody.fallbackRateCurrencyId ?? undefined,
-            parsedBody.ticker
+            parsedBody.ticker,
+            GlobalCurrencyCache
         );
 
         if (newCurrency instanceof CurrencyNameTakenError) throw createHttpError(400, newCurrency.message);
@@ -104,7 +108,10 @@ router.get<GetCurrencyAPI.ResponseDTO>(`/api/v1/currencies`,
                 (
                     authResult.ownerUserId,
                     sqlPrimitiveCurrencies.rangeItems,
-                    userQuery.requestedRateDate
+                    userQuery.requestedRateDate,
+                    GlobalCurrencyRateDatumsCache,
+                    GlobalCurrencyToBaseRateCache,
+                    GlobalCurrencyCache
                 );
                 return rateHydratedCurrencies.map(c =>
                 {
@@ -148,7 +155,10 @@ router.get<GetCurrencyRateHistoryAPI.ResponseDTO>(`/api/v1/currencies/history`,
             parsedQuery.id,
             parsedQuery.startDate ? parseInt(parsedQuery.startDate) : undefined,
             parsedQuery.endDate ? parseInt(parsedQuery.endDate) : undefined,
-            parsedQuery.division ? parseInt(parsedQuery.division) : 128
+            GlobalCurrencyRateDatumsCache,
+            GlobalCurrencyToBaseRateCache,
+            GlobalCurrencyCache,
+            parsedQuery.division ? parseInt(parsedQuery.division) : 128,
         ));
 
         return {

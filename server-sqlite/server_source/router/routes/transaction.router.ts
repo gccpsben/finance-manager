@@ -17,6 +17,7 @@ import { unwrap } from '../../std_errors/monadError.js';
 import { GlobalCurrencyToBaseRateCache } from '../../db/caches/currencyToBaseRate.cache.js';
 import { CurrencyNotFoundError } from '../../db/services/currency.service.js';
 import { GlobalCurrencyCache } from '../../db/caches/currencyListCache.cache.js';
+import { GlobalCurrencyRateDatumsCache } from '../../db/caches/currencyRateDatumsCache.cache.js';
 
 const router = new TypesafeRouter(Express.Router());
 
@@ -73,7 +74,7 @@ router.post<PostTxnAPI.ResponseDTO>("/api/v1/transactions",
                     toAmount: item.toAmount,
                     toContainerId: item.toContainerId,
                     toCurrencyId: item.toCurrencyId
-                }, transactionalContext.queryRunner);
+                }, transactionalContext.queryRunner, GlobalCurrencyCache);
 
                 if (transactionCreated instanceof UserNotFoundError) throw createHttpError(401);
                 if (transactionCreated instanceof TxnTagNotFoundError)  throw createHttpError(400, transactionCreated.message);
@@ -143,7 +144,7 @@ router.put<PutTxnAPI.ResponseDTO>("/api/v1/transactions",
                 toAmount: parsedBody.toAmount,
                 toContainerId: parsedBody.toContainerId,
                 toCurrencyId: parsedBody.toCurrencyId
-            }, transactionalContext.queryRunner);
+            }, transactionalContext.queryRunner, GlobalCurrencyCache);
 
             if (updatedTxn instanceof UserNotFoundError) throw createHttpError(401);
             if (updatedTxn instanceof TxnNotFoundError) throw createHttpError(404);
@@ -190,8 +191,9 @@ router.get<GetTxnAPI.ResponseDTO>(`/api/v1/transactions/json-query`,
         (
             authResult.ownerUserId,
             parsedQuery.query,
-            GlobalCurrencyCache,
+            GlobalCurrencyRateDatumsCache,
             GlobalCurrencyToBaseRateCache,
+            GlobalCurrencyCache,
             userQuery.startIndex,
             userQuery.endIndex,
         );
@@ -203,7 +205,15 @@ router.get<GetTxnAPI.ResponseDTO>(`/api/v1/transactions/json-query`,
             startingIndex: Math.min(matchedResults.totalItems, userQuery.startIndex === null ? Number.POSITIVE_INFINITY : userQuery.startIndex),
             rangeItems: await Promise.all(matchedResults.rangeItems.map(async item =>
             {
-                const txnChangeInValue = unwrap(await TransactionService.getTxnIncreaseInValue(authResult.ownerUserId, item, GlobalCurrencyToBaseRateCache)).increaseInValue;
+                const txnChangeInValue = unwrap(
+                    await TransactionService.getTxnIncreaseInValue(
+                        authResult.ownerUserId,
+                        item,
+                        GlobalCurrencyRateDatumsCache,
+                        GlobalCurrencyToBaseRateCache,
+                        GlobalCurrencyCache
+                    )
+                ).increaseInValue;
                 return {
                     id: item.id!,
                     title: item.title,
@@ -271,7 +281,15 @@ router.get<GetTxnAPI.ResponseDTO>(`/api/v1/transactions`,
             startingIndex: response.startingIndex,
             rangeItems: await Promise.all(response.rangeItems.map(async item =>
             {
-                const txnChangeInValue = unwrap(await TransactionService.getTxnIncreaseInValue(item.ownerId, item, GlobalCurrencyToBaseRateCache)).increaseInValue;
+                const txnChangeInValue = unwrap(
+                    await TransactionService.getTxnIncreaseInValue(
+                        authResult.ownerUserId,
+                        item,
+                        GlobalCurrencyRateDatumsCache,
+                        GlobalCurrencyToBaseRateCache,
+                        GlobalCurrencyCache
+                    )
+                ).increaseInValue;
                 return {
                     id: item.id!,
                     title: item.title,

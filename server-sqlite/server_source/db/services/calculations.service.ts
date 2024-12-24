@@ -6,7 +6,7 @@ import { Transaction } from "../entities/transaction.entity.js";
 import { DecimalAdditionMapReducer, nameof, ServiceUtils } from "../servicesUtils.js";
 import { LinearInterpolator } from "../../calculations/linearInterpolator.js";
 import { CurrencyCalculator, CurrencyService } from "./currency.service.js";
-import { GlobalCurrencyCache } from "../caches/currencyListCache.cache.js";
+import { CurrencyCache, GlobalCurrencyCache } from "../caches/currencyListCache.cache.js";
 import { UserNotFoundError, UserService } from "./user.service.js";
 import { panic, unwrap } from "../../std_errors/monadError.js";
 import { ArgsComparisonError, ConstantComparisonError } from "../../std_errors/argsErrors.js";
@@ -14,6 +14,7 @@ import { isInt } from "class-validator";
 import { CurrencyToBaseRateCache, GlobalCurrencyToBaseRateCache } from "../caches/currencyToBaseRate.cache.js";
 import { Database } from "../db.js";
 import { QUERY_IGNORE } from "../../symbols.js";
+import { CurrencyRateDatumsCache } from "../caches/currencyRateDatumsCache.cache.js";
 
 /** An object that represents a query of a time range. */
 export type TimeRangeQuery =
@@ -38,7 +39,9 @@ export class CalculationsService
         userId: string,
         queryLines: { [queryName: string]: TimeRangeQuery },
         nowEpoch: number,
-        cache: CurrencyToBaseRateCache | undefined = GlobalCurrencyToBaseRateCache
+        currencyRateDatumsCache: CurrencyRateDatumsCache | null,
+        currencyToBaseRateCache: CurrencyToBaseRateCache | null,
+        currencyCache: CurrencyCache | null
     )
     {
         if (!isInt(nowEpoch)) throw panic(`nowEpoch must be an integer.`);
@@ -87,7 +90,9 @@ export class CalculationsService
                 (
                     userId,
                     txn,
-                    cache
+                    currencyRateDatumsCache,
+                    currencyToBaseRateCache,
+                    currencyCache
                 ));
 
             const isValueDecreased = increaseInValue.lessThanOrEqualTo(new Decimal('0'));
@@ -187,7 +192,9 @@ export class CalculationsService
         startDate: number,
         endDate: number,
         division: number,
-        cache: CurrencyToBaseRateCache | undefined = GlobalCurrencyToBaseRateCache,
+        currencyRateDatumsCache: CurrencyRateDatumsCache | null,
+        cache: CurrencyToBaseRateCache | null,
+        currencyCache: CurrencyCache | null
     ): Promise<{[epoch: string]:string} | UserNotFoundError | ArgsComparisonError<number> | ConstantComparisonError<number>>
     {
         type cInterpolatorMap = { [currencyId: string]: LinearInterpolator };
@@ -208,9 +215,11 @@ export class CalculationsService
             (
                 userId,
                 cId,
+                currencyRateDatumsCache,
+                cache,
+                currencyCache,
                 new Date(startDate),
                 new Date(endDate),
-                cache
             ));
             return interpolator;
         };
@@ -226,7 +235,7 @@ export class CalculationsService
                 {
                     const cacheResult = GlobalCurrencyCache.queryCurrency(userId, currencyID);
                     if (cacheResult) return cacheResult;
-                    const fetchedResult = await currRepo.findCurrencyByIdNameTickerOne(userId, currencyID, QUERY_IGNORE, QUERY_IGNORE);
+                    const fetchedResult = await currRepo.findCurrencyByIdNameTickerOne(userId, currencyID, QUERY_IGNORE, QUERY_IGNORE, currencyCache);
                     return fetchedResult;
                 })();
 
@@ -251,7 +260,9 @@ export class CalculationsService
                         userId,
                         currencyObject!,
                         parseInt(epoch),
-                        cache
+                        currencyRateDatumsCache,
+                        cache,
+                        currencyCache,
                     ));
                 }
                 const currencyValue = currencyRateToBase.mul(balanceHistory.historyMap[epoch][currencyID]);

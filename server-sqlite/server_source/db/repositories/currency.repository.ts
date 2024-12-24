@@ -37,7 +37,7 @@ export class CurrencyRepository
         currencyId: string | typeof QUERY_IGNORE,
         currencyName: string | typeof QUERY_IGNORE,
         currencyTicker: string | typeof QUERY_IGNORE,
-        cache: CurrencyCache | null = GlobalCurrencyCache
+        cache: CurrencyCache | null
     )
     {
         const makeOutput = (curr: Partial<Currency>) => {
@@ -100,7 +100,7 @@ export class CurrencyRepository
             ticker: string | typeof PATCH_IGNORE,
             lastRateCronUpdateTime: number | null | typeof PATCH_IGNORE
         },
-        cache: CurrencyCache | null = GlobalCurrencyCache
+        cache: CurrencyCache | null
     )
     {
         const saveResult = await this.#repository.save(
@@ -156,7 +156,7 @@ export class CurrencyRepository
             ticker: string,
             lastRateCronUpdateTime?: number | null
         },
-        cache: CurrencyCache | null = GlobalCurrencyCache
+        cache: CurrencyCache | null
     )
     {
         const newCurrency = this.#repository.create(currencyObj);

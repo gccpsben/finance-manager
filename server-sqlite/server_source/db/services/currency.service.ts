@@ -5,8 +5,8 @@ import { Currency } from "../entities/currency.entity.js";
 import { LinearInterpolator } from "../../calculations/linearInterpolator.js";
 import { IdBound } from "../../index.d.js";
 import { nameof } from "../servicesUtils.js";
-import { GlobalCurrencyRateDatumsCache } from '../caches/currencyRateDatumsCache.cache.js';
-import { GlobalCurrencyCache } from "../caches/currencyListCache.cache.js";
+import { CurrencyRateDatumsCache, GlobalCurrencyRateDatumsCache } from '../caches/currencyRateDatumsCache.cache.js';
+import { CurrencyCache, GlobalCurrencyCache } from "../caches/currencyListCache.cache.js";
 import { UserNotFoundError, UserService } from "./user.service.js";
 import { MonadError, unwrap } from "../../std_errors/monadError.js";
 import { CurrencyToBaseRateCache, GlobalCurrencyToBaseRateCache } from "../caches/currencyToBaseRate.cache.js";
@@ -81,15 +81,17 @@ export class CurrencyCalculator
     (
         ownerId:string,
         from: Currency & { id: string }, to: Currency & { id: string },
-        cache: CurrencyToBaseRateCache | undefined = GlobalCurrencyToBaseRateCache,
+        currencyRateDatumsCache: CurrencyRateDatumsCache | null,
+        currencyToBaseRateCache: CurrencyToBaseRateCache | null,
+        currencyListCache: CurrencyCache | null
     )
     {
         // Ensure user exists
         const userFetchResult = await UserService.getUserById(ownerId);
         if (userFetchResult === null) return new UserNotFoundError(ownerId);
 
-        const fromRate = unwrap(await this.currencyToBaseRate(ownerId, from, undefined, cache));
-        const toRate = unwrap(await this.currencyToBaseRate(ownerId, to, undefined, cache));
+        const fromRate = unwrap(await this.currencyToBaseRate(ownerId, from, undefined, currencyRateDatumsCache, currencyToBaseRateCache, currencyListCache));
+        const toRate = unwrap(await this.currencyToBaseRate(ownerId, to, undefined, currencyRateDatumsCache, currencyToBaseRateCache, currencyListCache));
         return fromRate.dividedBy(toRate);
     }
 
@@ -108,14 +110,16 @@ export class CurrencyCalculator
             fallbackRateCurrencyId?: string | null | undefined,
         },
         date: number = Date.now(),
-        cache: CurrencyToBaseRateCache | undefined = GlobalCurrencyToBaseRateCache,
+        currencyRateDatumsCache: CurrencyRateDatumsCache | null,
+        currencyToBaseRateCache: CurrencyToBaseRateCache | null,
+        currencyCache: CurrencyCache | null
     ): Promise<Decimal | UserNotFoundError>
     {
         if (from.isBase) return new Decimal(`1`);
 
         const currRepo = Database.getCurrencyRepository()!;
 
-        const cacheResult = cache?.queryCurrencyToBaseRate(ownerId, from.id, date);
+        const cacheResult = currencyToBaseRateCache?.queryCurrencyToBaseRate(ownerId, from.id, date);
         if (cacheResult !== null && cacheResult !== undefined)
             return cacheResult;
 
@@ -124,15 +128,15 @@ export class CurrencyCalculator
         if (userFetchResult === null) return new UserNotFoundError(ownerId);
 
         const cacheResultIfPossible = (result: Decimal) => {
-            if (cache)
-                cache.cacheCurrencyToBase(ownerId, from.id, date, result);
+            if (currencyToBaseRateCache)
+                currencyToBaseRateCache.cacheCurrencyToBase(ownerId, from.id, date, result);
         };
 
         const getCurrById = async (id: string) =>
         {
-            const cacheResult = GlobalCurrencyCache.queryCurrency(ownerId, id);
+            const cacheResult = currencyCache?.queryCurrency(ownerId, id);
             if (cacheResult) return cacheResult as (IdBound<typeof fetchedResult>);
-            const fetchedResult = await currRepo.findCurrencyByIdNameTickerOne(ownerId, id, QUERY_IGNORE, QUERY_IGNORE);
+            const fetchedResult = await currRepo.findCurrencyByIdNameTickerOne(ownerId, id, QUERY_IGNORE, QUERY_IGNORE, currencyCache);
             return fetchedResult as IdBound<typeof fetchedResult>;
         };
 
@@ -140,7 +144,8 @@ export class CurrencyCalculator
         (
             ownerId,
             from.id,
-            date
+            date,
+            currencyRateDatumsCache,
         );
         const d1 = nearestTwoDatums[0]; const d2 = nearestTwoDatums[1];
 
@@ -152,7 +157,9 @@ export class CurrencyCalculator
                 ownerId,
                 unwrap(await getCurrById(from.fallbackRateCurrencyId!))!,
                 date,
-                cache
+                currencyRateDatumsCache,
+                currencyToBaseRateCache,
+                currencyCache
             )!;
             return currencyBaseAmount.mul(unwrap(currencyBaseAmountUnitToBaseRate));
         }
@@ -165,7 +172,9 @@ export class CurrencyCalculator
                 ownerId,
                 unwrap(await getCurrById(d1.refAmountCurrencyId))!,
                 d1.date,
-                cache
+                currencyRateDatumsCache,
+                currencyToBaseRateCache,
+                currencyCache
             )!);
             return unwrap(datumAmount.mul(datumUnitToBaseRate));
         }
@@ -181,21 +190,25 @@ export class CurrencyCalculator
                 ownerId,
                 D1Currency,
                 d1.date,
-                cache
+                currencyRateDatumsCache,
+                currencyToBaseRateCache,
+                currencyCache
             )!);
             const D2CurrBaseRate = unwrap(await CurrencyCalculator.currencyToBaseRate
             (
                 ownerId,
                 D2Currency,
                 d2.date,
-                cache
+                currencyRateDatumsCache,
+                currencyToBaseRateCache,
+                currencyCache
             ))!;
 
             let valLeft = new Decimal(d1.amount).mul(D1CurrBaseRate);
             let valRight = new Decimal(d2.amount).mul(D2CurrBaseRate);
             if (isDateBeforeD1D2 || isDateAfterD1D2 || valLeft === valRight)
             {
-                if (cache) cacheResultIfPossible(valLeft);
+                if (currencyToBaseRateCache) cacheResultIfPossible(valLeft);
                 return valLeft;
             }
 
@@ -209,7 +222,7 @@ export class CurrencyCalculator
                 item => item.value
             ).getValue(new Decimal(date));
 
-            if (cache) cacheResultIfPossible(midPt!);
+            if (currencyToBaseRateCache) cacheResultIfPossible(midPt!);
 
             return midPt!;
         }
@@ -221,9 +234,11 @@ export class CurrencyCalculator
     (
         userId:string,
         currencyId: string,
+        currencyRateDatumsCache: CurrencyRateDatumsCache | null,
+        currencyToBaseRateCache: CurrencyToBaseRateCache | null,
+        currencyCache: CurrencyCache | null,
         startDate?: Date,
         endDate?: Date,
-        cache: CurrencyToBaseRateCache | undefined = GlobalCurrencyToBaseRateCache,
     ): Promise<LinearInterpolator | UserNotFoundError>
     {
         const currRepo = await Database.getCurrencyRepository()!;
@@ -232,20 +247,13 @@ export class CurrencyCalculator
         const userFetchResult = await UserService.getUserById(userId);
         if (userFetchResult === null) return new UserNotFoundError(userId);
 
-        const datums = await (async () =>
-        {
-            const cacheResult = GlobalCurrencyRateDatumsCache.queryRateDatums(userId, currencyId);
-            if (cacheResult) return cacheResult;
-            const fetchedResult = await Database.getCurrencyRateDatumRepository()!.getCurrencyDatums(userId, currencyId);
-            GlobalCurrencyRateDatumsCache.cacheRateDatums(userId, currencyId, fetchedResult);
-            return fetchedResult;
-        })();
+        const datums = await Database.getCurrencyRateDatumRepository()!.getCurrencyDatums(userId, currencyId);
 
         const getCurrById = async (id: string) =>
         {
-            const cacheResult = GlobalCurrencyCache.queryCurrency(userId, id);
+            const cacheResult = currencyCache?.queryCurrency(userId, id);
             if (cacheResult) return cacheResult;
-            const fetchedResult = await currRepo.findCurrencyByIdNameTickerOne(userId, id, QUERY_IGNORE, QUERY_IGNORE);
+            const fetchedResult = await currRepo.findCurrencyByIdNameTickerOne(userId, id, QUERY_IGNORE, QUERY_IGNORE, currencyCache);
             return fetchedResult;
         };
 
@@ -266,7 +274,9 @@ export class CurrencyCalculator
                             userId,
                             datumUnitCurrency,
                             datum.date,
-                            cache
+                            currencyRateDatumsCache,
+                            currencyToBaseRateCache,
+                            currencyCache
                         ))
                     )
                 });
@@ -285,7 +295,8 @@ export class CurrencyService
         name: string,
         amount: Decimal | undefined,
         refCurrencyId: string | undefined,
-        ticker: string
+        ticker: string,
+        currencyCache: CurrencyCache | null
     ): Promise<
         ReturnType<CurrencyRepository['saveNewCurrency']> |
         CurrencyNotFoundError |
@@ -301,19 +312,19 @@ export class CurrencyService
         refCurrencyCheck:
         {
             if (refCurrencyId === undefined) break refCurrencyCheck;
-            const refCurrency = await cRepo.findCurrencyByIdNameTickerOne(userId,refCurrencyId,QUERY_IGNORE,QUERY_IGNORE);
+            const refCurrency = await cRepo.findCurrencyByIdNameTickerOne(userId,refCurrencyId,QUERY_IGNORE,QUERY_IGNORE,currencyCache);
             if (!refCurrency) return new CurrencyNotFoundError(refCurrencyId, userId);
         }
 
         // Check for repeated currency name.
         {
-            const currencyWithName = await cRepo.findCurrencyByIdNameTickerOne(userId,QUERY_IGNORE,name,QUERY_IGNORE);
+            const currencyWithName = await cRepo.findCurrencyByIdNameTickerOne(userId,QUERY_IGNORE,name,QUERY_IGNORE,currencyCache);
             if (!!currencyWithName) return new CurrencyNameTakenError(name, userId);
         }
 
         // Check for repeated ticker
         {
-            const currencyWithTicker = await cRepo.findCurrencyByIdNameTickerOne(userId, QUERY_IGNORE, QUERY_IGNORE, ticker);
+            const currencyWithTicker = await cRepo.findCurrencyByIdNameTickerOne(userId, QUERY_IGNORE, QUERY_IGNORE, ticker,currencyCache);
             if (!!currencyWithTicker) return new CurrencyTickerTakenError(ticker, userId);
         }
 
@@ -334,7 +345,8 @@ export class CurrencyService
                 fallbackRateAmount: amount == undefined ? undefined : amount.toFixed(),
                 fallbackRateCurrencyId: refCurrencyId,
                 lastRateCronUpdateTime: undefined
-            }
+            },
+            currencyCache
         );
 
         return savedNewCurrency;
@@ -351,7 +363,9 @@ export class CurrencyService
             fallbackRateCurrencyId?: string | null | undefined;
         }[],
         date: number | undefined = undefined,
-        cache: CurrencyToBaseRateCache | undefined = GlobalCurrencyToBaseRateCache,
+        currencyRateDatumsCache: CurrencyRateDatumsCache | null,
+        currencyToBaseRateCache: CurrencyToBaseRateCache | null,
+        currencyCache: CurrencyCache | null
     )
     {
         type outputType =
@@ -374,7 +388,9 @@ export class CurrencyService
                     userId,
                     currency,
                     date ?? 0,
-                    cache
+                    currencyRateDatumsCache,
+                    currencyToBaseRateCache,
+                    currencyCache
                 )).toString()
             });
         }

@@ -7,6 +7,8 @@ import { UserNotFoundError } from "../db/services/user.service.js";
 import { ExtendedLog } from "../debug/extendedLog.js";
 import { CronService } from "./cronService.js";
 import { QUERY_IGNORE } from "../symbols.js";
+import { GlobalCurrencyCache } from "../db/caches/currencyListCache.cache.js";
+import { GlobalCurrencyToBaseRateCache } from "../db/caches/currencyToBaseRate.cache.js";
 
 export class CurrencyRatesCRON implements CronService
 {
@@ -40,7 +42,7 @@ export class CurrencyRatesCRON implements CronService
                 const sourcesSortedByLeastUsed = rateSources.sort();
                 sourcesSortedByLeastUsed.sort((a,b) => (a.lastExecuteTime ?? 0) - (b.lastExecuteTime ?? 0));
 
-                const currencyObj = (await currRepo.findCurrencyByIdNameTickerOne(currency.ownerId, currency.id, QUERY_IGNORE, QUERY_IGNORE));
+                const currencyObj = (await currRepo.findCurrencyByIdNameTickerOne(currency.ownerId, currency.id, QUERY_IGNORE, QUERY_IGNORE, GlobalCurrencyCache));
                 if (currencyObj instanceof UserNotFoundError) continue;
                 if (currencyObj === null) continue;
 
@@ -51,7 +53,7 @@ export class CurrencyRatesCRON implements CronService
                     if (!fullRateSrc) continue;
 
                     currencyObj.lastRateCronUpdateTime = now;
-                    await Database.getCurrencyRepository()!.updateCurrency(currencyObj);
+                    await Database.getCurrencyRepository()!.updateCurrency(currencyObj, GlobalCurrencyCache);
 
                     ExtendedLog.logCyan(`Fetching rate of ticker='${currency.ticker}', hostname='${fullRateSrc.hostname}', path='${fullRateSrc.path}' using source name='${src.name}'`);
 
@@ -61,7 +63,9 @@ export class CurrencyRatesCRON implements CronService
                         currency.ownerId,
                         fullRateSrc,
                         now,
-                        transactionContext.queryRunner
+                        transactionContext.queryRunner,
+                        GlobalCurrencyToBaseRateCache,
+                        GlobalCurrencyCache
                     );
 
                     if (fetchResult instanceof ExecuteCurrencyRateSourceError)
