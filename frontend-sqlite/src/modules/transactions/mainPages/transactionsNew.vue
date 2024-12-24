@@ -12,6 +12,7 @@
                     <textarea placeholder="Search for transactions..."
                               class="searchTextarea"
                               rows="1"
+                              spellcheck="false"
                               v-model="searchText"
                               :style="isJSONQueryMode ? {'font-family': 'Consolas'} : {}"
                               @change="onSearchTextChange"/>
