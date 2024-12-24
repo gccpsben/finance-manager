@@ -2,7 +2,6 @@ import { Decimal } from "decimal.js";
 import { CurrencyRepository } from "../repositories/currency.repository.js";
 import { UserRepository } from "../repositories/user.repository.js";
 import { Currency } from "../entities/currency.entity.js";
-import { CurrencyRateDatumRepository } from "../repositories/currencyRateDatum.repository.js";
 import { LinearInterpolator } from "../../calculations/linearInterpolator.js";
 import { IdBound } from "../../index.d.js";
 import { nameof } from "../servicesUtils.js";
@@ -137,7 +136,7 @@ export class CurrencyCalculator
             return fetchedResult as IdBound<typeof fetchedResult>;
         };
 
-        const nearestTwoDatums = await CurrencyRateDatumRepository.getInstance().findNearestTwoDatum
+        const nearestTwoDatums = await Database.getCurrencyRateDatumRepository()!.findNearestTwoDatum
         (
             ownerId,
             from.id,
@@ -237,7 +236,7 @@ export class CurrencyCalculator
         {
             const cacheResult = GlobalCurrencyRateDatumsCache.queryRateDatums(userId, currencyId);
             if (cacheResult) return cacheResult;
-            const fetchedResult = await CurrencyRateDatumRepository.getInstance().getCurrencyDatums(userId, currencyId);
+            const fetchedResult = await Database.getCurrencyRateDatumRepository()!.getCurrencyDatums(userId, currencyId);
             GlobalCurrencyRateDatumsCache.cacheRateDatums(userId, currencyId, fetchedResult);
             return fetchedResult;
         })();

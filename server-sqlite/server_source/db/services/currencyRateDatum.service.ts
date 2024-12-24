@@ -1,15 +1,11 @@
 import { UserNotFoundError, UserService } from "./user.service.js";
-import { CurrencyRateDatumRepository } from "../repositories/currencyRateDatum.repository.js";
 import { CurrencyCalculator, CurrencyNotFoundError, CurrencyService } from "./currency.service.js";
 import { Decimal } from "decimal.js";
-import { CurrencyRateDatum } from "../entities/currencyRateDatum.entity.js";
-import { panic, unwrap } from "../../std_errors/monadError.js";
-import { IdBound } from "../../index.d.js";
+import { unwrap } from "../../std_errors/monadError.js";
 import { QueryRunner } from "typeorm";
 import { User } from "../entities/user.entity.js";
 import { CurrencyToBaseRateCache, GlobalCurrencyToBaseRateCache } from "../caches/currencyToBaseRate.cache.js";
 import { Database } from "../db.js";
-import { QUERY_IGNORE } from "../../symbols.js";
 
 
 function minAndMax<T> (array: T[], getter: (obj:T) => number)
@@ -52,13 +48,17 @@ export class CurrencyRateDatumService
         }[],
         queryRunner: QueryRunner,
         cache: CurrencyToBaseRateCache | undefined = GlobalCurrencyToBaseRateCache
-    ): Promise<IdBound<CurrencyRateDatum>[] | UserNotFoundError | CurrencyNotFoundError>
+    ): Promise<{
+            amount: string,
+            date: number,
+            id: string,
+            ownerId: string,
+            refAmountCurrencyId: string,
+            refCurrencyId: string
+        }[] | UserNotFoundError | CurrencyNotFoundError>
     {
-        let savedDatums: IdBound<CurrencyRateDatum>[] = [];
-        let uniqueUserIds = [...new Set(datums.map(x => x.userId))];
         let userIdToObjMap: { [userID: string]: User } = {};
-
-        const currRepo = Database.getCurrencyRepository()!;
+        let uniqueUserIds = [...new Set(datums.map(x => x.userId))];
 
         // Check for user-ids
         for (let userId of uniqueUserIds)
@@ -68,30 +68,7 @@ export class CurrencyRateDatumService
             userIdToObjMap[userId] = owner;
         }
 
-        for (let datum of datums)
-        {
-            cache?.invalidateCurrencyToBase(datum.userId, datum.currencyId);
-
-            const newRate = queryRunner.manager.getRepository(CurrencyRateDatum).create();
-            newRate.amount = datum.amount.toString();
-            newRate.date = datum.date;
-            newRate.owner = userIdToObjMap[datum.userId];
-
-            const refCurrency = await currRepo.findCurrencyByIdNameTickerOne(datum.userId, datum.currencyId, QUERY_IGNORE, QUERY_IGNORE);
-            const refAmountCurrency = await currRepo.findCurrencyByIdNameTickerOne(datum.userId, datum.amountCurrencyId, QUERY_IGNORE, QUERY_IGNORE);
-            if (refAmountCurrency instanceof UserNotFoundError) return refAmountCurrency;
-            if (refCurrency instanceof UserNotFoundError) return refCurrency;
-            if (refCurrency === null) return new CurrencyNotFoundError(datum.userId, datum.currencyId);
-            if (refAmountCurrency === null) return new CurrencyNotFoundError(datum.userId, datum.amountCurrencyId);
-
-            newRate.refCurrencyId = refCurrency.id;
-            newRate.refAmountCurrencyId = refAmountCurrency.id;
-            const newlySavedDatum = await CurrencyRateDatumRepository.getInstance().save(newRate);
-            if (!newlySavedDatum.id) throw panic(`Newly saved currency rate datum contains falsy IDs.`);
-            savedDatums.push(newlySavedDatum as IdBound<typeof newlySavedDatum>);
-        }
-
-        return savedDatums;
+        return await Database.getCurrencyRateDatumRepository()!.createCurrencyRateDatum(datums, queryRunner, cache);
     }
 
     public static async getCurrencyRateHistory
@@ -107,7 +84,7 @@ export class CurrencyRateDatumService
         const userFetchResult = await UserService.getUserById(ownerId);
         if (userFetchResult === null) return new UserNotFoundError(ownerId);
 
-        const datumsWithinRange = await CurrencyRateDatumRepository.getInstance().getCurrencyDatums(ownerId, currencyId, startDate, endDate);
+        const datumsWithinRange = await Database.getCurrencyRateDatumRepository()!.getCurrencyDatums(ownerId, currencyId, startDate, endDate);
 
         if (datumsWithinRange.length <= 1)
         {

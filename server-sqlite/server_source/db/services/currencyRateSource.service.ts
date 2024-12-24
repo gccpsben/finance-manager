@@ -8,10 +8,8 @@ import { FetchError } from "../../std_errors/netErrors.js";
 import jmespath from 'jmespath';
 import { CurrencyRateDatumService } from "./currencyRateDatum.service.js";
 import { Decimal } from "decimal.js";
-import { CurrencyRateDatum } from "../entities/currencyRateDatum.entity.js";
 import type { IdBound } from "../../index.d.js";
 import { QueryRunner, Relation } from "typeorm";
-import { User } from "../entities/user.entity.js";
 import { Database } from "../db.js";
 import { QUERY_IGNORE } from "../../symbols.js";
 
@@ -234,7 +232,14 @@ export class CurrencyRateSourceService
         },
         nowEpoch: number,
         queryRunner: QueryRunner
-    ): Promise<CurrencyRateDatum[] |
+    ): Promise<{
+        amount: string,
+        date: number,
+        id: string,
+        ownerId: string,
+        refAmountCurrencyId: string,
+        refCurrencyId: string
+    }[] |
         ExecuteCurrencyRateSourceError<
             Error |
             CurrencyNotFoundError |
