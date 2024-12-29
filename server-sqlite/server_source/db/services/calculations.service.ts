@@ -61,19 +61,23 @@ export class CalculationsService
             return earliestEpochRequested;
         })();
 
-        const allTxns = await TransactionRepository.getInstance().createQueryBuilder(`txn`)
-        .select(
-        [
-            `txn.${nameof<Transaction>('ownerId')}`,
-            `txn.${nameof<Transaction>('creationDate')}`,
-            `txn.${nameof<Transaction>('toAmount')}`,
-            `txn.${nameof<Transaction>('toCurrencyId')}`,
-            `txn.${nameof<Transaction>('fromAmount')}`,
-            `txn.${nameof<Transaction>('fromCurrencyId')}`
-        ])
-        .where(`txn.${nameof<Transaction>('ownerId')} = :ownerId`, { ownerId: userId })
-        .andWhere(`${nameof<Transaction>('creationDate')} >= :startDate`, { startDate: earliestEpochRequested })
-        .getMany() as SQLitePrimitiveOnly<Transaction>[];
+        // const allTxns = await TransactionRepository.getInstance().createQueryBuilder(`txn`)
+        // .select(
+        // [
+        //     `txn.${nameof<Transaction>('ownerId')}`,
+        //     `txn.${nameof<Transaction>('creationDate')}`,
+        //     `txn.${nameof<Transaction>('toAmount')}`,
+        //     `txn.${nameof<Transaction>('toCurrencyId')}`,
+        //     `txn.${nameof<Transaction>('fromAmount')}`,
+        //     `txn.${nameof<Transaction>('fromCurrencyId')}`
+        // ])
+        // .where(`txn.${nameof<Transaction>('ownerId')} = :ownerId`, { ownerId: userId })
+        // .andWhere(`${nameof<Transaction>('creationDate')} >= :startDate`, { startDate: earliestEpochRequested })
+        // .getMany() as SQLitePrimitiveOnly<Transaction>[];
+
+        const allTxns = (await Database.getTransactionRepository()!.getTransactions(userId, {
+            startDate: earliestEpochRequested
+        })).rangeItems;
 
         const totalCutoffs = (() =>
         {
@@ -136,7 +140,7 @@ export class CalculationsService
             return new ConstantComparisonError("division", division, 1, "LARGER_THAN_OR_EQUAL")
 
         /** Sorted: From earliest to latest txns */
-        const usrTxns = (await TransactionService.getTransactions(userId)).rangeItems.reverse();
+        const usrTxns = (await Database.getTransactionRepository()!.getTransactions(userId)).rangeItems.reverse();
 
         const output: UserBalanceHistoryResults =
         {

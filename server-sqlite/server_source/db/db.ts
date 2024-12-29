@@ -14,6 +14,7 @@ import { CurrencyRepository } from "./repositories/currency.repository.js";
 import { AccessTokenRepository } from "./repositories/accessToken.repository.js";
 import { ContainerRepository } from "./repositories/container.repository.js";
 import { CurrencyRateDatumRepository } from "./repositories/currencyRateDatum.repository.js";
+import { TransactionRepository } from "./repositories/transaction.repository.js";
 
 export class DatabaseInitError<T extends Error> extends MonadError<typeof DatabaseInitError.ERROR_SYMBOL> implements NestableError
 {
@@ -93,6 +94,7 @@ export class Database
     private static accessTokenRepository: AccessTokenRepository | null;
     private static containerRepository: ContainerRepository | null;
     private static currencyRateDatumRepository: CurrencyRateDatumRepository | null;
+    private static transactionRepository: TransactionRepository | null;
 
     private static transactionsQueue = new AsyncQueue();
     public static AppDataSource: DataSource | undefined = undefined;
@@ -187,6 +189,7 @@ export class Database
             Database.containerRepository = new ContainerRepository(dataSource);
             Database.accessTokenRepository = new AccessTokenRepository(dataSource);
             Database.currencyRateDatumRepository = new CurrencyRateDatumRepository(dataSource);
+            Database.transactionRepository = new TransactionRepository(dataSource);
             return dataSource;
         }
         catch(e)
@@ -201,4 +204,5 @@ export class Database
     public static getAccessTokenRepository() { return this.accessTokenRepository; }
     public static getContainerRepository() { return this.containerRepository; }
     public static getCurrencyRateDatumRepository() { return this.currencyRateDatumRepository; }
+    public static getTransactionRepository() { return this.transactionRepository; }
 }

@@ -62,7 +62,7 @@ router.post<PostTxnAPI.ResponseDTO>("/api/v1/transactions",
 
             for (const item of parsedBody.transactions)
             {
-                let transactionCreated = await TransactionService.createTransaction(authResult.ownerUserId,
+                let transactionCreated = await Database.getTransactionRepository()!.createTransaction(authResult.ownerUserId,
                 {
                     creationDate: item.creationDate ? item.creationDate : now,
                     title: item.title,
@@ -132,7 +132,7 @@ router.put<PutTxnAPI.ResponseDTO>("/api/v1/transactions",
 
             transactionalContext = await Database.createTransactionalContext();
 
-            const updatedTxn = await TransactionService.updateTransaction(authResult.ownerUserId, parsedQuery.targetTxnId,
+            const updatedTxn = await Database.getTransactionRepository()!.updateTransaction(authResult.ownerUserId, parsedQuery.targetTxnId,
             {
                 creationDate: parsedBody.creationDate ? parsedBody.creationDate : now,
                 title: parsedBody.title,
@@ -187,7 +187,7 @@ router.get<GetTxnAPI.ResponseDTO>(`/api/v1/transactions/json-query`,
             endIndex: parsedQuery.endIndex === undefined ? null : parseInt(parsedQuery.endIndex)
         };
 
-        const matchedResults = await TransactionService.getTransactionsJSONQuery
+        const matchedResults = await Database.getTransactionRepository()!.getTransactionsJSONQuery
         (
             authResult.ownerUserId,
             parsedQuery.query,
@@ -200,10 +200,10 @@ router.get<GetTxnAPI.ResponseDTO>(`/api/v1/transactions/json-query`,
 
         if (matchedResults instanceof JSONQueryError) throw createHttpError(400, matchedResults.message);
 
-        return {
-            endingIndex: Math.min(matchedResults.totalItems, userQuery.endIndex === null ? Number.POSITIVE_INFINITY : userQuery.endIndex),
-            startingIndex: Math.min(matchedResults.totalItems, userQuery.startIndex === null ? Number.POSITIVE_INFINITY : userQuery.startIndex),
-            rangeItems: await Promise.all(matchedResults.rangeItems.map(async item =>
+        const rangeItemsWithValue = await (async () =>
+        {
+            const results = [];
+            for (const item of matchedResults.rangeItems)
             {
                 const txnChangeInValue = unwrap(
                     await TransactionService.getTxnIncreaseInValue(
@@ -214,7 +214,7 @@ router.get<GetTxnAPI.ResponseDTO>(`/api/v1/transactions/json-query`,
                         GlobalCurrencyCache
                     )
                 ).increaseInValue;
-                return {
+                results.push({
                     id: item.id!,
                     title: item.title,
                     description: item.description ?? '',
@@ -228,8 +228,15 @@ router.get<GetTxnAPI.ResponseDTO>(`/api/v1/transactions/json-query`,
                     toCurrency: item.toCurrency?.id ?? null,
                     toContainer: item.toContainerId ?? null,
                     changeInValue: txnChangeInValue.toString()
-                }
-            })),
+                });
+            }
+            return results;
+        })();
+
+        return {
+            endingIndex: Math.min(matchedResults.totalItems, userQuery.endIndex === null ? Number.POSITIVE_INFINITY : userQuery.endIndex),
+            startingIndex: Math.min(matchedResults.totalItems, userQuery.startIndex === null ? Number.POSITIVE_INFINITY : userQuery.startIndex),
+            rangeItems: rangeItemsWithValue,
             totalItems: matchedResults.totalItems
         } satisfies GetTxnJsonQueryAPI.ResponseDTO
     }
@@ -263,7 +270,7 @@ router.get<GetTxnAPI.ResponseDTO>(`/api/v1/transactions`,
 
         const response = await PaginationAPIResponseClass.prepareFromQueryItems
         (
-            await TransactionService.getTransactions(authResult.ownerUserId,
+            await Database.getTransactionRepository()!.getTransactions(authResult.ownerUserId,
             {
                 startIndex: userQuery.start,
                 endIndex: userQuery.end,
@@ -275,11 +282,11 @@ router.get<GetTxnAPI.ResponseDTO>(`/api/v1/transactions`,
             userQuery.start
         );
 
-        return {
-            totalItems: response.totalItems,
-            endingIndex: response.endingIndex,
-            startingIndex: response.startingIndex,
-            rangeItems: await Promise.all(response.rangeItems.map(async item =>
+        // Do not use Promise.all here, since cache will not be used until Promise.all is resolved.
+        const rangeItems = await (async () =>
+        {
+            const result = [];
+            for (const item of response.rangeItems)
             {
                 const txnChangeInValue = unwrap(
                     await TransactionService.getTxnIncreaseInValue(
@@ -290,7 +297,8 @@ router.get<GetTxnAPI.ResponseDTO>(`/api/v1/transactions`,
                         GlobalCurrencyCache
                     )
                 ).increaseInValue;
-                return {
+                result.push(
+                {
                     id: item.id!,
                     title: item.title,
                     description: item.description ?? '',
@@ -304,8 +312,16 @@ router.get<GetTxnAPI.ResponseDTO>(`/api/v1/transactions`,
                     toCurrency: item.toCurrencyId ?? null,
                     toContainer: item.toContainerId ?? null,
                     changeInValue: txnChangeInValue.toString()
-                }
-            }))
+                });
+            }
+            return result;
+        })();
+
+        return {
+            totalItems: response.totalItems,
+            endingIndex: response.endingIndex,
+            startingIndex: response.startingIndex,
+            rangeItems: rangeItems
         };
     }
 });
@@ -329,7 +345,7 @@ router.delete<DeleteTxnAPI.ResponseDTO>(`/api/v1/transactions`,
             const parsedQuery = await ExpressValidations.validateBodyAgainstModel<query>(query, req.query);
             transactionalContext = await Database.createTransactionalContext();
 
-            const deleteResult = await TransactionService.deleteTransactions([parsedQuery.id], transactionalContext.queryRunner);
+            const deleteResult = await Database.getTransactionRepository()!.deleteTransactions([parsedQuery.id], transactionalContext.queryRunner);
             if (deleteResult.affected === 0) throw createHttpError(404);
             await transactionalContext.endSuccess();
             return {};

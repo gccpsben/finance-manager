@@ -15,6 +15,7 @@ import { ArgsComparisonError, ConstantComparisonError } from '../../std_errors/a
 import { GlobalCurrencyToBaseRateCache } from '../../db/caches/currencyToBaseRate.cache.js';
 import { GlobalCurrencyCache } from '../../db/caches/currencyListCache.cache.js';
 import { GlobalCurrencyRateDatumsCache } from '../../db/caches/currencyRateDatumsCache.cache.js';
+import { Database } from '../../db/db.js';
 
 const router = new TypesafeRouter(express.Router());
 
@@ -87,7 +88,7 @@ router.get<GetUserNetworthHistoryAPI.ResponseDTO>(`/api/v1/calculations/networth
             division: parsedQuery.division === undefined ? undefined : parseInt(parsedQuery.division),
         };
 
-        const userEarliestTxn = await TransactionService.getUserEarliestTransaction(authResults.ownerUserId);
+        const userEarliestTxn = await Database.getTransactionRepository()!.getUserEarliestTransaction(authResults.ownerUserId);
 
         const input =
         {
