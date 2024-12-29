@@ -7,6 +7,7 @@ import { UserNotFoundError } from "../services/user.service.js";
 import { UserRepository } from "./user.repository.js";
 import { EnvManager } from "../../env.js";
 import { QUERY_IGNORE } from "../../symbols.js";
+import { MeteredRepository } from "../meteredRepository.js";
 
 function validateUserIdExhaustiveCheck(userId: unknown): asserts userId is string
 {
@@ -15,7 +16,7 @@ function validateUserIdExhaustiveCheck(userId: unknown): asserts userId is strin
     if (userId === undefined) throw panic(`The given userId is undefined.`);
 }
 
-export class AccessTokenRepository
+export class AccessTokenRepository extends MeteredRepository
 {
     #dataSource: DataSource;
     #repository: Repository<AccessToken>;
@@ -31,6 +32,7 @@ export class AccessTokenRepository
         if (userId !== QUERY_IGNORE) validateUserIdExhaustiveCheck(userId);
         if (token !== QUERY_IGNORE) validateUserIdExhaustiveCheck(token);
 
+        this.incrementRead();
         const accessTokens = await this.#repository.find
         (
             {
@@ -55,6 +57,7 @@ export class AccessTokenRepository
     public async deleteTokensOfUser(userId: unknown)
     {
         validateUserIdExhaustiveCheck(userId);
+        this.incrementWrite();
         const result = await this.#repository
         .delete({ owner: { id: userId } });
         return result;
@@ -63,6 +66,7 @@ export class AccessTokenRepository
     public async deleteToken(token: string)
     {
         validateUserIdExhaustiveCheck(token);
+        this.incrementWrite();
         const result = await this.#repository
         .delete({ token: token });
         return result;
@@ -94,6 +98,7 @@ export class AccessTokenRepository
         newToken.owner = targetUser;
         newToken.creationDate = nowEpoch;
         newToken.expiryDate = newToken.creationDate + EnvManager.tokenExpiryMs;
+        this.incrementWrite();
         const newlySavedToken = await this.#repository.save(newToken);
         if (!newlySavedToken.token) throw panic(`Newly saved token contains falsy token column.`);
 
@@ -107,6 +112,7 @@ export class AccessTokenRepository
 
     public constructor (datasource: DataSource)
     {
+        super();
         this.#dataSource = datasource;
         this.#repository = this.#dataSource.getRepository(AccessToken);
     }

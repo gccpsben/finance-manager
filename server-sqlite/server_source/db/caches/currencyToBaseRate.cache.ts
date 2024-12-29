@@ -1,8 +1,9 @@
 import NodeCache from "node-cache";
 import { Decimal } from "decimal.js";
+import { CacheBase } from "./cacheBase.js";
 
 type CurrencyToBaseRateCacheEntry = {[dateEpoch: string]: Decimal};
-export class CurrencyToBaseRateCache
+export class CurrencyToBaseRateCache extends CacheBase
 {
     #nodeCache = new NodeCache( { stdTTL: 60 * 10, checkperiod: 30, useClones: false } );
 
@@ -48,9 +49,18 @@ export class CurrencyToBaseRateCache
     {
         const key = this.makeEntryKey(userId, currencyId);
         let dict = this.#nodeCache.get<CurrencyToBaseRateCacheEntry>(key);
-        if (!dict) return null;
+        if (!dict)
+        {
+            this.markCacheMiss();
+            return null;
+        }
         const result = dict[`${date}`];
-        if (result === undefined) return null;
+        if (result === undefined)
+        {
+            this.markCacheMiss();
+            return null;
+        }
+        this.markCacheHit();
         return result;
     }
 }

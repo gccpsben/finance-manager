@@ -3,14 +3,16 @@ import { Container } from "../entities/container.entity.js";
 import { panic } from "../../std_errors/monadError.js";
 import { QUERY_IGNORE } from "../../symbols.js";
 import { ServiceUtils } from "../servicesUtils.js";
+import { MeteredRepository } from "../meteredRepository.js";
 
-export class ContainerRepository
+export class ContainerRepository extends MeteredRepository
 {
     #dataSource: DataSource;
     #repository: Repository<Container>;
 
     public constructor (datasource: DataSource)
     {
+        super();
         this.#dataSource = datasource;
         this.#repository = this.#dataSource.getRepository(Container);
     }
@@ -41,6 +43,7 @@ export class ContainerRepository
             }
         };
 
+        this.incrementRead();
         const container = await this.#repository.findOne(
         {
             where: this.getWhereQuery(ownerId, containerId, containerName),
@@ -64,6 +67,7 @@ export class ContainerRepository
 
         dbQuery = ServiceUtils.paginateQuery(dbQuery, { endIndex: endIndex, startIndex: startIndex });
 
+        this.incrementRead();
         const queryResult = await dbQuery.getManyAndCount();
         if (queryResult[0].some(x => !x.id)) throw panic(`Containers queried from database contain falsy IDs.`);
 
@@ -91,6 +95,7 @@ export class ContainerRepository
         newContainer.creationDate = creationDate;
         newContainer.name = name;
         newContainer.ownerId = ownerId;
+        this.incrementWrite();
         const savedNewContainer = await this.#repository.save(newContainer);
         if (!savedNewContainer.id) throw panic(`Container saved to database contain falsy IDs.`);
         return {

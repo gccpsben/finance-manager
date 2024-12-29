@@ -1,6 +1,5 @@
 import NodeCache from "node-cache";
-import { Currency } from "../entities/currency.entity.js";
-import { IdBound } from "../../index.d.js";
+import { CacheBase } from "./cacheBase.js";
 
 export type CurrencyCacheEntry = {
     id: string,
@@ -11,7 +10,7 @@ export type CurrencyCacheEntry = {
     ticker: string
 };
 
-export class CurrencyCache
+export class CurrencyCache extends CacheBase
 {
     #nodeCache = new NodeCache( { stdTTL: 50, checkperiod: 5, useClones: false } );
 
@@ -41,7 +40,10 @@ export class CurrencyCache
         currencyId: string
     ): CurrencyCacheEntry | undefined
     {
-        return this.#nodeCache.get(this.makeEntryKey(userId, currencyId));
+        const result = this.#nodeCache.get(this.makeEntryKey(userId, currencyId));
+        if (result === undefined) this.markCacheMiss();
+        else this.markCacheHit();
+        return result as CurrencyCacheEntry;
     }
 }
 

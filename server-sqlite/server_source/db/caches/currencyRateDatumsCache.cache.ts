@@ -2,8 +2,9 @@ import NodeCache from "node-cache";
 import type { SQLitePrimitiveOnly } from "../../index.d.js";
 import { CurrencyRateDatum } from '../entities/currencyRateDatum.entity.js';
 import { DifferenceHydratedCurrencyRateDatum } from "../repositories/currencyRateDatum.repository.js";
+import { CacheBase } from "./cacheBase.js";
 
-export class CurrencyRateDatumsCache
+export class CurrencyRateDatumsCache extends CacheBase
 {
     #nodeCache = new NodeCache( { stdTTL: 50, checkperiod: 5, useClones: false } );
 
@@ -38,7 +39,10 @@ export class CurrencyRateDatumsCache
         currencyId: string
     ): SQLitePrimitiveOnly<CurrencyRateDatum>[] | undefined
     {
-        return this.#nodeCache.get(this.makeEntryKey(userId, currencyId));
+        const result = this.#nodeCache.get(this.makeEntryKey(userId, currencyId));
+        if (result === undefined) this.markCacheMiss();
+        else this.markCacheHit();
+        return result as SQLitePrimitiveOnly<CurrencyRateDatum>[];
     }
 
     public findTwoNearestDatum

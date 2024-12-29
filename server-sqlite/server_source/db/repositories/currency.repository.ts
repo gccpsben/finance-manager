@@ -9,14 +9,16 @@ import { UserRepository } from "./user.repository.js";
 import { IdBound } from "../../index.d.js";
 import { UserNotFoundError } from "../services/user.service.js";
 import { CurrencyCache, GlobalCurrencyCache } from "../caches/currencyListCache.cache.js";
+import { MeteredRepository } from "../meteredRepository.js";
 
-export class CurrencyRepository
+export class CurrencyRepository extends MeteredRepository
 {
     #dataSource: DataSource;
     #repository: Repository<Currency>;
 
     public constructor (datasource: DataSource)
     {
+        super();
         this.#dataSource = datasource;
         this.#repository = this.#dataSource.getRepository(Currency);
     }
@@ -68,6 +70,7 @@ export class CurrencyRepository
             return output;
         })();
 
+        this.incrementRead();
         const currency = await this.#repository.findOne(
         {
             where: whereQuery,
@@ -103,6 +106,7 @@ export class CurrencyRepository
         cache: CurrencyCache | null
     )
     {
+        this.incrementWrite();
         const saveResult = await this.#repository.save(
         {
             id: currencyObj.id,
@@ -161,6 +165,7 @@ export class CurrencyRepository
     {
         const newCurrency = this.#repository.create(currencyObj);
 
+        this.incrementWrite();
         // All relations are undefined, since we are only saving the foreign keys.
         const savedNewCurrency: Currency = await this.#repository.save(
         {
@@ -207,6 +212,7 @@ export class CurrencyRepository
         const keyOfRateSrc = (x: keyof CurrencyRateSource) => x;
         const keyOfCurr = (x: keyof Currency) => x;
 
+        this.incrementRead();
         // エンティティの関連を使用
         const rawItems = await this.#repository.createQueryBuilder(currTableAlias)
         .leftJoinAndSelect
@@ -272,6 +278,7 @@ export class CurrencyRepository
         }
     ): Promise<{ totalCount: number, rangeItems: IdBound<Currency>[] } | UserNotFoundError>
     {
+        this.incrementRead();
         const user = await UserRepository.getInstance().findOne({where: { id: ownerId ?? null }});
         if (!user) return new UserNotFoundError(ownerId);
 
@@ -283,6 +290,7 @@ export class CurrencyRepository
         if (query.id) dbQuery = dbQuery.andWhere("id = :id", { id: query.id ?? null })
         dbQuery = ServiceUtils.paginateQuery(dbQuery, query);
 
+        this.incrementRead();
         const queryResult = await dbQuery.getManyAndCount();
         if (queryResult[0].some(x => !x.id)) throw panic(`Currencies queried from database contain falsy IDs`);
 

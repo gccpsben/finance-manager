@@ -9,13 +9,14 @@ import { CurrencyNotFoundError } from "../services/currency.service.js";
 import { UserNotFoundError } from "../services/user.service.js";
 import { QUERY_IGNORE } from "../../symbols.js";
 import { CurrencyCache } from "../caches/currencyListCache.cache.js";
+import { MeteredRepository } from "../meteredRepository.js";
 
 export type DifferenceHydratedCurrencyRateDatum = SQLitePrimitiveOnly<CurrencyRateDatum> &
 { difference: number }
 
 const nameofD = (k: keyof CurrencyRateDatum) => k;
 
-export class CurrencyRateDatumRepository
+export class CurrencyRateDatumRepository extends MeteredRepository
 {
     #dataSource: DataSource;
     #repository: Repository<CurrencyRateDatum>;
@@ -43,6 +44,7 @@ export class CurrencyRateDatumRepository
         query = query.orderBy("difference", 'ASC');
         query = query.addSelect("*");
 
+        this.incrementRead();
         const results = await query.getRawMany() as (SQLitePrimitiveOnly<CurrencyRateDatum> & { difference: number })[];
         cache?.cacheRateDatums(userId, currencyId, results);
         return results.slice(0,2);
@@ -64,6 +66,7 @@ export class CurrencyRateDatumRepository
         if (startDate) query = query.andWhere(`${nameofD('date')} >= :startDate`, { startDate: startDate });
         if (endDate) query = query.andWhere(`${nameofD('date')} <= :endDate`, { endDate: endDate });
 
+        this.incrementRead();
         const results = await query.getMany();
         return results as (SQLitePrimitiveOnly<CurrencyRateDatum>)[];
     }
@@ -119,6 +122,8 @@ export class CurrencyRateDatumRepository
 
             newRate.refCurrencyId = refCurrency.id;
             newRate.refAmountCurrencyId = refAmountCurrency.id;
+
+            this.incrementWrite();
             const newlySavedDatum = await this.#repository.save(newRate);
             if (!newlySavedDatum.id) throw panic(`Newly saved currency rate datum contains falsy IDs.`);
             savedDatums.push({
@@ -136,6 +141,7 @@ export class CurrencyRateDatumRepository
 
     public constructor (datasource: DataSource)
     {
+        super();
         this.#dataSource = datasource;
         this.#repository = this.#dataSource.getRepository(CurrencyRateDatum);
     }
