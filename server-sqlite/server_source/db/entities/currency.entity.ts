@@ -2,7 +2,7 @@ import { Entity, PrimaryGeneratedColumn, Column, BeforeInsert, BeforeUpdate, Joi
 import "reflect-metadata"
 import { ManyToOne } from "typeorm";
 import { User } from "./user.entity.js";
-import { IsBoolean, IsNotEmpty, IsOptional, IsString, MaxLength, ValidationError } from "class-validator";
+import { IsBoolean, IsNotEmpty, IsOptional, IsString, MaxLength } from "class-validator";
 import { EntityClass } from "../dbEntityBase.js";
 import { EnsureNotPlainForeignKey, IsDecimalJSString } from "../validators.js";
 import { SQLitePrimitiveOnly } from "../../index.d.js";

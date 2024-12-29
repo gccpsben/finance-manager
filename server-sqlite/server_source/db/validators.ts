@@ -1,4 +1,4 @@
-import { registerDecorator, ValidationOptions, ValidationArguments, isInt, isPositive, isNumber, isNumberString, IsNumberString, isString } from 'class-validator';
+import { registerDecorator, ValidationOptions, ValidationArguments, isInt, isPositive, isNumber, isNumberString, isString } from 'class-validator';
 import { Decimal } from 'decimal.js';
 
 export function EnsureNotPlainForeignKey(validationOptions?: ValidationOptions)

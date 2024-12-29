@@ -1,4 +1,3 @@
-import createHttpError from "http-errors";
 import { TransactionTypeRepository as TransactionTagRepository } from "../repositories/txnTag.repository.js";
 import { UserRepository } from "../repositories/user.repository.js";
 import { TxnTag } from "../entities/txnTag.entity.js";

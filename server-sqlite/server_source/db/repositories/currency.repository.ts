@@ -8,7 +8,7 @@ import { nameof, ServiceUtils } from "../servicesUtils.js";
 import { UserRepository } from "./user.repository.js";
 import { IdBound } from "../../index.d.js";
 import { UserNotFoundError } from "../services/user.service.js";
-import { CurrencyCache, GlobalCurrencyCache } from "../caches/currencyListCache.cache.js";
+import { CurrencyCache } from "../caches/currencyListCache.cache.js";
 import { MeteredRepository } from "../meteredRepository.js";
 
 export class CurrencyRepository extends MeteredRepository

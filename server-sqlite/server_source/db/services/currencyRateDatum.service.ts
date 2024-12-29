@@ -1,10 +1,10 @@
 import { UserNotFoundError, UserService } from "./user.service.js";
-import { CurrencyCalculator, CurrencyNotFoundError, CurrencyService } from "./currency.service.js";
+import { CurrencyCalculator, CurrencyNotFoundError } from "./currency.service.js";
 import { Decimal } from "decimal.js";
 import { unwrap } from "../../std_errors/monadError.js";
 import { QueryRunner } from "typeorm";
 import { User } from "../entities/user.entity.js";
-import { CurrencyToBaseRateCache, GlobalCurrencyToBaseRateCache } from "../caches/currencyToBaseRate.cache.js";
+import { CurrencyToBaseRateCache } from "../caches/currencyToBaseRate.cache.js";
 import { Database } from "../db.js";
 import { CurrencyCache } from "../caches/currencyListCache.cache.js";
 import { CurrencyRateDatumsCache } from "../caches/currencyRateDatumsCache.cache.js";

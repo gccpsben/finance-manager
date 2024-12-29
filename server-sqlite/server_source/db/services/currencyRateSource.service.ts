@@ -9,7 +9,7 @@ import jmespath from 'jmespath';
 import { CurrencyRateDatumService } from "./currencyRateDatum.service.js";
 import { Decimal } from "decimal.js";
 import type { IdBound } from "../../index.d.js";
-import { QueryRunner, Relation } from "typeorm";
+import { QueryRunner } from "typeorm";
 import { Database } from "../db.js";
 import { QUERY_IGNORE } from "../../symbols.js";
 import { CurrencyCache } from "../caches/currencyListCache.cache.js";

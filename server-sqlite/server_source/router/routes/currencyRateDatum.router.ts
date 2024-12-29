@@ -7,7 +7,6 @@ import type { PostCurrencyRateAPI } from "../../../../api-types/currencyRateDatu
 import { TypesafeRouter } from '../typescriptRouter.js';
 import { CurrencyRateDatumService } from '../../db/services/currencyRateDatum.service.js';
 import createHttpError from 'http-errors';
-import { unwrap } from '../../std_errors/monadError.js';
 import { UserNotFoundError } from '../../db/services/user.service.js';
 import { CurrencyNotFoundError } from '../../db/services/currency.service.js';
 import { Type } from 'class-transformer';

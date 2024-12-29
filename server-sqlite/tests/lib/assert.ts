@@ -1,4 +1,4 @@
-import { ClassConstructor, plainToInstance } from "class-transformer";
+import { ClassConstructor } from "class-transformer";
 import { validate, ValidationError, ValidationOptions } from "class-validator";
 import path from "path";
 import { validateArrayAgainstModel, validateBodyAgainstModel } from "./validation.js";

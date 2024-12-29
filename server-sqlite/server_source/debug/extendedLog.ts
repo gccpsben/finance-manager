@@ -1,10 +1,8 @@
 
-import chalk, * as colors from 'chalk';
-import { Chalk } from 'chalk';
+import chalk from 'chalk';
 import * as fse from 'fs-extra/esm';
 import path from 'path';
 import { createStream, RotatingFileStream } from 'rotating-file-stream';
-import { Stream } from 'stream';
 import { EnvManager } from '../env.js';
 
 // let pastLines:any = [];

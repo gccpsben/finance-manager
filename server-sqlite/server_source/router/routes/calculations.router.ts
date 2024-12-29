@@ -7,7 +7,6 @@ import { ServiceUtils } from '../../db/servicesUtils.js';
 import { IsPositiveIntString, IsUTCDateIntString } from '../../db/validators.js';
 import { IsNotEmpty, IsOptional } from 'class-validator';
 import { ExpressValidations } from '../validation.js';
-import { TransactionService } from '../../db/services/transaction.service.js';
 import { InvalidLoginTokenError } from '../../db/services/accessToken.service.js';
 import createHttpError from 'http-errors';
 import { UserNotFoundError } from '../../db/services/user.service.js';

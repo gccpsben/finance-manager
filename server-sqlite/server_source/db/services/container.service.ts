@@ -1,13 +1,12 @@
 import { UserRepository } from "../repositories/user.repository.js";
 import { IdBound } from "../../index.d.js";
-import { TransactionService } from "./transaction.service.js";
 import { Decimal } from "decimal.js";
 import { CurrencyCalculator } from "./currency.service.js";
 import { Currency } from "../entities/currency.entity.js";
 import { CurrencyCache, GlobalCurrencyCache } from "../caches/currencyListCache.cache.js";
 import { UserNotFoundError, UserService } from "./user.service.js";
 import { MonadError, unwrap } from "../../std_errors/monadError.js";
-import { CurrencyToBaseRateCache, GlobalCurrencyToBaseRateCache } from "../caches/currencyToBaseRate.cache.js";
+import { CurrencyToBaseRateCache } from "../caches/currencyToBaseRate.cache.js";
 import { Database } from "../db.js";
 import { QUERY_IGNORE } from "../../symbols.js";
 import { CurrencyRateDatumsCache } from '../caches/currencyRateDatumsCache.cache.js';

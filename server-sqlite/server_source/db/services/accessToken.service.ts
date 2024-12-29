@@ -1,5 +1,5 @@
 import * as Express from 'express';
-import { MonadError, panic } from "../../std_errors/monadError.js";
+import { MonadError } from "../../std_errors/monadError.js";
 import { Database } from "../db.js";
 import { QUERY_IGNORE } from "../../symbols.js";
 
