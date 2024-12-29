@@ -61,20 +61,6 @@ export class CalculationsService
             return earliestEpochRequested;
         })();
 
-        // const allTxns = await TransactionRepository.getInstance().createQueryBuilder(`txn`)
-        // .select(
-        // [
-        //     `txn.${nameof<Transaction>('ownerId')}`,
-        //     `txn.${nameof<Transaction>('creationDate')}`,
-        //     `txn.${nameof<Transaction>('toAmount')}`,
-        //     `txn.${nameof<Transaction>('toCurrencyId')}`,
-        //     `txn.${nameof<Transaction>('fromAmount')}`,
-        //     `txn.${nameof<Transaction>('fromCurrencyId')}`
-        // ])
-        // .where(`txn.${nameof<Transaction>('ownerId')} = :ownerId`, { ownerId: userId })
-        // .andWhere(`${nameof<Transaction>('creationDate')} >= :startDate`, { startDate: earliestEpochRequested })
-        // .getMany() as SQLitePrimitiveOnly<Transaction>[];
-
         const allTxns = (await Database.getTransactionRepository()!.getTransactions(userId, {
             startDate: earliestEpochRequested
         })).rangeItems;

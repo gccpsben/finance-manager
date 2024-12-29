@@ -266,7 +266,28 @@ export default async function(this: Context)
                             }
                         });
 
-                        await executeInRandomOrder([...invalidRequestsPOST, ...validRequestsPOST, ...validRequestsGET]);
+                        const validRequestsGETQuery = fillArray(burstCount, () =>
+                        {
+                            return async () =>
+                            {
+                                return new Promise<void>(resolve =>
+                                {
+                                    setTimeout(async () =>
+                                    {
+                                        await TransactionHelpers.getTransactionJSONQuery(
+                                        {
+                                            serverURL: serverURL, token: firstUser.token,
+                                            assertBody: true, expectedCode: 200,
+                                            query: "$DELTA<0 or $not($contains($TITLE_LOWER, 'dinner'))"
+                                        });
+
+                                        resolve();
+                                    }, Math.random() * 1000);
+                                })
+                            }
+                        });
+
+                        await executeInRandomOrder([...invalidRequestsPOST, ...validRequestsPOST, ...validRequestsGET, ...validRequestsGETQuery]);
                     }
 
                     const txnCountAfterBatchPOST = (await TransactionHelpers.getTransaction(
