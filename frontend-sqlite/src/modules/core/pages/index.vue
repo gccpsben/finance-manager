@@ -56,7 +56,9 @@ export default
             <div v-area="'content'" class="rel" style="overflow:auto;">
                 <router-view v-area="'content'" v-slot="{ Component }">
                     <Transition name="page-transition">
-                        <component :is="Component"/>
+                        <KeepAlive :include="['transactionsNew']" max="10">
+                            <component :is="Component"/>
+                        </KeepAlive>
                     </Transition>
                 </router-view>
             </div>
