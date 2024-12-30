@@ -311,9 +311,7 @@ export class TransactionRepository extends MeteredRepository
         {
             startIndex?: number | undefined, endIndex?: number | undefined,
             startDate?: number | undefined, endDate?: number | undefined,
-            title?: string,
-            id?: string,
-            description?: string
+            title?: string, id?: string, description?: string
         } | undefined = undefined
     )
     {
@@ -339,6 +337,7 @@ export class TransactionRepository extends MeteredRepository
         if (query?.endDate)
             sqlQuery = sqlQuery.andWhere(`${nameofT('creationDate')} <= :endDate`, { endDate: query.endDate });
 
+        sqlQuery.orderBy(nameofT('creationDate'), 'DESC');
         sqlQuery = ServiceUtils.paginateQuery(sqlQuery, query ?? {});
 
         const queryResult = await sqlQuery.getManyAndCount();
