@@ -174,7 +174,7 @@ export class TransactionRepository extends MeteredRepository
         if (TxnQueryASTCalculator.areFunctionBindingsInAST(query))
             return new JSONQueryError(userId, `Function bindings are currently prohibited.`, query);
 
-        const currRepo = Database.getCurrencyRepository()!;
+        const [now, alias, currRepo] = [Date.now(), 'txn', Database.getCurrencyRepository()!];
         const findCurrById = async (cId: string): Promise<TransactionJSONQueryCurrency | null> =>
         {
             const queryResult = await currRepo.findCurrencyByIdNameTickerOne(userId, cId, QUERY_IGNORE, QUERY_IGNORE, currencyListCache);
@@ -187,8 +187,6 @@ export class TransactionRepository extends MeteredRepository
             } : null;
         };
 
-        const now = Date.now();
-        const alias = 'txn';
         let sqlQuery = this.#repository.createQueryBuilder(alias);
         sqlQuery = sqlQuery.leftJoinAndSelect(`${alias}.${nameofT('tags')}`, "txn_tag")
         sqlQuery = sqlQuery.where(`${alias}.${nameofT('ownerId')} = :ownerId`, { ownerId: userId });
@@ -198,6 +196,7 @@ export class TransactionRepository extends MeteredRepository
         if (sqlResults[0].some(x => !x.id))
             throw panic(`Some of the transactions queried from database has falsy primary keys.`);
 
+        const expression = jsonata(query);
         const matchedResults: TransactionJSONQueryItem[] = [];
         for (const txn of sqlResults[0].reverse())
         {
@@ -221,11 +220,17 @@ export class TransactionRepository extends MeteredRepository
                     tagNames: (txn.tags as { name: string }[]).map(x => x.name) ?? [],
                     changeInValue: 0
                 };
-                objToBeMatched.changeInValue = unwrap(
-                    await TransactionService.getTxnIncreaseInValue(userId, objToBeMatched, currencyRateDatumsCache, baseRateCache, currencyListCache)
-                ).increaseInValue.toNumber();
 
-                const expression = jsonata(query);
+                // Only calculate delta if it is referenced in the query
+                const tokensAST = TxnQueryASTCalculator.flattenASTTokens(expression.ast());
+                const isTokenInExpr = (token: string) => tokensAST.some(t => t.name === token || t.value === token);
+                if (["DELTA", "DELTA_NEG", "DELTA_POS", "changeInValue"].some(x => isTokenInExpr(x)))
+                {
+                    objToBeMatched.changeInValue = unwrap(
+                        await TransactionService.getTxnIncreaseInValue(userId, objToBeMatched, currencyRateDatumsCache, baseRateCache, currencyListCache)
+                    ).increaseInValue.toNumber();
+                }
+
                 expression.assign("TITLE", objToBeMatched.title);
                 expression.assign("TITLE_LOWER", objToBeMatched.title.toLowerCase());
                 expression.assign("TITLE_UPPER", objToBeMatched.title.toUpperCase());
