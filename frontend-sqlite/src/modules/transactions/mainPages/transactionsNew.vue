@@ -33,13 +33,13 @@
                     <div v-if="mainPagination.lastCallResult.value && mainPagination.lastCallResult.value.rangeItems?.length != 0">
                         <div class="bodyRows" v-for="item in mainPagination.lastCallResult.value.rangeItems" @click="redirect(['VIEW_TXN', item.id])">
                             <div class="bodyRowNameGrid">
-                                <div class="xLeft yBottom">
-                                    <div class="ellipsis">
-                                        <TxnTooltip :txn="{ ...item, tagIds: [...item.tagIds] }">
-                                            {{ item.title }}
-                                        </TxnTooltip>
+                                <TxnTooltip :txn="{ ...item, tagIds: [...item.tagIds] }">
+                                    <div class="fullSize rel" style="display: flex; align-items: end;">
+                                        <div class="fullSize abs ellipsis" style="text-align: start; height:min-content;">
+                                                {{ item.title }}
+                                        </div>
                                     </div>
-                                </div>
+                                </TxnTooltip>
                                 <div class="xLeft yTop" style="color: #555;">
                                     <DateTooltip :date="item.creationDate">{{ getDateAge(item.creationDate) }} ago</DateTooltip>
                                 </div>
@@ -102,6 +102,7 @@ import NetworkCircularIndicator from '@/modules/core/components/data-display/Net
 import axios from 'axios';
 import StaticNotice from '@/modules/core/components/data-display/StaticNotice.vue';
 import GaIcon from '@/modules/core/components/decorations/GaIcon.vue';
+import AbsEnclosure from '@/modules/core/components/layout/AbsEnclosure.vue';
 
 const { authGet, updateAll: mainStoreUpdateAll } = useMainStore();
 const { findContainerById } = useContainersStore();
@@ -294,6 +295,7 @@ onMounted(async () => await mainStoreUpdateAll());
                 user-select: none;
                 white-space: nowrap;
                 height: @bodyRowHeight;
+                gap: 14px;
                 grid-template-columns: 1fr 130px 85px;
                 overflow: hidden;
 
