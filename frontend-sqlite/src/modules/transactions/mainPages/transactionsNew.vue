@@ -31,32 +31,40 @@
             <div id="contentPanel">
                 <OverlapArea>
                     <div v-if="mainPagination.lastCallResult.value && mainPagination.lastCallResult.value.rangeItems?.length != 0">
-                        <div class="bodyRows" v-for="item in mainPagination.lastCallResult.value.rangeItems" @click="redirect(['VIEW_TXN', item.id])">
-                            <div class="bodyRowNameGrid">
-                                <TxnTooltip :txn="{ ...item, tagIds: [...item.tagIds] }">
-                                    <div class="fullSize rel" style="display: flex; align-items: end;">
-                                        <div class="fullSize abs ellipsis" style="text-align: start; height:min-content;">
-                                                {{ item.title }}
+                        <div :class="{'selected': selectedTxnIds.has(item.id), 'bodyRows': true}"
+                             v-for="item in mainPagination.lastCallResult.value.rangeItems"
+                             :key="item.id"
+                             v-on-long-press="[
+                                () => onTxnLongPressed(item.id),
+                                { onMouseUp: (_, _2, longPress) => onTxnClicked(longPress, item.id), delay: 500 },
+                             ]">
+                                <OverlapArea>
+                                    <div class="bodyRowsInner">
+                                        <div class="bodyRowNameGrid">
+                                            <TxnTooltip :txn="{ ...item, tagIds: [...item.tagIds] }"
+                                                        :open-delay="hasSelectedTxns ? 1500 : 500">
+                                                <div class="fullSize rel" style="display: flex; align-items: end;">
+                                                    <div class="fullSize abs ellipsis" style="text-align: start; height:min-content;">
+                                                        {{ item.title }}
+                                                    </div>
+                                                </div>
+                                            </TxnTooltip>
+                                            <div class="xLeft yTop" style="color: #555;">
+                                                <DateTooltip :date="item.creationDate">{{ getDateAge(item.creationDate) }} ago</DateTooltip>
+                                            </div>
+                                        </div>
+                                        <div class="bodyRowFromToGrid">
+                                            <div class="xLeft yBottom">{{ item.fromContainer ? findContainerById(item.fromContainer)?.name : '-' }}</div>
+                                            <div class="xLeft yTop">{{ item.toContainer ? findContainerById(item.toContainer)?.name : '-' }}</div>
+                                        </div>
+                                        <div :class="{ [changeToClass(item.changeInValue)]: true, bodyRowValueChange: true }">
+                                            {{ parseFloat(item.changeInValue).toFixed(2) }}
                                         </div>
                                     </div>
-                                </TxnTooltip>
-                                <div class="xLeft yTop" style="color: #555;">
-                                    <DateTooltip :date="item.creationDate">{{ getDateAge(item.creationDate) }} ago</DateTooltip>
-                                </div>
-                            </div>
-                            <div class="bodyRowFromToGrid">
-                                <div class="xLeft yBottom">
-                                    <template v-if="item.fromContainer">{{ findContainerById(item.fromContainer)?.name }}</template>
-                                    <template v-else>-</template>
-                                </div>
-                                <div class="xLeft yTop">
-                                    <template v-if="item.toContainer">{{ findContainerById(item.toContainer)?.name }}</template>
-                                    <template v-else>-</template>
-                                </div>
-                            </div>
-                            <div class="bodyRowValueChange" :class="{ [changeToClass(item.changeInValue)]: true }">
-                                {{ parseFloat(item.changeInValue).toFixed(2) }}
-                            </div>
+                                    <div v-if="selectedTxnIds.has(item.id)" class="fullSize center" style="pointer-events: none;">
+                                        <GaIcon class="selectionCheckmark" icon="check"/>
+                                    </div>
+                                </OverlapArea>
                         </div>
                     </div>
                     <div id="statusPanel">
@@ -71,11 +79,30 @@
                 </OverlapArea>
             </div>
 
-            <div id="paginationPanel">
-                <div class="xLeft yCenter">{{ uiRangeText }}</div>
-                <div class="xRight yCenter">
-                    <NumberPagination :max-page-readable="mainPagination.lastCallMaxPageIndex.value + 1"
-                                      v-model:model-value="mainPagination.currentPage.value" />
+            <div id="pageAndOptionsPanel">
+                <div id="selectionPanel" :class="{'expanded': hasSelectedTxns}">
+                    <div class="xLeft yCenter">
+                        {{ selectedTxnIds.size }} txn(s) selected
+                    </div>
+                    <div class="xRight yCenter">
+                        <VTooltip class="themedTooltip">
+                            <template v-slot:activator="{ props }">
+                                <div v-bind="props">
+                                    <BaseButton @click="selectedTxnIds.clear()">
+                                        <GaIcon icon="deselect" style="font-size: 20px" />
+                                    </BaseButton>
+                                </div>
+                            </template>
+                            <div>Unselect all selected txns</div>
+                        </VTooltip>
+                    </div>
+                </div>
+                <div id="paginationPanel">
+                    <div class="xLeft yCenter">{{ uiRangeText }}</div>
+                    <div class="xRight yCenter">
+                        <NumberPagination :max-page-readable="mainPagination.lastCallMaxPageIndex.value + 1"
+                                        v-model:model-value="mainPagination.currentPage.value" />
+                    </div>
                 </div>
             </div>
         </div>
@@ -84,7 +111,7 @@
 
 <script lang="ts" setup>
 import ViewTitle from '@/modules/core/components/data-display/ViewTitle.vue';
-import {API_TRANSACTIONS_JSON_QUERY_PATH, API_TRANSACTIONS_PATH } from "@/apiPaths";
+import { API_TRANSACTIONS_JSON_QUERY_PATH, API_TRANSACTIONS_PATH } from "@/apiPaths";
 import useNetworkPaginationNew, { type UpdaterReturnType } from "@/modules/core/composables/useNetworkedPagination";
 import { useMainStore } from "@/modules/core/stores/store";
 import { isNullOrUndefined } from "@/modules/core/utils/equals";
@@ -102,16 +129,26 @@ import NetworkCircularIndicator from '@/modules/core/components/data-display/Net
 import axios from 'axios';
 import StaticNotice from '@/modules/core/components/data-display/StaticNotice.vue';
 import GaIcon from '@/modules/core/components/decorations/GaIcon.vue';
-import AbsEnclosure from '@/modules/core/components/layout/AbsEnclosure.vue';
+import { vOnLongPress } from '@vueuse/components';
+import BaseButton from '@/modules/core/components/inputs/BaseButton.vue';
+import { VTooltip } from 'vuetify/components';
 
+const itemsInPage = 50;
 const { authGet, updateAll: mainStoreUpdateAll } = useMainStore();
 const { findContainerById } = useContainersStore();
-
+const [isJSONQueryMode, searchText, currentPageIndex] = [ref(false), ref(""), ref(0)];
+const selectedTxnIds = ref<Set<string>>(new Set());
 const fetchError = ref<any>(null);
-const isJSONQueryMode = ref(false);
-const currentPageIndex = ref(0);
-const itemsInPage = 50;
-const searchText = ref("");
+const uiRangeText = computed(() =>
+{
+    if (isNullOrUndefined(mainPagination.lastCallResult?.value)) return "Loading...";
+    const start = mainPagination.viewportStartIndex.value + 1;
+    const end = Math.min(mainPagination.lastCallResult.value.totalItems, mainPagination.viewportEndIndex.value + 1);
+    const totalItems = mainPagination.lastCallResult.value.totalItems;
+    if (start === end || totalItems === 0) return "No Results";
+    return `Showing ${start} - ${end} of ${totalItems}`;
+});
+
 const mainPagination = useNetworkPaginationNew<GetTxnAPI.TxnDTO>(
 {
     updater: async (start:number, end:number): Promise<UpdaterReturnType<GetTxnAPI.TxnDTO>> =>
@@ -179,15 +216,8 @@ const mainPagination = useNetworkPaginationNew<GetTxnAPI.TxnDTO>(
     overflowResolutionHandler: (_, lastAvailablePageIndex) => currentPageIndex.value = lastAvailablePageIndex,
     updateOnMount: true
 });
-const uiRangeText = computed(() =>
-{
-    if (isNullOrUndefined(mainPagination.lastCallResult?.value)) return "Loading...";
-    const start = mainPagination.viewportStartIndex.value + 1;
-    const end = Math.min(mainPagination.lastCallResult.value.totalItems, mainPagination.viewportEndIndex.value + 1);
-    const totalItems = mainPagination.lastCallResult.value.totalItems;
-    if (start === end || totalItems === 0) return "No Results";
-    return `Showing ${start} - ${end} of ${totalItems}`;
-});
+
+const hasSelectedTxns = computed(() => selectedTxnIds.value.size > 0);
 
 function onSearchTextChange()
 {
@@ -201,13 +231,32 @@ function redirect(target: ["VIEW_TXN", string] | ["ADD_TXN"])
     else router.push({ name: ROUTER_NAME_SINGLE_TXN, params: { id: target[1] } });
 }
 
-const changeToClass = (changeInValue: string) =>
+function changeToClass(changeInValue: string)
 {
     const value = parseFloat(changeInValue);
     if (value > 0) return 'increase';
     else if (value < 0) return 'decrease';
     else return 'noChange';
 };
+
+function onTxnClicked(isLongPress: boolean, txnId: string)
+{
+    if (isLongPress) return;
+    if (!hasSelectedTxns.value) return redirect(['VIEW_TXN', txnId])
+    toggleTxnSelection(txnId);
+}
+
+function onTxnLongPressed(txnId: string)
+{
+    toggleTxnSelection(txnId);
+}
+
+function toggleTxnSelection(txnId: string)
+{
+    if (selectedTxnIds.value.has(txnId)) selectedTxnIds.value.delete(txnId);
+    else selectedTxnIds.value.add(txnId);
+}
+
 onMounted(async () => await mainStoreUpdateAll());
 </script>
 
@@ -281,7 +330,13 @@ onMounted(async () => await mainStoreUpdateAll());
         {
             padding-bottom: @bodyRowHeight;
 
-            .bodyRows
+            .bodyRows.selected
+            {
+                background: fade(@focus, 10%);
+                .bodyRowsInner { opacity: 0.5; }
+            }
+
+            .bodyRowsInner
             {
                 &:hover
                 {
@@ -336,8 +391,11 @@ onMounted(async () => await mainStoreUpdateAll());
             }
         }
 
-        #paginationPanel
+        #pageAndOptionsPanel
         {
+            display: grid;
+            grid-template-columns: 1fr;
+            grid-template-rows: auto auto;
             position: absolute;
             bottom: 0px;
             left: 0px;
@@ -346,12 +404,32 @@ onMounted(async () => await mainStoreUpdateAll());
             box-shadow: 0px 0px 5px black;
             border-top: 1px solid @border;
             padding: 14px;
-            color: @foreground;
             .horiPadding(@desktopPagePadding);
-            .leftRightGrid(1fr, auto);
-            gap: 14px;
-            white-space: nowrap;
-            div:nth-child(1) { .ellipsis; text-align: start; }
+
+            & > div
+            {
+                .leftRightGrid(1fr, auto);
+                color: @foreground;
+                gap: 14px;
+                white-space: nowrap;
+            }
+
+            #selectionPanel
+            {
+                color: @focus;
+                overflow-y: hidden;
+                transition: all 0.5s ease;
+                max-height: 0px;
+                opacity: 0;
+                &.expanded
+                {
+                    max-height: 100px;
+                    padding-bottom: 24px;
+                    opacity: 1;
+                }
+            }
+
+            #paginationPanel div:nth-child(1) { .ellipsis; text-align: start; }
         }
     }
 }
@@ -366,14 +444,23 @@ onMounted(async () => await mainStoreUpdateAll());
     &:hover { background: @focusDark; }
 }
 
+.selectionCheckmark
+{
+    font-size: 24px;
+    background: @focusDark;
+    border-radius: 100%;
+    color: @focus;
+    padding: 4px;
+}
+
 @container transactionsPage (width <= @mobileCutoffWidth)
 {
     // Hide the column "from / to"
-    .bodyRows { grid-template-columns: 1fr 0px max-content !important; }
+    .bodyRowsInner { grid-template-columns: 1fr 0px max-content !important; }
     .headerRow { grid-template-columns: 1fr max-content !important; }
     .bodyRowFromToGrid, .headerRowFromTo { display: none; }
-    .bodyRows { .horiPadding(@mobilePagePadding) !important; }
-    #paginationPanel { .horiPadding(@mobilePagePadding) !important; }
+    .bodyRowsInner { .horiPadding(@mobilePagePadding) !important; }
+    #pageAndOptionsPanel { .horiPadding(@mobilePagePadding) !important; }
     #titleArea { padding: @mobilePagePadding !important; }
     #searchArea { padding-left: @mobilePagePadding !important; }
     .headerRow { .horiPadding(@mobilePagePadding) !important; }

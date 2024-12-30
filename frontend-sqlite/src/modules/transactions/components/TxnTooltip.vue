@@ -1,5 +1,5 @@
 <template>
-    <VTooltip class="mainTxnTooltip" :location="'bottom start'" :close-delay="500" :open-delay="500">
+    <VTooltip class="mainTxnTooltip" :location="'bottom start'" :close-delay="props.closeDelay ?? 500" :open-delay="props.openDelay ?? 500">
         <template v-slot:activator="{ props }">
             <div v-bind="props">
                 <slot></slot>
@@ -27,7 +27,7 @@ import { useCurrenciesStore } from '@/modules/currencies/stores/useCurrenciesSto
 import { useNow } from '@vueuse/core';
 
 
-export type TxnTooltipProps = { txn: GetTxnAPI.TxnDTO; };
+export type TxnTooltipProps = { txn: GetTxnAPI.TxnDTO; openDelay?: number; closeDelay?: number; };
 const props = defineProps<TxnTooltipProps>();
 const txnTypesStore = useTxnTagsStore();
 const currenciesStore = useCurrenciesStore();
