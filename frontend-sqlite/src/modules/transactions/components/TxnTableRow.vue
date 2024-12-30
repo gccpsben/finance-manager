@@ -1,0 +1,174 @@
+<template>
+    <div class="txnTableRowRoot">
+        <div :class="{'selected': isSelected}" class="fullSize"
+             v-on-long-press="
+             [
+                () => onTxnLongPressed(),
+                { onMouseUp: (_, _2, longPress) => onTxnClicked(longPress), delay: 500 },
+             ]">
+             <OverlapArea class="fullSize">
+                 <div class="txnTableRowInner">
+                     <div class="bodyRowNameGrid">
+                         <TxnTooltip :txn="{ ...txn, tagIds: [...txn.tagIds] }"
+                                     :open-delay="props.txnTooltipOpenDelay"
+                                     :close-delay="props.txnTooltipCloseDelay">
+                             <div class="fullSize rel" style="display: flex; align-items: end;">
+                                 <div class="fullSize abs ellipsis" style="text-align: start; height:min-content;">
+                                     {{ txn.title }}
+                                 </div>
+                             </div>
+                         </TxnTooltip>
+                         <div class="xLeft yTop" style="color: #555;">
+                             <DateTooltip :date="txn.creationDate">{{ getDateAge(txn.creationDate) }} ago</DateTooltip>
+                         </div>
+                     </div>
+                     <div class="bodyRowFromToGrid">
+                         <div class="xLeft yBottom">{{ txn.fromContainer ? findContainerById(txn.fromContainer)?.name : '-' }}</div>
+                         <div class="xLeft yTop">{{ txn.toContainer ? findContainerById(txn.toContainer)?.name : '-' }}</div>
+                     </div>
+                     <div :class="{ [changeToClass(txn.changeInValue)]: true, bodyRowValueChange: true }">
+                         {{ parseFloat(txn.changeInValue).toFixed(2) }}
+                     </div>
+                 </div>
+                 <div v-if="isSelected" class="fullSize center" style="pointer-events: none;">
+                     <GaIcon class="selectionCheckmark" icon="check"/>
+                 </div>
+             </OverlapArea>
+        </div>
+    </div>
+</template>
+
+<script lang="ts" setup>
+import TxnTooltip from './TxnTooltip.vue';
+import GaIcon from '@/modules/core/components/decorations/GaIcon.vue';
+import DateTooltip from '@/modules/core/components/data-display/DateTooltip.vue';
+import { vOnLongPress } from '@vueuse/components';
+import { getDateAge } from '@/modules/core/utils/date';
+import { useContainersStore } from '@/modules/containers/stores/useContainersStore';
+import OverlapArea from '@/modules/core/components/layout/OverlapArea.vue';
+
+export type TxnTableRowProps =
+{
+    txn:
+    {
+        readonly id: string,
+        readonly tagIds: readonly string[],
+        readonly creationDate: number,
+        readonly fromContainer: string | null,
+        readonly toContainer: string | null,
+        readonly changeInValue: string,
+        readonly title: string,
+        readonly description: string,
+        readonly owner: string,
+        readonly fromAmount: string | null,
+        readonly toAmount: string | null,
+        readonly fromCurrency: string | null,
+        readonly toCurrency: string | null,
+    },
+    txnTooltipOpenDelay?: number | undefined,
+    txnTooltipCloseDelay?: number | undefined,
+    isSelected: boolean
+};
+
+export type TxnTableRowEmits =
+{
+    (e: 'onLongPress'): void,
+    (e: 'onClick'): void
+};
+
+const emits = defineEmits<TxnTableRowEmits>();
+const props = withDefaults(defineProps<TxnTableRowProps>(), { isSelected: false });
+const { findContainerById } = useContainersStore();
+
+function changeToClass(changeInValue: string)
+{
+    const value = parseFloat(changeInValue);
+    if (value > 0) return 'increase';
+    else if (value < 0) return 'decrease';
+    else return 'noChange';
+}
+
+function onTxnClicked(isLongPress: boolean)
+{
+    if (isLongPress) return;
+    emits('onClick');
+}
+
+function onTxnLongPressed() { emits('onLongPress'); }
+</script>
+
+<style lang="less" scoped>
+@import '@/modules/core/stylesheets/globalStyle.less';
+* { box-sizing: border-box; }
+
+.txnTableRowRoot .selected
+{
+    background: fade(@focus, 10%);
+    .txnTableRowInner { opacity: 0.5; }
+}
+
+.txnTableRowInner
+{
+    &:hover
+    {
+        background: @focusDark;
+        color: @focus;
+    }
+
+    .horiPadding(calc(@desktopPagePadding));
+    display: grid;
+    cursor: pointer;
+    user-select: none;
+    white-space: nowrap;
+    height: 100%;
+    gap: 14px;
+    grid-template-columns: 1fr 130px 85px;
+    overflow: hidden;
+    border-bottom: 1px dashed @border;
+
+    .bodyRowNameGrid
+    {
+        display: grid;
+        grid-template-columns: 1fr;
+        grid-template-rows: 1fr 1fr;
+    }
+
+    .bodyRowFromToGrid
+    {
+        font-size: 12px;
+        display: grid;
+        grid-template-columns: 1fr;
+        grid-template-rows: 1fr 1fr;
+        div:nth-child(1) { align-content: end; }
+        div { .ellipsis; text-align: start; }
+    }
+
+    .bodyRowValueChange
+    {
+        font-size: 18px;
+        .xRight; .yCenter;
+        &.decrease { color: @error; }
+        &.increase { color: @success; }
+        &.noChange { color: orange; }
+    }
+}
+
+.selectionCheckmark
+{
+    font-size: 24px;
+    background: @focusDark;
+    border-radius: 100%;
+    color: @focus;
+    padding: 4px;
+    user-select: none;
+}
+
+@mobileCutoffWidth: 650px;
+@container transactionsPage (width <= @mobileCutoffWidth)
+{
+    // Hide the column "from / to"
+    .txnTableRowInner { grid-template-columns: 1fr 0px max-content !important; }
+    .bodyRowFromToGrid, .headerRowFromTo { display: none; }
+    .txnTableRowInner { .horiPadding(@mobilePagePadding) !important; }
+}
+</style>
