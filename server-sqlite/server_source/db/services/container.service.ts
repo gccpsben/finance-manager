@@ -81,10 +81,13 @@ export class ContainerService
 
             for (const txn of relevantTxns)
             {
-                if (txn.fromAmount && txn.fromContainerId && txn.fromCurrencyId)
-                    append(txn.fromContainerId, txn.fromCurrencyId, txn.fromAmount, true);
-                if (txn.toAmount && txn.toContainerId && txn.toCurrencyId)
-                    append(txn.toContainerId, txn.toCurrencyId, txn.toAmount);
+                for (const fragment of txn.fragments)
+                {
+                    if (fragment.fromAmount && fragment.fromContainerId && fragment.fromCurrencyId)
+                        append(fragment.fromContainerId, fragment.fromCurrencyId, fragment.fromAmount, true);
+                    if (fragment.toAmount && fragment.toContainerId && fragment.toCurrencyId)
+                        append(fragment.toContainerId, fragment.toCurrencyId, fragment.toAmount);
+                }
             }
 
             return output;

@@ -89,7 +89,7 @@
                             30d Expenses
                             <template #tipsContent>
                                 <div>All expenses in the past 30 days.</div>
-                                <div>Change in value of each transaction is not considered here, all transactions with 'From' and no 'To' will be listed here.</div>
+                                <div>All transactions incurring negative change in value will be considered "expenses", except for those marked otherwise.</div>
                             </template>
                         </TipsIconTitle>
                     </template>
@@ -101,7 +101,7 @@
                                     <div class="ellipsis">{{ props.currentItem.title }}</div>
                                 </div>
                                 <div class="listItemTitle middleRight">
-                                    {{ currenciesStore.formatAmount(props.currentItem) }}
+                                    {{ props.currentItem.changeInValue }} {{ currenciesStore.getBaseCurrencySymbol() }}
                                 </div>
                             </grid-shortcut>
                         </TxnTooltip>
@@ -118,7 +118,7 @@
                             30d Incomes
                             <template #tipsContent>
                                 <div>All incomes in the past 30 days.</div>
-                                <div>Change in value of each transaction is not considered here, all transactions with no 'From' and only 'To' will be listed here.</div>
+                                <div>All transactions incurring positive change in value will be considered "incomes", except for those marked otherwise.</div>
                             </template>
                         </TipsIconTitle>
                     </template>
@@ -130,7 +130,7 @@
                                     <div class="ellipsis">{{ props.currentItem.title }}</div>
                                 </div>
                                 <div class="listItemTitle middleRight">
-                                    {{ currenciesStore.formatAmount(props.currentItem) }}
+                                    {{ props.currentItem.changeInValue }} {{ currenciesStore.getBaseCurrencySymbol() }}
                                 </div>
                             </grid-shortcut>
                         </TxnTooltip>
@@ -147,7 +147,7 @@
                             30d Transfers
                             <template #tipsContent>
                                 <div>All transfers in the past 30 days.</div>
-                                <div>Change in value of each transaction is not considered here, all transactions with both 'From' and 'To' will be listed here.</div>
+                                <div>All transactions incurring zero change in value will be considered "transfers", except for those marked otherwise.</div>
                             </template>
                         </TipsIconTitle>
                     </template>
@@ -159,7 +159,7 @@
                                     <div class="ellipsis">{{ props.currentItem.title }}</div>
                                 </div>
                                 <div class="listItemTitle middleRight">
-                                    {{ currenciesStore.formatAmount(props.currentItem) }}
+                                    {{ props.currentItem.changeInValue }} {{ currenciesStore.getBaseCurrencySymbol() }}
                                 </div>
                             </grid-shortcut>
                         </TxnTooltip>

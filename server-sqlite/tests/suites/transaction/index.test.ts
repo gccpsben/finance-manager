@@ -123,9 +123,17 @@ export default async function(this: Context)
                 const baseObj =
                 {
                     ...getRandTxnBaseBody(),
-                    fromAmount: "200",
-                    fromContainerId: testContext.containerId,
-                    fromCurrencyId: testContext.baseCurrId,
+                    fragments:
+                    [
+                        {
+                            fromAmount: "200",
+                            fromContainer: testContext.containerId,
+                            fromCurrency: testContext.baseCurrId,
+                            toAmount: null,
+                            toContainer: null,
+                            toCurrency: null
+                        }
+                    ],
                     tagIds: [testContext.txnTagId1]
                 } satisfies PostTxnAPIClass.RequestItemDTOClass;
 
@@ -144,6 +152,18 @@ export default async function(this: Context)
                         });
                     });
                 }
+
+                await this.test(`Forbid creating transactions with no fragments`, async function()
+                {
+                    await TransactionHelpers.postCreateTransaction(
+                    {
+                        serverURL: serverURL,
+                        body: { transactions: [ { ...baseObj, fragments: [] } ] },
+                        token: firstUser.token,
+                        assertBody: false,
+                        expectedCode: 400
+                    });
+                });
 
                 await this.test(`Allow creating transactions without description`, async function()
                 {
@@ -188,7 +208,22 @@ export default async function(this: Context)
 
                     const response = await TransactionHelpers.postCreateTransaction(
                     {
-                        serverURL: serverURL, body: { transactions: [ baseObj, baseObj, baseObj ] },
+                        serverURL: serverURL, body:
+                        {
+                            transactions:
+                            [
+                                baseObj,
+                                baseObj,
+                                {
+                                    ...baseObj,
+                                    fragments: // Try adding multiple fragments here
+                                    [
+                                        baseObj.fragments[0],
+                                        baseObj.fragments[0]
+                                    ]
+                                }
+                            ]
+                        },
                         token: firstUser.token, assertBody: true, expectedCode: 200
                     });
 
@@ -311,12 +346,14 @@ export default async function(this: Context)
                     const baseObj =
                     {
                         ...randTxnBaseBody,
-                        fromAmount: "200",
-                        fromContainerId: testContext.containerId,
-                        fromCurrencyId: testContext.baseCurrId,
-                        toAmount: "200",
-                        toContainerId: testContext.containerId,
-                        toCurrencyId: testContext.baseCurrId,
+                        fragments: [{
+                            fromAmount: "200",
+                            fromContainer: testContext.containerId,
+                            fromCurrency: testContext.baseCurrId,
+                            toAmount: "200",
+                            toContainer: testContext.containerId,
+                            toCurrency: testContext.baseCurrId,
+                        }],
                         tagIds: [testContext.txnTagId1]
                     } satisfies PostTxnAPIClass.RequestItemDTOClass;
 
@@ -361,12 +398,14 @@ export default async function(this: Context)
                         targetTxnId: createdTxnId,
                         body:
                         {
-                            fromAmount: "171",
-                            fromContainerId: testContext.containerId,
-                            fromCurrencyId: testContext.baseCurrId,
-                            toAmount: undefined,
-                            toContainerId: undefined,
-                            toCurrencyId: undefined,
+                            fragments: [{
+                                fromAmount: "171",
+                                fromContainer: testContext.containerId,
+                                fromCurrency: testContext.baseCurrId,
+                                toAmount: null,
+                                toContainer: null,
+                                toCurrency: null,
+                            }],
                             tagIds: [testContext.txnTagId2],
                             creationDate: txnCreated.parsedBody.rangeItems[0].creationDate,
                             description: "changed desc",
@@ -384,12 +423,12 @@ export default async function(this: Context)
                     });
 
                     assertStrictEqual(txnAfterMutated.parsedBody.rangeItems[0].id, createdTxnId);
-                    assertStrictEqual(txnAfterMutated.parsedBody.rangeItems[0].fromAmount, "171");
-                    assertStrictEqual(txnAfterMutated.parsedBody.rangeItems[0].fromContainer, testContext.containerId);
-                    assertStrictEqual(txnAfterMutated.parsedBody.rangeItems[0].fromCurrency, testContext.baseCurrId);
-                    assertStrictEqual(txnAfterMutated.parsedBody.rangeItems[0].toAmount, null);
-                    assertStrictEqual(txnAfterMutated.parsedBody.rangeItems[0].toContainer, null);
-                    assertStrictEqual(txnAfterMutated.parsedBody.rangeItems[0].toCurrency, null);
+                    assertStrictEqual(txnAfterMutated.parsedBody.rangeItems[0].fragments[0].fromAmount, "171");
+                    assertStrictEqual(txnAfterMutated.parsedBody.rangeItems[0].fragments[0].fromContainer, testContext.containerId);
+                    assertStrictEqual(txnAfterMutated.parsedBody.rangeItems[0].fragments[0].fromCurrency, testContext.baseCurrId);
+                    assertStrictEqual(txnAfterMutated.parsedBody.rangeItems[0].fragments[0].toAmount, null);
+                    assertStrictEqual(txnAfterMutated.parsedBody.rangeItems[0].fragments[0].toContainer, null);
+                    assertStrictEqual(txnAfterMutated.parsedBody.rangeItems[0].fragments[0].toCurrency, null);
                     assertStrictEqual(txnAfterMutated.parsedBody.rangeItems[0].tagIds[0], testContext.txnTagId2);
                     assertStrictEqual(txnAfterMutated.parsedBody.rangeItems[0].creationDate, txnCreated.parsedBody.rangeItems[0].creationDate);
                     assertStrictEqual(txnAfterMutated.parsedBody.rangeItems[0].description, "changed desc");

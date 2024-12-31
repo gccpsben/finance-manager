@@ -8,10 +8,11 @@ import { waitUntil } from "@/modules/core/utils/wait";
 import { useCurrenciesStore } from "@/modules/currencies/stores/useCurrenciesStore";
 import { useTxnTagsStore } from "@/modules/txnTypes/stores/useTxnTypesStore";
 import { useResettableObject } from "@/resettableObject";
+import { transform } from "typescript";
 import { computed, ref, toRaw } from "vue";
 
 type OmitFromTxnDTO<K extends keyof GetTxnAPI.TxnDTO> = Omit<GetTxnAPI.TxnDTO, K>;
-export type TxnWorkingEntity = OmitFromTxnDTO<'creationDate'|'owner'> & { creationDate: string; };
+export type TxnWorkingEntity = OmitFromTxnDTO<'creationDate'|'owner'|'changeInValue'> & { creationDate: string; };
 export const DateFormatToShow = "YYYY-MM-DD hh:mm:ss.ms";
 
 /**
@@ -28,27 +29,34 @@ function useTxnWorkingCopy()
     const { containers } = useContainersStore();
     const { txnTags: txnTypes } = useTxnTagsStore();
     const isEnteredDateValid = computed(() => !isNaN(new Date(`${txnToBeEdited.currentData.value?.creationDate}`).getTime()));
-    const isEnteredFromAmountValid = computed(() => isNumeric(txnToBeEdited.currentData?.value?.fromAmount));
-    const isEnteredToAmountValid = computed(() => isNumeric(txnToBeEdited.currentData?.value?.toAmount));
 
     const txnErrors = computed<string | undefined>(() =>
     {
         const txn = txnToBeEdited.currentData.value;
         if (!txn) return 'Loading...';
 
-        const toContainer = txn.toContainer;
-        const toCurrency = txn.toCurrency;
-        const fromContainer = txn.fromContainer;
-        const fromCurrency = txn.fromCurrency;
+        for (let i = 0; i < txn.fragments.length; i++)
+        {
+            const fragment = txn.fragments[i];
+            const toContainer = fragment.toContainer;
+            const toCurrency = fragment.toCurrency;
+            const fromContainer = fragment.fromContainer;
+            const fromCurrency = fragment.fromCurrency;
 
-        if (!txn.fromAmount && !txn.toAmount) return "At least one of 'From' or 'To' sections must be provided.";
+            const isFromAmountValid = isNumeric(fragment.fromAmount);
+            const isToAmountValid = isNumeric(fragment.toAmount);
+
+            if (!fragment.fromAmount && !fragment.toAmount) return `At least one of 'From' or 'To' sections must be provided (fragment #${i+1}).`;
+            if (!!toContainer && !toCurrency) return `A currency must be selected in the 'To' section (fragment #${i+1}).`;
+            if (!!fromContainer && !fromCurrency) return `A currency must be selected in the 'From' section (fragment #${i+1}).`;
+            if (!fromContainer && !toContainer) return `Either container in 'From' or container in 'To' is missing (fragment #${i+1}).`;
+            if (!!fromContainer && !isFromAmountValid) return `The value provided in section 'From' must be a number (fragment #${i+1}).`;
+            if (!!toContainer && !isToAmountValid) return `The value provided in section 'to' must be a number (fragment #${i+1}).`;
+        }
+
         if (!isEnteredDateValid.value) return 'The date provided is invalid.';
         if (!txn.title.trim()) return 'A name must be provided.';
-        if (!!toContainer && !toCurrency) return "A currency must be selected in the 'To' section.";
-        if (!!fromContainer && !fromCurrency) return "A currency must be selected in the 'From' section.";
-        if (!fromContainer && !toContainer) return "Either container in 'From' or container in 'To' is missing.";
-        if (!!fromContainer && !isEnteredFromAmountValid.value) return "The value provided in section 'From' must be a number.";
-        if (!!toContainer && !isEnteredToAmountValid.value) return "The value provided in section 'to' must be a number.";
+
         return undefined;
     });
 
@@ -136,8 +144,6 @@ function useTxnWorkingCopy()
         containers,
         txnTags: txnTypes,
         isEnteredDateValid,
-        isEnteredFromAmountValid,
-        isEnteredToAmountValid,
         txnErrors,
         readyToReset,
         readyToSave,
@@ -161,15 +167,18 @@ export function useEditTxn()
         // Transform txn body to fit validation:
         (() =>
         {
-            if (transformedTxn.toContainer === null)
+            for (const frag of transformedTxn.fragments)
             {
-                transformedTxn.toCurrency = null;
-                transformedTxn.toAmount = null;
-            }
-            if (transformedTxn.fromContainer === null)
-            {
-                transformedTxn.fromCurrency = null;
-                transformedTxn.fromAmount = null;
+                if (frag.toContainer === null)
+                {
+                    frag.toCurrency = null;
+                    frag.toAmount = null;
+                }
+                if (frag.fromContainer === null)
+                {
+                    frag.fromCurrency = null;
+                    frag.fromAmount = null;
+                }
             }
         })();
 
@@ -185,12 +194,14 @@ export function useEditTxn()
                     tagIds: transformedTxn.tagIds,
                     creationDate: new Date(transformedTxn.creationDate).getTime(),
                     description: transformedTxn.description ?? undefined,
-                    fromAmount: transformedTxn.fromAmount ?? undefined,
-                    fromContainerId: transformedTxn.fromContainer ?? undefined,
-                    fromCurrencyId: transformedTxn.fromCurrency ?? undefined,
-                    toAmount: transformedTxn.toAmount ?? undefined,
-                    toContainerId: transformedTxn.toContainer ?? undefined,
-                    toCurrencyId: transformedTxn.toCurrency ?? undefined
+                    fragments: transformedTxn.fragments.map(f => ({
+                        fromAmount: f.fromAmount ?? null,
+                        fromContainer: f.fromContainer ?? null,
+                        fromCurrency: f.fromCurrency ?? null,
+                        toAmount: f.toAmount ?? null,
+                        toContainer: f.toContainer ?? null,
+                        toCurrency: f.toCurrency ?? null
+                    }))
                 } satisfies PutTxnAPI.RequestBodyDTO
             },
             {
@@ -230,13 +241,15 @@ export function useAddTxn()
             title: "A new transaction",
             creationDate: '',
             description: '',
-            fromAmount: null,
-            fromContainer: null,
-            fromCurrency: null,
             id: "<default>",
-            toAmount: null,
-            toCurrency: null,
-            toContainer: null,
+            fragments: [{
+                fromAmount: null,
+                fromContainer: null,
+                fromCurrency: null,
+                toAmount: null,
+                toCurrency: null,
+                toContainer: null,
+            }],
             tagIds: []
         };
 
@@ -253,15 +266,18 @@ export function useAddTxn()
         // Transform txn body to fit validation:
         (() =>
         {
-            if (transformedTxn.toContainer === null)
+            for (const frag of transformedTxn.fragments)
             {
-                transformedTxn.toCurrency = null;
-                transformedTxn.toAmount = null;
-            }
-            if (transformedTxn.fromContainer === null)
-            {
-                transformedTxn.fromCurrency = null;
-                transformedTxn.fromAmount = null;
+                if (frag.toContainer === null)
+                {
+                    frag.toCurrency = null;
+                    frag.toAmount = null;
+                }
+                if (frag.fromContainer === null)
+                {
+                    frag.fromCurrency = null;
+                    frag.fromAmount = null;
+                }
             }
         })();
 
@@ -279,13 +295,23 @@ export function useAddTxn()
                             title: transformedTxn.title,
                             tagIds: transformedTxn.tagIds,
                             creationDate: new Date(transformedTxn.creationDate).getTime(),
-                            description: transformedTxn.description ?? undefined,
-                            fromAmount: transformedTxn.fromAmount ?? undefined,
-                            fromContainerId: transformedTxn.fromContainer ?? undefined,
-                            fromCurrencyId: transformedTxn.fromCurrency ?? undefined,
-                            toAmount: transformedTxn.toAmount ?? undefined,
-                            toContainerId: transformedTxn.toContainer ?? undefined,
-                            toCurrencyId: transformedTxn.toCurrency ?? undefined
+                            description: transformedTxn.description ?? null,
+                            fragments: [
+                                {
+                                    fromAmount: transformedTxn.fragments[0].fromAmount ?? null,
+                                    fromContainer: transformedTxn.fragments[0].fromContainer ?? null,
+                                    fromCurrency: transformedTxn.fragments[0].fromCurrency ?? null,
+                                    toAmount: transformedTxn.fragments[0].toAmount ?? null,
+                                    toContainer: transformedTxn.fragments[0].toContainer ?? null,
+                                    toCurrency: transformedTxn.fragments[0].toCurrency ?? null
+                                }
+                            ]
+                            // fromAmount: transformedTxn.fromAmount ?? null,
+                            // fromContainerId: transformedTxn.fromContainer ?? null,
+                            // fromCurrencyId: transformedTxn.fromCurrency ?? null,
+                            // toAmount: transformedTxn.toAmount ?? null,
+                            // toContainerId: transformedTxn.toContainer ?? null,
+                            // toCurrencyId: transformedTxn.toCurrency ?? null
                         }
                     ]
                 } satisfies PostTxnAPI.RequestDTO

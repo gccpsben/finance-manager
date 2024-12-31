@@ -23,8 +23,18 @@
                          </div>
                      </div>
                      <div class="bodyRowFromToGrid">
-                         <div class="xLeft yBottom">{{ txn.fromContainer ? findContainerById(txn.fromContainer)?.name : '-' }}</div>
-                         <div class="xLeft yTop">{{ txn.toContainer ? findContainerById(txn.toContainer)?.name : '-' }}</div>
+                         <div class="xLeft yBottom">
+                            <div v-if="containerFlowDirection[0] === MULTIPLE" class="grayedOut">(Multiple)</div>
+                            <div v-else-if="containerFlowDirection[0] === LOADING" class="grayedOut">(Loading)</div>
+                            <div v-else-if="containerFlowDirection[0] === null" class="grayedOut"> - </div>
+                            <div v-else> {{ containerFlowDirection[0] }} </div>
+                         </div>
+                         <div class="xLeft yTop">
+                            <div v-if="containerFlowDirection[1] === MULTIPLE" class="grayedOut">(Multiple)</div>
+                            <div v-else-if="containerFlowDirection[1] === LOADING" class="grayedOut">(Loading)</div>
+                            <div v-else-if="containerFlowDirection[1] === null" class="grayedOut"> - </div>
+                            <div v-else> {{ containerFlowDirection[1] }} </div>
+                         </div>
                      </div>
                      <div :class="{ [changeToClass(txn.changeInValue)]: true, bodyRowValueChange: true }">
                          {{ parseFloat(txn.changeInValue).toFixed(2) }}
@@ -46,6 +56,11 @@ import { vOnLongPress } from '@vueuse/components';
 import { getDateAge } from '@/modules/core/utils/date';
 import { useContainersStore } from '@/modules/containers/stores/useContainersStore';
 import OverlapArea from '@/modules/core/components/layout/OverlapArea.vue';
+import { computed } from 'vue';
+
+/** A symbol that represents a from / to side contains multiple containers. */
+const MULTIPLE: unique symbol = Symbol();
+const LOADING: unique symbol = Symbol();
 
 export type TxnTableRowProps =
 {
@@ -54,16 +69,19 @@ export type TxnTableRowProps =
         readonly id: string,
         readonly tagIds: readonly string[],
         readonly creationDate: number,
-        readonly fromContainer: string | null,
-        readonly toContainer: string | null,
         readonly changeInValue: string,
         readonly title: string,
         readonly description: string,
         readonly owner: string,
-        readonly fromAmount: string | null,
-        readonly toAmount: string | null,
-        readonly fromCurrency: string | null,
-        readonly toCurrency: string | null,
+        readonly fragments: readonly
+        {
+            readonly fromContainer: string | null,
+            readonly toContainer: string | null,
+            readonly fromAmount: string | null,
+            readonly toAmount: string | null,
+            readonly fromCurrency: string | null,
+            readonly toCurrency: string | null,
+        }[]
     },
     txnTooltipOpenDelay?: number | undefined,
     txnTooltipCloseDelay?: number | undefined,
@@ -79,6 +97,25 @@ export type TxnTableRowEmits =
 const emits = defineEmits<TxnTableRowEmits>();
 const props = withDefaults(defineProps<TxnTableRowProps>(), { isSelected: false });
 const { findContainerById } = useContainersStore();
+const containerFlowDirection = computed<[string | null | typeof MULTIPLE | typeof LOADING, string | null | typeof MULTIPLE | typeof LOADING]>(() =>
+{
+    const fragments = props.txn.fragments;
+    const fromContainers = [...new Set<string>(fragments.map(x => x.fromContainer).filter(x => x !== null))];
+    const toContainers = [...new Set<string>(fragments.map(x => x.toContainer).filter(x => x !== null))];
+    const fromContainerResult = (() =>
+    {
+        if (fromContainers.length === 0) return null;
+        if (fromContainers.length > 1) return MULTIPLE;
+        return findContainerById(fromContainers[0])?.name ?? LOADING;
+    })();
+    const toContainerResult = (() =>
+    {
+        if (toContainers.length === 0) return null;
+        if (toContainers.length > 1) return MULTIPLE;
+        return findContainerById(toContainers[0])?.name ?? LOADING;
+    })();
+    return [fromContainerResult, toContainerResult] as const;
+});
 
 function changeToClass(changeInValue: string)
 {
@@ -106,6 +143,8 @@ function onTxnLongPressed() { emits('onLongPress'); }
     background: fade(@focus, 10%);
     .txnTableRowInner { opacity: 0.5; }
 }
+
+.grayedOut { color: gray; }
 
 .txnTableRowInner
 {

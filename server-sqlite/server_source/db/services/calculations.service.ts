@@ -149,15 +149,19 @@ export class CalculationsService
                 while (currentTxnIndex < usrTxns.length && usrTxns[currentTxnIndex].creationDate <= currentEpoch)
                 {
                     const txn = usrTxns[currentTxnIndex];
-                    if (txn.fromAmount && txn.fromCurrencyId)
+
+                    for (const fragment of txn.fragments)
                     {
-                        await balancesReducer.reduce(txn.fromCurrencyId, new Decimal(txn.fromAmount).neg());
-                        appendCurrencyToEpoch(txn.fromCurrencyId, txn.creationDate);
-                    }
-                    if (txn.toAmount && txn.toCurrencyId)
-                    {
-                        await balancesReducer.reduce(txn.toCurrencyId, new Decimal(txn.toAmount));
-                        appendCurrencyToEpoch(txn.toCurrencyId, txn.creationDate);
+                        if (fragment.fromAmount && fragment.fromCurrencyId)
+                        {
+                            await balancesReducer.reduce(fragment.fromCurrencyId, new Decimal(fragment.fromAmount).neg());
+                            appendCurrencyToEpoch(fragment.fromCurrencyId, txn.creationDate);
+                        }
+                        if (fragment.toAmount && fragment.toCurrencyId)
+                        {
+                            await balancesReducer.reduce(fragment.toCurrencyId, new Decimal(fragment.toAmount));
+                            appendCurrencyToEpoch(fragment.toCurrencyId, txn.creationDate);
+                        }
                     }
 
                     output.historyMap[currentEpoch.toString()] = { ...balancesReducer.currentValue };

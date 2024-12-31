@@ -12,6 +12,13 @@ export const useTxnTagsStore = defineStore
             {
                 txnTags: useNetworkRequest<GetTxnTagsAPI.ResponseDTO>(API_TXN_TAGS_PATH, { includeAuthHeaders: true }),
             }
-        )
+        ),
+        actions:
+        {
+            tagIdToName(id: string): string | null
+            {
+                return this.txnTags.lastSuccessfulData?.rangeItems.find(x => x.id === id)?.name ?? null;
+            }
+        }
     }
 );

@@ -2,8 +2,9 @@ import type { GetTxnAPI } from "@/../../api-types/txn";
 
 export function getTxnClassification(txn: GetTxnAPI.TxnDTO)
 {
-    if (txn.fromAmount && txn.toAmount) return "Transfer";
-    else if (txn.fromAmount && !txn.toAmount) return "Expense";
+    const delta = parseFloat(txn.changeInValue);
+    if (delta === 0) return "Transfer";
+    else if (delta < 0) return "Expense";
     else return "Income";
 };
 

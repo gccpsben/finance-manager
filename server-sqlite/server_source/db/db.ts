@@ -15,6 +15,7 @@ import { AccessTokenRepository } from "./repositories/accessToken.repository.js"
 import { ContainerRepository } from "./repositories/container.repository.js";
 import { CurrencyRateDatumRepository } from "./repositories/currencyRateDatum.repository.js";
 import { TransactionRepository } from "./repositories/transaction.repository.js";
+import { Fragment } from "./entities/fragment.entity.js";
 
 export class DatabaseInitError<T extends Error> extends MonadError<typeof DatabaseInitError.ERROR_SYMBOL> implements NestableError
 {
@@ -167,7 +168,7 @@ export class Database
         Database.AppDataSource = new DataSource(
         {
             type: "better-sqlite3",
-            entities: [User, AccessToken, Currency, Container, Transaction, TxnTag, CurrencyRateDatum, CurrencyRateSource],
+            entities: [User, AccessToken, Currency, Container, Transaction, TxnTag, CurrencyRateDatum, CurrencyRateSource, Fragment],
             database: EnvManager.sqliteInMemory ? ":memory:" : EnvManager.sqliteFilePath!,
             synchronize: true,
             logging: ['warn'],

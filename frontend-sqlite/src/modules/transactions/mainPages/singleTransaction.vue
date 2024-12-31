@@ -25,31 +25,44 @@
                             </template>
                         </TextField>
 
+                        <div class="subheader" v-area="'fragmentLabel'" >
+                            <h3>Fragment {{ currentFragmentIndex + 1 }} of {{ txnWorkingCopy.currentData.value?.fragments.length }}</h3>
+                        </div>
+
                         <CustomDropdown :options="selectableContainerOptions"
                                         class="fullSize" v-area="'fromContainer'" field-name="From Container"
-                                        v-model:selected-option="txnWorkingCopy.currentData.value!.fromContainer!" />
+                                        v-model:selected-option="txnWorkingCopy.currentData.value!.fragments[currentFragmentIndex].fromContainer!" />
                         <CustomDropdown :options="selectableCurrenciesOptions" class="currencyDropdown fullSize"
-                                        :class="{'disabled': !txnWorkingCopy.currentData.value!.fromContainer}"
+                                        :class="{'disabled': !txnWorkingCopy.currentData.value!.fragments[currentFragmentIndex].fromContainer}"
                                         v-area="'fromCurrency'" field-name="From Currency"
-                                        v-model:selected-option="txnWorkingCopy.currentData.value!.fromCurrency!" />
+                                        v-model:selected-option="txnWorkingCopy.currentData.value!.fragments[currentFragmentIndex].fromCurrency!" />
                         <TextField  v-area="'fromAmount'" field-name="From Amount" input-type="number"
-                                    :class="{'disabled': !txnWorkingCopy.currentData.value!.fromContainer}"
-                                    :override-theme-color="editTxnHook.isEnteredFromAmountValid ? undefined : 'red'"
-                                    :text="txnWorkingCopy.currentData.value!.fromAmount ?? ''"
-                                    @update:text="txnWorkingCopy.currentData.value!.fromAmount = $event"/>
+                                    :class="{'disabled': !txnWorkingCopy.currentData.value!.fragments[currentFragmentIndex].fromContainer}"
+                                    :text="txnWorkingCopy.currentData.value!.fragments[currentFragmentIndex].fromAmount ?? ''"
+                                    @update:text="txnWorkingCopy.currentData.value!.fragments[currentFragmentIndex].fromAmount = $event"/>
 
                         <CustomDropdown :options="selectableContainerOptions"
                                         class="fullSize" v-area="'toContainer'" field-name="To Container"
-                                        v-model:selected-option="txnWorkingCopy.currentData.value!.toContainer!" />
+                                        v-model:selected-option="txnWorkingCopy.currentData.value!.fragments[currentFragmentIndex].toContainer!" />
                         <CustomDropdown v-area="'toCurrency'" :options="selectableCurrenciesOptions"
-                                        :class="{'disabled': !txnWorkingCopy.currentData.value!.toContainer}"
+                                        :class="{'disabled': !txnWorkingCopy.currentData.value!.fragments[currentFragmentIndex].toContainer}"
                                         field-name="To Currency" class="currencyDropdown fullSize"
-                                        v-model:selected-option="txnWorkingCopy.currentData.value!.toCurrency!" />
+                                        v-model:selected-option="txnWorkingCopy.currentData.value!.fragments[currentFragmentIndex].toCurrency!" />
                         <TextField v-area="'toAmount'" field-name="To Amount" input-type="number"
-                                    :class="{'disabled': !txnWorkingCopy.currentData.value!.toContainer}"
-                                    :override-theme-color="editTxnHook.isEnteredToAmountValid ? undefined : 'red'"
-                                    :text="txnWorkingCopy.currentData.value!.toAmount ?? ''"
-                                    @update:text="txnWorkingCopy.currentData.value!.toAmount = $event"/>
+                                    :class="{'disabled': !txnWorkingCopy.currentData.value!.fragments[currentFragmentIndex].toContainer}"
+                                    :text="txnWorkingCopy.currentData.value!.fragments[currentFragmentIndex].toAmount ?? ''"
+                                    @update:text="txnWorkingCopy.currentData.value!.fragments[currentFragmentIndex].toAmount = $event"/>
+
+                        <div id="fragPaginationContainer" v-area="'fragPagination'" >
+                            <div class="xLeft">
+                                <BaseButton @click="addFragment" style="margin-right: 4px;">Add</BaseButton>
+                                <BaseButton @click="deleteFragment" :disabled="(txnWorkingCopy.currentData.value?.fragments.length ?? 0) <= 1">Delete</BaseButton>
+                            </div>
+                            <div class="xRight">
+                                <NumberPagination :max-page-readable="txnWorkingCopy.currentData.value?.fragments.length"
+                                                  :min-page-readable="1" v-model="currentFragmentIndex"/>
+                            </div>
+                        </div>
 
                         <TextField v-area="'desc'" id="descriptionTextField" field-name="Description" input-type="text"
                                     :text="txnWorkingCopy.currentData.value?.description ?? ''" always-float textarea-mode
@@ -65,7 +78,7 @@
                                 </BaseButton>
                             </div>
                             <div class="dummy"></div>
-                            <BaseButton @click="editTxnHook.txnToBeEdited.reset()"
+                            <BaseButton @click="(currentFragmentIndex = 0); editTxnHook.txnToBeEdited.reset();"
                                         :disabled="!editTxnHook.readyToReset.value">
                                 Reset
                             </BaseButton>
@@ -111,11 +124,11 @@
                             </div>
                             <div class="xRight">
                                 <BaseButton @click="deleteTxn">
-                                        <NetworkCircularIndicator v-if="deleteTxnNetworkHook.isTxnDeleting.value || deleteTxnNetworkHook.txnDeletionError.value"
-                                                                    style="width:23px; height:23px;"
-                                                                    :is-loading="deleteTxnNetworkHook.isTxnDeleting.value"
-                                                                    :error="deleteTxnNetworkHook.txnDeletionError.value"/>
-                                        <div v-if="!deleteTxnNetworkHook.isTxnDeleting.value && !deleteTxnNetworkHook.txnDeletionError.value">Delete</div>
+                                    <NetworkCircularIndicator v-if="deleteTxnNetworkHook.isTxnDeleting.value || deleteTxnNetworkHook.txnDeletionError.value"
+                                                                style="width:23px; height:23px;"
+                                                                :is-loading="deleteTxnNetworkHook.isTxnDeleting.value"
+                                                                :error="deleteTxnNetworkHook.txnDeletionError.value"/>
+                                    <div v-if="!deleteTxnNetworkHook.isTxnDeleting.value && !deleteTxnNetworkHook.txnDeletionError.value">Delete</div>
                                 </BaseButton>
                             </div>
                         </div>
@@ -142,6 +155,7 @@ import CustomDropdown from '@/modules/core/components/inputs/CustomDropdown.vue'
 import { useDeleteTxn } from '../composables/useDeleteTxn';
 import BaseDialog from '@/modules/core/components/data-display/BaseDialog.vue';
 import { wait } from '@/modules/core/utils/wait';
+import NumberPagination from '@/modules/core/components/data-display/NumberPagination.vue';
 
 type AddHookReturnType = ReturnType<typeof useAddTxn>;
 type EditHookReturnType = ReturnType<typeof useEditTxn>;
@@ -159,6 +173,7 @@ const ensureIsEditMode = (hook: AddOrEditHookReturnType): hook is EditHookReturn
     return true;
 };
 
+const currentFragmentIndex = ref(0);
 const isDeleteDialogOpen = ref(false);
 const isAddMode = computed(() => router.currentRoute.value.name === ROUTER_NAME_CREATE_NEW_TXN);
 
@@ -243,6 +258,26 @@ async function deleteTxn()
     await wait(500);
     router.push({ name: ROUTER_NAME_ALL_TRANSACTIONS });
 }
+function addFragment()
+{
+    if (!txnWorkingCopy.value.currentData.value?.fragments) return;
+    txnWorkingCopy.value.currentData.value.fragments.push({
+        fromAmount: null,
+        fromContainer: null,
+        fromCurrency: null,
+        toAmount: null,
+        toContainer: null,
+        toCurrency: null
+    });
+    currentFragmentIndex.value = txnWorkingCopy.value.currentData.value.fragments.length - 1;
+}
+function deleteFragment()
+{
+    if (!txnWorkingCopy.value.currentData.value?.fragments) return;
+    const currentFragmentIndexValue = currentFragmentIndex.value;
+    currentFragmentIndex.value = 0;
+    txnWorkingCopy.value.currentData.value.fragments.splice(currentFragmentIndexValue, 1);
+}
 </script>
 
 <style lang="less" scoped>
@@ -282,16 +317,18 @@ fieldset
     display:grid;
     gap: 15px;
     grid-template:
-        'id            id            date          date          ' 45px
-        'name          name          name          name          ' 45px
-        'fromContainer fromContainer toContainer   toContainer   ' minmax(0px, 45px)
-        'fromCurrency  fromCurrency  toCurrency    toCurrency    ' minmax(0px, 45px)
-        'fromAmount    fromAmount    toAmount      toAmount      ' minmax(0px, 45px)
-        '_             _             _             _             ' 5px
-        'desc          desc          desc          desc          ' 100px
-        'tags          tags          tags          tags          ' auto
-        'error         error         error         error         ' auto
-        'actions       actions       actions       actions       ' 35px
+        'id              id              date            date          ' 45px
+        'name            name            name            name          ' 45px
+        'fragmentLabel   fragmentLabel   fragmentLabel   fragmentLabel ' auto
+        'fromContainer   fromContainer   toContainer     toContainer   ' minmax(0px, 45px)
+        'fromCurrency    fromCurrency    toCurrency      toCurrency    ' minmax(0px, 45px)
+        'fromAmount      fromAmount      toAmount        toAmount      ' minmax(0px, 45px)
+        'fragPagination  fragPagination  fragPagination  fragPagination' auto
+        '_               _               _               _             ' 5px
+        'desc            desc            desc            desc          ' 100px
+        'tags            tags            tags            tags          ' auto
+        'error           error           error           error         ' auto
+        'actions         actions         actions         actions       ' auto
         / 1fr          1fr           1fr           1fr;
 
     max-height: calc(100svh - 190px);
@@ -322,11 +359,18 @@ fieldset
 
     #formErrorMsg
     {
+        text-align: start;
         font-family: @font;
         color: @error;
         font-weight: 900;
         .yCenter;
         .xLeft;
+    }
+
+    #fragPaginationContainer
+    {
+        .leftRightGrid;
+        margin-bottom: 14px;
     }
 }
 
@@ -338,6 +382,14 @@ fieldset
     .nowButton { color: @foreground; }
 }
 
+.subheader
+{
+    margin-top: 14px;
+    color: @foreground;
+    font-size: 12px;
+    font-family: @font;
+    .xLeft;
+}
 .disabled { opacity: 0.3; pointer-events: none; }
 #descriptionTextField:deep(textarea) { padding: 14px; }
 
@@ -356,15 +408,17 @@ fieldset
             'id              id              ' 45px
             'name            name            ' 45px
             'date            date            ' 45px
+            'fragmentLabel   fragmentLabel   ' auto
             'fromContainer   fromContainer   ' minmax(0px, 45px)
             'fromAmount      fromCurrency    ' minmax(0px, 45px)
             'toContainer     toContainer     ' minmax(0px, 45px)
             'toAmount        toCurrency      ' minmax(0px, 45px)
+            'fragPagination  fragPagination  ' auto
             '_               _               ' 5px
             'desc            desc            ' minmax(0px, 100px)
             'tags            tags            ' auto
             'error           error           ' auto
-            'actions         actions         ' 45px
+            'actions         actions         ' auto
             / 1fr            0.4fr !important;
     }
 }

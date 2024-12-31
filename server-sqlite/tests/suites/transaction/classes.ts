@@ -6,6 +6,16 @@ import { Type } from "class-transformer";
 
 export namespace GetTxnJSONQueryAPIClass
 {
+    export class FragmentDTOClass implements GetTxnJsonQueryAPI.FragmentDTO
+    {
+        @IsOptional() @IsDecimalJSString() fromAmount: string;
+        @IsOptional() @IsString() fromCurrency: string;
+        @IsOptional() @IsString() fromContainer: string;
+        @IsOptional() @IsDecimalJSString() toAmount: string;
+        @IsOptional() @IsString() toCurrency: string;
+        @IsOptional() @IsString() toContainer: string;
+    }
+
     export class TxnDTOClass implements GetTxnJsonQueryAPI.TxnDTO
     {
         @IsString() id: string;
@@ -14,13 +24,12 @@ export namespace GetTxnJSONQueryAPIClass
         @IsString() owner: string;
         @IsOptional() @IsUTCDateInt()  creationDate: number;
         @IsArray() tagIds: string[];
-        @IsOptional() @IsDecimalJSString() fromAmount: string;
-        @IsOptional() @IsString() fromCurrency: string;
-        @IsOptional() @IsString() fromContainer: string;
-        @IsOptional() @IsDecimalJSString() toAmount: string;
-        @IsOptional() @IsString() toCurrency: string;
-        @IsOptional() @IsString() toContainer: string;
         @IsNotEmpty() @IsDecimalJSString() changeInValue: string;
+
+        @IsArray()
+        @ValidateNested({ each: true })
+        @Type(() => FragmentDTOClass)
+        fragments: GetTxnJsonQueryAPI.FragmentDTO[];
     }
 
     export class ResponseDTOClass implements GetTxnJsonQueryAPI.ResponseDTO
@@ -38,6 +47,16 @@ export namespace GetTxnJSONQueryAPIClass
 
 export namespace GetTxnAPIClass
 {
+    export class FragmentDTOClass implements GetTxnAPI.FragmentDTO
+    {
+        @IsOptional() @IsDecimalJSString() fromAmount: string;
+        @IsOptional() @IsString() fromCurrency: string;
+        @IsOptional() @IsString() fromContainer: string;
+        @IsOptional() @IsDecimalJSString() toAmount: string;
+        @IsOptional() @IsString() toCurrency: string;
+        @IsOptional() @IsString() toContainer: string;
+    }
+
     export class TxnDTOClass implements GetTxnAPI.TxnDTO
     {
         @IsString() id: string;
@@ -46,13 +65,12 @@ export namespace GetTxnAPIClass
         @IsString() owner: string;
         @IsOptional() @IsUTCDateInt()  creationDate: number;
         @IsArray() tagIds: string[];
-        @IsOptional() @IsDecimalJSString() fromAmount: string;
-        @IsOptional() @IsString() fromCurrency: string;
-        @IsOptional() @IsString() fromContainer: string;
-        @IsOptional() @IsDecimalJSString() toAmount: string;
-        @IsOptional() @IsString() toCurrency: string;
-        @IsOptional() @IsString() toContainer: string;
         @IsNotEmpty() @IsDecimalJSString() changeInValue: string;
+
+        @IsArray()
+        @ValidateNested({ each: true })
+        @Type(() => FragmentDTOClass)
+        fragments: GetTxnAPI.FragmentDTO[];
     }
 
     export class ResponseDTOClass implements GetTxnAPI.ResponseDTO
@@ -70,18 +88,27 @@ export namespace GetTxnAPIClass
 
 export namespace PostTxnAPIClass
 {
+    export class FragmentDTOClass implements PostTxnAPI.FragmentDTO
+    {
+        @IsOptional() @IsDecimalJSString() fromAmount: string;
+        @IsOptional() @IsString() fromCurrency: string;
+        @IsOptional() @IsString() fromContainer: string;
+        @IsOptional() @IsDecimalJSString() toAmount: string;
+        @IsOptional() @IsString() toCurrency: string;
+        @IsOptional() @IsString() toContainer: string;
+    }
+
     export class RequestItemDTOClass implements PostTxnAPI.RequestItemDTO
     {
         @IsString() @IsNotEmpty() title: string;
         @IsOptional() @IsUTCDateInt() creationDate?: number | undefined;
         @IsOptional() @IsString() description?: string | undefined;
         @IsArray() tagIds: string[];
-        @IsOptional() @IsDecimalJSString() fromAmount?: string | undefined;
-        @IsOptional() @IsString() fromContainerId?: string | undefined;
-        @IsOptional() @IsString() fromCurrencyId?: string | undefined;
-        @IsOptional() @IsDecimalJSString() toAmount?: string | undefined;
-        @IsOptional() @IsString() toContainerId?: string | undefined;
-        @IsOptional() @IsString() toCurrencyId?: string | undefined;
+
+        @IsArray()
+        @ValidateNested({ each: true })
+        @Type(() => FragmentDTOClass)
+        fragments: PostTxnAPI.FragmentDTO[];
     }
 
     export class RequestDTOClass implements PostTxnAPI.RequestDTO
@@ -100,18 +127,27 @@ export namespace PostTxnAPIClass
 
 export namespace PutTxnAPIClass
 {
+    export class FragmentDTOClass implements PutTxnAPI.FragmentDTO
+    {
+        @IsOptional() @IsDecimalJSString() fromAmount: string;
+        @IsOptional() @IsString() fromCurrency: string;
+        @IsOptional() @IsString() fromContainer: string;
+        @IsOptional() @IsDecimalJSString() toAmount: string;
+        @IsOptional() @IsString() toCurrency: string;
+        @IsOptional() @IsString() toContainer: string;
+    }
+
     export class RequestBodyDTOClass implements PutTxnAPI.RequestBodyDTO
     {
         @IsString() @IsNotEmpty() title: string;
         @IsOptional() @IsUTCDateInt() creationDate?: number | undefined;
         @IsOptional() @IsString() description?: string | undefined;
         @IsArray() tagIds: string[];
-        @IsOptional() @IsDecimalJSString() fromAmount?: string | undefined;
-        @IsOptional() @IsString() fromContainerId?: string | undefined;
-        @IsOptional() @IsString() fromCurrencyId?: string | undefined;
-        @IsOptional() @IsDecimalJSString() toAmount?: string | undefined;
-        @IsOptional() @IsString() toContainerId?: string | undefined;
-        @IsOptional() @IsString() toCurrencyId?: string | undefined;
+
+        @IsArray()
+        @ValidateNested({ each: true })
+        @Type(() => FragmentDTOClass)
+        fragments: PutTxnAPI.FragmentDTO[];
     }
 
     export class RequestQueryDTOClass implements PutTxnAPI.RequestQueryDTO

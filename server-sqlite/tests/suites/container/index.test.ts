@@ -95,12 +95,14 @@ export default async function(this: Context)
                 {
                     type txnDatum =
                     {
-                        toAmount: Decimal|undefined,
-                        toCurrencyID?: string|undefined,
-                        toContainerId?: string|undefined,
-                        fromAmount: Decimal|undefined,
-                        fromCurrencyID?: string|undefined,
-                        fromContainerId?: string|undefined,
+                        fragments: {
+                            toAmount: Decimal|undefined,
+                            toCurrencyID?: string|undefined,
+                            toContainerId?: string|undefined,
+                            fromAmount: Decimal|undefined,
+                            fromCurrencyID?: string|undefined,
+                            fromContainerId?: string|undefined,
+                        }[],
                         txnAgeDays: number
                     };
                     const userCreds = await AuthHelpers.registerRandMockUsers(serverURL, 1);
@@ -153,33 +155,62 @@ export default async function(this: Context)
                     const txnsToPost: txnDatum[] =
                     [
                         {
-                            fromAmount: undefined,
-                            toAmount: new Decimal(`100.0000`),
-                            toCurrencyID: baseCurrency.currencyId,
-                            toContainerId: containers[0].containerId,
+                            fragments: [
+                                {
+                                    fromAmount: undefined,
+                                    toAmount: new Decimal(`50.0000`),
+                                    toCurrencyID: baseCurrency.currencyId,
+                                    toContainerId: containers[0].containerId,
+                                },
+                                {
+                                    fromAmount: undefined,
+                                    toAmount: new Decimal(`50.0000`),
+                                    toCurrencyID: baseCurrency.currencyId,
+                                    toContainerId: containers[0].containerId,
+                                },
+                                {
+                                    fromAmount: new Decimal(`100.0000`),
+                                    toAmount: undefined,
+                                    fromCurrencyID: baseCurrency.currencyId,
+                                    fromContainerId: containers[0].containerId,
+                                },
+                                {
+                                    fromAmount: undefined,
+                                    toAmount: new Decimal(`100.0000`),
+                                    toCurrencyID: baseCurrency.currencyId,
+                                    toContainerId: containers[0].containerId,
+                                }
+                            ],
                             txnAgeDays: 90
                         },
                         {
-                            fromAmount: undefined,
-                            toAmount: new Decimal(`200.0000`),
-                            toCurrencyID: baseCurrency.currencyId,
-                            toContainerId: containers[1].containerId,
+                            fragments: [
+                                {
+                                    fromAmount: undefined,
+                                    toAmount: new Decimal(`200.0000`),
+                                    toCurrencyID: baseCurrency.currencyId,
+                                    toContainerId: containers[1].containerId,
+                                },
+                                {
+                                    fromAmount: undefined,
+                                    toAmount: new Decimal(`2.0000`),
+                                    toCurrencyID: secondCurrency.currencyId,
+                                    toContainerId: containers[0].containerId,
+                                }
+                            ],
                             txnAgeDays: 80
                         },
                         {
-                            fromAmount: undefined,
-                            toAmount: new Decimal(`2.0000`),
-                            toCurrencyID: secondCurrency.currencyId,
-                            toContainerId: containers[0].containerId,
-                            txnAgeDays: 80
-                        },
-                        {
-                            fromAmount: new Decimal(`99.0000`),
-                            fromCurrencyID: baseCurrency.currencyId,
-                            fromContainerId: containers[0].containerId,
-                            toAmount: new Decimal(`2.0000`),
-                            toCurrencyID: thirdCurrency.currencyId,
-                            toContainerId: containers[1].containerId,
+                            fragments: [
+                                {
+                                    fromAmount: new Decimal(`99.0000`),
+                                    fromCurrencyID: baseCurrency.currencyId,
+                                    fromContainerId: containers[0].containerId,
+                                    toAmount: new Decimal(`2.0000`),
+                                    toCurrencyID: thirdCurrency.currencyId,
+                                    toContainerId: containers[1].containerId,
+                                }
+                            ],
                             txnAgeDays: 50
                         },
                     ];
@@ -210,9 +241,6 @@ export default async function(this: Context)
 
                     for (const txnToPost of txnsToPost)
                     {
-                        const isFrom = !!txnToPost.fromAmount;
-                        const isTo = !!txnToPost.toAmount;
-
                         await TransactionHelpers.postCreateTransaction(
                         {
                             body:
@@ -223,12 +251,19 @@ export default async function(this: Context)
                                         title: randomUUID(),
                                         creationDate: Date.now() - txnToPost.txnAgeDays * 8.64e+7,
                                         description: simpleFaker.string.sample(100),
-                                        fromAmount: isFrom ? txnToPost.fromAmount.toString() : undefined,
-                                        fromContainerId: isFrom ? txnToPost.fromContainerId : undefined,
-                                        fromCurrencyId: isFrom ? txnToPost.fromCurrencyID : undefined,
-                                        toAmount: isTo ? txnToPost.toAmount.toString() : undefined,
-                                        toContainerId: isTo ? txnToPost.toContainerId : undefined,
-                                        toCurrencyId: isTo ? txnToPost.toCurrencyID : undefined,
+                                        fragments: txnToPost.fragments.map(f =>
+                                        {
+                                            const isFrom = !!f.fromAmount;
+                                            const isTo = !!f.toAmount;
+                                            return {
+                                                fromAmount: isFrom ? f.fromAmount.toString() : undefined,
+                                                fromContainer: isFrom ? f.fromContainerId : undefined,
+                                                fromCurrency: isFrom ? f.fromCurrencyID : undefined,
+                                                toAmount: isTo ? f.toAmount.toString() : undefined,
+                                                toContainer: isTo ? f.toContainerId : undefined,
+                                                toCurrency: isTo ? f.toCurrencyID : undefined,
+                                            }
+                                        }),
                                         tagIds: [choice(txnTypes).txnId]
                                     }
                                 ]

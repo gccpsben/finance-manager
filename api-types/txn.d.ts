@@ -1,18 +1,23 @@
 import { PaginationAPIResponse } from "./lib"
 export namespace PostTxnAPI
 {
+    export type FragmentDTO =
+    {
+        fromAmount: string | null;
+        fromCurrency: string | null;
+        fromContainer: string | null;
+        toAmount: string | null;
+        toCurrency: string | null;
+        toContainer: string | null;
+    };
+
     export type RequestItemDTO =
     {
         title: string;
         creationDate?: number | null;
         description?: string | null;
         tagIds: string[];
-        fromAmount?: string | null;
-        fromContainerId?: string | null;
-        fromCurrencyId?: string | null;
-        toAmount?: string | null;
-        toContainerId?: string | null;
-        toCurrencyId?: string | null;
+        fragments: PostTxnAPI.FragmentDTO[]
     };
 
     export type RequestDTO =
@@ -25,13 +30,42 @@ export namespace PostTxnAPI
 
 export namespace PutTxnAPI
 {
+    export type FragmentDTO =
+    {
+        fromAmount: string | null;
+        fromCurrency: string | null;
+        fromContainer: string | null;
+        toAmount: string | null;
+        toCurrency: string | null;
+        toContainer: string | null;
+    };
+
+    export type RequestItemDTO =
+    {
+        title: string;
+        creationDate?: number | null;
+        description?: string | null;
+        tagIds: string[];
+        fragments: PutTxnAPI.FragmentDTO[]
+    };
+
     export type RequestQueryDTO = { targetTxnId: string; };
-    export type RequestBodyDTO = PostTxnAPI.RequestItemDTO;
+    export type RequestBodyDTO = RequestItemDTO;
     export type ResponseDTO = { };
 }
 
 export namespace GetTxnAPI
 {
+    export type FragmentDTO =
+    {
+        fromAmount: string | null;
+        fromCurrency: string | null;
+        fromContainer: string | null;
+        toAmount: string | null;
+        toCurrency: string | null;
+        toContainer: string | null;
+    };
+
     export type TxnDTO =
     {
         id: string;
@@ -40,13 +74,8 @@ export namespace GetTxnAPI
         owner: string;
         creationDate: number;
         tagIds: string[];
-        fromAmount: string | null;
-        fromCurrency: string | null;
-        fromContainer: string | null;
-        toAmount: string | null;
-        toCurrency: string | null;
-        toContainer: string | null;
         changeInValue: string;
+        fragments: FragmentDTO[];
     }
     export type RequestDTO = {};
     export type ResponseDTO = PaginationAPIResponse<TxnDTO>;
@@ -55,7 +84,28 @@ export namespace GetTxnAPI
 export namespace GetTxnJsonQueryAPI
 {
     export type Path = `/api/v1/transactions/json-query`;
-    export type TxnDTO = GetTxnAPI.TxnDTO;
+
+    export type FragmentDTO =
+    {
+        fromAmount: string | null;
+        fromCurrency: string | null;
+        fromContainer: string | null;
+        toAmount: string | null;
+        toCurrency: string | null;
+        toContainer: string | null;
+    };
+
+    export type TxnDTO =
+    {
+        id: string;
+        title: string;
+        description: string;
+        owner: string;
+        creationDate: number;
+        tagIds: string[];
+        changeInValue: string;
+        fragments: FragmentDTO[];
+    }
     export type QueryDTO =
     {
         query: string;

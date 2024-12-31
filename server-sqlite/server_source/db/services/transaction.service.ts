@@ -13,8 +13,10 @@ import { QUERY_IGNORE } from "../../symbols.js";
 import { Database } from "../db.js";
 import { CurrencyCache } from "../caches/currencyListCache.cache.js";
 import { CurrencyRateDatumsCache } from '../caches/currencyRateDatumsCache.cache.js';
+import { Fragment, FragmentRaw } from "../entities/fragment.entity.js";
+import { QueryRunner } from "typeorm";
 
-export class TxnMissingContainerOrCurrency extends MonadError<typeof TxnMissingFromToAmountError.ERROR_SYMBOL>
+export class FragmentMissingContainerOrCurrency extends MonadError<typeof FragmentMissingContainerOrCurrency.ERROR_SYMBOL>
 {
     static readonly ERROR_SYMBOL: unique symbol;
 
@@ -22,20 +24,31 @@ export class TxnMissingContainerOrCurrency extends MonadError<typeof TxnMissingF
     {
         super
         (
-            TxnMissingFromToAmountError.ERROR_SYMBOL,
-            `If "${nameofT('fromAmount')}" is given, ${nameofT('fromContainerId')} and ${nameofT('fromCurrencyId')} must also be defined, same for to variant.`
+            FragmentMissingContainerOrCurrency.ERROR_SYMBOL,
+            `If "${nameofF('fromAmount')}" is given, ${nameofF('fromContainerId')} and ${nameofF('fromCurrencyId')} must also be defined, same for to variant.`
         );
         this.name = this.constructor.name;
     }
 }
 
-export class TxnMissingFromToAmountError extends MonadError<typeof TxnMissingFromToAmountError.ERROR_SYMBOL>
+export class TxnNoFragmentsError extends MonadError<typeof TxnNoFragmentsError.ERROR_SYMBOL>
 {
     static readonly ERROR_SYMBOL: unique symbol;
 
     constructor()
     {
-        super(TxnMissingFromToAmountError.ERROR_SYMBOL, `"${nameofT('fromAmount')}" and ${nameofT('toAmount')} cannot be both undefined.`);
+        super(TxnNoFragmentsError.ERROR_SYMBOL, `A transaction must have at least one fragment.`);
+        this.name = this.constructor.name;
+    }
+}
+
+export class FragmentMissingFromToAmountError extends MonadError<typeof FragmentMissingFromToAmountError.ERROR_SYMBOL>
+{
+    static readonly ERROR_SYMBOL: unique symbol;
+
+    constructor()
+    {
+        super(FragmentMissingFromToAmountError.ERROR_SYMBOL, `"${nameofF('fromAmount')}" and ${nameofF('toAmount')} cannot be both undefined.`);
         this.name = this.constructor.name;
     }
 }
@@ -86,18 +99,19 @@ export type TransactionJSONQueryItem =
     title: string,
     creationDate: number,
     description: string | null,
-    fromAmount: string | null,
-    fromContainerId: string | null,
-    fromCurrencyId: string | null,
-    fromCurrency: null | TransactionJSONQueryCurrency,
     id: string,
-    toAmount: string | null,
-    toContainerId: string | null,
-    toCurrency: null | TransactionJSONQueryCurrency,
-    tagIds: string[]
+    tagIds: string[],
+    // fromAmount: string | null,
+    // fromContainerId: string | null,
+    // fromCurrency: null | TransactionJSONQueryCurrency,
+    // toAmount: string | null,
+    // toContainerId: string | null,
+    // toCurrency: null | TransactionJSONQueryCurrency,
+    fragments: FragmentRaw[]
 }
 
 const nameofT = (x: keyof Transaction) => nameof<Transaction>(x);
+const nameofF = (x: keyof Fragment) => nameof<Fragment>(x);
 
 export class TransactionService
 {
@@ -113,104 +127,79 @@ export class TransactionService
             title: string,
             creationDate: number,
             description: string,
-            fromAmount?: string,
-            fromContainerId?: string,
-            fromCurrencyId?: string,
-            toAmount?: string | null,
-            toContainerId?: string | null,
-            toCurrencyId?: string | null,
+            fragments: Omit<FragmentRaw, 'id'>[],
             txnTagIds: string[]
         },
         currencyListCache: CurrencyCache | null
     ): Promise<
-        Transaction |
+        {
+            title: string,
+            creationDate: number,
+            description: string,
+            fragments: FragmentRaw[],
+            txnTagIds: string[]
+        } |
         UserNotFoundError |
         TxnTagNotFoundError |
         ContainerNotFoundError |
-        TxnMissingFromToAmountError |
-        TxnMissingContainerOrCurrency |
+        FragmentMissingFromToAmountError |
+        FragmentMissingContainerOrCurrency |
+        TxnNoFragmentsError |
         CurrencyNotFoundError
     >
     {
-        // NOTICE when using TypeORM's `save` method.
-        // All undefined properties will be skipped.
+        // ? NOTICE when using TypeORM's `save` method.
+        // ? All undefined properties will be skipped.
+
+        if (!obj.fragments?.length) return new TxnNoFragmentsError();
 
         // Ensure user exists
         const userFetchResult = await UserService.getUserById(userId);
         if (userFetchResult === null) return new UserNotFoundError(userId);
 
         const currRepo = Database.getCurrencyRepository()!;
+        const contRepo = Database.getContainerRepository()!;
 
-        const newTxn: PartialNull<Omit<Transaction, 'validate' | 'id'>> = {
-            title: null,
-            description: null,
-            ownerId: null,
-            owner: null,
-            creationDate: null,
-            tags: null,
-            fromAmount: null,
-            fromCurrencyId: null,
-            fromCurrency: null,
-            fromContainerId: null,
-            fromContainer: null,
-            toAmount: null,
-            toCurrencyId: null,
-            toCurrency: null,
-            toContainerId: null,
-            toContainer: null
-        };
-        newTxn.creationDate = obj.creationDate;
-        newTxn.description = obj.description;
-
-        newTxn.title = obj.title;
-
-        // From Amount
+        // Validate each fragment
+        for (const fragment of obj.fragments)
         {
-            if (obj.fromAmount) newTxn.fromAmount = obj.fromAmount;
-            if (obj.fromContainerId)
+            if (!fragment.fromAmount && !fragment.toAmount) return new FragmentMissingFromToAmountError();
+            if (fragment.fromAmount && (!fragment.fromContainerId || !fragment.fromCurrencyId)) return new FragmentMissingContainerOrCurrency();
+            if (fragment.toAmount && (!fragment.toContainerId || !fragment.toCurrencyId)) return new FragmentMissingContainerOrCurrency();
+
+            // From Amount
             {
-                const container = await Database.getContainerRepository()!.getContainer(userId, obj.fromContainerId, QUERY_IGNORE);
-                if (!container) return new ContainerNotFoundError(obj.fromContainerId, userId);
-                newTxn.fromContainerId = container.id;
+                if (fragment.fromContainerId)
+                {
+                    const container = await contRepo.getContainer(userId, fragment.fromContainerId, QUERY_IGNORE);
+                    if (!container) return new ContainerNotFoundError(fragment.fromContainerId, userId);
+                    // appliedFragment.fromContainerId = container.id;
+                }
+                if (fragment.fromCurrencyId)
+                {
+                    const currency = await currRepo.findCurrencyByIdNameTickerOne(userId, fragment.fromCurrencyId, QUERY_IGNORE, QUERY_IGNORE, currencyListCache);
+                    if (!currency) return new CurrencyNotFoundError(fragment.fromCurrencyId, userId);
+                }
             }
-            if (obj.fromCurrencyId)
+
+            // To Amount
             {
-                const currency = await currRepo.findCurrencyByIdNameTickerOne(userId, obj.fromCurrencyId, QUERY_IGNORE, QUERY_IGNORE, currencyListCache);
-                if (!currency) return new CurrencyNotFoundError(obj.fromCurrencyId, userId);
-                newTxn.fromCurrencyId = obj.fromCurrencyId;
+                if (fragment.toContainerId)
+                {
+                    const container = await contRepo.getContainer(userId, fragment.toContainerId, QUERY_IGNORE);
+                    if (!container) return new ContainerNotFoundError(fragment.toContainerId, userId);
+                }
+
+                if (fragment.toCurrencyId)
+                {
+                    const currency = await currRepo.findCurrencyByIdNameTickerOne(userId, fragment.toCurrencyId, QUERY_IGNORE, QUERY_IGNORE, currencyListCache);
+                    if (!currency) return new CurrencyNotFoundError(fragment.toCurrencyId, userId);
+                }
             }
         }
-
-        // To Amount
-        {
-            if (obj.toAmount) newTxn.toAmount = obj.toAmount;
-            else newTxn.toAmount = null;
-
-            if (obj.toContainerId)
-            {
-                const container = await Database.getContainerRepository()!.getContainer(userId, obj.toContainerId, QUERY_IGNORE);
-                if (!container) return new ContainerNotFoundError(obj.toContainerId, userId);
-                newTxn.toContainerId = container.id;
-            }
-            else { newTxn.toContainerId = null; newTxn.toContainer = null; }
-
-            if (obj.toCurrencyId)
-            {
-                const currency = await currRepo.findCurrencyByIdNameTickerOne(userId, obj.toCurrencyId, QUERY_IGNORE, QUERY_IGNORE, currencyListCache);
-                if (!currency) return new CurrencyNotFoundError(obj.toCurrencyId, userId);
-                newTxn.toCurrencyId = obj.toCurrencyId;
-            }
-            else { newTxn.toCurrencyId = null; newTxn.toCurrency = null; }
-        }
-
-        if (!obj.fromAmount && !obj.toAmount) return new TxnMissingFromToAmountError();
-        if (obj.fromAmount && (!obj.fromContainerId || !obj.fromCurrencyId)) return new TxnMissingContainerOrCurrency();
-        if (obj.toAmount && (!obj.toContainerId || !obj.toCurrencyId)) return new TxnMissingContainerOrCurrency();
 
         const owner = await UserService.getUserById(userId);
         if (!owner) return new UserNotFoundError(userId);
-
-        newTxn.owner = owner;
 
         const tnxTagObjs: TxnTag[] = [];
         for (const txnTagId of obj.txnTagIds)
@@ -221,11 +210,20 @@ export class TransactionService
             tnxTagObjs.push(txnTag);
         }
 
-        newTxn.tags = tnxTagObjs;
-
-        // @ts-ignore
-        // TODO: fix id null mismatch
-        return newTxn;
+        return {
+            title: obj.title,
+            creationDate: obj.creationDate,
+            description: obj.description,
+            fragments: (obj.fragments ?? []).map(f => ({
+                fromAmount: f.fromAmount,
+                fromContainerId: f.fromContainerId,
+                fromCurrencyId: f.fromCurrencyId,
+                toAmount: f.toAmount,
+                toContainerId: f.toContainerId,
+                toCurrencyId: f.toCurrencyId
+            })),
+            txnTagIds: obj.txnTagIds
+        };
     }
 
     public static getTxnValueIncreaseRaw
@@ -253,10 +251,14 @@ export class TransactionService
         userId: string,
         transaction:
         {
-            fromAmount?: string | null | undefined,
-            toAmount?:string | null | undefined,
-            fromCurrencyId?: string | null | undefined,
-            toCurrencyId?: string | null | undefined,
+            fragments: {
+                fromAmount: string | null;
+                fromContainerId: string | null;
+                fromCurrencyId: string | null;
+                toAmount: string | null;
+                toContainerId: string | null;
+                toCurrencyId: string | null;
+            }[],
             creationDate: number
         },
         currencyRateDatumsCache: CurrencyRateDatumsCache | null,
@@ -310,16 +312,109 @@ export class TransactionService
         };
 
         return {
-            increaseInValue: this.getTxnValueIncreaseRaw(
-                !!transaction.fromCurrencyId && !!transaction.fromAmount ? {
-                    amount: transaction.fromAmount,
-                    rate: await getRate(transaction.fromCurrencyId)
-                } : null,
-                !!transaction.toCurrencyId && !!transaction.toAmount ? {
-                    amount: transaction.toAmount ,
-                    rate: await getRate(transaction.toCurrencyId)
-                } : null
-            )
+            increaseInValue: await (async () =>
+            {
+                let txnValueIncrease = new Decimal("0");
+                for (const fragment of transaction.fragments)
+                {
+                    txnValueIncrease = txnValueIncrease.add(this.getTxnValueIncreaseRaw(
+                        !!fragment.fromCurrencyId && !!fragment.fromAmount ? {
+                            amount: fragment.fromAmount,
+                            rate: await getRate(fragment.fromCurrencyId)
+                        } : null,
+                        !!fragment.toCurrencyId && !!fragment.toAmount ? {
+                            amount: fragment.toAmount ,
+                            rate: await getRate(fragment.toCurrencyId)
+                        } : null
+                    ))
+                }
+                return txnValueIncrease;
+            })()
         }
+    }
+
+    public static async createTransaction
+    (
+        userId: string,
+        obj:
+        {
+            title: string,
+            creationDate: number,
+            description: string,
+            fragments: Omit<FragmentRaw, 'id'>[],
+            txnTagIds: string[]
+        },
+        queryRunner: QueryRunner,
+        currencyListCache: CurrencyCache | null
+    )
+    {
+        const newTxn = await TransactionService.validateTransaction(userId, {
+            creationDate: obj.creationDate,
+            description: obj.description,
+            fragments: obj.fragments,
+            title: obj.title,
+            txnTagIds: obj.txnTagIds
+        }, currencyListCache);
+
+        if (newTxn instanceof UserNotFoundError) return newTxn;
+        if (newTxn instanceof TxnTagNotFoundError) return newTxn;
+        if (newTxn instanceof FragmentMissingFromToAmountError) return newTxn;
+        if (newTxn instanceof ContainerNotFoundError) return newTxn;
+        if (newTxn instanceof FragmentMissingContainerOrCurrency) return newTxn;
+        if (newTxn instanceof CurrencyNotFoundError) return newTxn;
+        if (newTxn instanceof TxnNoFragmentsError) return newTxn;
+
+        const savedTxn = await Database.getTransactionRepository()!.createTransaction(userId, {
+            creationDate: newTxn.creationDate,
+            description: newTxn.description,
+            fragments: newTxn.fragments,
+            title: newTxn.title,
+            txnTagIds: newTxn.txnTagIds
+        }, queryRunner);
+
+        if (savedTxn instanceof TxnTagNotFoundError) return savedTxn;
+
+        return savedTxn;
+    }
+
+    public static async updateTransaction
+    (
+        userId: string,
+        targetTxnId: string,
+        obj:
+        {
+            title: string,
+            creationDate: number,
+            description: string,
+            fragments: Omit<FragmentRaw, 'id'>[],
+            txnTagIds: string[]
+        },
+        queryRunner: QueryRunner,
+        currencyListCache: CurrencyCache | null
+    )
+    {
+        const newTxn = await TransactionService.validateTransaction(userId, {
+            creationDate: obj.creationDate,
+            description: obj.description,
+            fragments: obj.fragments,
+            title: obj.title,
+            txnTagIds: obj.txnTagIds
+        }, currencyListCache);
+
+        if (newTxn instanceof UserNotFoundError) return newTxn;
+        if (newTxn instanceof TxnTagNotFoundError) return newTxn;
+        if (newTxn instanceof FragmentMissingFromToAmountError) return newTxn;
+        if (newTxn instanceof ContainerNotFoundError) return newTxn;
+        if (newTxn instanceof FragmentMissingContainerOrCurrency) return newTxn;
+        if (newTxn instanceof CurrencyNotFoundError) return newTxn;
+
+        const savedTxn = await Database.getTransactionRepository()!.updateTransaction(userId, targetTxnId, {
+            creationDate: obj.creationDate,
+            description: obj.description,
+            fragments: obj.fragments,
+            tagIds: obj.txnTagIds,
+            title: obj.title
+        }, queryRunner);
+        return savedTxn;
     }
 }

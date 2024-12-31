@@ -2,7 +2,7 @@ import { IsArray, IsNotEmpty, IsOptional, IsString, ValidateNested } from 'class
 import Express from 'express';
 import { type PutTxnAPI, type GetTxnAPI, type PostTxnAPI, type DeleteTxnAPI, GetTxnJsonQueryAPI } from '../../../../api-types/txn.js';
 import { AccessTokenService, InvalidLoginTokenError } from '../../db/services/accessToken.service.js';
-import { JSONQueryError, TransactionService, TxnMissingContainerOrCurrency, TxnMissingFromToAmountError, TxnNotFoundError } from '../../db/services/transaction.service.js';
+import { JSONQueryError, TransactionService, FragmentMissingContainerOrCurrency, FragmentMissingFromToAmountError, TxnNotFoundError, TxnNoFragmentsError } from '../../db/services/transaction.service.js';
 import { IsDecimalJSString, IsIntString, IsUTCDateInt } from '../../db/validators.js';
 import { OptionalPaginationAPIQueryRequest, PaginationAPIResponseClass } from '../pagination.js';
 import { TypesafeRouter } from '../typescriptRouter.js';
@@ -28,18 +28,27 @@ router.post<PostTxnAPI.ResponseDTO>("/api/v1/transactions",
         let transactionalContext: null | Awaited<ReturnType<typeof Database.createTransactionalContext>> = null;
         try
         {
+            class fragmentItem implements PostTxnAPI.FragmentDTO
+            {
+                @IsOptional() @IsDecimalJSString() fromAmount: string | null;
+                @IsOptional() @IsString() fromCurrency: string | null;
+                @IsOptional() @IsString() fromContainer: string | null;
+                @IsOptional() @IsDecimalJSString() toAmount: string | null;
+                @IsOptional() @IsString() toCurrency: string | null;
+                @IsOptional() @IsString() toContainer: string | null;
+            }
+
             class bodyItem implements PostTxnAPI.RequestItemDTO
             {
                 @IsString() @IsNotEmpty() title: string;
                 @IsOptional() @IsUTCDateInt() creationDate?: number | undefined;
                 @IsOptional() @IsString() description?: string | undefined;
                 @IsArray() @IsNotEmpty() tagIds: string[];
-                @IsOptional() @IsDecimalJSString() fromAmount: string | undefined;
-                @IsOptional() @IsString() fromContainerId: string | undefined;
-                @IsOptional() @IsString() fromCurrencyId: string | undefined;
-                @IsOptional() @IsDecimalJSString() toAmount: string | undefined;
-                @IsOptional() @IsString() toContainerId: string | undefined;
-                @IsOptional() @IsString() toCurrencyId: string | undefined;
+
+                @IsArray()
+                @ValidateNested({ each: true })
+                @Type(() => fragmentItem)
+                fragments: PostTxnAPI.FragmentDTO[];
             }
 
             class body implements PostTxnAPI.RequestDTO
@@ -62,26 +71,29 @@ router.post<PostTxnAPI.ResponseDTO>("/api/v1/transactions",
 
             for (const item of parsedBody.transactions)
             {
-                let transactionCreated = await Database.getTransactionRepository()!.createTransaction(authResult.ownerUserId,
+                let transactionCreated = await TransactionService.createTransaction(authResult.ownerUserId,
                 {
                     creationDate: item.creationDate ? item.creationDate : now,
                     title: item.title,
                     description: item.description ?? "",
                     txnTagIds: item.tagIds,
-                    fromAmount: item.fromAmount,
-                    fromContainerId: item.fromContainerId,
-                    fromCurrencyId: item.fromCurrencyId,
-                    toAmount: item.toAmount,
-                    toContainerId: item.toContainerId,
-                    toCurrencyId: item.toCurrencyId
+                    fragments: item.fragments.map(f => ({
+                        fromAmount: f.fromAmount,
+                        fromContainerId: f.fromContainer,
+                        fromCurrencyId: f.fromCurrency,
+                        toAmount: f.toAmount,
+                        toContainerId: f.toContainer,
+                        toCurrencyId: f.toCurrency,
+                    }))
                 }, transactionalContext.queryRunner, GlobalCurrencyCache);
 
                 if (transactionCreated instanceof UserNotFoundError) throw createHttpError(401);
                 if (transactionCreated instanceof TxnTagNotFoundError)  throw createHttpError(400, transactionCreated.message);
                 if (transactionCreated instanceof ContainerNotFoundError) throw createHttpError(400, transactionCreated.message);
-                if (transactionCreated instanceof TxnMissingFromToAmountError) throw createHttpError(400, transactionCreated.message);
-                if (transactionCreated instanceof TxnMissingContainerOrCurrency) throw createHttpError(400, transactionCreated.message);
+                if (transactionCreated instanceof FragmentMissingFromToAmountError) throw createHttpError(400, transactionCreated.message);
+                if (transactionCreated instanceof FragmentMissingContainerOrCurrency) throw createHttpError(400, transactionCreated.message);
                 if (transactionCreated instanceof CurrencyNotFoundError) throw createHttpError(400, transactionCreated.message);
+                if (transactionCreated instanceof TxnNoFragmentsError) throw createHttpError(400, transactionCreated.message);
 
                 idsCreated.push(transactionCreated.id);
             }
@@ -105,18 +117,27 @@ router.put<PutTxnAPI.ResponseDTO>("/api/v1/transactions",
         let transactionalContext: null | Awaited<ReturnType<typeof Database.createTransactionalContext>> = null;
         try
         {
+            class fragmentItem implements PostTxnAPI.FragmentDTO
+            {
+                @IsOptional() @IsDecimalJSString() fromAmount: string | null;
+                @IsOptional() @IsString() fromCurrency: string | null;
+                @IsOptional() @IsString() fromContainer: string | null;
+                @IsOptional() @IsDecimalJSString() toAmount: string | null;
+                @IsOptional() @IsString() toCurrency: string | null;
+                @IsOptional() @IsString() toContainer: string | null;
+            }
+
             class body implements PutTxnAPI.RequestBodyDTO
             {
+                @IsArray()
+                @ValidateNested({ each: true })
+                @Type(() => fragmentItem)
+                fragments: PutTxnAPI.FragmentDTO[];
+
                 @IsString() @IsNotEmpty() title: string;
                 @IsOptional() @IsUTCDateInt() creationDate?: number | undefined;
                 @IsOptional() @IsString() description?: string | undefined;
                 @IsArray() @IsNotEmpty() tagIds: string[];
-                @IsOptional() @IsDecimalJSString() fromAmount: string | undefined;
-                @IsOptional() @IsString() fromContainerId: string | undefined;
-                @IsOptional() @IsString() fromCurrencyId: string | undefined;
-                @IsOptional() @IsDecimalJSString() toAmount: string | undefined;
-                @IsOptional() @IsString() toContainerId: string | undefined;
-                @IsOptional() @IsString() toCurrencyId: string | undefined;
             }
 
             class query implements PutTxnAPI.RequestQueryDTO
@@ -132,26 +153,28 @@ router.put<PutTxnAPI.ResponseDTO>("/api/v1/transactions",
 
             transactionalContext = await Database.createTransactionalContext();
 
-            const updatedTxn = await Database.getTransactionRepository()!.updateTransaction(authResult.ownerUserId, parsedQuery.targetTxnId,
+            const updatedTxn = await TransactionService.updateTransaction(authResult.ownerUserId, parsedQuery.targetTxnId,
             {
                 creationDate: parsedBody.creationDate ? parsedBody.creationDate : now,
                 title: parsedBody.title,
                 description: parsedBody.description ?? "",
-                tagIds: parsedBody.tagIds,
-                fromAmount: parsedBody.fromAmount,
-                fromContainerId: parsedBody.fromContainerId,
-                fromCurrencyId: parsedBody.fromCurrencyId,
-                toAmount: parsedBody.toAmount,
-                toContainerId: parsedBody.toContainerId,
-                toCurrencyId: parsedBody.toCurrencyId
+                txnTagIds: parsedBody.tagIds,
+                fragments: parsedBody.fragments.map(f => ({
+                    fromAmount: f.fromAmount,
+                    fromContainerId: f.fromContainer,
+                    fromCurrencyId: f.fromCurrency,
+                    toAmount: f.toAmount,
+                    toContainerId: f.toContainer,
+                    toCurrencyId: f.toCurrency
+                }))
             }, transactionalContext.queryRunner, GlobalCurrencyCache);
 
             if (updatedTxn instanceof UserNotFoundError) throw createHttpError(401);
             if (updatedTxn instanceof TxnNotFoundError) throw createHttpError(404);
             if (updatedTxn instanceof TxnTagNotFoundError) throw createHttpError(400, updatedTxn.message);
             if (updatedTxn instanceof ContainerNotFoundError) throw createHttpError(400, updatedTxn.message);
-            if (updatedTxn instanceof TxnMissingFromToAmountError) throw createHttpError(400, updatedTxn.message);
-            if (updatedTxn instanceof TxnMissingContainerOrCurrency) throw createHttpError(400, updatedTxn.message);
+            if (updatedTxn instanceof FragmentMissingFromToAmountError) throw createHttpError(400, updatedTxn.message);
+            if (updatedTxn instanceof FragmentMissingContainerOrCurrency) throw createHttpError(400, updatedTxn.message);
 
             await transactionalContext.endSuccess();
             return {};
@@ -214,19 +237,15 @@ router.get<GetTxnAPI.ResponseDTO>(`/api/v1/transactions/json-query`,
                         GlobalCurrencyCache
                     )
                 ).increaseInValue;
-                results.push({
+                results.push(
+                {
                     id: item.id!,
                     title: item.title,
                     description: item.description ?? '',
                     owner: authResult.ownerUserId,
                     creationDate: item.creationDate,
                     tagIds: item.tagIds,
-                    fromAmount: item.fromAmount ?? null,
-                    fromCurrency: item.fromCurrency?.id ?? null,
-                    fromContainer: item.fromContainerId ?? null,
-                    toAmount: item.toAmount ?? null,
-                    toCurrency: item.toCurrency?.id ?? null,
-                    toContainer: item.toContainerId ?? null,
+                    fragments: item.fragments,
                     changeInValue: txnChangeInValue.toString()
                 });
             }
@@ -236,7 +255,25 @@ router.get<GetTxnAPI.ResponseDTO>(`/api/v1/transactions/json-query`,
         return {
             endingIndex: Math.min(matchedResults.totalItems, userQuery.endIndex === null ? Number.POSITIVE_INFINITY : userQuery.endIndex),
             startingIndex: Math.min(matchedResults.totalItems, userQuery.startIndex === null ? Number.POSITIVE_INFINITY : userQuery.startIndex),
-            rangeItems: rangeItemsWithValue,
+            rangeItems: rangeItemsWithValue.map(item => (
+            {
+                creationDate: item.creationDate,
+                description: item.description,
+                fragments: item.fragments.map(frag => (
+                {
+                    fromAmount: frag.fromAmount,
+                    fromContainer: frag.fromContainerId,
+                    fromCurrency: frag.fromCurrencyId,
+                    toAmount: frag.toAmount,
+                    toContainer: frag.toContainerId,
+                    toCurrency: frag.toCurrencyId
+                } satisfies GetTxnAPI.FragmentDTO)),
+                id: item.id,
+                owner: item.owner,
+                tagIds: item.tagIds,
+                title: item.title,
+                changeInValue: item.changeInValue
+            })),
             totalItems: matchedResults.totalItems
         } satisfies GetTxnJsonQueryAPI.ResponseDTO
     }
@@ -305,12 +342,7 @@ router.get<GetTxnAPI.ResponseDTO>(`/api/v1/transactions`,
                     owner: item.ownerId,
                     creationDate: item.creationDate,
                     tagIds: item.tagIds,
-                    fromAmount: item.fromAmount ?? null,
-                    fromCurrency: item.fromCurrencyId ?? null,
-                    fromContainer: item.fromContainerId ?? null,
-                    toAmount: item.toAmount ?? null,
-                    toCurrency: item.toCurrencyId ?? null,
-                    toContainer: item.toContainerId ?? null,
+                    fragments: item.fragments,
                     changeInValue: txnChangeInValue.toString()
                 });
             }
@@ -321,7 +353,29 @@ router.get<GetTxnAPI.ResponseDTO>(`/api/v1/transactions`,
             totalItems: response.totalItems,
             endingIndex: response.endingIndex,
             startingIndex: response.startingIndex,
-            rangeItems: rangeItems
+            rangeItems: rangeItems.map(item =>
+            {
+                const output: GetTxnAPI.TxnDTO =
+                {
+                    creationDate: item.creationDate,
+                    description: item.description,
+                    fragments: item.fragments.map(frag => (
+                    {
+                        fromAmount: frag.fromAmount,
+                        fromContainer: frag.fromContainerId,
+                        fromCurrency: frag.fromCurrencyId,
+                        toAmount: frag.toAmount,
+                        toContainer: frag.toContainerId,
+                        toCurrency: frag.toCurrencyId
+                    })),
+                    id: item.id,
+                    owner: item.owner,
+                    tagIds: item.tagIds,
+                    title: item.title,
+                    changeInValue: item.changeInValue
+                };
+                return output;
+            })
         };
     }
 });

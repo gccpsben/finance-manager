@@ -5,7 +5,7 @@ import { panic, unwrap } from "../../std_errors/monadError.js";
 import { MeteredRepository } from "../meteredRepository.js";
 import { CurrencyCache } from "../caches/currencyListCache.cache.js";
 import { UserNotFoundError, UserService } from "../services/user.service.js";
-import { JSONQueryError, TransactionJSONQueryCurrency, TransactionJSONQueryItem, TransactionService, TxnMissingContainerOrCurrency, TxnMissingFromToAmountError, TxnNotFoundError } from "../services/transaction.service.js";
+import { JSONQueryError, TransactionJSONQueryCurrency, TransactionJSONQueryItem, TransactionService, FragmentMissingContainerOrCurrency, FragmentMissingFromToAmountError, TxnNotFoundError } from "../services/transaction.service.js";
 import { QUERY_IGNORE } from "../../symbols.js";
 import { TxnTag } from "../entities/txnTag.entity.js";
 import { TransactionTagService, TxnTagNotFoundError } from "../services/txnTag.service.js";
@@ -18,8 +18,10 @@ import { nameof, ServiceUtils } from "../servicesUtils.js";
 import { CurrencyNotFoundError } from "../services/currency.service.js";
 import { SQLitePrimitiveOnly } from "../../index.d.js";
 import { isNullOrUndefined } from "../../router/validation.js";
+import { Fragment, FragmentRaw } from "../entities/fragment.entity.js";
 
 const nameofT = (x: keyof Transaction) => nameof<Transaction>(x);
+const nameofF = (x: keyof Fragment) => nameof<Fragment>(x);
 
 export class TransactionRepository extends MeteredRepository
 {
@@ -32,6 +34,10 @@ export class TransactionRepository extends MeteredRepository
         queryRunner: QueryRunner
     ): Promise<DeleteResult>
     {
+        // Delete all fragments of the transactions
+        for (const id of txnIds)
+            await queryRunner.manager.getRepository(Fragment).delete({ parentTxnId: id });
+
         const deletedTxn = await queryRunner.manager.getRepository(Transaction).delete(txnIds);
         return deletedTxn;
     }
@@ -43,6 +49,10 @@ export class TransactionRepository extends MeteredRepository
         this.#repository = this.#dataSource.getRepository(Transaction);
     }
 
+    /**
+     * Attempt to update previously added transactions.
+     * This function perform MINIMAL validations logics.
+     */
     public async updateTransaction
     (
         userId: string,
@@ -52,113 +62,42 @@ export class TransactionRepository extends MeteredRepository
             title: string,
             creationDate: number,
             description: string,
-            fromAmount?: string,
-            fromContainerId?: string,
-            fromCurrencyId?: string,
-            toAmount?: string | undefined,
-            toContainerId?: string | undefined,
-            toCurrencyId?: string | undefined,
+            fragments: FragmentRaw[],
             tagIds: string[]
         },
-        queryRunner: QueryRunner,
-        currencyListCache: CurrencyCache | null
+        queryRunner: QueryRunner
     )
     {
-        const currRepo = Database.getCurrencyRepository()!;
-        const contRepo = Database.getContainerRepository()!;
-
         // Ensure user exists
         const userFetchResult = await UserService.getUserById(userId);
         if (userFetchResult === null) return new UserNotFoundError(userId);
 
-        // TODO: Stop using type `Transaction`, this is problematic, temp fix via DeepPartial
-        const oldTxn = await queryRunner.manager.getRepository(Transaction).findOne(
+        // Delete old fragments
+        await queryRunner.manager.getRepository(Fragment).delete({ parentTxnId: targetTxnId });
+
+        // Re-save new fragments
+        const savedFragments = await this.saveFragmentsOfTxn(userId,
         {
-            where:
-            {
-                id: targetTxnId ?? null,
-                ownerId: userId ?? null
-            }
-        }) as DeepPartial<Transaction> | null ;
+            ...obj,
+            parentTxnId: targetTxnId
+        }, queryRunner);
 
-        if (!oldTxn) return new TxnNotFoundError(targetTxnId, userId);
-
-        // Modify old txn given input manually
+        // Get all txn tags
+        const tags: TxnTag[] = [];
+        for (const tagId of obj.tagIds)
         {
-            oldTxn.title = obj.title;
-            oldTxn.creationDate = obj.creationDate;
-            oldTxn.description = obj.description;
-
-            oldTxn.fromAmount = isNullOrUndefined(obj.fromAmount) ? null : obj.fromAmount;
-
-            oldTxn.fromContainerId = obj.fromContainerId ?? null;
-            oldTxn.fromContainer = !oldTxn.fromContainerId ? null : await contRepo.getContainer(oldTxn.ownerId!, obj.fromContainerId ?? '', QUERY_IGNORE);
-
-            oldTxn.fromCurrencyId = obj.fromCurrencyId ?? null;
-            oldTxn.fromCurrency = !oldTxn.fromCurrencyId ? undefined : {
-                id: (await currRepo.findCurrencyByIdNameTickerOne
-                (
-                    oldTxn.ownerId!,
-                    oldTxn.fromCurrencyId,
-                    QUERY_IGNORE,
-                    QUERY_IGNORE,
-                    currencyListCache
-                ))!.id
-            };
-
-            oldTxn.toAmount = isNullOrUndefined(obj.toAmount) ? null : obj.toAmount;
-
-            oldTxn.toContainerId = obj.toContainerId ?? null;
-            oldTxn.toContainer = !oldTxn.toContainerId ? null : await contRepo.getContainer(oldTxn.ownerId!, obj.toContainerId ?? '', QUERY_IGNORE);
-
-            oldTxn.toCurrencyId = obj.toCurrencyId ?? null;
-            oldTxn.toCurrency = !oldTxn.toCurrencyId ? undefined : {
-                id: (await currRepo.findCurrencyByIdNameTickerOne
-                (
-                    oldTxn.ownerId!,
-                    oldTxn.toCurrencyId,
-                    QUERY_IGNORE,
-                    QUERY_IGNORE,
-                    currencyListCache
-                ))!.id
-            };
-
-            {
-                let tagObjs: TxnTag[] = [];
-                if (!!obj.tagIds)
-                {
-                    for (const txnTagId of obj.tagIds)
-                    {
-                        const txnTagObj = await TransactionTagService.getTxnTagById(oldTxn.ownerId!, txnTagId);
-                        if (txnTagObj instanceof UserNotFoundError) return txnTagObj;
-                        if (txnTagObj instanceof TxnTagNotFoundError) return txnTagObj;
-                        tagObjs.push(txnTagObj);
-                    }
-                }
-                oldTxn.tags = tagObjs;
-            }
+            const tag = await queryRunner.manager.getRepository(TxnTag).findOne({where: { ownerId: userId, id: tagId }});
+            if (tag === null) return new TxnTagNotFoundError({ id: tagId }, userId);
+            tags.push(tag);
         }
 
-        const txnValidationResults = await TransactionService.validateTransaction(userId, {
-            creationDate: oldTxn.creationDate,
-            txnTagIds: oldTxn.tags.map(t => t.id!),
-            description: oldTxn.description ?? '',
-            title: oldTxn.title,
-            fromAmount: oldTxn.fromAmount ?? undefined,
-            fromContainerId: oldTxn.fromContainerId ?? undefined,
-            fromCurrencyId: oldTxn.fromCurrencyId ?? undefined,
-            toAmount: oldTxn.toAmount,
-            toContainerId: oldTxn.toContainerId,
-            toCurrencyId: oldTxn.toCurrencyId
-        }, currencyListCache);
-
-        if (txnValidationResults instanceof UserNotFoundError) return txnValidationResults;
-        if (txnValidationResults instanceof TxnTagNotFoundError) return txnValidationResults;
-        if (txnValidationResults instanceof ContainerNotFoundError) return txnValidationResults;
-        if (txnValidationResults instanceof TxnMissingFromToAmountError) return txnValidationResults;
-        if (txnValidationResults instanceof TxnMissingContainerOrCurrency) return txnValidationResults;
-
-        return await queryRunner.manager.getRepository(Transaction).save(oldTxn);
+        return await queryRunner.manager.getRepository(Transaction).save(
+        {
+            id: targetTxnId,
+            ...obj,
+            tags: tags,
+            fragments: savedFragments
+        });
     }
 
     public async getTransactionsJSONQuery
@@ -188,7 +127,8 @@ export class TransactionRepository extends MeteredRepository
         };
 
         let sqlQuery = this.#repository.createQueryBuilder(alias);
-        sqlQuery = sqlQuery.leftJoinAndSelect(`${alias}.${nameofT('tags')}`, "txn_tag")
+        sqlQuery = sqlQuery.leftJoinAndSelect(`${alias}.${nameofT('tags')}`, "txn_tag");
+        sqlQuery = sqlQuery.leftJoinAndSelect(`${alias}.${nameofT('fragments')}`, "frags");
         sqlQuery = sqlQuery.where(`${alias}.${nameofT('ownerId')} = :ownerId`, { ownerId: userId });
         const sqlResults = await sqlQuery.getManyAndCount();
 
@@ -204,18 +144,20 @@ export class TransactionRepository extends MeteredRepository
             {
                 const objToBeMatched =
                 {
+                    id: txn.id!,
                     title: txn.title!,
                     creationDate: txn.creationDate!,
                     description: txn.description,
-                    fromAmount: txn.fromAmount,
-                    fromContainerId: txn.fromContainerId,
-                    fromCurrencyId: txn.fromCurrencyId,
-                    fromCurrency: txn.fromCurrencyId ? await findCurrById(txn.fromCurrencyId) : null,
-                    id: txn.id!,
-                    toAmount: txn.toAmount,
-                    toContainerId: txn.toContainerId,
-                    toCurrency: txn.toCurrencyId ? await findCurrById(txn.toCurrencyId) : null,
-                    toCurrencyId: txn.toCurrencyId,
+                    fragments: await Promise.all(txn.fragments.map(async x => ({
+                        fromAmount: x.fromAmount,
+                        fromContainerId: x.fromContainerId,
+                        fromCurrencyId: x.fromCurrencyId,
+                        fromCurrency: x.fromCurrencyId ? await findCurrById(x.fromCurrencyId) : null,
+                        toAmount: x.toAmount,
+                        toContainerId: x.toContainerId,
+                        toCurrencyId: x.toCurrencyId,
+                        toCurrency: x.toCurrencyId ? await findCurrById(x.toCurrencyId) : null,
+                    }))),
                     tagIds: (txn.tags as { id: string }[]).map(x => x.id) ?? [],
                     tagNames: (txn.tags as { name: string }[]).map(x => x.name) ?? [],
                     changeInValue: 0
@@ -242,13 +184,13 @@ export class TransactionRepository extends MeteredRepository
                 expression.assign("DELTA", objToBeMatched.changeInValue);
                 expression.assign("DELTA_NEG", objToBeMatched.changeInValue * -1);
                 expression.assign("DELTA_POS", objToBeMatched.changeInValue);
-                expression.assign("IS_TRANSFER", (objToBeMatched.fromContainerId && objToBeMatched.toContainerId));
-                expression.assign("IS_FROM", (objToBeMatched.fromContainerId && !objToBeMatched.toContainerId));
-                expression.assign("IS_TO", (!objToBeMatched.fromContainerId && objToBeMatched.toContainerId));
-                expression.assign("WITH_NON_BASE", objToBeMatched.fromCurrency?.isBase === false || objToBeMatched.toCurrency?.isBase === false);
-                expression.assign("ONLY_BASE", objToBeMatched.fromCurrency?.isBase === false || objToBeMatched.toCurrency?.isBase === false);
-                expression.assign("FROM_TICKER", objToBeMatched.fromCurrency?.ticker ?? null);
-                expression.assign("TO_TICKER", objToBeMatched.toCurrency?.ticker ?? null);
+                // expression.assign("IS_TRANSFER", (objToBeMatched.fromContainerId && objToBeMatched.toContainerId));
+                // expression.assign("IS_FROM", (objToBeMatched.fromContainerId && !objToBeMatched.toContainerId));
+                // expression.assign("IS_TO", (!objToBeMatched.fromContainerId && objToBeMatched.toContainerId));
+                // expression.assign("WITH_NON_BASE", objToBeMatched.fromCurrency?.isBase === false || objToBeMatched.toCurrency?.isBase === false);
+                // expression.assign("ONLY_BASE", objToBeMatched.fromCurrency?.isBase === false || objToBeMatched.toCurrency?.isBase === false);
+                // expression.assign("FROM_TICKER", objToBeMatched.fromCurrency?.ticker ?? null);
+                // expression.assign("TO_TICKER", objToBeMatched.toCurrency?.ticker ?? null);
                 expression.registerFunction("withinInc", (value, minInclusive, maxInclusive) => value >= minInclusive && value <= maxInclusive, "<nnn:b>");
                 expression.registerFunction("withinExc", (value, minInclusive, maxInclusive) => value > minInclusive && value < maxInclusive, "<nnn:b>");
 
@@ -268,6 +210,9 @@ export class TransactionRepository extends MeteredRepository
         };
     }
 
+    /**
+     * This function performs MINIMAL validation logics.
+     */
     public async createTransaction
     (
         userId: string,
@@ -276,32 +221,79 @@ export class TransactionRepository extends MeteredRepository
             title: string,
             creationDate: number,
             description: string,
-            fromAmount?: string,
-            fromContainerId?: string,
-            fromCurrencyId?: string,
-            toAmount?: string | undefined,
-            toContainerId?: string | undefined,
-            toCurrencyId?: string | undefined,
+            fragments: FragmentRaw[],
             txnTagIds: string[]
         },
         queryRunner: QueryRunner,
-        currencyListCache: CurrencyCache | null
     )
     {
-        const newTxn = await TransactionService.validateTransaction(userId, obj, currencyListCache);
-        if (newTxn instanceof UserNotFoundError) return newTxn;
-        if (newTxn instanceof TxnTagNotFoundError) return newTxn;
-        if (newTxn instanceof TxnMissingFromToAmountError) return newTxn;
-        if (newTxn instanceof ContainerNotFoundError) return newTxn;
-        if (newTxn instanceof TxnMissingContainerOrCurrency) return newTxn;
-        if (newTxn instanceof CurrencyNotFoundError) return newTxn;
-        const savedObj = await queryRunner.manager.getRepository(Transaction).save(newTxn);
+        // Get all txn tags
+        const tags: TxnTag[] = [];
+        for (const tagId of obj.txnTagIds)
+        {
+            const tag = await queryRunner.manager.getRepository(TxnTag).findOne({where: { ownerId: userId, id: tagId }});
+            if (tag === null) return new TxnTagNotFoundError({ id: tagId }, userId);
+            tags.push(tag);
+        }
+
+        const savedObj = await queryRunner.manager.getRepository(Transaction).save(
+        {
+            ownerId: userId,
+            creationDate: obj.creationDate,
+            description: obj.description,
+            fragments: obj.fragments,
+            tags: tags,
+            title: obj.title
+        });
 
         if (!savedObj.id)
             throw panic(`Saved rows in the database still got falsy IDs`);
 
+        const savedFragments = await this.saveFragmentsOfTxn(userId, {
+            ...obj,
+            parentTxnId: savedObj.id!
+        }, queryRunner);
+
         // Id will always be defined since we saved the obj.
-        return savedObj as (typeof savedObj & { id: string });
+        return {
+            creationDate: savedObj.creationDate,
+            description: savedObj.description,
+            fragments: savedFragments,
+            id: savedObj.id,
+            ownerId: savedObj.ownerId,
+            tags: savedObj.tags,
+            title: savedObj.title
+        };
+    }
+
+    public async saveFragmentsOfTxn(
+        userId: string,
+        obj:
+        {
+            fragments: FragmentRaw[],
+            parentTxnId: string
+        },
+        queryRunner: QueryRunner,
+    )
+    {
+        // Save all fragments
+        const savedFragments: Fragment[] = [];
+        for (const fragment of obj.fragments)
+        {
+            const savedFragment = await queryRunner.manager.getRepository(Fragment).save(
+            {
+                fromAmount: fragment.fromAmount,
+                fromContainerId: fragment.fromContainerId,
+                fromCurrencyId: fragment.fromCurrencyId,
+                toAmount: fragment.toAmount,
+                toContainerId: fragment.toContainerId,
+                toCurrencyId: fragment.toCurrencyId,
+                parentTxnId: obj.parentTxnId,
+                ownerId: userId
+            });
+            savedFragments.push(savedFragment);
+        }
+        return savedFragments;
     }
 
     public async getTransactions
@@ -318,8 +310,9 @@ export class TransactionRepository extends MeteredRepository
         const alias = "txn";
 
         let sqlQuery = this.#repository.createQueryBuilder(alias);
-        sqlQuery = sqlQuery.leftJoinAndSelect(`${alias}.${nameofT('tags')}`, "txn_tag")
-        sqlQuery = sqlQuery.orderBy(`${alias}.${nameofT('creationDate')}`, "DESC")
+        sqlQuery = sqlQuery.leftJoinAndSelect(`${alias}.${nameofT('tags')}`, "txn_tag");
+        sqlQuery = sqlQuery.leftJoinAndSelect(`${alias}.${nameofT('fragments')}`, "frags");
+        sqlQuery = sqlQuery.orderBy(`${alias}.${nameofT('creationDate')}`, "DESC");
         sqlQuery = sqlQuery.where(`${alias}.${nameofT('ownerId')} = :ownerId`, { ownerId: userId });
 
         if (query?.id !== undefined)
@@ -352,15 +345,18 @@ export class TransactionRepository extends MeteredRepository
                 title: x.title,
                 creationDate: x.creationDate,
                 description: x.description,
-                fromAmount: x.fromAmount,
-                fromContainerId: x.fromContainerId,
-                fromCurrencyId: x.fromCurrencyId,
                 id: x.id,
                 ownerId: x.ownerId,
-                toAmount: x.toAmount,
-                toContainerId: x.toContainerId,
-                toCurrencyId: x.toCurrencyId,
-                tagIds: (x.tags as { id: string }[]).map(x => x.id) ?? []
+                tagIds: (x.tags as { id: string }[]).map(x => x.id) ?? [],
+                fragments: (x.fragments as (FragmentRaw & {id: string})[]).map(f => ({
+                    id: f.id,
+                    fromAmount: f.fromAmount,
+                    fromContainerId: f.fromContainerId,
+                    fromCurrencyId: f.fromCurrencyId,
+                    toAmount: f.toAmount,
+                    toContainerId: f.toContainerId,
+                    toCurrencyId: f.toCurrencyId,
+                }))
             })),
         };
     }
@@ -381,20 +377,23 @@ export class TransactionRepository extends MeteredRepository
 
     public async getContainersTransactions(userId: string, containerIds: string[] | { id: string }[])
     {
+        const alias = "txn";
         const targetContainerIds = ServiceUtils.normalizeEntitiesToIds(containerIds, 'id');
 
         let query = this.#repository
-        .createQueryBuilder(`txn`)
-        .where(`${nameofT('ownerId')} = :ownerId`, { ownerId: userId ?? null })
+        .createQueryBuilder(alias)
+        .where(`${alias}.${nameofT('ownerId')} = :ownerId`, { ownerId: userId ?? null })
+        .leftJoinAndSelect(`${alias}.${nameofT('fragments')}`, "frags")
         .andWhere
         (
             /*sql*/`
-                ${nameofT('fromContainerId')} IN (:...targetContainerIds)
+                frags.${nameofF('fromContainerId')} IN (:...targetContainerIds)
                     OR
-                ${nameofT('toContainerId')} IN (:...targetContainerIds)`,
+                frags.${nameofF('toContainerId')} IN (:...targetContainerIds)`,
             { targetContainerIds: targetContainerIds }
         );
 
-        return await query.getMany() as SQLitePrimitiveOnly<Transaction>[];
+        // TODO: as Transaction[] is wrong
+        return await query.getMany() as Transaction[];
     }
 }

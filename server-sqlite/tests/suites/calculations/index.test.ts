@@ -45,17 +45,65 @@ export default async function(this: Context)
 
                         const currentMonthStartEpoch = transformOffsetDate(30);
                         const currentWeekStartEpoch = transformOffsetDate(7);
-                        const txnsToPost: { toAmount: Decimal|undefined, fromAmount: Decimal|undefined, txnAgeDays: number }[] =
+                        const txnsToPost: {
+                            txnAgeDays: number,
+                            fragments: {
+                                toAmount: Decimal|undefined,
+                                fromAmount: Decimal|undefined,
+                            }[]
+                        }[] =
                         [
-                            { fromAmount: undefined              , toAmount: new Decimal(`100.0001`), txnAgeDays: 90  },
-                            { fromAmount: new Decimal(`0.0001`)  , toAmount: new Decimal(`0.0001`)  , txnAgeDays: 50  },
-                            { fromAmount: new Decimal(`0.0001`)  , toAmount: undefined              , txnAgeDays: 18  },
-                            { fromAmount: new Decimal(`0`)       , toAmount: new Decimal(`12710`)   , txnAgeDays: 6.9 },
-                            { fromAmount: new Decimal(`1820`)    , toAmount: undefined              , txnAgeDays: 6.7 },
-                            { fromAmount: undefined              , toAmount: new Decimal(`78777`)   , txnAgeDays: 1.5 },
-                            { fromAmount: new Decimal(`1912.30`) , toAmount: undefined              , txnAgeDays: 0.3 },
-                            { fromAmount: new Decimal(`192`)     , toAmount: new Decimal(`72727`)   , txnAgeDays: 0.1 },
-                            { fromAmount: new Decimal(`09037`)   , toAmount: undefined              , txnAgeDays: 0   }
+                            {
+                                txnAgeDays: 90, fragments: [
+                                    { fromAmount: undefined              , toAmount: new Decimal(`100.0001`)  }
+                                ]
+                            },
+                            {
+                                txnAgeDays: 50, fragments: [
+                                    { fromAmount: new Decimal(`0.0001`)  , toAmount: new Decimal(`0.0001`)   },
+                                    { fromAmount: new Decimal(`0.0001`)  , toAmount: new Decimal(`0.0001`)   },
+                                    { fromAmount: new Decimal(`0.0001`)  , toAmount: new Decimal(`0.0001`)   },
+                                    { fromAmount: new Decimal(`0.0001`)  , toAmount: new Decimal(`0.0001`)   }
+                                ]
+                            },
+                            {
+                                txnAgeDays: 18, fragments: [
+                                    { fromAmount: new Decimal(`0.0001`)  , toAmount: undefined   }
+                                ]
+                            },
+                            {
+                                txnAgeDays: 6.9, fragments: [
+                                    { fromAmount: new Decimal(`0`)       , toAmount: undefined   },
+                                    { fromAmount: undefined             , toAmount: new Decimal(`12710`)   }
+                                ]
+                            },
+                            {
+                                txnAgeDays: 6.7, fragments: [
+                                    { fromAmount: new Decimal(`1820`)    , toAmount: undefined   }
+                                ]
+                            },
+                            {
+                                txnAgeDays: 1.5, fragments: [
+                                    { fromAmount: undefined              , toAmount: new Decimal(`78777`)   },
+                                    { fromAmount: new Decimal(`78777`)   , toAmount: new Decimal(`0`)   },
+                                    { fromAmount: new Decimal(`0`)       , toAmount: new Decimal(`78777`)   },
+                                ]
+                            },
+                            {
+                                txnAgeDays: 0.3, fragments: [
+                                    { fromAmount: new Decimal(`1912.30`) , toAmount: undefined   }
+                                ]
+                            },
+                            {
+                                txnAgeDays: 0.1, fragments: [
+                                    { fromAmount: new Decimal(`192`)     , toAmount: new Decimal(`72727`)   }
+                                ]
+                            },
+                            {
+                                txnAgeDays: 0, fragments: [
+                                    { fromAmount: new Decimal(`09037`)   , toAmount: undefined   }
+                                ]
+                            },
                         ];
                         const expectedResult =
                         {
@@ -71,33 +119,40 @@ export default async function(this: Context)
                             incomesMonth: new Decimal(`164022`),
                         };
 
+                        // Start posting defined test transactions to server
                         for (const txnToPost of txnsToPost)
                         {
-                            const isFrom = !!txnToPost.fromAmount;
-                            const isTo = !!txnToPost.toAmount;
-
-                            await TransactionHelpers.postCreateTransaction(
-                            {
-                                body:
+                            await TransactionHelpers.postCreateTransaction
+                            (
                                 {
-                                    transactions:
-                                    [
-                                        {
-                                            title: randomUUID(),
-                                            creationDate: transformOffsetDate(txnToPost.txnAgeDays),
-                                            description: simpleFaker.string.sample(100),
-                                            fromAmount: isFrom ? txnToPost.fromAmount.toString() : undefined,
-                                            fromContainerId: isFrom ? choice(containers).containerId : undefined,
-                                            fromCurrencyId: isFrom ? baseCurrency.currencyId : undefined,
-                                            toAmount: isTo ? txnToPost.toAmount.toString() : undefined,
-                                            toContainerId: isTo ? choice(containers).containerId : undefined,
-                                            toCurrencyId: isTo ? baseCurrency.currencyId : undefined,
-                                            tagIds: [choice(txnTypes).txnId]
-                                        }
-                                    ]
-                                },
-                                ...baseConfig
-                            });
+                                    body:
+                                    {
+                                        transactions:
+                                        [
+                                            {
+                                                title: randomUUID(),
+                                                creationDate: transformOffsetDate(txnToPost.txnAgeDays),
+                                                description: simpleFaker.string.sample(100),
+                                                fragments: txnToPost.fragments.map(f => {
+                                                    const isFrom = !!f.fromAmount;
+                                                    const isTo = !!f.toAmount;
+
+                                                    return {
+                                                        fromAmount: isFrom ? f.fromAmount.toString() : undefined,
+                                                        fromContainer: isFrom ? choice(containers).containerId : undefined,
+                                                        fromCurrency: isFrom ? baseCurrency.currencyId : undefined,
+                                                        toAmount: isTo ? f.toAmount.toString() : undefined,
+                                                        toContainer: isTo ? choice(containers).containerId : undefined,
+                                                        toCurrency: isTo ? baseCurrency.currencyId : undefined,
+                                                    }
+                                                }),
+                                                tagIds: [choice(txnTypes).txnId]
+                                            }
+                                        ]
+                                    },
+                                    ...baseConfig
+                                }
+                            );
                         }
 
                         const userExpensesAndIncomes = await CalculationsHelpers.getUserExpensesAndIncomes
@@ -137,17 +192,75 @@ export default async function(this: Context)
             const baseCurrency = await CurrencyHelpers.postCreateCurrency({ body: { name: "BASE", ticker: "BASE" }, ...baseConfig });
             const secondCurrency = await CurrencyHelpers.postCreateCurrency({ body: makeCurrBody("SEC", "SEC", '1', baseCurrency.currencyId), ...baseConfig });
             const thirdCurrency = await CurrencyHelpers.postCreateCurrency({ body: makeCurrBody("THI", "THI", '1', secondCurrency.currencyId), ...baseConfig });
-            const txnsToPost: { toAmount: string | undefined, fromAmount: string | undefined, txnAgeDays: number, currId: string, conId: string }[] =
+            const txnsToPost:
+            {
+                txnAgeDays: number,
+                fragments:
+                {
+                    toAmount: string | undefined,
+                    fromAmount: string | undefined,
+                    currId: string,
+                    conId: string
+                }[]
+            }[] =
             [
-                { fromAmount: undefined, toAmount: `100.0001`, txnAgeDays: 90, currId: baseCurrency.currencyId, conId: containers[0].containerId },
-                { fromAmount: `0.0001`, toAmount: `0.0001`, txnAgeDays: 50, currId: baseCurrency.currencyId, conId: containers[1].containerId },
-                { fromAmount: `0.0001`, toAmount: undefined, txnAgeDays: 18, currId: thirdCurrency.currencyId, conId: containers[2].containerId },
-                { fromAmount: `0`, toAmount: `12710`, txnAgeDays: 6.9, currId: thirdCurrency.currencyId, conId: containers[1].containerId },
-                { fromAmount: `1820`, toAmount: undefined, txnAgeDays: 6.7, currId: baseCurrency.currencyId, conId: containers[0].containerId },
-                { fromAmount: undefined, toAmount: `78777`, txnAgeDays: 1.5, currId: secondCurrency.currencyId, conId: containers[1].containerId },
-                { fromAmount: `1912.30`, toAmount: undefined, txnAgeDays: 0.3, currId: baseCurrency.currencyId, conId: containers[2].containerId },
-                { fromAmount: `192`, toAmount: `72727`, txnAgeDays: 0.1, currId: secondCurrency.currencyId, conId: containers[0].containerId },
-                { fromAmount: `09037`, toAmount: undefined, txnAgeDays: 0, currId: thirdCurrency.currencyId, conId: containers[1].containerId }
+                {
+                    txnAgeDays: 90,
+                    fragments: [
+                        { fromAmount: undefined  , toAmount: `100.0001`, currId: baseCurrency.currencyId, conId: containers[0].containerId },
+                    ]
+                },
+                {
+                    txnAgeDays: 50,
+                    fragments: [
+                        { fromAmount: `0.0001`   , toAmount: `0.0001`  , currId: baseCurrency.currencyId, conId: containers[1].containerId },
+                        { fromAmount: `0.0001`   , toAmount: `0.0001`  , currId: baseCurrency.currencyId, conId: containers[1].containerId },
+                        { fromAmount: `0.0001`   , toAmount: `0.0001`  , currId: baseCurrency.currencyId, conId: containers[1].containerId },
+                    ]
+                },
+                {
+                    txnAgeDays: 18,
+                    fragments: [
+                        { fromAmount: `0.0001`   , toAmount: undefined , currId: thirdCurrency.currencyId, conId: containers[2].containerId },
+                    ]
+                },
+                {
+                    txnAgeDays: 6.9,
+                    fragments: [
+                        { fromAmount: `0`        , toAmount: undefined , currId: thirdCurrency.currencyId, conId: containers[1].containerId },
+                        { fromAmount: undefined  , toAmount: `12710`   , currId: thirdCurrency.currencyId, conId: containers[0].containerId },
+                    ]
+                },
+                {
+                    txnAgeDays: 6.7,
+                    fragments: [
+                        { fromAmount: `1820`     , toAmount: undefined , currId: baseCurrency.currencyId, conId: containers[0].containerId },
+                    ]
+                },
+                {
+                    txnAgeDays: 1.5,
+                    fragments: [
+                        { fromAmount: undefined  , toAmount: `78777`   , currId: secondCurrency.currencyId, conId: containers[1].containerId },
+                    ]
+                },
+                {
+                    txnAgeDays: 0.3,
+                    fragments: [
+                        { fromAmount: `1912.30`  , toAmount: undefined, currId: baseCurrency.currencyId, conId: containers[2].containerId },
+                    ]
+                },
+                {
+                    txnAgeDays: 0.1,
+                    fragments: [
+                        { fromAmount: `192`      , toAmount: `72727`  , currId: secondCurrency.currencyId, conId: containers[0].containerId },
+                    ]
+                },
+                {
+                    txnAgeDays: 0,
+                    fragments: [
+                        { fromAmount: `09037`    , toAmount: undefined, currId: thirdCurrency.currencyId, conId: containers[1].containerId }
+                    ]
+                },
             ];
 
             shuffleArray(txnsToPost);
@@ -155,9 +268,6 @@ export default async function(this: Context)
             // Start posting defined test transactions to server
             for (const txnToPost of txnsToPost)
             {
-                const isFrom = !!txnToPost.fromAmount;
-                const isTo = !!txnToPost.toAmount;
-
                 await TransactionHelpers.postCreateTransaction
                 (
                     {
@@ -169,12 +279,19 @@ export default async function(this: Context)
                                     title: randomUUID(),
                                     creationDate: transformOffsetDate(txnToPost.txnAgeDays),
                                     description: simpleFaker.string.sample(100),
-                                    fromAmount: isFrom ? txnToPost.fromAmount : undefined,
-                                    fromContainerId: isFrom ? txnToPost.conId : undefined,
-                                    fromCurrencyId: isFrom ? txnToPost.currId : undefined,
-                                    toAmount: isTo ? txnToPost.toAmount : undefined,
-                                    toContainerId: isTo ? txnToPost.conId : undefined,
-                                    toCurrencyId: isTo ? txnToPost.currId : undefined,
+                                    fragments: txnToPost.fragments.map(f => {
+                                        const isFrom = !!f.fromAmount;
+                                        const isTo = !!f.toAmount;
+
+                                        return {
+                                            fromAmount: isFrom ? f.fromAmount : undefined,
+                                            fromContainer: isFrom ? f.conId : undefined,
+                                            fromCurrency: isFrom ? f.currId : undefined,
+                                            toAmount: isTo ? f.toAmount : undefined,
+                                            toContainer: isTo ? f.conId : undefined,
+                                            toCurrency: isTo ? f.currId : undefined,
+                                        }
+                                    }),
                                     tagIds: [choice(txnTypes).txnId]
                                 }
                             ]
@@ -315,17 +432,76 @@ export default async function(this: Context)
             const baseCurrency = await CurrencyHelpers.postCreateCurrency({ body: { name: "BASE", ticker: "BASE" }, ...baseConfig });
             const secondCurrency = await CurrencyHelpers.postCreateCurrency({ body: makeCurrBody("SEC", "SEC", '1', baseCurrency.currencyId), ...baseConfig });
             const thirdCurrency = await CurrencyHelpers.postCreateCurrency({ body: makeCurrBody("THI", "THI", '1', secondCurrency.currencyId), ...baseConfig });
-            const txnsToPost: { toAmount: string | undefined, fromAmount: string | undefined, txnAgeDays: number, currId: string, conId: string }[] =
+            const txnsToPost:
+            {
+                txnAgeDays: number,
+                fragments:
+                {
+                    toAmount: string | undefined,
+                    fromAmount: string | undefined,
+                    currId: string,
+                    conId: string
+                }[]
+            }[] =
             [
-                { fromAmount: undefined  , toAmount: `100.0001` , txnAgeDays: 90, currId: baseCurrency.currencyId   , conId: containers[0].containerId },
-                { fromAmount: `0.0001`   , toAmount: `0.0001`   , txnAgeDays: 85, currId: baseCurrency.currencyId   , conId: containers[1].containerId },
-                { fromAmount: `0.0001`   , toAmount: undefined  , txnAgeDays: 65, currId: thirdCurrency.currencyId  , conId: containers[2].containerId },
-                { fromAmount: `0`        , toAmount: `12710`    , txnAgeDays: 60, currId: thirdCurrency.currencyId  , conId: containers[1].containerId },
-                { fromAmount: `1820`     , toAmount: undefined  , txnAgeDays: 40, currId: baseCurrency.currencyId   , conId: containers[0].containerId },
-                { fromAmount: undefined  , toAmount: `78777`    , txnAgeDays: 32, currId: secondCurrency.currencyId , conId: containers[1].containerId },
-                { fromAmount: `1912.30`  , toAmount: undefined  , txnAgeDays: 18, currId: baseCurrency.currencyId   , conId: containers[2].containerId },
-                { fromAmount: `192`      , toAmount: `72727`    , txnAgeDays: 9 , currId: secondCurrency.currencyId , conId: containers[0].containerId },
-                { fromAmount: `09037`    , toAmount: undefined  , txnAgeDays: 0 , currId: thirdCurrency.currencyId  , conId: containers[1].containerId }
+                {
+                    txnAgeDays: 90,
+                    fragments: [
+                        { fromAmount: undefined  , toAmount: `100.0001`, currId: baseCurrency.currencyId   , conId: containers[0].containerId }
+                    ]
+                },
+                {
+                    txnAgeDays: 85,
+                    fragments: [
+                        { fromAmount: `0.0001`   , toAmount: `0.0001`  , currId: baseCurrency.currencyId   , conId: containers[1].containerId },
+                        { fromAmount: `0.0001`   , toAmount: `0.0001`  , currId: baseCurrency.currencyId   , conId: containers[1].containerId },
+                        { fromAmount: `0.0001`   , toAmount: `0.0001`  , currId: baseCurrency.currencyId   , conId: containers[1].containerId },
+                        { fromAmount: `0.0001`   , toAmount: `0.0001`  , currId: baseCurrency.currencyId   , conId: containers[1].containerId }
+                    ]
+                },
+                {
+                    txnAgeDays: 65,
+                    fragments: [
+                        { fromAmount: `0.0001`   , toAmount: undefined , currId: thirdCurrency.currencyId  , conId: containers[2].containerId }
+                    ]
+                },
+                {
+                    txnAgeDays: 60,
+                    fragments: [
+                        { fromAmount: `0`        , toAmount: `12710`   , currId: thirdCurrency.currencyId  , conId: containers[1].containerId }
+                    ]
+                },
+                {
+                    txnAgeDays: 40,
+                    fragments: [
+                        { fromAmount: `1820`     , toAmount: undefined , currId: baseCurrency.currencyId   , conId: containers[0].containerId }
+                    ]
+                },
+                {
+                    txnAgeDays: 32,
+                    fragments: [
+                        { fromAmount: undefined  , toAmount: `78777`   , currId: secondCurrency.currencyId , conId: containers[1].containerId }
+                    ]
+                },
+                {
+                    txnAgeDays: 18,
+                    fragments: [
+                        { fromAmount: `1912.30`  , toAmount: undefined , currId: baseCurrency.currencyId   , conId: containers[2].containerId }
+                    ]
+                },
+                {
+                    txnAgeDays: 9,
+                    fragments: [
+                        { fromAmount: `192`      , toAmount: undefined , currId: secondCurrency.currencyId , conId: containers[1].containerId },
+                        { fromAmount: undefined  , toAmount: `72727`   , currId: secondCurrency.currencyId , conId: containers[0].containerId }
+                    ]
+                },
+                {
+                    txnAgeDays: 0,
+                    fragments: [
+                        { fromAmount: `09037`    , toAmount: undefined , currId: thirdCurrency.currencyId  , conId: containers[1].containerId }
+                    ]
+                },
             ];
             const ratesDatums =
             [
@@ -346,9 +522,6 @@ export default async function(this: Context)
             // Start posting defined test transactions to server
             for (const txnToPost of txnsToPost)
             {
-                const isFrom = !!txnToPost.fromAmount;
-                const isTo = !!txnToPost.toAmount;
-
                 await TransactionHelpers.postCreateTransaction
                 (
                     {
@@ -360,12 +533,19 @@ export default async function(this: Context)
                                     title: randomUUID(),
                                     creationDate: transformOffsetDate(txnToPost.txnAgeDays),
                                     description: simpleFaker.string.sample(100),
-                                    fromAmount: isFrom ? txnToPost.fromAmount : undefined,
-                                    fromContainerId: isFrom ? txnToPost.conId : undefined,
-                                    fromCurrencyId: isFrom ? txnToPost.currId : undefined,
-                                    toAmount: isTo ? txnToPost.toAmount : undefined,
-                                    toContainerId: isTo ? txnToPost.conId : undefined,
-                                    toCurrencyId: isTo ? txnToPost.currId : undefined,
+                                    fragments: txnToPost.fragments.map(f => {
+                                        const isFrom = !!f.fromAmount;
+                                        const isTo = !!f.toAmount;
+
+                                        return {
+                                            fromAmount: isFrom ? f.fromAmount : undefined,
+                                            fromContainer: isFrom ? f.conId : undefined,
+                                            fromCurrency: isFrom ? f.currId : undefined,
+                                            toAmount: isTo ? f.toAmount : undefined,
+                                            toContainer: isTo ? f.conId : undefined,
+                                            toCurrency: isTo ? f.currId : undefined,
+                                        }
+                                    }),
                                     tagIds: [choice(txnTypes).txnId]
                                 }
                             ]
