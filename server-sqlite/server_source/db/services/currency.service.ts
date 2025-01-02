@@ -402,4 +402,71 @@ export class CurrencyService
         }
         return output;
     }
+
+    public static async getWorthOfBalances
+    (
+        userId:string,
+        date: number,
+        balances: { [currId: string]: Decimal },
+        currencyRateDatumsCache: CurrencyRateDatumsCache | null,
+        currencyToBaseRateCache: CurrencyToBaseRateCache | null,
+        currencyListCache: CurrencyCache | null
+    )
+    {
+        const currRepo = Database.getCurrencyRepository()!;
+        const getRate = async (currencyId: string) =>
+        {
+            let currencyRate = await (async () =>
+            {
+                // Try getting the currency rate to base at txn's epoch from cache first.
+                const amountToBaseValueCacheResult = currencyToBaseRateCache?.queryCurrencyToBaseRate(userId, currencyId, date);
+                if (amountToBaseValueCacheResult) return amountToBaseValueCacheResult.toString();
+
+                // If not available, compute the rate uncached. And finally save the result into cache.
+                const currencyRefetched = await currRepo.findCurrencyByIdNameTickerOne
+                (
+                    userId,
+                    currencyId,
+                    QUERY_IGNORE,
+                    QUERY_IGNORE,
+                    currencyListCache
+                );
+                const rate =
+                (
+                    await CurrencyService.rateHydrateCurrency
+                    (
+                        userId,
+                        [currencyRefetched!],
+                        date,
+                        currencyRateDatumsCache,
+                        currencyToBaseRateCache,
+                        currencyListCache
+                    )
+                )[0].rateToBase;
+
+                if (currencyToBaseRateCache)
+                    currencyToBaseRateCache.cacheCurrencyToBase(userId, currencyRefetched!.id, date, new Decimal(rate));
+
+                return rate;
+            })();
+
+            return currencyRate;
+        };
+
+        let currenciesRate:{ [currId: string]: string; } = {};
+        let output: Decimal = new Decimal("0");
+        for (const [currId, amount] of Object.entries(balances))
+        {
+            if (!currenciesRate[currId])
+                currenciesRate[currId] = await getRate(currId);
+
+            let currencyWorth = new Decimal((await getRate(currId))).mul(amount);
+            output = output.add(currencyWorth);
+        }
+
+        return {
+            rates: currenciesRate,
+            totalWorth: output
+        }
+    }
 }

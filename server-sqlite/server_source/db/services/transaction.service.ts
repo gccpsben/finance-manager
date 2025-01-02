@@ -226,7 +226,7 @@ export class TransactionService
         };
     }
 
-    public static getTxnValueIncreaseRaw
+    public static getFragmentValueIncreaseRaw
     (
         from: { amount: string, rate: string } | null,
         to: { amount: string, rate: string } | null
@@ -317,7 +317,7 @@ export class TransactionService
                 let txnValueIncrease = new Decimal("0");
                 for (const fragment of transaction.fragments)
                 {
-                    txnValueIncrease = txnValueIncrease.add(this.getTxnValueIncreaseRaw(
+                    txnValueIncrease = txnValueIncrease.add(this.getFragmentValueIncreaseRaw(
                         !!fragment.fromCurrencyId && !!fragment.fromAmount ? {
                             amount: fragment.fromAmount,
                             rate: await getRate(fragment.fromCurrencyId)

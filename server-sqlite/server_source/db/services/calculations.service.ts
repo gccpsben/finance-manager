@@ -2,7 +2,7 @@ import { Decimal } from "decimal.js";
 import { TransactionService } from "./transaction.service.js";
 import { DecimalAdditionMapReducer, ServiceUtils } from "../servicesUtils.js";
 import { LinearInterpolator } from "../../calculations/linearInterpolator.js";
-import { CurrencyCalculator } from "./currency.service.js";
+import { CurrencyCalculator, CurrencyService } from "./currency.service.js";
 import { CurrencyCache, GlobalCurrencyCache } from "../caches/currencyListCache.cache.js";
 import { UserNotFoundError, UserService } from "./user.service.js";
 import { panic, unwrap } from "../../std_errors/monadError.js";
@@ -12,6 +12,7 @@ import { CurrencyToBaseRateCache } from "../caches/currencyToBaseRate.cache.js";
 import { Database } from "../db.js";
 import { QUERY_IGNORE } from "../../symbols.js";
 import { CurrencyRateDatumsCache } from "../caches/currencyRateDatumsCache.cache.js";
+import { FragmentRaw } from "../entities/fragment.entity.js";
 
 /** An object that represents a query of a time range. */
 export type TimeRangeQuery =
@@ -26,8 +27,99 @@ export type UserBalanceHistoryResults =
     currenciesEarliestPresentEpoch: { [currencyId: string]: number }
 };
 
+export type ContainerTimeLine =
+{
+    timeline:
+    {
+        txn:
+        {
+            id: string,
+            creationDate: number,
+            title: string,
+            fragments: FragmentRaw[],
+        },
+        containerBalance: { [currId: string]: Decimal },
+        containerWorth: string
+    }[]
+};
+
 export class CalculationsService
 {
+    public static async getContainersTimelines
+    (
+        userId: string,
+        containerIds: string[],
+        currencyRateDatumsCache: CurrencyRateDatumsCache | null,
+        currencyToBaseRateCache: CurrencyToBaseRateCache | null,
+        currencyCache: CurrencyCache | null
+    ): Promise<{ [containerId: string]: ContainerTimeLine }>
+    {
+        const txnRepo = Database.getTransactionRepository()!;
+
+        // TODO: Move container filter to SQL, should be faster with external RDBMS
+        /** All txns related to the given containers. Sorted: From earliest to latest txns */
+        const containerTxns = (await txnRepo.getTransactions(userId))
+        .rangeItems
+        .filter(x => x.fragments.some(f => {
+            if (f.fromContainerId && containerIds.includes(f.fromContainerId)) return true;
+            if (f.toContainerId && containerIds.includes(f.toContainerId)) return true;
+            return false;
+        }))
+        .reverse();
+
+        const output: {[containerId: string]: ContainerTimeLine} = {};
+
+        for (const containerId of containerIds)
+        {
+            const entries: ContainerTimeLine['timeline'] = [];
+            const balancesReducer = new DecimalAdditionMapReducer<string>({});
+
+            for (const txn of containerTxns)
+            {
+                let relatedFragmentsCount = 0;
+
+                // Reduce fragments balances to reducer
+                for (const fragment of txn.fragments)
+                {
+                    const fromRelated = fragment.fromCurrencyId && fragment.fromContainerId === containerId;
+                    const toRelated = fragment.toCurrencyId && fragment.toContainerId === containerId;
+
+                    if (fromRelated) await balancesReducer.reduce(fragment.fromCurrencyId!, new Decimal(fragment.fromAmount!).neg());
+                    if (toRelated) await balancesReducer.reduce(fragment.toCurrencyId!, new Decimal(fragment.toAmount!));
+
+                    if (fromRelated || toRelated) relatedFragmentsCount++;
+                }
+
+                if (relatedFragmentsCount === 0) continue;
+
+                entries.push(
+                {
+                    txn:
+                    {
+                        creationDate: txn.creationDate,
+                        fragments: txn.fragments,
+                        id: txn.id!,
+                        title: txn.title,
+                    },
+                    containerBalance: balancesReducer.currentValue,
+                    containerWorth: (await CurrencyService.getWorthOfBalances
+                    (
+                        userId,
+                        txn.creationDate,
+                        balancesReducer.currentValue,
+                        currencyRateDatumsCache,
+                        currencyToBaseRateCache,
+                        currencyCache
+                    )).totalWorth.toString()
+                });
+            }
+
+            output[containerId] = { timeline: entries };
+        }
+
+        return output;
+    }
+
     /**
      * Get the total expenses and incomes given a list of time ranges.
      */
