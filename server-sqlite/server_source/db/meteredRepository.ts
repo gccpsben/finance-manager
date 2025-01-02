@@ -6,4 +6,5 @@ export class MeteredRepository
     protected incrementWrite() { this.#dbWriteQueryCount++ }
     public getDbReadQueryCount() { return this.#dbReadQueryCount; }
     public getDbWriteQueryCount() { return this.#dbWriteQueryCount; }
+    public resetQueryCount() { this.#dbReadQueryCount = 0; this.#dbWriteQueryCount = 0; }
 }
