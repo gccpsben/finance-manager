@@ -9,6 +9,7 @@ import { CronService } from "./cronService.js";
 import { QUERY_IGNORE } from "../symbols.js";
 import { GlobalCurrencyCache } from "../db/caches/currencyListCache.cache.js";
 import { GlobalCurrencyToBaseRateCache } from "../db/caches/currencyToBaseRate.cache.js";
+import { GlobalCurrencyRateDatumsCache } from "../db/caches/currencyRateDatumsCache.cache.js";
 
 export class CurrencyRatesCRON implements CronService
 {
@@ -64,6 +65,7 @@ export class CurrencyRatesCRON implements CronService
                         fullRateSrc,
                         now,
                         transactionContext.queryRunner,
+                        GlobalCurrencyRateDatumsCache,
                         GlobalCurrencyToBaseRateCache,
                         GlobalCurrencyCache
                     );

@@ -13,6 +13,7 @@ import { Type } from 'class-transformer';
 import { Database } from '../../db/db.js';
 import { GlobalCurrencyToBaseRateCache } from '../../db/caches/currencyToBaseRate.cache.js';
 import { GlobalCurrencyCache } from '../../db/caches/currencyListCache.cache.js';
+import { GlobalCurrencyRateDatumsCache } from '../../db/caches/currencyRateDatumsCache.cache.js';
 
 const router = new TypesafeRouter(express.Router());
 
@@ -55,6 +56,7 @@ router.post<PostCurrencyRateAPI.ResponseDTO>(`/api/v1/currencyRateDatums`,
                 }
             }),
             transactionContext.queryRunner,
+            GlobalCurrencyRateDatumsCache,
             GlobalCurrencyToBaseRateCache,
             GlobalCurrencyCache
         );

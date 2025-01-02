@@ -1,5 +1,5 @@
 import NodeCache from "node-cache";
-import { CacheBase } from "./cacheBase.js";
+import { CacheBase } from "../cacheBase.js";
 
 export type CurrencyCacheEntry = {
     id: string,

@@ -49,6 +49,7 @@ export class CurrencyRateDatumService
             amountCurrencyId: string
         }[],
         queryRunner: QueryRunner,
+        currencyRateDatumsCache: CurrencyRateDatumsCache | null,
         currencyToBaseRateCache: CurrencyToBaseRateCache | null,
         currencyCache: CurrencyCache | null
     ): Promise<{
@@ -71,7 +72,14 @@ export class CurrencyRateDatumService
             userIdToObjMap[userId] = owner;
         }
 
-        return await Database.getCurrencyRateDatumRepository()!.createCurrencyRateDatum(datums, queryRunner, currencyToBaseRateCache, currencyCache);
+        return await Database.getCurrencyRateDatumRepository()!.createCurrencyRateDatum
+        (
+            datums,
+            queryRunner,
+            currencyRateDatumsCache,
+            currencyToBaseRateCache,
+            currencyCache,
+        );
     }
 
     public static async getCurrencyRateHistory
@@ -90,9 +98,10 @@ export class CurrencyRateDatumService
         const userFetchResult = await UserService.getUserById(ownerId);
         if (userFetchResult === null) return new UserNotFoundError(ownerId);
 
-        const datumsWithinRange = await Database.getCurrencyRateDatumRepository()!.getCurrencyDatums(ownerId, currencyId, startDate, endDate);
+        const datumsWithinRange = await Database.getCurrencyRateDatumRepository()!
+        .getCurrencyDatums(ownerId, currencyId, startDate, endDate, currencyRateDatumsCache);
 
-        if (datumsWithinRange.length <= 1)
+        if (datumsWithinRange.length === 0)
         {
             return {
                 datums: [],

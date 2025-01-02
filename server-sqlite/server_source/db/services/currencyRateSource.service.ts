@@ -14,6 +14,7 @@ import { Database } from "../db.js";
 import { QUERY_IGNORE } from "../../symbols.js";
 import { CurrencyCache } from "../caches/currencyListCache.cache.js";
 import { CurrencyToBaseRateCache } from "../caches/currencyToBaseRate.cache.js";
+import { CurrencyRateDatumsCache } from "../caches/currencyRateDatumsCache.cache.js";
 
 export class InvalidNumberError extends MonadError<typeof InvalidNumberError.ERROR_SYMBOL>
 {
@@ -239,6 +240,7 @@ export class CurrencyRateSourceService
         },
         nowEpoch: number,
         queryRunner: QueryRunner,
+        currencyRateDatumsCache: CurrencyRateDatumsCache | null,
         currencyToBaseRateCache: CurrencyToBaseRateCache | null,
         currencyCache: CurrencyCache | null
     ): Promise<{
@@ -296,6 +298,7 @@ export class CurrencyRateSourceService
                     }
                 ],
                 queryRunner,
+                currencyRateDatumsCache,
                 currencyToBaseRateCache,
                 currencyCache
             );

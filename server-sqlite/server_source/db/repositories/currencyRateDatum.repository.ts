@@ -55,9 +55,22 @@ export class CurrencyRateDatumRepository extends MeteredRepository
         userId:string,
         currencyId: string,
         startDate: number | undefined = undefined,
-        endDate: number | undefined = undefined
+        endDate: number | undefined = undefined,
+        currencyDateDatumsCache: CurrencyRateDatumsCache | null
     )
     {
+        const cache_result = currencyDateDatumsCache?.queryRateDatums(userId, currencyId);
+        if (cache_result !== undefined)
+        {
+            return cache_result.filter(x => {
+                if (startDate !== undefined && !(x.date >= startDate))
+                    return false;
+                if (endDate !== undefined && !(x.date <= endDate))
+                    return false;
+                return true;
+            });
+        }
+
         let query = this.#repository
         .createQueryBuilder(`datum`)
         .where(`${nameofD('ownerId')} = :ownerId`, { ownerId: userId ?? null });
@@ -68,6 +81,11 @@ export class CurrencyRateDatumRepository extends MeteredRepository
 
         this.incrementRead();
         const results = await query.getMany();
+
+        // We only cache datums that are full.
+        if (startDate === undefined && endDate === undefined && !!currencyDateDatumsCache)
+            currencyDateDatumsCache.cacheRateDatums(userId, currencyId, results);
+
         return results as (SQLitePrimitiveOnly<CurrencyRateDatum>)[];
     }
 
@@ -82,6 +100,7 @@ export class CurrencyRateDatumRepository extends MeteredRepository
             amountCurrencyId: string
         }[],
         queryRunner: QueryRunner,
+        currencyRateDatumsCache: CurrencyRateDatumsCache | null,
         currencyToBaseRateCache: CurrencyToBaseRateCache | null,
         currencyListCache: CurrencyCache | null
     ): Promise<{
@@ -106,6 +125,7 @@ export class CurrencyRateDatumRepository extends MeteredRepository
 
         for (let datum of datums)
         {
+            currencyRateDatumsCache?.invalidateRateDatums(datum.userId, datum.currencyId);
             currencyToBaseRateCache?.invalidateCurrencyToBase(datum.userId, datum.currencyId);
 
             const newRate = queryRunner.manager.getRepository(CurrencyRateDatum).create();
@@ -126,6 +146,7 @@ export class CurrencyRateDatumRepository extends MeteredRepository
             this.incrementWrite();
             const newlySavedDatum = await this.#repository.save(newRate);
             if (!newlySavedDatum.id) throw panic(`Newly saved currency rate datum contains falsy IDs.`);
+
             savedDatums.push({
                 amount: newlySavedDatum.amount,
                 date: newlySavedDatum.date,

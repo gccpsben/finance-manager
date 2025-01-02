@@ -588,6 +588,7 @@ export default async function(this: Context)
                             }
                         );
 
+                        assertStrictEqual(historyResponse.parsedBody.datums.length, testCase.division);
                         for (let i = 0; i < testCase.division; i++)
                         {
                             assertStrictEqual(historyResponse.parsedBody.datums[i].date, testCase.expectedResults[i].date);

@@ -209,8 +209,8 @@ export class CalculationsService
                 currencyRateDatumsCache,
                 cache,
                 currencyCache,
-                new Date(startDate),
-                new Date(endDate),
+                startDate,
+                endDate,
             ));
             return interpolator;
         };

@@ -237,8 +237,8 @@ export class CurrencyCalculator
         currencyRateDatumsCache: CurrencyRateDatumsCache | null,
         currencyToBaseRateCache: CurrencyToBaseRateCache | null,
         currencyCache: CurrencyCache | null,
-        startDate?: Date,
-        endDate?: Date,
+        startDate?: number | undefined,
+        endDate?: number | undefined,
     ): Promise<LinearInterpolator | UserNotFoundError>
     {
         const currRepo = await Database.getCurrencyRepository()!;
@@ -247,12 +247,13 @@ export class CurrencyCalculator
         const userFetchResult = await UserService.getUserById(userId);
         if (userFetchResult === null) return new UserNotFoundError(userId);
 
-        const datums = await (async () =>
-        {
-            const cache_result = currencyRateDatumsCache?.queryRateDatums(userId, currencyId);
-            if (cache_result !== undefined) return cache_result; // cache hit
-            return await Database.getCurrencyRateDatumRepository()!.getCurrencyDatums(userId, currencyId); // cache miss
-        })();
+        const datums = await Database.getCurrencyRateDatumRepository()!.getCurrencyDatums(
+            userId,
+            currencyId,
+            undefined,
+            undefined,
+            currencyRateDatumsCache
+        )
 
         const getCurrById = async (id: string) =>
         {

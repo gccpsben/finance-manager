@@ -2,7 +2,7 @@ import NodeCache from "node-cache";
 import type { SQLitePrimitiveOnly } from "../../index.d.js";
 import { CurrencyRateDatum } from '../entities/currencyRateDatum.entity.js';
 import { DifferenceHydratedCurrencyRateDatum } from "../repositories/currencyRateDatum.repository.js";
-import { CacheBase } from "./cacheBase.js";
+import { CacheBase } from "../cacheBase.js";
 
 export class CurrencyRateDatumsCache extends CacheBase
 {

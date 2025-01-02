@@ -1,6 +1,6 @@
 import NodeCache from "node-cache";
 import { Decimal } from "decimal.js";
-import { CacheBase } from "./cacheBase.js";
+import { CacheBase } from "../cacheBase.js";
 
 type CurrencyToBaseRateCacheEntry = {[dateEpoch: string]: Decimal};
 export class CurrencyToBaseRateCache extends CacheBase
