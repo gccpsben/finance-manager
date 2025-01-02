@@ -247,7 +247,12 @@ export class CurrencyCalculator
         const userFetchResult = await UserService.getUserById(userId);
         if (userFetchResult === null) return new UserNotFoundError(userId);
 
-        const datums = await Database.getCurrencyRateDatumRepository()!.getCurrencyDatums(userId, currencyId);
+        const datums = await (async () =>
+        {
+            const cache_result = currencyRateDatumsCache?.queryRateDatums(userId, currencyId);
+            if (cache_result !== undefined) return cache_result; // cache hit
+            return await Database.getCurrencyRateDatumRepository()!.getCurrencyDatums(userId, currencyId); // cache miss
+        })();
 
         const getCurrById = async (id: string) =>
         {
