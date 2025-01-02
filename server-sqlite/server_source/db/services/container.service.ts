@@ -1,15 +1,14 @@
 import { UserRepository } from "../repositories/user.repository.js";
-import { IdBound } from "../../index.d.js";
 import { Decimal } from "decimal.js";
 import { CurrencyCalculator } from "./currency.service.js";
-import { Currency } from "../entities/currency.entity.js";
-import { CurrencyCache, GlobalCurrencyCache } from "../caches/currencyListCache.cache.js";
+import { CurrencyCache } from "../caches/currencyListCache.cache.js";
 import { UserNotFoundError, UserService } from "./user.service.js";
 import { MonadError, unwrap } from "../../std_errors/monadError.js";
 import { CurrencyToBaseRateCache } from "../caches/currencyToBaseRate.cache.js";
 import { Database } from "../db.js";
 import { QUERY_IGNORE } from "../../symbols.js";
 import { CurrencyRateDatumsCache } from '../caches/currencyRateDatumsCache.cache.js';
+import { ServiceUtils } from "../servicesUtils.js";
 
 export class ContainerNotFoundError extends MonadError<typeof ContainerNotFoundError.ERROR_SYMBOL>
 {
@@ -124,29 +123,22 @@ export class ContainerService
             return new Set([...currencyIds]);
         })());
 
-        const relevantCurrencies = await (async () =>
-        {
-            const output: { [currencyId: string]: IdBound<Partial<Currency>> } = {};
-            const getCurrById = async (id: string) =>
-            {
-                const cacheResult = GlobalCurrencyCache.queryCurrency(ownerId, id);
-                if (cacheResult) return cacheResult;
-                const fetchedResult = unwrap(await currRepo.findCurrencyByIdNameTickerOne
-                (
-                    ownerId,
-                    id,
-                    QUERY_IGNORE,
-                    QUERY_IGNORE,
-                    currencyCache
-                ));
-                return fetchedResult;
-            };
-
-            for (const cId of relevantCurrencyIds)
-                output[cId] = (await getCurrById(cId))!;
-
-            return output;
-        })();
+        const relevantCurrencies = ServiceUtils.reverseMap
+        (
+            await Promise.all(relevantCurrencyIds.map
+            (
+                async cId =>
+                {
+                    return [cId, (await currRepo.findCurrencyByIdNameTickerOne(
+                        ownerId,
+                        cId,
+                        QUERY_IGNORE,
+                        QUERY_IGNORE,
+                        currencyCache
+                    ))!];
+                }
+            ))
+        );
 
         // The mapping between each currency and its rate at the given date.
         const ratesAtGivenEpoch = await (async () =>

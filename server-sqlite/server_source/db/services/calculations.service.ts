@@ -314,13 +314,13 @@ export class CalculationsService
             let valueOfAllCurrenciesSum = new Decimal(0);
             for (const currencyID of Object.keys(balanceHistory.historyMap[epoch]))
             {
-                const currencyObject = await (async () =>
-                {
-                    const cacheResult = GlobalCurrencyCache.queryCurrency(userId, currencyID);
-                    if (cacheResult) return cacheResult;
-                    const fetchedResult = await currRepo.findCurrencyByIdNameTickerOne(userId, currencyID, QUERY_IGNORE, QUERY_IGNORE, currencyCache);
-                    return fetchedResult;
-                })();
+                const currencyObject = await currRepo.findCurrencyByIdNameTickerOne(
+                    userId,
+                    currencyID,
+                    QUERY_IGNORE,
+                    QUERY_IGNORE,
+                    currencyCache
+                );
 
                 let currencyRateToBase = await (async () =>
                 {

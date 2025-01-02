@@ -255,20 +255,18 @@ export class CurrencyCalculator
             currencyRateDatumsCache
         )
 
-        const getCurrById = async (id: string) =>
-        {
-            const cacheResult = currencyCache?.queryCurrency(userId, id);
-            if (cacheResult) return cacheResult;
-            const fetchedResult = await currRepo.findCurrencyByIdNameTickerOne(userId, id, QUERY_IGNORE, QUERY_IGNORE, currencyCache);
-            return fetchedResult;
-        };
-
         const entries: { key:Decimal, value: Decimal }[] = await (async () =>
         {
             const output: { key:Decimal, value: Decimal }[] = [];
             for (const datum of datums)
             {
-                const datumUnitCurrency = unwrap(await getCurrById(datum.refAmountCurrencyId))!;
+                const datumUnitCurrency = (await currRepo.findCurrencyByIdNameTickerOne(
+                    userId,
+                    datum.refAmountCurrencyId,
+                    QUERY_IGNORE,
+                    QUERY_IGNORE,
+                    currencyCache
+                ))!;
 
                 output.push(
                 {

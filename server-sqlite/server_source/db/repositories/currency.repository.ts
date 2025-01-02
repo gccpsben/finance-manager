@@ -24,7 +24,10 @@ export class CurrencyRepository extends MeteredRepository
     }
 
     /**
-     * Query the database for users' currencies. Notice that this will NOT load any relationship,
+     * Query the cache for users' currencies or query the database if not found.
+     * ```
+     * ```
+     * Notice that this will NOT load any relationship,
      * therefore all foreign keys are represented by strings only.
      * ```
      * ```
@@ -278,7 +281,6 @@ export class CurrencyRepository extends MeteredRepository
         }
     ): Promise<{ totalCount: number, rangeItems: IdBound<Currency>[] } | UserNotFoundError>
     {
-        this.incrementRead();
         const user = await UserRepository.getInstance().findOne({where: { id: ownerId ?? null }});
         if (!user) return new UserNotFoundError(ownerId);
 
