@@ -267,7 +267,7 @@ onMounted(async () => await mainStoreUpdateAll());
             #statusPanel
             {
                 position: absolute; top:0px; .fullSize;
-                .center;
+                .center; padding:24px;
                 pointer-events: none;
 
                 & > * { pointer-events: all; }
