@@ -13,6 +13,7 @@ import { Database } from "../db.js";
 import { QUERY_IGNORE } from "../../symbols.js";
 import { CurrencyRateDatumsCache } from "../caches/currencyRateDatumsCache.cache.js";
 import { FragmentRaw } from "../entities/fragment.entity.js";
+import { ContainerNotFoundError } from "./container.service.js";
 
 /** An object that represents a query of a time range. */
 export type TimeRangeQuery =
@@ -52,15 +53,21 @@ export class CalculationsService
         currencyRateDatumsCache: CurrencyRateDatumsCache | null,
         currencyToBaseRateCache: CurrencyToBaseRateCache | null,
         currencyCache: CurrencyCache | null
-    ): Promise<{ [containerId: string]: ContainerTimeLine }>
+    ): Promise<{ [containerId: string]: ContainerTimeLine } | ContainerNotFoundError>
     {
         const txnRepo = Database.getTransactionRepository()!;
+        const contRepo = Database.getContainerRepository!();
+
+        for (const cId of containerIds)
+            if (! await contRepo?.getContainer(userId, cId, QUERY_IGNORE))
+                return new ContainerNotFoundError(cId, userId);
 
         // TODO: Move container filter to SQL, should be faster with external RDBMS
         /** All txns related to the given containers. Sorted: From earliest to latest txns */
         const containerTxns = (await txnRepo.getTransactions(userId))
         .rangeItems
-        .filter(x => x.fragments.some(f => {
+        .filter(x => x.fragments.some(f =>
+        {
             if (f.fromContainerId && containerIds.includes(f.fromContainerId)) return true;
             if (f.toContainerId && containerIds.includes(f.toContainerId)) return true;
             return false;
@@ -177,8 +184,7 @@ export class CalculationsService
             const isValueDecreased = increaseInValue.lessThanOrEqualTo(new Decimal('0'));
             for (const queryQueryPair of queryNamesAndQuery)
             {
-                const query = queryQueryPair[1];
-                const queryName = queryQueryPair[0];
+                const [queryName, query] = queryQueryPair;
                 const isTxnWithinQueryRange = (() =>
                 {
                     if (query.mode === 'AT_OR_AFTER' && txn.creationDate >= query.epoch) return true;
