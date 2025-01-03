@@ -1,4 +1,4 @@
-import { IsArray, IsNotEmpty, IsOptional, IsString, ValidateNested } from 'class-validator';
+import { IsArray, IsBoolean, IsNotEmpty, IsOptional, IsString, ValidateNested } from 'class-validator';
 import Express from 'express';
 import { type PutTxnAPI, type GetTxnAPI, type PostTxnAPI, type DeleteTxnAPI, GetTxnJsonQueryAPI } from '../../../../api-types/txn.js';
 import { AccessTokenService, InvalidLoginTokenError } from '../../db/services/accessToken.service.js';
@@ -44,6 +44,7 @@ router.post<PostTxnAPI.ResponseDTO>("/api/v1/transactions",
                 @IsOptional() @IsUTCDateInt() creationDate?: number | undefined;
                 @IsOptional() @IsString() description?: string | undefined;
                 @IsArray() @IsNotEmpty() tagIds: string[];
+                @IsNotEmpty() @IsBoolean() excludedFromIncomesExpenses: boolean;
 
                 @IsArray()
                 @ValidateNested({ each: true })
@@ -84,7 +85,8 @@ router.post<PostTxnAPI.ResponseDTO>("/api/v1/transactions",
                         toAmount: f.toAmount,
                         toContainerId: f.toContainer,
                         toCurrencyId: f.toCurrency,
-                    }))
+                    })),
+                    excludedFromIncomesExpenses: item.excludedFromIncomesExpenses
                 }, transactionalContext.queryRunner, GlobalCurrencyCache);
 
                 if (transactionCreated instanceof UserNotFoundError) throw createHttpError(401);
@@ -138,6 +140,7 @@ router.put<PutTxnAPI.ResponseDTO>("/api/v1/transactions",
                 @IsOptional() @IsUTCDateInt() creationDate?: number | undefined;
                 @IsOptional() @IsString() description?: string | undefined;
                 @IsArray() @IsNotEmpty() tagIds: string[];
+                @IsNotEmpty() @IsBoolean() excludedFromIncomesExpenses: boolean;
             }
 
             class query implements PutTxnAPI.RequestQueryDTO
@@ -166,7 +169,8 @@ router.put<PutTxnAPI.ResponseDTO>("/api/v1/transactions",
                     toAmount: f.toAmount,
                     toContainerId: f.toContainer,
                     toCurrencyId: f.toCurrency
-                }))
+                })),
+                excludedFromIncomesExpenses: parsedBody.excludedFromIncomesExpenses
             }, transactionalContext.queryRunner, GlobalCurrencyCache);
 
             if (updatedTxn instanceof UserNotFoundError) throw createHttpError(401);
@@ -246,7 +250,8 @@ router.get<GetTxnAPI.ResponseDTO>(`/api/v1/transactions/json-query`,
                     creationDate: item.creationDate,
                     tagIds: item.tagIds,
                     fragments: item.fragments,
-                    changeInValue: txnChangeInValue.toString()
+                    changeInValue: txnChangeInValue.toString(),
+                    excludedFromIncomesExpenses: item.excludedFromIncomesExpenses
                 });
             }
             return results;
@@ -272,7 +277,8 @@ router.get<GetTxnAPI.ResponseDTO>(`/api/v1/transactions/json-query`,
                 owner: item.owner,
                 tagIds: item.tagIds,
                 title: item.title,
-                changeInValue: item.changeInValue
+                changeInValue: item.changeInValue,
+                excludedFromIncomesExpenses: item.excludedFromIncomesExpenses
             })),
             totalItems: matchedResults.totalItems
         } satisfies GetTxnJsonQueryAPI.ResponseDTO
@@ -343,7 +349,8 @@ router.get<GetTxnAPI.ResponseDTO>(`/api/v1/transactions`,
                     creationDate: item.creationDate,
                     tagIds: item.tagIds,
                     fragments: item.fragments,
-                    changeInValue: txnChangeInValue.toString()
+                    changeInValue: txnChangeInValue.toString(),
+                    excludedFromIncomesExpenses: item.excludedFromIncomesExpenses
                 });
             }
             return result;
@@ -372,7 +379,8 @@ router.get<GetTxnAPI.ResponseDTO>(`/api/v1/transactions`,
                     owner: item.owner,
                     tagIds: item.tagIds,
                     title: item.title,
-                    changeInValue: item.changeInValue
+                    changeInValue: item.changeInValue,
+                    excludedFromIncomesExpenses: item.excludedFromIncomesExpenses
                 };
                 return output;
             })

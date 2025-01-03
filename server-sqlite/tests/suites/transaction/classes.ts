@@ -1,4 +1,4 @@
-import { IsString, IsNotEmpty, IsOptional, IsArray, ValidateNested, IsNumber } from "class-validator";
+import { IsString, IsNotEmpty, IsOptional, IsArray, ValidateNested, IsNumber, IsBoolean } from "class-validator";
 import { IsDecimalJSString, IsUTCDateInt } from "../../../server_source/db/validators.js";
 import { GetTxnAPI, GetTxnJsonQueryAPI, PostTxnAPI, PutTxnAPI } from "../../../../api-types/txn.js";
 import { Type } from "class-transformer";
@@ -25,6 +25,7 @@ export namespace GetTxnJSONQueryAPIClass
         @IsOptional() @IsUTCDateInt()  creationDate: number;
         @IsArray() tagIds: string[];
         @IsNotEmpty() @IsDecimalJSString() changeInValue: string;
+        @IsNotEmpty() @IsBoolean() excludedFromIncomesExpenses: boolean;
 
         @IsArray()
         @ValidateNested({ each: true })
@@ -66,6 +67,7 @@ export namespace GetTxnAPIClass
         @IsOptional() @IsUTCDateInt()  creationDate: number;
         @IsArray() tagIds: string[];
         @IsNotEmpty() @IsDecimalJSString() changeInValue: string;
+        @IsNotEmpty() @IsBoolean() excludedFromIncomesExpenses: boolean;
 
         @IsArray()
         @ValidateNested({ each: true })
@@ -104,6 +106,7 @@ export namespace PostTxnAPIClass
         @IsOptional() @IsUTCDateInt() creationDate?: number | undefined;
         @IsOptional() @IsString() description?: string | undefined;
         @IsArray() tagIds: string[];
+        @IsNotEmpty() @IsBoolean() excludedFromIncomesExpenses: boolean;
 
         @IsArray()
         @ValidateNested({ each: true })
@@ -143,6 +146,7 @@ export namespace PutTxnAPIClass
         @IsOptional() @IsUTCDateInt() creationDate?: number | undefined;
         @IsOptional() @IsString() description?: string | undefined;
         @IsArray() tagIds: string[];
+        @IsNotEmpty() @IsBoolean() excludedFromIncomesExpenses: boolean;
 
         @IsArray()
         @ValidateNested({ each: true })

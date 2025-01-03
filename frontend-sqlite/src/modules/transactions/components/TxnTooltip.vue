@@ -11,6 +11,9 @@
             <div class="titleLabel">{{ props.txn.title }}</div>
             <div class="">{{ tagsLabel }}</div>
             <div style="padding-bottom: 14px;"></div>
+            <div class="ignoredLabel" v-if="props.txn.excludedFromIncomesExpenses">
+                * Excluded from incomes / expenses
+            </div>
             <div class="conversionLabel">{{ conversionLabel }}</div>
             <div class="idLabel">{{ props.txn.id }}</div>
         </div>
@@ -134,6 +137,11 @@ const tagsLabel = computed(() =>
     {
         color: gray;
         font-family: Consolas;
+    }
+
+    * .ignoredLabel
+    {
+        color: @error;
     }
 
     * .conversionLabel

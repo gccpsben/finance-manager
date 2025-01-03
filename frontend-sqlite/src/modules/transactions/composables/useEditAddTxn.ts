@@ -201,7 +201,8 @@ export function useEditTxn()
                         toAmount: f.toAmount ?? null,
                         toContainer: f.toContainer ?? null,
                         toCurrency: f.toCurrency ?? null
-                    }))
+                    })),
+                    excludedFromIncomesExpenses: transformedTxn.excludedFromIncomesExpenses
                 } satisfies PutTxnAPI.RequestBodyDTO
             },
             {
@@ -250,7 +251,8 @@ export function useAddTxn()
                 toCurrency: null,
                 toContainer: null,
             }],
-            tagIds: []
+            tagIds: [],
+            excludedFromIncomesExpenses: false
         };
 
         txnWorkingCopyHook.txnToBeEdited.markSafePoint(emptyRawTxn);
@@ -305,13 +307,8 @@ export function useAddTxn()
                                     toContainer: transformedTxn.fragments[0].toContainer ?? null,
                                     toCurrency: transformedTxn.fragments[0].toCurrency ?? null
                                 }
-                            ]
-                            // fromAmount: transformedTxn.fromAmount ?? null,
-                            // fromContainerId: transformedTxn.fromContainer ?? null,
-                            // fromCurrencyId: transformedTxn.fromCurrency ?? null,
-                            // toAmount: transformedTxn.toAmount ?? null,
-                            // toContainerId: transformedTxn.toContainer ?? null,
-                            // toCurrencyId: transformedTxn.toCurrency ?? null
+                            ],
+                            excludedFromIncomesExpenses: transformedTxn.excludedFromIncomesExpenses
                         }
                     ]
                 } satisfies PostTxnAPI.RequestDTO

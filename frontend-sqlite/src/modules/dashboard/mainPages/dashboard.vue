@@ -89,22 +89,12 @@
                             30d Expenses
                             <template #tipsContent>
                                 <div>All expenses in the past 30 days.</div>
-                                <div>All transactions incurring negative change in value will be considered "expenses", except for those marked otherwise.</div>
+                                <div>All transactions incurring negative change in value will be considered "expenses".</div>
                             </template>
                         </TipsIconTitle>
                     </template>
                     <template #row="props">
-                        <TxnTooltip :txn="props.currentItem">
-                            <grid-shortcut columns="50px 1fr 1fr" :class="{'fullSize': true}" @click="viewTxn(props.currentItem.id)" class="fullSize highlightableRow">
-                                <div class="listItemTitle middleLeft">{{ getDateAge(props.currentItem.creationDate) }}</div>
-                                <div class="listItemTitle middleLeft">
-                                    <div class="ellipsis">{{ props.currentItem.title }}</div>
-                                </div>
-                                <div class="listItemTitle middleRight">
-                                    {{ props.currentItem.changeInValue }} {{ currenciesStore.getBaseCurrencySymbol() }}
-                                </div>
-                            </grid-shortcut>
-                        </TxnTooltip>
+                        <ListCellTxnRow :txn="props.currentItem" />
                     </template>
                 </ListCell>
 
@@ -118,22 +108,12 @@
                             30d Incomes
                             <template #tipsContent>
                                 <div>All incomes in the past 30 days.</div>
-                                <div>All transactions incurring positive change in value will be considered "incomes", except for those marked otherwise.</div>
+                                <div>All transactions incurring positive change in value will be considered "incomes".</div>
                             </template>
                         </TipsIconTitle>
                     </template>
                     <template #row="props">
-                        <TxnTooltip :txn="props.currentItem">
-                            <grid-shortcut columns="50px 1fr 1fr" :class="{'fullSize': true}" @click="viewTxn(props.currentItem.id)" class="fullSize highlightableRow">
-                                <div class="listItemTitle middleLeft">{{ getDateAge(props.currentItem.creationDate) }}</div>
-                                <div class="listItemTitle middleLeft">
-                                    <div class="ellipsis">{{ props.currentItem.title }}</div>
-                                </div>
-                                <div class="listItemTitle middleRight">
-                                    {{ props.currentItem.changeInValue }} {{ currenciesStore.getBaseCurrencySymbol() }}
-                                </div>
-                            </grid-shortcut>
-                        </TxnTooltip>
+                        <ListCellTxnRow :txn="props.currentItem"/>
                     </template>
                 </ListCell>
 
@@ -147,22 +127,12 @@
                             30d Transfers
                             <template #tipsContent>
                                 <div>All transfers in the past 30 days.</div>
-                                <div>All transactions incurring zero change in value will be considered "transfers", except for those marked otherwise.</div>
+                                <div>All transactions incurring zero change in value will be considered "transfers".</div>
                             </template>
                         </TipsIconTitle>
                     </template>
                     <template #row="props">
-                        <TxnTooltip :txn="props.currentItem">
-                            <grid-shortcut columns="50px 1fr 1fr" :class="{'fullSize': true}" @click="viewTxn(props.currentItem.id)" class="fullSize highlightableRow">
-                                <div class="listItemTitle middleLeft">{{ getDateAge(props.currentItem.creationDate) }}</div>
-                                <div class="listItemTitle middleLeft">
-                                    <div class="ellipsis">{{ props.currentItem.title }}</div>
-                                </div>
-                                <div class="listItemTitle middleRight">
-                                    {{ props.currentItem.changeInValue }} {{ currenciesStore.getBaseCurrencySymbol() }}
-                                </div>
-                            </grid-shortcut>
-                        </TxnTooltip>
+                        <ListCellTxnRow :txn="props.currentItem"/>
                     </template>
                 </ListCell>
 
@@ -258,11 +228,12 @@ import TxnTooltip from "@/modules/transactions/components/TxnTooltip.vue";
 import ListCell from "@/modules/core/components/data-display/ListCell.vue";
 import TipsIcon from "@/modules/core/components/data-display/TipsIcon.vue";
 import TipsIconTitle from "@/modules/core/components/data-display/TipsIconTitle.vue";
+import ListCellTxnRow from "@/modules/transactions/components/ListCellTxnRow.vue";
 
 export default
 {
     directives: {'area':vArea},
-    components: { TipsIconTitle, ListCell, "cell": cell, ContainerValuesGraphCell, NetworthHistoryCell, numberCell, TxnTooltip, TipsIcon },
+    components: { TipsIconTitle, ListCell, "cell": cell, ContainerValuesGraphCell, NetworthHistoryCell, numberCell, TxnTooltip, TipsIcon, ListCellTxnRow },
     data()
     {
         let data =
@@ -508,17 +479,6 @@ export default
         '_30dExpensesList _30dExpensesList ContainersList ContainersList'
         '_30dIncomesList _30dIncomesList NetworthGraph NetworthGraph'
         '_30dTransfersList _30dTransfersList containerValuesGraph containerValuesGraph';
-
-        .listItemTitle
-        {
-            .fg(inherit); font-size:14px; overflow:hidden; white-space: nowrap; text-overflow: ellipsis;
-        }
-
-        .highlightableRow
-        {
-            cursor:pointer;
-            &:hover { color: @focus; }
-        }
     }
 }
 

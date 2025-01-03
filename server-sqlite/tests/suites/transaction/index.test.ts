@@ -134,7 +134,8 @@ export default async function(this: Context)
                             toCurrency: null
                         }
                     ],
-                    tagIds: [testContext.txnTagId1]
+                    tagIds: [testContext.txnTagId1],
+                    excludedFromIncomesExpenses: false
                 } satisfies PostTxnAPIClass.RequestItemDTOClass;
 
                 for (const testCase of BodyGenerator.enumerateMissingField(baseObj, ["description", "creationDate"]))
@@ -354,7 +355,8 @@ export default async function(this: Context)
                             toContainer: testContext.containerId,
                             toCurrency: testContext.baseCurrId,
                         }],
-                        tagIds: [testContext.txnTagId1]
+                        tagIds: [testContext.txnTagId1],
+                        excludedFromIncomesExpenses: false
                     } satisfies PostTxnAPIClass.RequestItemDTOClass;
 
                     const createdTxn = await TransactionHelpers.postCreateTransaction(
@@ -410,6 +412,7 @@ export default async function(this: Context)
                             creationDate: txnCreated.parsedBody.rangeItems[0].creationDate,
                             description: "changed desc",
                             title: "changed title",
+                            excludedFromIncomesExpenses: false
                         }
                     });
 

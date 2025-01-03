@@ -264,7 +264,8 @@ export default async function(this: Context)
                                                 toCurrency: isTo ? f.toCurrencyID : undefined,
                                             }
                                         }),
-                                        tagIds: [choice(txnTypes).txnId]
+                                        tagIds: [choice(txnTypes).txnId],
+                                        excludedFromIncomesExpenses: false
                                     }
                                 ]
                             },

@@ -50,73 +50,87 @@ export default async function(this: Context)
                             fragments: {
                                 toAmount: Decimal|undefined,
                                 fromAmount: Decimal|undefined,
-                            }[]
+                            }[],
+                            excludedFromExpensesIncomes: boolean
                         }[] =
                         [
                             {
                                 txnAgeDays: 90, fragments: [
                                     { fromAmount: undefined              , toAmount: new Decimal(`100.0001`)  }
-                                ]
+                                ],
+                                excludedFromExpensesIncomes: false
                             },
                             {
-                                txnAgeDays: 50, fragments: [
+                                txnAgeDays: 25, fragments: [
                                     { fromAmount: new Decimal(`0.0001`)  , toAmount: new Decimal(`0.0001`)   },
                                     { fromAmount: new Decimal(`0.0001`)  , toAmount: new Decimal(`0.0001`)   },
                                     { fromAmount: new Decimal(`0.0001`)  , toAmount: new Decimal(`0.0001`)   },
                                     { fromAmount: new Decimal(`0.0001`)  , toAmount: new Decimal(`0.0001`)   }
-                                ]
+                                ],
+                                excludedFromExpensesIncomes: false
+                            },
+                            {
+                                txnAgeDays: 20, fragments: [
+                                    { fromAmount: new Decimal(`20`)  , toAmount: new Decimal(`50`)   },
+                                ],
+                                excludedFromExpensesIncomes: false
                             },
                             {
                                 txnAgeDays: 18, fragments: [
                                     { fromAmount: new Decimal(`0.0001`)  , toAmount: undefined   }
-                                ]
+                                ],
+                                excludedFromExpensesIncomes: true
                             },
                             {
                                 txnAgeDays: 6.9, fragments: [
                                     { fromAmount: new Decimal(`0`)       , toAmount: undefined   },
                                     { fromAmount: undefined             , toAmount: new Decimal(`12710`)   }
-                                ]
+                                ],
+                                excludedFromExpensesIncomes: false
                             },
                             {
                                 txnAgeDays: 6.7, fragments: [
                                     { fromAmount: new Decimal(`1820`)    , toAmount: undefined   }
-                                ]
+                                ],
+                                excludedFromExpensesIncomes: false
                             },
                             {
                                 txnAgeDays: 1.5, fragments: [
                                     { fromAmount: undefined              , toAmount: new Decimal(`78777`)   },
                                     { fromAmount: new Decimal(`78777`)   , toAmount: new Decimal(`0`)   },
                                     { fromAmount: new Decimal(`0`)       , toAmount: new Decimal(`78777`)   },
-                                ]
+                                ],
+                                excludedFromExpensesIncomes: false
                             },
                             {
                                 txnAgeDays: 0.3, fragments: [
                                     { fromAmount: new Decimal(`1912.30`) , toAmount: undefined   }
-                                ]
+                                ],
+                                excludedFromExpensesIncomes: false
                             },
                             {
                                 txnAgeDays: 0.1, fragments: [
                                     { fromAmount: new Decimal(`192`)     , toAmount: new Decimal(`72727`)   }
-                                ]
+                                ],
+                                excludedFromExpensesIncomes: true
                             },
                             {
                                 txnAgeDays: 0, fragments: [
                                     { fromAmount: new Decimal(`09037`)   , toAmount: undefined   }
-                                ]
+                                ],
+                                excludedFromExpensesIncomes: false
                             },
                         ];
                         const expectedResult =
                         {
-                            // expensesTotal: new Decimal(`12769.3001`),
-                            // incomesTotal: new Decimal(`164122.0001`),
-                            expenses30d: new Decimal(`12769.3001`),
-                            incomes30d: new Decimal(`164022`),
+                            expenses30d: new Decimal(`12769.3`),
+                            incomes30d: new Decimal(`91517`),
                             expenses7d: new Decimal(`12769.3`),
-                            incomes7d: new Decimal(`164022`),
+                            incomes7d: new Decimal(`91487`),
                             expensesWeek: new Decimal(`12769.3`),
-                            incomesWeek: new Decimal(`164022`),
-                            expensesMonth: new Decimal(`12769.3001`),
-                            incomesMonth: new Decimal(`164022`),
+                            incomesWeek: new Decimal(`91487`),
+                            expensesMonth: new Decimal(`12769.3`),
+                            incomesMonth: new Decimal(`91517`),
                         };
 
                         // Start posting defined test transactions to server
@@ -146,7 +160,8 @@ export default async function(this: Context)
                                                         toCurrency: isTo ? baseCurrency.currencyId : undefined,
                                                     }
                                                 }),
-                                                tagIds: [choice(txnTypes).txnId]
+                                                tagIds: [choice(txnTypes).txnId],
+                                                excludedFromIncomesExpenses: txnToPost.excludedFromExpensesIncomes
                                             }
                                         ]
                                     },
@@ -292,7 +307,8 @@ export default async function(this: Context)
                                             toCurrency: isTo ? f.currId : undefined,
                                         }
                                     }),
-                                    tagIds: [choice(txnTypes).txnId]
+                                    tagIds: [choice(txnTypes).txnId],
+                                    excludedFromIncomesExpenses: false
                                 }
                             ]
                         },
@@ -546,7 +562,8 @@ export default async function(this: Context)
                                             toCurrency: isTo ? f.currId : undefined,
                                         }
                                     }),
-                                    tagIds: [choice(txnTypes).txnId]
+                                    tagIds: [choice(txnTypes).txnId],
+                                    excludedFromIncomesExpenses: false
                                 }
                             ]
                         },

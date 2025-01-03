@@ -73,6 +73,7 @@ export type TxnTableRowProps =
         readonly title: string,
         readonly description: string,
         readonly owner: string,
+        readonly excludedFromIncomesExpenses: boolean,
         readonly fragments: readonly
         {
             readonly fromContainer: string | null,

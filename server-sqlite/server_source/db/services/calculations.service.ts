@@ -137,11 +137,15 @@ export class CalculationsService
         nowEpoch: number,
         currencyRateDatumsCache: CurrencyRateDatumsCache | null,
         currencyToBaseRateCache: CurrencyToBaseRateCache | null,
-        currencyCache: CurrencyCache | null
+        currencyCache: CurrencyCache | null,
+        config: { countExcludedTxns: boolean } | null = null
     )
     {
         if (!isInt(nowEpoch)) throw panic(`nowEpoch must be an integer.`);
 
+        /** To count transactions marked as excluded from incomes / expenses. */
+        const countExcludedTxns = config === null ? false : config.countExcludedTxns;
+        const txnRepo = Database.getTransactionRepository()!;
         const queryNamesAndQuery = Object.entries(queryLines);
 
         // Only fetch all transactions after the earliest requested epoch to save bandwidth.
@@ -157,7 +161,7 @@ export class CalculationsService
             return earliestEpochRequested;
         })();
 
-        const allTxns = (await Database.getTransactionRepository()!.getTransactions(userId, {
+        const allTxns = (await txnRepo.getTransactions(userId, {
             startDate: earliestEpochRequested
         })).rangeItems;
 
@@ -171,6 +175,9 @@ export class CalculationsService
 
         for (let txn of allTxns)
         {
+            if (!countExcludedTxns && txn.excludedFromIncomesExpenses)
+                continue;
+
             const { increaseInValue } =
                 unwrap(await TransactionService.getTxnIncreaseInValue
                 (

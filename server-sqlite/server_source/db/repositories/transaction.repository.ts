@@ -60,7 +60,8 @@ export class TransactionRepository extends MeteredRepository
             creationDate: number,
             description: string,
             fragments: FragmentRaw[],
-            tagIds: string[]
+            tagIds: string[],
+            excludedFromIncomesExpenses: boolean
         },
         queryRunner: QueryRunner
     )
@@ -157,7 +158,8 @@ export class TransactionRepository extends MeteredRepository
                     }))),
                     tagIds: (txn.tags as { id: string }[]).map(x => x.id) ?? [],
                     tagNames: (txn.tags as { name: string }[]).map(x => x.name) ?? [],
-                    changeInValue: 0
+                    changeInValue: 0,
+                    excludedFromIncomesExpenses: txn.excludedFromIncomesExpenses
                 };
 
                 // Only calculate delta if it is referenced in the query
@@ -219,7 +221,8 @@ export class TransactionRepository extends MeteredRepository
             creationDate: number,
             description: string,
             fragments: FragmentRaw[],
-            txnTagIds: string[]
+            txnTagIds: string[],
+            excludedFromIncomesExpenses: boolean
         },
         queryRunner: QueryRunner,
     )
@@ -240,7 +243,8 @@ export class TransactionRepository extends MeteredRepository
             description: obj.description,
             fragments: obj.fragments,
             tags: tags,
-            title: obj.title
+            title: obj.title,
+            excludedFromIncomesExpenses: obj.excludedFromIncomesExpenses
         });
 
         if (!savedObj.id)
@@ -259,7 +263,8 @@ export class TransactionRepository extends MeteredRepository
             id: savedObj.id,
             ownerId: savedObj.ownerId,
             tags: savedObj.tags,
-            title: savedObj.title
+            title: savedObj.title,
+            excludedFromIncomesExpenses: savedObj.excludedFromIncomesExpenses
         };
     }
 
@@ -353,7 +358,8 @@ export class TransactionRepository extends MeteredRepository
                     toAmount: f.toAmount,
                     toContainerId: f.toContainerId,
                     toCurrencyId: f.toCurrencyId,
-                }))
+                })),
+                excludedFromIncomesExpenses: x.excludedFromIncomesExpenses
             })),
         };
     }

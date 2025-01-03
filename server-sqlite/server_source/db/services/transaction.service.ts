@@ -108,6 +108,7 @@ export type TransactionJSONQueryItem =
     // toContainerId: string | null,
     // toCurrency: null | TransactionJSONQueryCurrency,
     fragments: FragmentRaw[]
+    excludedFromIncomesExpenses: boolean
 }
 
 const nameofT = (x: keyof Transaction) => nameof<Transaction>(x);
@@ -342,10 +343,12 @@ export class TransactionService
             creationDate: number,
             description: string,
             fragments: Omit<FragmentRaw, 'id'>[],
-            txnTagIds: string[]
+            txnTagIds: string[],
+            excludedFromIncomesExpenses: boolean
         },
         queryRunner: QueryRunner,
-        currencyListCache: CurrencyCache | null
+        currencyListCache: CurrencyCache | null,
+
     )
     {
         const newTxn = await TransactionService.validateTransaction(userId, {
@@ -369,7 +372,8 @@ export class TransactionService
             description: newTxn.description,
             fragments: newTxn.fragments,
             title: newTxn.title,
-            txnTagIds: newTxn.txnTagIds
+            txnTagIds: newTxn.txnTagIds,
+            excludedFromIncomesExpenses: obj.excludedFromIncomesExpenses
         }, queryRunner);
 
         if (savedTxn instanceof TxnTagNotFoundError) return savedTxn;
@@ -387,7 +391,8 @@ export class TransactionService
             creationDate: number,
             description: string,
             fragments: Omit<FragmentRaw, 'id'>[],
-            txnTagIds: string[]
+            txnTagIds: string[],
+            excludedFromIncomesExpenses: boolean
         },
         queryRunner: QueryRunner,
         currencyListCache: CurrencyCache | null
@@ -413,7 +418,8 @@ export class TransactionService
             description: obj.description,
             fragments: obj.fragments,
             tagIds: obj.txnTagIds,
-            title: obj.title
+            title: obj.title,
+            excludedFromIncomesExpenses: obj.excludedFromIncomesExpenses
         }, queryRunner);
         return savedTxn;
     }

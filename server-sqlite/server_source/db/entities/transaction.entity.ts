@@ -1,10 +1,8 @@
-import { Entity, PrimaryGeneratedColumn, Column, BeforeInsert, BeforeUpdate, ManyToOne, JoinColumn, Check, Index, Relation, ManyToMany, JoinTable, OneToMany } from "typeorm";
+import { Entity, PrimaryGeneratedColumn, Column, BeforeInsert, BeforeUpdate, ManyToOne, JoinColumn, Index, Relation, ManyToMany, JoinTable, OneToMany } from "typeorm";
 import "reflect-metadata"
-import { IsNotEmpty, IsOptional, IsString, MaxLength } from "class-validator";
+import { IsBoolean, IsNotEmpty, IsOptional, IsString, MaxLength } from "class-validator";
 import { EntityClass } from "../dbEntityBase.js";
-import { Currency } from "./currency.entity.js";
-import { Container } from "./container.entity.js";
-import { EnsureNotPlainForeignKey, IsDecimalJSString, IsUTCDateInt } from "../validators.js";
+import { EnsureNotPlainForeignKey, IsUTCDateInt } from "../validators.js";
 import { User } from "./user.entity.js";
 import { TxnTag } from "./txnTag.entity.js";
 import { Fragment } from "./fragment.entity.js";
@@ -52,6 +50,11 @@ export class Transaction extends EntityClass
 
     @OneToMany(() => Fragment, (fragment) => fragment.parentTxn)
     fragments: Fragment[];
+
+    @Column({ nullable: false, type: Boolean })
+    @IsNotEmpty()
+    @IsBoolean()
+    excludedFromIncomesExpenses: boolean;
 
     @BeforeInsert()
     @BeforeUpdate()

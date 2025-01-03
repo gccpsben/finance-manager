@@ -7,8 +7,8 @@
                 <div class="fullSize">
                     <div id="viewTxnGrid">
 
-                        <TextField v-area="'id'" :field-name="'ID'"
-                                    :text="txnWorkingCopy.currentData.value!.id ?? ''" readonly/>
+                        <!-- <TextField v-area="'id'" :field-name="'ID'"
+                                    :text="txnWorkingCopy.currentData.value!.id ?? ''" readonly/> -->
 
                         <TextField v-area="'name'"
                                     :override-theme-color="!!txnWorkingCopy.currentData.value!.title.trim() ? undefined : 'red'"
@@ -71,6 +71,12 @@
                         <ChipsSelector field-name="Tags" v-area="'tags'" v-model:values="txnWorkingCopy.currentData.value!.tagIds"
                                        :options="selectableTxnTagsOptions" />
 
+                        <CustomCheckbox v-area="'excludedFromIncomesExpenses'"
+                                        style="font-size: 14px;"
+                                        v-model="txnWorkingCopy.currentData.value!.excludedFromIncomesExpenses">
+                            Excluded from Expenses / Incomes
+                        </CustomCheckbox>
+
                         <div id="resetSaveContainer" v-area="'actions'" v-if="txnWorkingCopy.currentData">
                             <div class="center">
                                 <BaseButton @click="isDeleteDialogOpen = true" class="fullSize">
@@ -96,6 +102,10 @@
 
                         <div v-area="'error'" id="formErrorMsg">
                             <div>{{ editTxnHook.txnErrors.value }}</div>
+                        </div>
+
+                        <div v-area="'id'" id="txnIdArea">
+                            <div>Transaction ID: {{ txnWorkingCopy.currentData.value!.id ?? '' }}</div>
                         </div>
 
                     </div>
@@ -156,6 +166,7 @@ import { useDeleteTxn } from '../composables/useDeleteTxn';
 import BaseDialog from '@/modules/core/components/data-display/BaseDialog.vue';
 import { wait } from '@/modules/core/utils/wait';
 import NumberPagination from '@/modules/core/components/data-display/NumberPagination.vue';
+import CustomCheckbox from '@/modules/core/components/inputs/CustomCheckbox.vue';
 
 type AddHookReturnType = ReturnType<typeof useAddTxn>;
 type EditHookReturnType = ReturnType<typeof useEditTxn>;
@@ -314,10 +325,11 @@ fieldset
 
 #viewTxnGrid
 {
+    font-family: @font;
     display:grid;
     gap: 15px;
     grid-template:
-        'id              id              date            date          ' 45px
+        'date            date            date            date          ' 45px
         'name            name            name            name          ' 45px
         'fragmentLabel   fragmentLabel   fragmentLabel   fragmentLabel ' auto
         'fromContainer   fromContainer   toContainer     toContainer   ' minmax(0px, 45px)
@@ -327,8 +339,10 @@ fieldset
         '_               _               _               _             ' 5px
         'desc            desc            desc            desc          ' 100px
         'tags            tags            tags            tags          ' auto
+        'excludedFromIncomesExpenses excludedFromIncomesExpenses excludedFromIncomesExpenses excludedFromIncomesExpenses' auto
         'error           error           error           error         ' auto
         'actions         actions         actions         actions       ' auto
+        'id              id              id              id            ' auto
         / 1fr          1fr           1fr           1fr;
 
     max-height: calc(100svh - 190px);
@@ -372,6 +386,13 @@ fieldset
         .leftRightGrid;
         margin-bottom: 14px;
     }
+
+    #txnIdArea
+    {
+        font-family: Consolas;
+        color: fade(@foreground, 30%);
+        .xLeft;
+    }
 }
 
 .nowButtonContainer
@@ -405,7 +426,6 @@ fieldset
     #viewTxnGrid
     {
         grid-template:
-            'id              id              ' 45px
             'name            name            ' 45px
             'date            date            ' 45px
             'fragmentLabel   fragmentLabel   ' auto
@@ -417,8 +437,10 @@ fieldset
             '_               _               ' 5px
             'desc            desc            ' minmax(0px, 100px)
             'tags            tags            ' auto
+            'excludedFromIncomesExpenses excludedFromIncomesExpenses' auto
             'error           error           ' auto
             'actions         actions         ' auto
+            'id              id              ' auto
             / 1fr            0.4fr !important;
     }
 }
