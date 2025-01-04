@@ -79,7 +79,17 @@ const props = withDefaults(defineProps<ViewTitleProps>(), { hasBackButton: false
             #backBtn
             {
                 .center;
-                .optionIcon;
+
+                padding:5px 10px 5px 10px;
+                font-size:20px;
+                border-radius: 5px;
+                background: @background;
+                cursor:pointer;
+                user-select: none;
+
+                &:hover { background: @focusDark; color:@focus; }
+                &:disabled { opacity: 0.3 !important; pointer-events: none !important; }
+
                 color: white;
                 &:not(:hover) { background: transparent; }
             }

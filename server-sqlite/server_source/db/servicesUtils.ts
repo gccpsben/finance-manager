@@ -42,6 +42,9 @@ export namespace ServiceUtils
         else return array.map(x => x[key]);
     }
 
+    /**
+     * Given a dictionary, transform each value using a mapper.
+     */
     export function mapObjectValues<T, R>(dict: { [ key: string ] : T}, mapper: (arg : T) => R)
     {
         const output: { [key: string]: R } = {};
@@ -50,6 +53,9 @@ export namespace ServiceUtils
         return output;
     }
 
+    /**
+     * Construct a dictionary from a list of entries.
+     */
     export function reverseMap<T>(entries: [string, T][])
     {
         const output: {[key: string]: T} = {};

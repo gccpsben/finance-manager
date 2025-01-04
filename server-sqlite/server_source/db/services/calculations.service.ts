@@ -3,7 +3,7 @@ import { TransactionService } from "./transaction.service.js";
 import { DecimalAdditionMapReducer, ServiceUtils } from "../servicesUtils.js";
 import { LinearInterpolator } from "../../calculations/linearInterpolator.js";
 import { CurrencyCalculator, CurrencyService } from "./currency.service.js";
-import { CurrencyCache, GlobalCurrencyCache } from "../caches/currencyListCache.cache.js";
+import { CurrencyCache } from "../caches/currencyListCache.cache.js";
 import { UserNotFoundError, UserService } from "./user.service.js";
 import { panic, unwrap } from "../../std_errors/monadError.js";
 import { ArgsComparisonError, ConstantComparisonError } from "../../std_errors/argsErrors.js";
@@ -28,39 +28,54 @@ export type UserBalanceHistoryResults =
     currenciesEarliestPresentEpoch: { [currencyId: string]: number }
 };
 
-export type ContainerTimeLine =
+export type ContainerNetworthTimelineEntry =
 {
-    timeline:
+    txn:
     {
-        txn:
-        {
-            id: string,
-            creationDate: number,
-            title: string,
-            fragments: FragmentRaw[],
-        },
-        containerBalance: { [currId: string]: Decimal },
-        containerWorth: string
-    }[]
+        id: string,
+        creationDate: number,
+        title: string,
+        fragments: FragmentRaw[],
+    },
+    containerBalance: { [currId: string]: Decimal },
+    containerWorth: string
+};
+
+export type ContainerBalanceTimelineEntry =
+{
+    txn:
+    {
+        id: string,
+        creationDate: number,
+        title: string,
+        fragments: FragmentRaw[],
+    },
+    containerBalance: { [currId: string]: Decimal },
 };
 
 export class CalculationsService
 {
-    public static async getContainersTimelines
+    /**
+     * Given a list of containers, return each containers' balance history.
+     * Notice that the number of txns in each container will always equal to the number of returned datums for that container.
+     * In other words, the datums returned are NOT evenly spaced.
+     * If you need an evenly-spaced result, use a `LinearStepper` to space the series.
+     // TODO: Not Finished (no unit test, no manual test)
+     */
+    public static async getContainersBalanceHistory
     (
         userId: string,
         containerIds: string[],
-        currencyRateDatumsCache: CurrencyRateDatumsCache | null,
-        currencyToBaseRateCache: CurrencyToBaseRateCache | null,
-        currencyCache: CurrencyCache | null
-    ): Promise<{ [containerId: string]: ContainerTimeLine } | ContainerNotFoundError>
+        skipContainerCheck = false
+    ): Promise<{ [contId: string]: ContainerBalanceTimelineEntry[] } | ContainerNotFoundError>
     {
-        const txnRepo = Database.getTransactionRepository()!;
         const contRepo = Database.getContainerRepository!();
+        const txnRepo = Database.getTransactionRepository()!;
 
-        for (const cId of containerIds)
-            if (! await contRepo?.getContainer(userId, cId, QUERY_IGNORE))
-                return new ContainerNotFoundError(cId, userId);
+        if (!skipContainerCheck)
+            for (const cId of containerIds)
+                if (! await contRepo?.getContainer(userId, cId, QUERY_IGNORE))
+                    return new ContainerNotFoundError(cId, userId);
 
         // TODO: Move container filter to SQL, should be faster with external RDBMS
         /** All txns related to the given containers. Sorted: From earliest to latest txns */
@@ -74,11 +89,11 @@ export class CalculationsService
         }))
         .reverse();
 
-        const output: {[containerId: string]: ContainerTimeLine} = {};
+        const output: { [containerId: string]: ContainerBalanceTimelineEntry[] } = {};
 
         for (const containerId of containerIds)
         {
-            const entries: ContainerTimeLine['timeline'] = [];
+            const entries: ContainerBalanceTimelineEntry[] = [];
             const balancesReducer = new DecimalAdditionMapReducer<string>({});
 
             for (const txn of containerTxns)
@@ -108,23 +123,66 @@ export class CalculationsService
                         id: txn.id!,
                         title: txn.title,
                     },
-                    containerBalance: balancesReducer.currentValue,
+                    containerBalance: { ...balancesReducer.currentValue }
+                });
+            }
+
+            output[containerId] = entries;
+        }
+
+        return output;
+    }
+
+    /**
+     * Given a list of containers, return each containers' balance and networth history.
+     * Notice that the number of txns in each container will always equal to the number of returned datums for that container.
+     * In other words, the datums returned are NOT evenly spaced.
+     * If you need an evenly-spaced result, use a `LinearStepper` to space the series.
+     // TODO: Make unit test
+     // TODO: Refactor this using the above function
+     */
+    public static async getContainersWorthHistory
+    (
+        userId: string,
+        containerIds: string[],
+        currencyRateDatumsCache: CurrencyRateDatumsCache | null,
+        currencyToBaseRateCache: CurrencyToBaseRateCache | null,
+        currencyCache: CurrencyCache | null
+    ): Promise<{ [containerId: string]: ContainerNetworthTimelineEntry[] } | ContainerNotFoundError>
+    {
+        const balanceHistories = await this.getContainersBalanceHistory(
+            userId,
+            containerIds,
+            false
+        );
+
+        if (balanceHistories instanceof ContainerNotFoundError) return balanceHistories;
+
+        const networthHistory: { [containerId: string]: ContainerNetworthTimelineEntry[] } = {};
+        for (const [containerId, balanceHistory] of Object.entries(balanceHistories))
+        {
+            networthHistory[containerId] = [];
+            for (const historyEntry of balanceHistory)
+            {
+                // TODO: See if we can use interpolator for performance reason?
+                networthHistory[containerId].push(
+                {
+                    containerBalance: historyEntry.containerBalance,
+                    txn: historyEntry.txn,
                     containerWorth: (await CurrencyService.getWorthOfBalances
                     (
                         userId,
-                        txn.creationDate,
-                        balancesReducer.currentValue,
+                        historyEntry.txn.creationDate,
+                        historyEntry.containerBalance,
                         currencyRateDatumsCache,
                         currencyToBaseRateCache,
                         currencyCache
                     )).totalWorth.toString()
                 });
             }
-
-            output[containerId] = { timeline: entries };
         }
 
-        return output;
+        return networthHistory;
     }
 
     /**

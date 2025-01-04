@@ -67,7 +67,7 @@ import { ref, watch } from 'vue';
 import { useCurrenciesStore } from '@/modules/currencies/stores/useCurrenciesStore';
 import LeftRightGrid from '@/modules/core/components/layout/LeftRightGrid.vue';
 import BaseButton from '@/modules/core/components/inputs/BaseButton.vue';
-import router, { ROUTER_NAME_CREATE_NEW_CONTAINER, ROUTER_NAME_SINGLE_CONTAINER } from '@/router';
+import router, { ROUTER_NAME_CREATE_NEW_CONTAINER, ROUTER_NAME_EDIT_SINGLE_CONTAINER, ROUTER_NAME_SINGLE_CONTAINER_OVERVIEW } from '@/router';
 import { API_CONTAINERS_PATH } from '@/apiPaths';
 import { useNetworkRequest } from '@/modules/core/composables/useNetworkRequest';
 import type { GetContainerAPI } from '../../../../../api-types/container';
@@ -108,7 +108,7 @@ function viewContainer(conId: string)
 {
     router.push(
     {
-        name: ROUTER_NAME_SINGLE_CONTAINER,
+        name: ROUTER_NAME_SINGLE_CONTAINER_OVERVIEW,
         params: { id: conId }
     });
 }

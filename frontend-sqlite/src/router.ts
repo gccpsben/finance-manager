@@ -6,7 +6,8 @@ export const ROUTER_NAME_CREATE_NEW_CONTAINER = `createNewContainer`;
 export const ROUTER_NAME_ALL_TRANSACTIONS = `transactions`;
 export const ROUTER_NAME_ALL_CONTAINERS = `containers`;
 export const ROUTER_NAME_LOGIN = `login`;
-export const ROUTER_NAME_SINGLE_CONTAINER = `singleContainer`;
+export const ROUTER_NAME_EDIT_SINGLE_CONTAINER = `singleContainerEdit`;
+export const ROUTER_NAME_SINGLE_CONTAINER_OVERVIEW = `singleContainerOverview`;
 export const ROUTER_NAME_ADD_CONTAINER = `addContainer`;
 export const ROUTER_NAME_ADD_TYPE = `addType`;
 export const ROUTER_NAME_ADD_CURRENCY = `addCurrency`;
@@ -88,12 +89,17 @@ const router = createRouter(
                         {
                             path: "new",
                             name: ROUTER_NAME_CREATE_NEW_CONTAINER,
-                            component: () => import(`@/modules/containers/mainPages/SingleContainer.vue`),
+                            component: () => import(`@/modules/containers/mainPages/SingleContainerEditOrAdd.vue`),
+                        },
+                        {
+                            path: ":id/edit",
+                            name: ROUTER_NAME_EDIT_SINGLE_CONTAINER,
+                            component: () => import(`@/modules/containers/mainPages/SingleContainerEditOrAdd.vue`),
                         },
                         {
                             path: ":id",
-                            name: ROUTER_NAME_SINGLE_CONTAINER,
-                            component: () => import(`@/modules/containers/mainPages/SingleContainer.vue`),
+                            name: ROUTER_NAME_SINGLE_CONTAINER_OVERVIEW,
+                            component: () => import(`@/modules/containers/mainPages/ContainerSingle.vue`),
                         },
                     ]
                 }

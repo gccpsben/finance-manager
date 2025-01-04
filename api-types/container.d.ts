@@ -26,3 +26,38 @@ export namespace PostContainerAPI
     export type RequestDTO = { name: string; };
     export type ResponseDTO = { id: string; };
 }
+
+export namespace GetContainerTimelineAPI
+{
+    export type Path<Params extends string> = `/api/v1/containers/timeline${Params}`;
+
+    export type FragmentDTO =
+    {
+        fromAmount: string | null;
+        fromCurrencyId: string | null;
+        fromContainerId: string | null;
+        toAmount: string | null;
+        toCurrencyId: string | null;
+        toContainerId: string | null;
+    };
+
+    export type RequestQueryDTO =
+    {
+        containerId: string;
+        startDate?: string | undefined;
+        endDate?: string | undefined;
+        division?: string | undefined;
+    };
+
+    export type RequestDTO = { };
+    export type ResponseDTO =
+    {
+        timeline: {
+            [epoch: string]:
+            {
+                containerBalance: { [currId: string]: string },
+                containerWorth: string
+            }
+        }
+    };
+}

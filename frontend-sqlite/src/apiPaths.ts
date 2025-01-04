@@ -6,6 +6,7 @@ export const API_TRANSACTIONS_JSON_QUERY_PATH = "/api/v1/transactions/json-query
 export const API_CURRENCIES_PATH = "/api/v1/currencies";
 export const API_CONTAINERS_PATH = "/api/v1/containers";
 export const API_POST_CONTAINERS_PATH = "/api/v1/containers";
+export const API_CONTAINERS_TIMELINES_PATH = `/api/v1/containers/timeline`;
 export const API_TXN_TAGS_PATH = "/api/v1/transactionTags";
 export const API_GRAPHS_PATH = "/api/v1/graphs";
 export const API_BAL_VAL_PATH = "/api/v1/balanceHistory";

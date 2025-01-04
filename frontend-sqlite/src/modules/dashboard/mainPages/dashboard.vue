@@ -444,6 +444,7 @@ export default
 <style lang="less" scoped>
 @import '@/modules/core/stylesheets/globalStyle.less';
 @import url('https://fonts.googleapis.com/css2?family=Schibsted+Grotesk:ital,wght@0,400;0,500;0,600;1,400;1,500;1,600&display=swap');
+@mobileCutoffWidth: 600px;
 
 #topDiv
 {
@@ -501,7 +502,7 @@ export default
     }
 }
 
-@container topDiv (width <= 500px)
+@container topDiv (width <= @mobileCutoffWidth)
 {
     #topDivInner > #mainGrid { padding: @mobilePagePadding !important; }
 
