@@ -392,6 +392,7 @@ fieldset
         font-family: Consolas;
         color: fade(@foreground, 30%);
         .xLeft;
+        text-align: start;
     }
 }
 
