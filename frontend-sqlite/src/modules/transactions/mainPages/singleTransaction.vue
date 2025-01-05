@@ -7,9 +7,6 @@
                 <div class="fullSize">
                     <div id="viewTxnGrid">
 
-                        <!-- <TextField v-area="'id'" :field-name="'ID'"
-                                    :text="txnWorkingCopy.currentData.value!.id ?? ''" readonly/> -->
-
                         <TextField v-area="'name'"
                                     :override-theme-color="!!txnWorkingCopy.currentData.value!.title.trim() ? undefined : 'red'"
                                     :field-name="'Name'" v-model:text="txnWorkingCopy.currentData.value!.title"/>
@@ -39,7 +36,7 @@
                         <TextField  v-area="'fromAmount'" field-name="From Amount" input-type="number"
                                     :class="{'disabled': !txnWorkingCopy.currentData.value!.fragments[currentFragmentIndex].fromContainer}"
                                     :text="txnWorkingCopy.currentData.value!.fragments[currentFragmentIndex].fromAmount ?? ''"
-                                    @update:text="txnWorkingCopy.currentData.value!.fragments[currentFragmentIndex].fromAmount = $event"/>
+                                    @update:text="txnWorkingCopy.currentData.value!.fragments[currentFragmentIndex].fromAmount = $event === '' ? null : $event"/>
 
                         <CustomDropdown :options="selectableContainerOptions"
                                         class="fullSize" v-area="'toContainer'" field-name="To Container"
@@ -51,7 +48,7 @@
                         <TextField v-area="'toAmount'" field-name="To Amount" input-type="number"
                                     :class="{'disabled': !txnWorkingCopy.currentData.value!.fragments[currentFragmentIndex].toContainer}"
                                     :text="txnWorkingCopy.currentData.value!.fragments[currentFragmentIndex].toAmount ?? ''"
-                                    @update:text="txnWorkingCopy.currentData.value!.fragments[currentFragmentIndex].toAmount = $event"/>
+                                    @update:text="txnWorkingCopy.currentData.value!.fragments[currentFragmentIndex].toAmount = $event === '' ? null : $event"/>
 
                         <div id="fragPaginationContainer" v-area="'fragPagination'" >
                             <div class="xLeft">

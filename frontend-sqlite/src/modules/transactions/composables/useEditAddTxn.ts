@@ -74,25 +74,10 @@ function useTxnWorkingCopy()
 
     const txnToBeEdited = useResettableObject<undefined | TxnWorkingEntity>(undefined, (latest, safePoint) =>
     {
-        // Normalize JSON for comparison (null == '', date in epoch == date in string etc...)
-        const normalizedIsEqual = (txn1: TxnWorkingEntity, txn2: TxnWorkingEntity) =>
-        {
-            if (Object.keys(txn1).length !== Object.keys(txn2).length) return false;
-            for (const key of Object.keys(txn1) as (keyof TxnWorkingEntity)[])
-            {
-                const val1 = txn1[key];
-                const val2 = txn2[key];
-                if ((val1 === null && val2 === '') || val2 === null && val1 === '') continue;
-                if (val2 === val1) continue;
-                return false;
-            }
-            return true;
-        };
-
         const [latestObj, safePointObj] = [toRaw(latest), toRaw(safePoint)];
         if (!latestObj || !safePointObj) return false;
 
-        return normalizedIsEqual(latestObj, safePointObj);
+        return JSON.stringify(latestObj) === JSON.stringify(safePointObj);
     });
 
     const loadTxn = async (txnID: string) =>
