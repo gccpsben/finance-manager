@@ -68,7 +68,10 @@
                         <ChipsSelector field-name="Tags" v-area="'tags'" v-model:values="txnWorkingCopy.currentData.value!.tagIds"
                                        :options="selectableTxnTagsOptions" />
 
-                        <CustomCheckbox v-area="'excludedFromIncomesExpenses'"
+                        <AttachmentsField :files="['pdf',2,'jpg',4,'jpeg',6,'png',8,9,'docx','txt',12,13,14].map(x => ({extension: `${x}`, fileName: `${x} a long name here a long name here a long name here a long name here a long name here`}))"
+                                          v-area="'attachments'"/>
+
+                        <CustomCheckbox v-area="'excludedFromIE'"
                                         style="font-size: 14px;"
                                         v-model="txnWorkingCopy.currentData.value!.excludedFromIncomesExpenses">
                             Excluded from Expenses / Incomes
@@ -164,6 +167,10 @@ import BaseDialog from '@/modules/core/components/data-display/BaseDialog.vue';
 import { wait } from '@/modules/core/utils/wait';
 import NumberPagination from '@/modules/core/components/data-display/NumberPagination.vue';
 import CustomCheckbox from '@/modules/core/components/inputs/CustomCheckbox.vue';
+import CustomFieldset from '@/modules/core/components/data-display/CustomFieldset.vue';
+import AbsEnclosure from '@/modules/core/components/layout/AbsEnclosure.vue';
+import AttachmentBox from '@/modules/core/components/data-display/AttachmentBox.vue';
+import AttachmentsField from '@/modules/core/components/data-display/AttachmentsField.vue';
 
 type AddHookReturnType = ReturnType<typeof useAddTxn>;
 type EditHookReturnType = ReturnType<typeof useEditTxn>;
@@ -326,20 +333,19 @@ fieldset
     display:grid;
     gap: 15px;
     grid-template:
-        'date            date            date            date          ' 45px
-        'name            name            name            name          ' 45px
-        'fragmentLabel   fragmentLabel   fragmentLabel   fragmentLabel ' auto
-        'fromContainer   fromContainer   toContainer     toContainer   ' minmax(0px, 45px)
-        'fromCurrency    fromCurrency    toCurrency      toCurrency    ' minmax(0px, 45px)
-        'fromAmount      fromAmount      toAmount        toAmount      ' minmax(0px, 45px)
-        'fragPagination  fragPagination  fragPagination  fragPagination' auto
-        '_               _               _               _             ' 5px
-        'desc            desc            desc            desc          ' 100px
-        'tags            tags            tags            tags          ' auto
-        'excludedFromIncomesExpenses excludedFromIncomesExpenses excludedFromIncomesExpenses excludedFromIncomesExpenses' auto
-        'error           error           error           error         ' auto
-        'actions         actions         actions         actions       ' auto
-        'id              id              id              id            ' auto
+        'date            date            name            name           ' 45px
+        'fragmentLabel   fragmentLabel   fragmentLabel   fragmentLabel  ' auto
+        'fromContainer   fromContainer   toContainer     toContainer    ' minmax(0px, 45px)
+        'fromCurrency    fromCurrency    toCurrency      toCurrency     ' minmax(0px, 45px)
+        'fromAmount      fromAmount      toAmount        toAmount       ' minmax(0px, 45px)
+        'fragPagination  fragPagination  fragPagination  fragPagination ' auto
+        '_               _               _               _              ' 5px
+        'desc            desc            attachments     attachments    ' 100px
+        'tags            tags            attachments     attachments    ' 150px
+        'excludedFromIE  excludedFromIE  excludedFromIE  excludedFromIE ' auto
+        'error           error           error           error          ' auto
+        'actions         actions         actions         actions        ' auto
+        'id              id              id              id             ' auto
         / 1fr          1fr           1fr           1fr;
 
     max-height: calc(100svh - 190px);
@@ -434,8 +440,9 @@ fieldset
             'fragPagination  fragPagination  ' auto
             '_               _               ' 5px
             'desc            desc            ' minmax(0px, 100px)
-            'tags            tags            ' auto
-            'excludedFromIncomesExpenses excludedFromIncomesExpenses' auto
+            'tags            tags            ' 150px
+            'attachments     attachments     ' 250px
+            'excludedFromIE  excludedFromIE  ' auto
             'error           error           ' auto
             'actions         actions         ' auto
             'id              id              ' auto

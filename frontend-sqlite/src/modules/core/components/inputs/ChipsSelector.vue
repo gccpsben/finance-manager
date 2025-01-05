@@ -3,6 +3,7 @@ import { computed, ref } from 'vue';
 import CustomFieldset from '../data-display/CustomFieldset.vue';
 import CustomChip from '../data-display/CustomChip.vue';
 import { defineProperty, Uncontrolled } from '../../utils/defineProperty';
+import AbsEnclosure from '../layout/AbsEnclosure.vue';
 
 // #region Props and Emits declaration
 export type ChipsSelectorEmits = { (e: 'update:values', v: string): void, (e: 'focus'):void, (e: 'blur'):void };
@@ -72,15 +73,17 @@ const toggleSelection = (value: string) =>
      <CustomFieldset class="chipSelectorRoot" tabindex="0" :should-text-float="true"
                      :should-highlight="false" :field-name="fieldName">
         <template #content>
-            <div style="padding: 14px; padding-bottom: 0px; text-align: start; transform: translateY(9px)">
-                <template v-for="item in optionValuePairs">
-                        <CustomChip :background="item.color"
-                                    :foreground="'white'"
-                                    class="chipSelectorChips"
-                                    :class="{'selected': item.isSelected}"
-                                    :label="item.label"
-                                    @click="toggleSelection(item.id)"/>
-                </template>
+            <div style="text-align: start; transform: translateY(9px); margin-bottom: 9px;">
+                <AbsEnclosure style="overflow: scroll; padding: 14px;">
+                    <CustomChip :background="item.color"
+                            :foreground="'white'"
+                            v-for="item in optionValuePairs"
+                            class="chipSelectorChips"
+                            :class="{'selected': item.isSelected}"
+                            :label="item.label"
+                            @click="toggleSelection(item.id)"/>
+                    <div style="height: 10px;"></div>
+                </AbsEnclosure>
             </div>
         </template>
     </CustomFieldset>
