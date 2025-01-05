@@ -20,7 +20,7 @@
                         <div id="resetSaveContainer" v-area="'actions'" v-if="containerWorkingCopy.currentData">
                             <div class="dummy"></div>
                             <BaseButton @click="editTxnHook.containerToBeEdited.reset()"
-                                        :disabled="!editTxnHook.readyToReset.value">
+                                        :disabled="!editTxnHook.containerToBeEdited.isChanged.value">
                                 Reset
                             </BaseButton>
                             <div class="center">
@@ -65,6 +65,7 @@ import TextField from '@/modules/core/components/inputs/TextField.vue';
 import NetworkCircularIndicator from '@/modules/core/components/data-display/NetworkCircularIndicator.vue';
 import StaticNotice from '@/modules/core/components/data-display/StaticNotice.vue';
 import BaseButton from '@/modules/core/components/inputs/BaseButton.vue';
+import { useLeaveGuard } from '@/modules/core/composables/useLeaveGuard';
 
 type AddHookReturnType = ReturnType<typeof useAddContainer>;
 type EditHookReturnType = ReturnType<typeof useEditContainer>;
@@ -99,6 +100,8 @@ const shouldDisplayNotFoundScreen = computed(() =>
     if (isAddMode.value) return false;
     return editTxnHook.containerLoadingState.value === 'NOT_FOUND';
 });
+
+useLeaveGuard(editTxnHook.containerToBeEdited.isChanged);
 
 if (ensureIsAddMode(editTxnHook)) editTxnHook.init();
 if (ensureIsEditMode(editTxnHook))

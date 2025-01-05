@@ -167,10 +167,8 @@ import BaseDialog from '@/modules/core/components/data-display/BaseDialog.vue';
 import { wait } from '@/modules/core/utils/wait';
 import NumberPagination from '@/modules/core/components/data-display/NumberPagination.vue';
 import CustomCheckbox from '@/modules/core/components/inputs/CustomCheckbox.vue';
-import CustomFieldset from '@/modules/core/components/data-display/CustomFieldset.vue';
-import AbsEnclosure from '@/modules/core/components/layout/AbsEnclosure.vue';
-import AttachmentBox from '@/modules/core/components/data-display/AttachmentBox.vue';
 import AttachmentsField from '@/modules/core/components/data-display/AttachmentsField.vue';
+import { useLeaveGuard } from '@/modules/core/composables/useLeaveGuard';
 
 type AddHookReturnType = ReturnType<typeof useAddTxn>;
 type EditHookReturnType = ReturnType<typeof useEditTxn>;
@@ -246,6 +244,7 @@ if (ensureIsEditMode(editTxnHook))
     );
 }
 
+useLeaveGuard(txnWorkingCopy.value.isChanged);
 autoFillCurrentDateTime();
 
 async function handleSaveBtn()
