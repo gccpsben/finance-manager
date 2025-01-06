@@ -8,7 +8,6 @@ import { FetchError } from "../../std_errors/netErrors.js";
 import jmespath from 'jmespath';
 import { CurrencyRateDatumService } from "./currencyRateDatum.service.js";
 import { Decimal } from "decimal.js";
-import type { IdBound } from "../../index.d.js";
 import { QueryRunner } from "typeorm";
 import { Database } from "../db.js";
 import { QUERY_IGNORE } from "../../symbols.js";
@@ -97,7 +96,7 @@ export class CurrencyRateSourceService
         refAmountCurrencyId: string,
         refCurrencyId: string,
         currencyCache: CurrencyCache | null
-    ): Promise<IdBound<CurrencyRateSource> | CurrencyNotFoundError>
+    )
     {
         const newCurrencyRateSource = CurrencyRateSourceRepository.getInstance().create();
         newCurrencyRateSource.hostname = hostname;
@@ -119,7 +118,17 @@ export class CurrencyRateSourceService
         const newlySavedSrc = await CurrencyRateSourceRepository.getInstance().save(newCurrencyRateSource);
         if (!newlySavedSrc.id) throw panic(`Newly saved currency rate source contain falsy IDs.`);
 
-        return newlySavedSrc as IdBound<typeof newlySavedSrc>;
+        return {
+            hostname: newlySavedSrc.hostname,
+            id: newlySavedSrc.id!,
+            jsonQueryString: newlySavedSrc.jsonQueryString,
+            lastExecuteTime: newlySavedSrc.lastExecuteTime,
+            name: newlySavedSrc.name,
+            ownerId: newlySavedSrc.ownerId,
+            path: newlySavedSrc.path,
+            refAmountCurrencyId: newlySavedSrc.refAmountCurrencyId,
+            refCurrencyId: newlySavedSrc.refCurrencyId
+        };
     }
 
     public static async validateCurrencyRateSource(
@@ -159,7 +168,17 @@ export class CurrencyRateSourceService
     (
         ownerId: string,
         currencyId: string
-    ): Promise<IdBound<CurrencyRateSource>[]>
+    ): Promise<{
+        hostname: string,
+        id: string,
+        jsonQueryString: string,
+        lastExecuteTime: number | null,
+        name: string,
+        ownerId: string,
+        refAmountCurrencyId: string,
+        refCurrencyId: string,
+        path: string
+    }[]>
     {
         const userCurrencyRateSources = await CurrencyRateSourceRepository
         .getInstance()
@@ -168,14 +187,34 @@ export class CurrencyRateSourceService
         if (userCurrencyRateSources.some(x => !x.id))
             throw panic(`CurrencyRateSources queried from database contain falsy IDs.`);
 
-        return userCurrencyRateSources as IdBound<typeof userCurrencyRateSources[0]>[]
+        return userCurrencyRateSources.map(x => ({
+            hostname: x.hostname,
+            id: x.id!,
+            jsonQueryString: x.jsonQueryString,
+            lastExecuteTime: x.lastExecuteTime,
+            name: x.name,
+            ownerId: x.ownerId,
+            refAmountCurrencyId: x.refAmountCurrencyId,
+            refCurrencyId: x.refCurrencyId,
+            path: x.path
+        }));
     }
 
     public static async getCurrencyRatesSourceById
     (
         ownerId: string,
         srcId: string
-    ): Promise<IdBound<CurrencyRateSource> | null>
+    ): Promise<{
+        hostname: string,
+        id: string,
+        jsonQueryString: string,
+        lastExecuteTime: number | null,
+        name: string,
+        ownerId: string,
+        path: string,
+        refAmountCurrencyId: string,
+        refCurrencyId: string
+    } | null>
     {
         const userCurrencyRateSource = await CurrencyRateSourceRepository
         .getInstance()
@@ -184,20 +223,32 @@ export class CurrencyRateSourceService
         if (!userCurrencyRateSource?.id && !!userCurrencyRateSource)
             throw panic(`CurrencyRateSources queried from database contain falsy IDs.`);
 
-        return userCurrencyRateSource as IdBound<typeof userCurrencyRateSource>;
+        if (!userCurrencyRateSource) return null;
+
+        return {
+            hostname: userCurrencyRateSource.hostname,
+            id: userCurrencyRateSource.id!,
+            jsonQueryString: userCurrencyRateSource.jsonQueryString,
+            lastExecuteTime: userCurrencyRateSource.lastExecuteTime,
+            name: userCurrencyRateSource.name,
+            ownerId: userCurrencyRateSource.ownerId,
+            path: userCurrencyRateSource.path,
+            refAmountCurrencyId: userCurrencyRateSource.refAmountCurrencyId,
+            refCurrencyId: userCurrencyRateSource.refCurrencyId
+        };
     }
 
     public static async patchUserCurrencyRateSource
     (
         ownerId:string,
-        patchArgs: IdBound<Partial<
+        patchArgs: { id: string } & Partial<
         {
             hostname: string,
             jsonQueryString: string,
             name: string,
             path: string,
             refAmountCurrencyId: string
-        }>>,
+        }>,
         currencyCache: CurrencyCache | null
     )
     {
@@ -217,7 +268,17 @@ export class CurrencyRateSourceService
         if (validationResult !== null) return new PatchCurrencySrcValidationError(patchArgs.id, validationResult);
 
         const newlySavedSrc = await CurrencyRateSourceRepository.getInstance().save(originalSrc);
-        return newlySavedSrc as IdBound<typeof newlySavedSrc>;
+        return {
+            hostname: newlySavedSrc.hostname,
+            id: newlySavedSrc.id!,
+            jsonQueryString: newlySavedSrc.jsonQueryString,
+            lastExecuteTime: newlySavedSrc.lastExecuteTime,
+            name: newlySavedSrc.name,
+            ownerId: newlySavedSrc.ownerId,
+            refAmountCurrencyId: newlySavedSrc.refAmountCurrencyId,
+            refCurrencyId: newlySavedSrc.refCurrencyId,
+            path: newlySavedSrc.path
+        };
     }
 
     // TODO: Separate this function into Execute and Save.

@@ -15,4 +15,4 @@ export type UnionToIntersection<U> =
 export type NoUnion<Key> =
     // If this is a simple type UnionToIntersection<Key> will be the same type, otherwise it will an intersection of all types in the union and probably will not extend `Key`
     [Key] extends [UnionToIntersection<Key>] ? Key : never;
-export type IdBound<T> = T & { id: string };
+// export type IdBound<T> = T & { id: string };

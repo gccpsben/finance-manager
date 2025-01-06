@@ -13,7 +13,6 @@ import { OptionalPaginationAPIQueryRequest, PaginationAPIResponseClass } from '.
 import { CurrencyRateDatumService } from '../../db/services/currencyRateDatum.service.js';
 import { unwrap } from '../../std_errors/monadError.js';
 import { UserNotFoundError } from '../../db/services/user.service.js';
-import type { IdBound } from '../../index.d.js';
 import { Database } from '../../db/db.js';
 import { GlobalCurrencyToBaseRateCache } from '../../db/caches/currencyToBaseRate.cache.js';
 import { GlobalCurrencyCache } from '../../db/caches/currencyListCache.cache.js';
@@ -88,7 +87,7 @@ router.get<GetCurrencyAPI.ResponseDTO>(`/api/v1/currencies`,
             requestedRateDate: parsedQuery.date === undefined ? now : parseInt(parsedQuery.date)
         };
 
-        const sqlPrimitiveCurrencies = await PaginationAPIResponseClass.prepareFromQueryItems<IdBound<Currency>>
+        const sqlPrimitiveCurrencies = await PaginationAPIResponseClass.prepareFromQueryItems
         (
             unwrap(await Database.getCurrencyRepository()!.getCurrencies(authResult.ownerUserId,
             {

@@ -23,6 +23,7 @@ router.post<PostLoginAPI.ResponseDTO>("/api/v1/auth/login",
         await ExpressValidations.validateBodyAgainstModel<body>(body, req.body);
         const authResult = await UserService.validatePassword(req.body.username, req.body.password);
         if (!authResult.success) throw createHttpError(401);
+
         const newToken = await Database.getAccessTokenRepository()!.generateTokenForUser(authResult.userId!, now);
         if (newToken instanceof UserNotFoundError) throw createHttpError(401);
 

@@ -6,7 +6,6 @@ import { DataSource } from "typeorm/browser";
 import { PATCH_IGNORE, QUERY_IGNORE } from "../../symbols.js";
 import { nameof, ServiceUtils } from "../servicesUtils.js";
 import { UserRepository } from "./user.repository.js";
-import { IdBound } from "../../index.d.js";
 import { UserNotFoundError } from "../services/user.service.js";
 import { CurrencyCache } from "../caches/currencyListCache.cache.js";
 import { MeteredRepository } from "../meteredRepository.js";
@@ -279,7 +278,16 @@ export class CurrencyRepository extends MeteredRepository
             name?: string | undefined,
             id?: string | undefined
         }
-    ): Promise<{ totalCount: number, rangeItems: IdBound<Currency>[] } | UserNotFoundError>
+    ): Promise<{ totalCount: number, rangeItems: {
+        id: string,
+        isBase: boolean,
+        ownerId: string,
+        ticker: string,
+        name: string,
+        fallbackRateAmount: string | null,
+        fallbackRateCurrencyId: string | null,
+        lastRateCronUpdateTime: number | null
+    }[] } | UserNotFoundError>
     {
         const user = await UserRepository.getInstance().findOne({where: { id: ownerId ?? null }});
         if (!user) return new UserNotFoundError(ownerId);
@@ -298,7 +306,18 @@ export class CurrencyRepository extends MeteredRepository
 
         return {
             totalCount: queryResult[1],
-            rangeItems: queryResult[0] as (typeof queryResult[0][0] & { id: string })[]
+            rangeItems: queryResult[0].map(c => {
+                return {
+                    id: c.id!,
+                    isBase: c.isBase,
+                    ownerId: c.ownerId,
+                    ticker: c.ticker,
+                    name: c.name,
+                    fallbackRateAmount: c.fallbackRateAmount ?? null,
+                    fallbackRateCurrencyId: c.fallbackRateCurrencyId ?? null,
+                    lastRateCronUpdateTime: c.lastRateCronUpdateTime === undefined ? null : c.lastRateCronUpdateTime
+                }
+            })
         }
     }
 }

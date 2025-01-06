@@ -3,7 +3,6 @@ import { CurrencyRepository } from "../repositories/currency.repository.js";
 import { UserRepository } from "../repositories/user.repository.js";
 import { Currency } from "../entities/currency.entity.js";
 import { LinearInterpolator } from "../../calculations/linearInterpolator.js";
-import { IdBound } from "../../index.d.js";
 import { nameof } from "../servicesUtils.js";
 import { CurrencyRateDatumsCache } from '../caches/currencyRateDatumsCache.cache.js';
 import { CurrencyCache } from "../caches/currencyListCache.cache.js";
@@ -135,9 +134,9 @@ export class CurrencyCalculator
         const getCurrById = async (id: string) =>
         {
             const cacheResult = currencyCache?.queryCurrency(ownerId, id);
-            if (cacheResult) return cacheResult as (IdBound<typeof fetchedResult>);
+            if (cacheResult) return cacheResult as typeof fetchedResult;
             const fetchedResult = await currRepo.findCurrencyByIdNameTickerOne(ownerId, id, QUERY_IGNORE, QUERY_IGNORE, currencyCache);
-            return fetchedResult as IdBound<typeof fetchedResult>;
+            return fetchedResult as typeof fetchedResult;
         };
 
         const nearestTwoDatums = await Database.getCurrencyRateDatumRepository()!.findNearestTwoDatum
