@@ -139,7 +139,7 @@ router.get<GetContainerTimelineAPI.ResponseDTO>(`/api/v1/containers/timeline`,
             GlobalCurrencyCache
         ));
 
-        if (timeline instanceof ContainerNotFoundError) throw createHttpError(400, timeline.message);
+        if (timeline instanceof ContainerNotFoundError) throw createHttpError(404, timeline.message);
 
         const userQuery =
         {

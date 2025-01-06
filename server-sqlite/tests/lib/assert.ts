@@ -38,22 +38,25 @@ export async function assert(fn: () => Promise<boolean>)
         throw new UnitTestAssertion(`Assertion failed (returned false).`);
 }
 
-export function assertEqual(actualValue: any, expectedValue: any)
+export function assertEqual(actualValue: any, expectedValue: any, msg?: string)
 {
     if (actualValue == expectedValue) return;
-    throw new UnitTestAssertion(`Expected ${expectedValue} but got ${actualValue}`);
+    const extraMsg = msg === undefined ? `` : `, (${msg})`;
+    throw new UnitTestAssertion(`Expected ${expectedValue} but got ${actualValue}${extraMsg}`);
 }
 
-export function assertStrictEqual(actualValue: any, expectedValue: any)
+export function assertStrictEqual(actualValue: any, expectedValue: any, msg?: string)
 {
     if (actualValue === expectedValue) return;
-    throw new UnitTestAssertion(`Expected strictly ${expectedValue} but got ${actualValue}`);
+    const extraMsg = msg === undefined ? `` : `, (${msg})`;
+    throw new UnitTestAssertion(`Expected strictly ${expectedValue} (typeof ${typeof expectedValue}) but got ${actualValue} (typeof ${typeof expectedValue})${extraMsg}`);
 }
 
-export function assertJSONEqual(actualValue: any, expectedValue: any)
+export function assertJSONEqual(actualValue: any, expectedValue: any, msg?: string)
 {
     if (JSON.stringify(actualValue) === JSON.stringify(expectedValue)) return;
-    throw new UnitTestAssertion(`Expected strictly ${JSON.stringify(expectedValue, null, 4)} but got ${JSON.stringify(actualValue, null, 4)}`);
+    const extraMsg = msg === undefined ? `` : `, (${msg})`;
+    throw new UnitTestAssertion(`Expected strictly ${JSON.stringify(expectedValue, null, 4)} but got ${JSON.stringify(actualValue, null, 4)}${extraMsg}`);
 }
 
 export async function assertArrayAgainstModel<T extends object>

@@ -1,7 +1,8 @@
-import { BalancesHydratedContainerDTO, ContainerDTO, GetContainerAPI, PostContainerAPI, ValueHydratedContainerDTO } from "../../../../api-types/container.js";
-import { IsArray, IsDefined, IsNumber, IsString, ValidateNested } from "class-validator";
-import { IsDecimalJSString, IsStringToDecimalJSStringDict, IsUTCDateInt } from "../../../server_source/db/validators.js";
+import { BalancesHydratedContainerDTO, ContainerDTO, GetContainerAPI, GetContainerTimelineAPI, PostContainerAPI, ValueHydratedContainerDTO } from "../../../../api-types/container.js";
+import { IsArray, IsDefined, isInstance, IsNotEmpty, IsNumber, IsObject, IsString, validate, ValidateNested } from "class-validator";
+import { IsDecimalJSString, IsEpochKeyedMap, IsPassing, IsStringToDecimalJSStringDict, IsStringToStringDict, IsUTCDateInt } from "../../../server_source/db/validators.js";
 import { Type } from "class-transformer";
+import { validateBodyAgainstModel } from "../../lib/validation.js";
 
 export class ContainerDTOClass implements ContainerDTO
 {
@@ -34,6 +35,29 @@ export namespace GetContainerAPIClass
         @ValidateNested({ each: true })
         @Type(() => BalancesValueHydratedContainerDTOClass)
         rangeItems: (ValueHydratedContainerDTO & BalancesHydratedContainerDTO)[];
+    }
+}
+
+export namespace GetContainerTimelineAPIClass
+{
+    export class RequestDTO implements GetContainerTimelineAPI.RequestDTO {}
+    export class TimelineEpochDTO
+    {
+        @IsObject() @IsStringToDecimalJSStringDict() containerBalance: {  [currId: string]: string; };
+        @IsDecimalJSString() containerWorth: string;
+    }
+    export class ResponseDTO implements GetContainerTimelineAPI.ResponseDTO
+    {
+        @IsObject()
+        @IsNotEmpty()
+        @IsEpochKeyedMap()
+        @IsPassing(async (v: { [key: string]: any }) => {
+            for (const entry of Object.entries(v))
+                if ((await validateBodyAgainstModel(TimelineEpochDTO, entry[1])).errors.length > 0)
+                    return false;
+            return true;
+        })
+        timeline: { [epoch: string]: TimelineEpochDTO; };
     }
 }
 

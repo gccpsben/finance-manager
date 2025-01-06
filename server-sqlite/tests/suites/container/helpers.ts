@@ -1,7 +1,7 @@
 import { HTTPAssert } from "../../lib/assert.js";
 import { Generator } from "../../shortcuts/generator.js";
 import { PostContainerAPI } from "../../../../api-types/container.js";
-import { GetContainerAPIClass, PostContainerAPIClass } from "./classes.js";
+import { GetContainerAPIClass, GetContainerTimelineAPIClass, PostContainerAPIClass } from "./classes.js";
 import { TESTS_ENDPOINTS } from "../../index.test.js";
 
 export namespace ContainerHelpers
@@ -82,6 +82,36 @@ export namespace ContainerHelpers
                 baseURL: config.serverURL, expectedStatus: config.expectedCode, method: "GET",
                 headers: { "authorization": config.token },
                 expectedBodyType: assertBody ? GetContainerAPIClass.ResponseDTO : undefined,
+            }
+        );
+        return {
+            res: response,
+            parsedBody: response.parsedBody
+        };
+    }
+
+    export async function getContainerTimeline(config:
+    {
+        serverURL: string,
+        token: string,
+        containerId: string,
+        division: number,
+        assertBody?: boolean,
+        expectedCode?: number,
+        startDate?: number | undefined,
+        endDate?: number | undefined,
+    })
+    {
+        const assertBody = config.assertBody === undefined ? true : config.assertBody;
+        const url = `${TESTS_ENDPOINTS['containers-timelines'].get(config.containerId, config.division, config.startDate, config.endDate)}`;
+
+        const response = await HTTPAssert.assertFetch
+        (
+            url,
+            {
+                baseURL: config.serverURL, expectedStatus: config.expectedCode, method: "GET",
+                headers: { "authorization": config.token },
+                expectedBodyType: assertBody ? GetContainerTimelineAPIClass.ResponseDTO : undefined,
             }
         );
         return {

@@ -1,6 +1,5 @@
 import { Decimal } from "decimal.js";
 
-// TODO: Make unit test
 export class LinearStepper<V>
 {
     public entries: { key:Decimal, value:V }[] = [];

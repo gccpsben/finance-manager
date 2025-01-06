@@ -83,7 +83,7 @@ export function IsEpochKeyedMap()
     };
 }
 
-export function IsPassing(predicate: (value: any) => boolean)
+export function IsPassing(predicate: (value: any) => boolean | Promise<boolean>)
 {
     return function (object: Object, propertyName: string)
     {
@@ -97,9 +97,9 @@ export function IsPassing(predicate: (value: any) => boolean)
             },
             validator:
             {
-                validate(value: any, args: ValidationArguments)
+                async validate(value: any, args: ValidationArguments)
                 {
-                    if (!predicate(value)) return false;
+                    if (! await predicate(value)) return false;
                     return true;
                 },
             },

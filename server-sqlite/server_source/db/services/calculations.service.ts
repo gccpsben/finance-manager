@@ -60,7 +60,6 @@ export class CalculationsService
      * Notice that the number of txns in each container will always equal to the number of returned datums for that container.
      * In other words, the datums returned are NOT evenly spaced.
      * If you need an evenly-spaced result, use a `LinearStepper` to space the series.
-     // TODO: Not Finished (no unit test, no manual test)
      */
     public static async getContainersBalanceHistory
     (
@@ -138,7 +137,6 @@ export class CalculationsService
      * Notice that the number of txns in each container will always equal to the number of returned datums for that container.
      * In other words, the datums returned are NOT evenly spaced.
      * If you need an evenly-spaced result, use a `LinearStepper` to space the series.
-     // TODO: Make unit test
      // TODO: Refactor this using the above function
      */
     public static async getContainersWorthHistory

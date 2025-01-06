@@ -17,6 +17,7 @@ import { exit } from 'process';
 import { GetCurrencyRateSrcAPI, DeleteCurrencyRateSrcAPI } from '../../api-types/currencyRateSource.js';
 import { GetUserBalanceHistoryAPI, GetUserNetworthHistoryAPI } from '../../api-types/calculations.js';
 import { GetTxnJsonQueryAPI } from '../../api-types/txn.js';
+import { GetContainerTimelineAPI } from '../../api-types/container.js';
 export type HTTPMethod = "GET" | "PATCH" | "POST" | "DELETE";
 
 export type TestUserEntry =
@@ -38,7 +39,23 @@ export const TESTS_ENDPOINTS =
     "containers":
     {
         "post": `/api/v1/containers`,
-        "get": `/api/v1/containers`
+        "get": `/api/v1/containers`,
+    },
+    "containers-timelines":
+    {
+        get: (cId: string, division: number, startDate?: number | undefined, endDate?: number | undefined) =>
+        {
+            const urlSearchParams = new URLSearchParams(
+            {
+                ...(startDate === undefined ? {} : { "startDate": startDate.toString() }),
+                ...(endDate === undefined ? {} : { "endDate": endDate.toString() }),
+                "division": division.toString(),
+                "containerId": cId
+            } satisfies GetContainerTimelineAPI.RequestQueryDTO);
+            return `/api/v1/containers/timeline?${urlSearchParams.toString()}` satisfies GetContainerTimelineAPI.Path<string>
+        },
+        getWithoutParams: () =>
+            `/api/v1/containers/timeline` satisfies GetContainerTimelineAPI.Path<string>,
     },
     "calculations-expensesAndIncomes":
     {
