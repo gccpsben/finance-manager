@@ -73,6 +73,32 @@ export namespace ServiceUtils
                 throw new Error("Owner mismatch.");
         }
     }
+
+    export function minAndMax<T> (array: T[], getter: (obj:T) => number)
+    {
+        let lowest = Number.POSITIVE_INFINITY;
+        let highest = Number.NEGATIVE_INFINITY;
+        let lowestObj: T | undefined = undefined;
+        let highestObj: T | undefined = undefined;
+        let arrayLength = array.length;
+        for (let i = 0; i < arrayLength; i++)
+        {
+            let obj = array[i];
+            let objValue = getter(obj);
+
+            if (objValue >= highest)
+            {
+                highest = objValue;
+                highestObj = obj;
+            }
+            if (objValue <= lowest)
+            {
+                lowest = objValue;
+                lowestObj = obj;
+            }
+        }
+        return { minObj: lowestObj, maxObj: highestObj, min: lowest, max: highest }
+    }
 }
 
 /**
