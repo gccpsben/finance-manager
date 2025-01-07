@@ -11,8 +11,8 @@ export class LinearInterpolator
         if (keyingFunc === undefined) keyingFunc = (t:any) => { return t.key; };
         if (valueFunc === undefined) valueFunc = (t:any) => { return t.value; };
 
-        let hydratedEntires = [...entries].map(x => { return { "key": keyingFunc(x), "value": valueFunc(x) } });
-        let _entires = hydratedEntires.sort((a,b) => { return b.key.sub(a.key).toNumber() });
+        let hydratedEntires = [...entries].map(x => ({ "key": keyingFunc(x), "value": valueFunc(x) }));
+        let _entires = hydratedEntires.sort((a,b) => b.key.sub(a.key).toNumber());
 
         return new LinearInterpolator(_entires);
     }
@@ -20,14 +20,9 @@ export class LinearInterpolator
     private inteop(valueLeft:Decimal, valueRight:Decimal, keyLeft:Decimal, keyRight:Decimal, xValue:Decimal)
     {
         if (valueLeft == valueRight) return valueLeft;
-        if (keyLeft == keyRight)
-        {
-            console.warn("repeated keys in get");
-            return (valueLeft.add(valueRight)).dividedBy(LinearInterpolator.decimal2);
-        }
+        if (keyLeft == keyRight) return (valueLeft.add(valueRight)).dividedBy(LinearInterpolator.decimal2); // TODO: See if this is actually allowed?
         let valueRange = valueRight.sub(valueLeft);
         let keyRange = keyRight.sub(keyLeft);
-        // return valueLeft + ((xValue - keyLeft) / keyRange) * valueRange;
         return valueLeft.add((xValue.sub(keyLeft)).dividedBy(keyRange).mul(valueRange));
     }
 

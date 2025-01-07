@@ -10,6 +10,8 @@ import { MonadError, unwrap } from "../../std_errors/monadError.js";
 import { CurrencyToBaseRateCache } from "../caches/currencyToBaseRate.cache.js";
 import { Database } from "../db.js";
 import { QUERY_IGNORE } from "../../symbols.js";
+import { LinearInterpolatorVirtual } from "../../calculations/linearInterpolatorVirtual.js";
+import { ServiceUtils } from "../servicesUtils.js";
 
 export class CurrencyRefCurrencyIdAmountTupleError extends MonadError<typeof CurrencyRefCurrencyIdAmountTupleError.ERROR_SYMBOL>
 {
@@ -247,27 +249,31 @@ export class CurrencyCalculator
         currencyCache: CurrencyCache | null,
         startDate?: number | undefined,
         endDate?: number | undefined,
-    ): Promise<LinearInterpolator | UserNotFoundError>
+    ): Promise<LinearInterpolatorVirtual | UserNotFoundError>
     {
-        const currRepo = await Database.getCurrencyRepository()!;
+        const currRepo = Database.getCurrencyRepository()!;
 
         // Ensure user exists
         const userFetchResult = await UserService.getUserById(userId);
         if (userFetchResult === null) return new UserNotFoundError(userId);
 
-        const datums = await Database.getCurrencyRateDatumRepository()!.getCurrencyDatums(
+        const currencyRateDatums = await Database.getCurrencyRateDatumRepository()!.getCurrencyDatums(
             userId,
             currencyId,
             undefined,
             undefined,
             currencyRateDatumsCache
-        )
+        );
 
-        const entries: { key:Decimal, value: Decimal }[] = await (async () =>
-        {
-            const output: { key:Decimal, value: Decimal }[] = [];
-            for (const datum of datums)
+        const dateToDatumTable = ServiceUtils.reverseMap(currencyRateDatums.map(x => ([`${x.date}`, x])));
+
+        return await LinearInterpolatorVirtual.fromEntries(
+            currencyRateDatums,
+            async d => new Decimal(d.date),
+            async datumKey =>
             {
+                const datum = dateToDatumTable[datumKey.toString()];
+
                 const datumUnitCurrency = (await currRepo.findCurrencyByIdNameTickerOne(
                     userId,
                     datum.refAmountCurrencyId,
@@ -276,26 +282,20 @@ export class CurrencyCalculator
                     currencyCache
                 ))!;
 
-                output.push(
-                {
-                    key: new Decimal(datum.date),
-                    value: new Decimal(datum.amount).mul
-                    (
-                        unwrap(await CurrencyCalculator.currencyToBaseRate
-                        (
-                            userId,
-                            datumUnitCurrency,
-                            datum.date,
-                            currencyRateDatumsCache,
-                            currencyToBaseRateCache,
-                            currencyCache
-                        ))
-                    )
-                });
+
+                const currencyRateAtDate = unwrap(await CurrencyCalculator.currencyToBaseRate
+                (
+                    userId,
+                    datumUnitCurrency,
+                    datum.date,
+                    currencyRateDatumsCache,
+                    currencyToBaseRateCache,
+                    currencyCache
+                ));
+
+                return new Decimal(datum.amount).mul(currencyRateAtDate);
             }
-            return output;
-        })();
-        return LinearInterpolator.fromEntries(entries);
+        );
     }
 };
 

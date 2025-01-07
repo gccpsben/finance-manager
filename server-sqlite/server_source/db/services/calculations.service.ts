@@ -14,6 +14,7 @@ import { QUERY_IGNORE } from "../../symbols.js";
 import { CurrencyRateDatumsCache } from "../caches/currencyRateDatumsCache.cache.js";
 import { FragmentRaw } from "../entities/fragment.entity.js";
 import { ContainerNotFoundError } from "./container.service.js";
+import { LinearInterpolatorVirtual } from "../../calculations/linearInterpolatorVirtual.js";
 
 /** An object that represents a query of a time range. */
 export type TimeRangeQuery =
@@ -349,7 +350,7 @@ export class CalculationsService
         currencyCache: CurrencyCache | null
     ): Promise<{[epoch: string]:string} | UserNotFoundError | ArgsComparisonError<number> | ConstantComparisonError<number>>
     {
-        type cInterpolatorMap = { [currencyId: string]: LinearInterpolator };
+        type cInterpolatorMap = { [currencyId: string]: LinearInterpolatorVirtual };
 
         const currRepo = Database.getCurrencyRepository()!;
 
@@ -400,7 +401,7 @@ export class CalculationsService
                     // If not available, load the entire interpolator and use the interpolator output.
                     if (!currenciesInterpolators[currencyID])
                         currenciesInterpolators[currencyID] = await getInterpolatorForCurrency(currencyID);
-                    return currenciesInterpolators[currencyID].getValue(new Decimal(epoch));
+                    return await currenciesInterpolators[currencyID].getValue(new Decimal(epoch));
                 })();
 
                 // Happens when the rate is unavailable at the given epoch (first rate is after the given epoch)

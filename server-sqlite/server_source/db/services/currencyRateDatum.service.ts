@@ -106,7 +106,7 @@ export class CurrencyRateDatumService
             output.push(
             {
                 date: xValueDecimal.toNumber(),
-                rateToBase: interpolator.getValue(xValueDecimal) ?? new Decimal("0") // TODO: Properly address this
+                rateToBase: await interpolator.getValue(xValueDecimal) ?? new Decimal("0") // TODO: Properly address this
             });
         }
 
