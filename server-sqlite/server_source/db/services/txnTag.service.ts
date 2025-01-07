@@ -1,8 +1,7 @@
 import { TransactionTypeRepository as TxnTagRepository } from "../repositories/txnTag.repository.js";
 import { UserRepository } from "../repositories/user.repository.js";
-import { nameofTT, TxnTag } from "../entities/txnTag.entity.js";
+import { nameofTT } from "../entities/txnTag.entity.js";
 import { ServiceUtils } from "../servicesUtils.js";
-import type { SQLitePrimitiveOnly } from "../../index.d.js";
 import { MonadError } from "../../std_errors/monadError.js";
 import { UserNotFoundError } from "./user.service.js";
 
@@ -65,7 +64,12 @@ export class TxnTagService
         .getOne();
 
         if (!result || !id) return new TxnTagNotFoundError({id: id}, ownerId);
-        return result;
+
+        return {
+            id: result.id,
+            name: result.name,
+            ownerId: result.ownerId
+        };
     }
 
     public static async getUserTxnTags
@@ -77,7 +81,7 @@ export class TxnTagService
             name?: string,
             id?: string,
         }
-    ): Promise<{ totalCount: number, rangeItems: SQLitePrimitiveOnly<TxnTag>[] } | UserNotFoundError>
+    )
     {
         const user = await UserRepository.getInstance().findOne({where: { id: ownerId }});
         if (!user) return new UserNotFoundError(ownerId);
@@ -93,7 +97,12 @@ export class TxnTagService
 
         return {
             totalCount: queryResult[1],
-            rangeItems: queryResult[0],
+            rangeItems: queryResult[0].map(q => (
+            {
+                id: q.id,
+                name: q.name,
+                ownerId: q.ownerId
+            })),
         };
     }
 

@@ -14,7 +14,6 @@ import { CurrencyToBaseRateCache } from "../caches/currencyToBaseRate.cache.js";
 import { TxnQueryASTCalculator } from "../../calculations/txnAST.js";
 import jsonata from "jsonata";
 import { ServiceUtils } from "../servicesUtils.js";
-import { SQLitePrimitiveOnly } from "../../index.d.js";
 import { Fragment, FragmentRaw, nameofF } from "../entities/fragment.entity.js";
 
 export class TransactionRepository extends MeteredRepository
@@ -361,7 +360,7 @@ export class TransactionRepository extends MeteredRepository
         };
     }
 
-    public async getUserEarliestTransaction(userId: string): Promise<SQLitePrimitiveOnly<Transaction> | null>
+    public async getUserEarliestTransaction(userId: string)
     {
         let query = await this.#repository
         .createQueryBuilder(`txn`)
@@ -370,7 +369,15 @@ export class TransactionRepository extends MeteredRepository
         .limit(1)
         .getOne();
 
-        return query;
+        // Keep interface explicit
+        return query === null ? null : {
+            id: query.id,
+            title: query.title,
+            description: query.description,
+            ownerId: query.ownerId,
+            creationDate: query.creationDate,
+            excludedFromIncomesExpenses: query.excludedFromIncomesExpenses
+        };
     }
 
     public async getContainersTransactions(userId: string, containerIds: string[] | { id: string }[])
@@ -378,7 +385,7 @@ export class TransactionRepository extends MeteredRepository
         const alias = "txn";
         const targetContainerIds = ServiceUtils.normalizeEntitiesToIds(containerIds, 'id');
 
-        let query = this.#repository
+        let queryResult = await this.#repository
         .createQueryBuilder(alias)
         .where(`${alias}.${nameofT('ownerId')} = :ownerId`, { ownerId: userId ?? null })
         .leftJoinAndSelect(`${alias}.${nameofT('fragments')}`, "frags")
@@ -389,9 +396,26 @@ export class TransactionRepository extends MeteredRepository
                     OR
                 frags.${nameofF('toContainerId')} IN (:...targetContainerIds)`,
             { targetContainerIds: targetContainerIds }
-        );
+        ).getMany();
 
-        // TODO: as Transaction[] is wrong
-        return await query.getMany() as Transaction[];
+        // Be explicit
+        return queryResult.map(x => ({
+            id: x.id,
+            title: x.title,
+            description: x.description,
+            ownerId: x.ownerId,
+            creationDate: x.creationDate,
+            fragments: x.fragments.map(f => ({
+                id: f.id,
+                parentTxnId: f.parentTxnId,
+                fromAmount: f.fromAmount,
+                fromCurrencyId: f.fromCurrencyId,
+                fromContainerId: f.fromContainerId,
+                toAmount: f.toAmount,
+                toCurrencyId: f.toCurrencyId,
+                toContainerId: f.toContainerId,
+                ownerId: f.ownerId
+            }))
+        }))
     }
 }

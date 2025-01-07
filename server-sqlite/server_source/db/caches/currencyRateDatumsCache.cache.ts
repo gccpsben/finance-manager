@@ -1,8 +1,15 @@
 import NodeCache from "node-cache";
-import type { SQLitePrimitiveOnly } from "../../index.d.js";
-import { CurrencyRateDatum } from '../entities/currencyRateDatum.entity.js';
-import { DifferenceHydratedCurrencyRateDatum } from "../repositories/currencyRateDatum.repository.js";
 import { CacheBase } from "../cacheBase.js";
+
+export type CurrencyRateDatumsCacheEntry =
+{
+    id: string,
+    amount: string,
+    refCurrencyId: string,
+    refAmountCurrencyId: string,
+    ownerId: string,
+    date: number
+};
 
 export class CurrencyRateDatumsCache extends CacheBase
 {
@@ -17,10 +24,9 @@ export class CurrencyRateDatumsCache extends CacheBase
     (
         userId: string,
         currencyId: string,
-        datums: SQLitePrimitiveOnly<CurrencyRateDatum>[]
+        datums: CurrencyRateDatumsCacheEntry[]
     )
     {
-
         this.#nodeCache.set(this.makeEntryKey(userId, currencyId), datums);
     }
 
@@ -37,12 +43,12 @@ export class CurrencyRateDatumsCache extends CacheBase
     (
         userId: string,
         currencyId: string
-    ): SQLitePrimitiveOnly<CurrencyRateDatum>[] | undefined
+    ): CurrencyRateDatumsCacheEntry[] | undefined
     {
         const result = this.#nodeCache.get(this.makeEntryKey(userId, currencyId));
         if (result === undefined) this.markCacheMiss();
         else this.markCacheHit();
-        return result as SQLitePrimitiveOnly<CurrencyRateDatum>[];
+        return result as CurrencyRateDatumsCacheEntry[];
     }
 
     public findTwoNearestDatum
@@ -50,14 +56,14 @@ export class CurrencyRateDatumsCache extends CacheBase
         userId: string,
         currencyId: string,
         date: Date | number
-    ): SQLitePrimitiveOnly<DifferenceHydratedCurrencyRateDatum>[] | undefined
+    )
     {
         const datums = this.queryRateDatums(userId, currencyId);
         if (!datums) return undefined;
 
         const targetDateEpoch = typeof date === 'number' ? date : date.getTime();
-        let nearest1:SQLitePrimitiveOnly<CurrencyRateDatum>|null = null; // closest number
-        let nearest2:SQLitePrimitiveOnly<CurrencyRateDatum>|null = null; // second closest number
+        let nearest1:CurrencyRateDatumsCacheEntry|null = null; // closest number
+        let nearest2:CurrencyRateDatumsCacheEntry|null = null; // second closest number
         let minDiff1 = Infinity; // minimum difference for the closest number
         let minDiff2 = Infinity; // minimum difference for the second closest number
 

@@ -132,7 +132,7 @@ export class CurrencyRateSourceService
     }
 
     public static async validateCurrencyRateSource(
-        src: CurrencyRateSource,
+        src: { ownerId: string, refCurrencyId: string, refAmountCurrencyId: string },
         currencyCache: CurrencyCache | null
     ): Promise<
         "RefCurrencyNotFound" | "RefAmountCurrencyNotFound" |

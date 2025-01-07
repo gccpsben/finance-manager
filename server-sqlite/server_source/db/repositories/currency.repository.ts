@@ -205,7 +205,6 @@ export class CurrencyRepository extends MeteredRepository
         }
     }
 
-    // TODO: userid
     public async getAllUsersCurrWithSources()
     {
         type currTableAlias = "currencies_table";
@@ -215,6 +214,7 @@ export class CurrencyRepository extends MeteredRepository
         const keyOfCurr = (x: keyof Currency) => x;
 
         this.incrementRead();
+
         // エンティティの関連を使用
         const rawItems = await this.#repository.createQueryBuilder(currTableAlias)
         .leftJoinAndSelect
@@ -230,18 +230,18 @@ export class CurrencyRepository extends MeteredRepository
         const output = rawItems.map(item => (
         {
             currency: {
-                id: item[`${currTableAlias}_${keyOfCurr('id')}`],
-                name: item[`${currTableAlias}_${keyOfCurr('name')}`],
-                ownerId: item[`${currTableAlias}_${keyOfCurr('ownerId')}`],
-                ticker: item[`${currTableAlias}_${keyOfCurr('ticker')}`],
+                id: item[`${currTableAlias}_${keyOfCurr('id')}`] as string,
+                name: item[`${currTableAlias}_${keyOfCurr('name')}`] as string,
+                ownerId: item[`${currTableAlias}_${keyOfCurr('ownerId')}`] as string,
+                ticker: item[`${currTableAlias}_${keyOfCurr('ticker')}`] as string,
                 lastRateCronUpdateTime: item[`${currTableAlias}_${keyOfCurr('lastRateCronUpdateTime')}`] as number | null,
             },
             rateSource: {
-                id: item[`${srcTableAlias}_${keyOfRateSrc('id')}`],
-                hostname: item[`${srcTableAlias}_${keyOfRateSrc('hostname')}`],
-                jsonQueryString: item[`${srcTableAlias}_${keyOfRateSrc('jsonQueryString')}`],
-                lastExecuteTime: item[`${srcTableAlias}_${keyOfRateSrc('lastExecuteTime')}`],
-                name: item[`${srcTableAlias}_${keyOfRateSrc('name')}`],
+                id: item[`${srcTableAlias}_${keyOfRateSrc('id')}`] as string,
+                hostname: item[`${srcTableAlias}_${keyOfRateSrc('hostname')}`] as string,
+                jsonQueryString: item[`${srcTableAlias}_${keyOfRateSrc('jsonQueryString')}`] as string,
+                lastExecuteTime: item[`${srcTableAlias}_${keyOfRateSrc('lastExecuteTime')}`] as number | null,
+                name: item[`${srcTableAlias}_${keyOfRateSrc('name')}`] as string,
             }
         }));
 
@@ -278,16 +278,7 @@ export class CurrencyRepository extends MeteredRepository
             name?: string | undefined,
             id?: string | undefined
         }
-    ): Promise<{ totalCount: number, rangeItems: {
-        id: string,
-        isBase: boolean,
-        ownerId: string,
-        ticker: string,
-        name: string,
-        fallbackRateAmount: string | null,
-        fallbackRateCurrencyId: string | null,
-        lastRateCronUpdateTime: number | null
-    }[] } | UserNotFoundError>
+    )
     {
         const user = await UserRepository.getInstance().findOne({where: { id: ownerId ?? null }});
         if (!user) return new UserNotFoundError(ownerId);

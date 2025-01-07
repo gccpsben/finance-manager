@@ -6,10 +6,6 @@ export type PickByType<T, Value> = { [P in keyof T as T[P] extends Value | undef
 export type OmitByType<T, Value> = { [P in keyof T as T[P] extends Value | undefined ? never : P]: T[P] };
 export type PartialNull<T> = { [key in keyof T]: T[key] | null };
 export type ArrayElement<ArrayType extends readonly unknown[]> = ArrayType extends readonly (infer ElementType)[] ? ElementType : never;
-export type SQLitePrimitiveOnly<T> =
-{
-    [P in keyof T as T[P] extends (boolean | number | string | null | undefined | Date) ? P : never]: T[P]
-};
 export type UnionToIntersection<U> =
     (U extends any ? (k: U)=>void : never) extends ((k: infer I)=>void) ? I : never
 export type NoUnion<Key> =

@@ -5,7 +5,6 @@ import { User } from "./user.entity.js";
 import { IsBoolean, IsNotEmpty, IsOptional, IsString, MaxLength } from "class-validator";
 import { EntityClass } from "../dbEntityBase.js";
 import { EnsureNotPlainForeignKey, IsDecimalJSString } from "../validators.js";
-import { SQLitePrimitiveOnly } from "../../index.d.js";
 import { CurrencyRateSource } from "./currencyRateSource.entity.js";
 import { nameof } from "../servicesUtils.js";
 
@@ -68,17 +67,5 @@ export class Currency extends EntityClass
     @BeforeUpdate()
     public override async validate() { await super.validate(); }
 }
-
-export type RateHydratedCurrency =
-{
-    currency: Currency,
-    rateToBase: string
-};
-
-export type RateHydratedPrimitiveCurrency =
-{
-    currency: SQLitePrimitiveOnly<Currency>,
-    rateToBase: string
-};
 
 export const nameofC = (x: keyof Currency) => nameof<Currency>(x);

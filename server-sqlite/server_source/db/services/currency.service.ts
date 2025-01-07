@@ -77,7 +77,18 @@ export class CurrencyCalculator
     public static async currencyToCurrencyRate
     (
         ownerId:string,
-        from: Currency & { id: string }, to: Currency & { id: string },
+        from: {
+            id: string;
+            isBase: boolean;
+            fallbackRateAmount?: string | null | undefined;
+            fallbackRateCurrencyId?: string | null | undefined;
+        },
+        to: {
+            id: string;
+            isBase: boolean;
+            fallbackRateAmount?: string | null | undefined;
+            fallbackRateCurrencyId?: string | null | undefined;
+        },
         currencyRateDatumsCache: CurrencyRateDatumsCache | null,
         currencyToBaseRateCache: CurrencyToBaseRateCache | null,
         currencyListCache: CurrencyCache | null

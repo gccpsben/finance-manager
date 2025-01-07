@@ -32,13 +32,18 @@ export class UserNameTakenError extends MonadError<typeof UserNotFoundError.ERRO
 
 export class UserService
 {
-    public static async getUserById(userId: string): Promise<User | null>
+    public static async getUserById(userId: string)
     {
-        return await UserRepository
+        const result = await UserRepository
         .getInstance()
         .createQueryBuilder('user')
         .where(`user.${nameofU('id')} = :id`, { id: userId })
         .getOne() ?? null;
+
+        return result === null ? null : {
+            id: result.id,
+            username: result.username
+        };
     }
 
     public static async findAllUsers()

@@ -6,7 +6,6 @@ import { IsNumberString, IsOptional, IsString } from 'class-validator';
 import { ExpressValidations } from '../validation.js';
 import { IsDecimalJSString, IsIntString } from '../../db/validators.js';
 import createHttpError from 'http-errors';
-import { Currency } from '../../db/entities/currency.entity.js';
 import type { GetCurrencyAPI, GetCurrencyRateHistoryAPI, PostCurrencyAPI } from "../../../../api-types/currencies.js";
 import { TypesafeRouter } from '../typescriptRouter.js';
 import { OptionalPaginationAPIQueryRequest, PaginationAPIResponseClass } from '../pagination.js';

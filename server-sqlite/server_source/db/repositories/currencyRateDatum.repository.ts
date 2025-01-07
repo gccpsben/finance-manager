@@ -1,7 +1,6 @@
 import { DataSource, QueryRunner, Repository } from "typeorm";
 import { CurrencyRateDatum, nameofCRD } from "../entities/currencyRateDatum.entity.js";
 import { Database } from "../db.js";
-import { SQLitePrimitiveOnly } from "../../index.d.js";
 import { CurrencyRateDatumsCache } from "../caches/currencyRateDatumsCache.cache.js";
 import { panic } from "../../std_errors/monadError.js";
 import { CurrencyToBaseRateCache } from "../caches/currencyToBaseRate.cache.js";
@@ -10,9 +9,6 @@ import { UserNotFoundError } from "../services/user.service.js";
 import { QUERY_IGNORE } from "../../symbols.js";
 import { CurrencyCache } from "../caches/currencyListCache.cache.js";
 import { MeteredRepository } from "../meteredRepository.js";
-
-export type DifferenceHydratedCurrencyRateDatum = SQLitePrimitiveOnly<CurrencyRateDatum> &
-{ difference: number }
 
 export class CurrencyRateDatumRepository extends MeteredRepository
 {
@@ -29,7 +25,7 @@ export class CurrencyRateDatumRepository extends MeteredRepository
         userId: string,
         currencyId: string, date: number,
         cache: CurrencyRateDatumsCache | null
-    ): Promise<DifferenceHydratedCurrencyRateDatum[]>
+    )
     {
         const cachedTwoDatums = cache?.findTwoNearestDatum(userId, currencyId, date);
         if (cachedTwoDatums !== undefined) return cachedTwoDatums;
@@ -43,7 +39,17 @@ export class CurrencyRateDatumRepository extends MeteredRepository
         query = query.addSelect("*");
 
         this.incrementRead();
-        const results = await query.getRawMany() as (SQLitePrimitiveOnly<CurrencyRateDatum> & { difference: number })[];
+        const results = await query.getRawMany() as
+        {
+            difference: number,
+            id: string,
+            amount: string,
+            refCurrencyId: string,
+            refAmountCurrencyId: string,
+            ownerId: string,
+            date: number
+        }[];
+
         cache?.cacheRateDatums(userId, currencyId, results);
         return results.slice(0,2);
     }
@@ -82,9 +88,25 @@ export class CurrencyRateDatumRepository extends MeteredRepository
 
         // We only cache datums that are full.
         if (startDate === undefined && endDate === undefined && !!currencyDateDatumsCache)
-            currencyDateDatumsCache.cacheRateDatums(userId, currencyId, results);
+            currencyDateDatumsCache.cacheRateDatums(userId, currencyId, results.map(r => ({
+                amount: r.amount,
+                date: r.date,
+                id: r.id!,
+                ownerId: r.ownerId,
+                refAmountCurrencyId: r.refAmountCurrencyId,
+                refCurrencyId: r.refCurrencyId,
+            })));
 
-        return results as (SQLitePrimitiveOnly<CurrencyRateDatum>)[];
+        // We only want to returned whitelisted properties, to keep the interface simple
+        // and explicit
+        return results.map(r => ({
+            id: r.id,
+            amount: r.amount,
+            refCurrencyId: r.refCurrencyId,
+            refAmountCurrencyId: r.refAmountCurrencyId,
+            ownerId: r.ownerId,
+            date: r.date
+        }));
     }
 
     public async createCurrencyRateDatum

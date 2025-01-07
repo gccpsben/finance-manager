@@ -196,7 +196,7 @@ export class TransactionService
         const owner = await UserService.getUserById(userId);
         if (!owner) return new UserNotFoundError(userId);
 
-        const tnxTagObjs: TxnTag[] = [];
+        const tnxTagObjs: { id: string; name: string; ownerId: string }[] = [];
         for (const txnTagId of obj.txnTagIds)
         {
             const txnTag = await TxnTagService.getTxnTagById(userId, txnTagId);
