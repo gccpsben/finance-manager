@@ -2,7 +2,7 @@ import express from 'express';
 import { AccessTokenService, InvalidLoginTokenError } from '../../db/services/accessToken.service.js';
 import { IsNotEmpty, IsOptional, IsString } from 'class-validator';
 import { ExpressValidations } from '../validation.js';
-import { TransactionTagService, TxnTagExistsError } from '../../db/services/txnTag.service.js';
+import { TxnTagService, TxnTagExistsError } from '../../db/services/txnTag.service.js';
 import { TypesafeRouter } from '../typescriptRouter.js';
 import type { GetTxnTagsAPI, PostTxnTagsAPI } from '../../../../api-types/txnTag.js';
 import { OptionalPaginationAPIQueryRequest, PaginationAPIResponseClass } from '../pagination.js';
@@ -34,7 +34,7 @@ router.get<GetTxnTagsAPI.ResponseDTO>(`/api/v1/transactionTags`,
             id: parsedQuery.id
         };
 
-        const userTxnTags = await TransactionTagService.getUserTxnTags(authResult.ownerUserId,
+        const userTxnTags = await TxnTagService.getUserTxnTags(authResult.ownerUserId,
         {
             startIndex: userQuery.start,
             endIndex: userQuery.end,
@@ -73,7 +73,7 @@ router.post<PostTxnTagsAPI.ResponseDTO>(`/api/v1/transactionTags`,
         if (authResult instanceof InvalidLoginTokenError) throw createHttpError(401);
 
         const parsedBody = await ExpressValidations.validateBodyAgainstModel<body>(body, req.body);
-        const createdTag = await TransactionTagService.createTxnTag(authResult.ownerUserId, parsedBody.name);
+        const createdTag = await TxnTagService.createTxnTag(authResult.ownerUserId, parsedBody.name);
         if (createdTag instanceof TxnTagExistsError) throw createHttpError(400, createdTag.message);
         if (createdTag instanceof UserNotFoundError) throw createHttpError(401);
 

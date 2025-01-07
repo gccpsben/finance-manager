@@ -1,6 +1,6 @@
 import { ContainerNotFoundError } from "./container.service.js";
 import { CurrencyNotFoundError, CurrencyService } from "./currency.service.js";
-import { TransactionTagService, TxnTagNotFoundError } from "./txnTag.service.js";
+import { TxnTagService, TxnTagNotFoundError } from "./txnTag.service.js";
 import { UserNotFoundError, UserService } from "./user.service.js";
 import { Decimal } from "decimal.js";
 import { MonadError } from "../../std_errors/monadError.js";
@@ -199,7 +199,7 @@ export class TransactionService
         const tnxTagObjs: TxnTag[] = [];
         for (const txnTagId of obj.txnTagIds)
         {
-            const txnTag = await TransactionTagService.getTxnTagById(userId, txnTagId);
+            const txnTag = await TxnTagService.getTxnTagById(userId, txnTagId);
             if (txnTag instanceof UserNotFoundError) return txnTag;
             if (txnTag instanceof TxnTagNotFoundError) return txnTag;
             tnxTagObjs.push(txnTag);

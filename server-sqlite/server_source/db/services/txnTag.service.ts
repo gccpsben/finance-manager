@@ -1,4 +1,4 @@
-import { TransactionTypeRepository as TransactionTagRepository } from "../repositories/txnTag.repository.js";
+import { TransactionTypeRepository as TxnTagRepository } from "../repositories/txnTag.repository.js";
 import { UserRepository } from "../repositories/user.repository.js";
 import { nameofTT, TxnTag } from "../entities/txnTag.entity.js";
 import { ServiceUtils } from "../servicesUtils.js";
@@ -40,18 +40,18 @@ export class TxnTagExistsError extends MonadError<typeof TxnTagExistsError.ERROR
     }
 }
 
-export class TransactionTagService
+export class TxnTagService
 {
     public static async createTxnTag(ownerId: string, name: string)
     {
-        const tagWithSameName = await TransactionTagService.tryGetTxnTagByName(ownerId, name);
+        const tagWithSameName = await TxnTagService.tryGetTxnTagByName(ownerId, name);
         if (tagWithSameName.found) return new TxnTagExistsError(name, ownerId);
         const owner = await UserRepository.getInstance().findOne({ where: { id: ownerId } });
         if (owner === null) return new UserNotFoundError(ownerId);
-        const newTag = TransactionTagRepository.getInstance().create();
+        const newTag = TxnTagRepository.getInstance().create();
         newTag.name = name;
         newTag.owner = owner;
-        return await TransactionTagRepository.getInstance().save(newTag);
+        return await TxnTagRepository.getInstance().save(newTag);
     }
 
     public static async getTxnTagById(ownerId: string, id: string)
@@ -59,7 +59,7 @@ export class TransactionTagService
         const user = await UserRepository.getInstance().findOne({where: { id: ownerId }});
         if (!user) return new UserNotFoundError(ownerId);
 
-        const result = await TransactionTagRepository.getInstance()
+        const result = await TxnTagRepository.getInstance()
         .createQueryBuilder(`tag`)
         .where(`tag.${nameofTT('id')} = :id AND tag.${nameofTT('ownerId')} = :ownerId`, { id: id, ownerId: ownerId })
         .getOne();
@@ -82,7 +82,7 @@ export class TransactionTagService
         const user = await UserRepository.getInstance().findOne({where: { id: ownerId }});
         if (!user) return new UserNotFoundError(ownerId);
 
-        let query = TransactionTagRepository.getInstance()
+        let query = TxnTagRepository.getInstance()
         .createQueryBuilder(`tag`)
         .where(`tag.${nameofTT('ownerId')} = :ownerId`, {ownerId: ownerId });
 
@@ -97,19 +97,12 @@ export class TransactionTagService
         };
     }
 
-    public static async getTxnTagByName(ownerId: string, name: string)
-    {
-        const result = await this.tryGetTxnTagByName(ownerId, name);
-        if (!result.found) return new TxnTagNotFoundError({ name: name }, ownerId);
-        return result.obj;
-    }
-
     public static async tryGetTxnTagByName(ownerId: string, name: string)
     {
         const user = await UserRepository.getInstance().findOne({where: { id: ownerId }});
         if (!user) throw new UserNotFoundError(ownerId);
 
-        const result = await TransactionTagRepository.getInstance()
+        const result = await TxnTagRepository.getInstance()
         .createQueryBuilder(`type`)
         .where(`type.${nameofTT('name')} = :name AND type.${nameofTT('ownerId')} = :ownerId`, { name: name, ownerId: ownerId })
         .getOne();
