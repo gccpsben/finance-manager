@@ -224,7 +224,13 @@ export class TransactionRepository extends MeteredRepository
 
         // Since delta is not calculated in the last loop, we need to calculate the delta of transactions that are sent to the clients.
         // otherwise the returned transactions will all be delta=0.
-        const outputRangeItems = await Promise.all(matchedResults.map(async txn => {
+        const inViewRangeResults = matchedResults.slice
+        (
+            startIndex ?? 0,
+            endIndex === null ? matchedResults.length + 1 : endIndex + 1
+        );
+
+        const valueHydratedResults = await Promise.all(inViewRangeResults.map(async txn => {
             return {
                 ...txn,
                 changeInValue: unwrap(
@@ -234,12 +240,8 @@ export class TransactionRepository extends MeteredRepository
         }));
 
         return {
-            totalItems: outputRangeItems.length,
-            rangeItems: outputRangeItems.slice
-            (
-                startIndex ?? 0,
-                endIndex === null ? matchedResults.length + 1 : endIndex + 1
-            )
+            totalItems: valueHydratedResults.length,
+            rangeItems: valueHydratedResults
         };
     }
 
