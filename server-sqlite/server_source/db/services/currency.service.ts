@@ -239,7 +239,6 @@ export class CurrencyCalculator
     }
 
 
-    // TODO: Make startDate and endDate responsive to cache
     public static async getCurrencyToBaseRateInterpolator
     (
         userId:string,
@@ -260,8 +259,8 @@ export class CurrencyCalculator
         const currencyRateDatums = await Database.getCurrencyRateDatumRepository()!.getCurrencyDatums(
             userId,
             currencyId,
-            undefined,
-            undefined,
+            startDate,
+            endDate, // TODO: See if any edge-case will occur here (datum slightly out of range)
             currencyRateDatumsCache
         );
 
