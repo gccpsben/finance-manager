@@ -144,7 +144,7 @@ export class TransactionRepository extends MeteredRepository
         sqlQuery = sqlQuery.leftJoinAndSelect(`${alias}.${nameofT('tags')}`, "txn_tag");
         sqlQuery = sqlQuery.leftJoinAndSelect(`${alias}.${nameofT('fragments')}`, "frags");
 
-        const sqlResults = await sqlQuery.getManyAndCount();
+        const sqlResults = await sqlQuery.orderBy(nameofT('creationDate'), 'ASC').getManyAndCount();
 
         // Check if id are all defined.
         if (sqlResults[0].some(x => !x.id))
