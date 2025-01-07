@@ -1,6 +1,5 @@
 import { Decimal } from "decimal.js";
 import { ObjectLiteral, SelectQueryBuilder } from "typeorm";
-import { OwnedEntity } from "./ownedEntity.js";
 
 export const nameof = <T>(name: Extract<keyof T, string>): string => name;
 export namespace ServiceUtils
@@ -64,7 +63,7 @@ export namespace ServiceUtils
         return output;
     }
 
-    export function ensureEntityOwnership(entity: OwnedEntity[] | OwnedEntity, expectedOwnerId: string)
+    export function ensureEntityOwnership(entity: { ownerId: string }[] | { ownerId: string }, expectedOwnerId: string)
     {
         const entities = Array.isArray(entity) ? entity : [entity];
         for (const entity of entities)

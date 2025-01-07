@@ -5,11 +5,10 @@ import { User } from "./user.entity.js";
 import { EntityClass } from "../dbEntityBase.js";
 import { EnsureNotPlainForeignKey } from "../validators.js";
 import { Currency } from "./currency.entity.js";
-import { OwnedEntity } from "../ownedEntity.js";
 
 export const CURRENCY_RATE_SOURCE_ENTITY_TABLE_NAME = "currency_rate_source";
 @Entity({ name: CURRENCY_RATE_SOURCE_ENTITY_TABLE_NAME })
-export class CurrencyRateSource extends EntityClass implements OwnedEntity
+export class CurrencyRateSource extends EntityClass
 {
     @PrimaryGeneratedColumn('uuid')
     id: string | null;
