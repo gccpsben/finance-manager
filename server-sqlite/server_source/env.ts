@@ -6,6 +6,7 @@ import path from 'path';
 import fsExtra from 'fs-extra/esm';
 import { MonadError, NestableError, NestableErrorSymbol } from './std_errors/monadError.js';
 import { DirNotFoundError } from './std_errors/fsErrors.js';
+import { Variant } from './index.d.js';
 export type EnvType = "Development" | "UnitTest" | "Production";
 export enum RESTfulLogType { "DISABLED","TO_FILE_ONLY","TO_CONSOLE_ONLY","TO_BOTH" };
 
@@ -44,28 +45,6 @@ export class UnknownEnvTypeError extends MonadError<typeof UnknownEnvTypeError.E
     constructor(envTypeReceived: string)
     {
         super(UnknownEnvTypeError.ERROR_SYMBOL, `Unknown env type detected, received: ${envTypeReceived}`);
-        this.name = this.constructor.name;
-    }
-}
-
-export class MissingSqliteConfigInEnvError extends MonadError<typeof MissingSqliteConfigInEnvError.ERROR_SYMBOL>
-{
-    static readonly ERROR_SYMBOL: unique symbol;
-
-    constructor()
-    {
-        super(MissingSqliteConfigInEnvError.ERROR_SYMBOL, `SQLITE_FILE_PATH is not defined in env file and SQLITE_IN_MEMORY is not set to true.`);
-        this.name = this.constructor.name;
-    }
-}
-
-export class InvalidSqliteConfigInEnvError extends MonadError<typeof InvalidSqliteConfigInEnvError.ERROR_SYMBOL>
-{
-    static readonly ERROR_SYMBOL: unique symbol;
-
-    constructor()
-    {
-        super(InvalidSqliteConfigInEnvError.ERROR_SYMBOL, `SQLITE_FILE_PATH cannot be defined if SQLITE_IN_MEMORY is set to true.`);
         this.name = this.constructor.name;
     }
 }
@@ -122,13 +101,31 @@ export class InvalidRESTfulLogTypeInEnvError extends MonadError<typeof InvalidRE
     }
 }
 
+export class DataLocationNotFoundError extends MonadError<typeof DataLocationNotFoundError.ERROR_SYMBOL>
+{
+    static readonly ERROR_SYMBOL: unique symbol;
+    path: string;
+
+    constructor(path: string)
+    {
+        super(DataLocationNotFoundError.ERROR_SYMBOL, `The given data location "${path}" is either not found or not a directory.`);
+        this.name = this.constructor.name;
+        this.path = path;
+    }
+}
+
 export class EnvManager
 {
+    public static currentEnvFilePath = ['unloaded', undefined] as Variant<'unloaded', undefined> |
+                                                                  Variant<'path', string | undefined> |
+                                                                  Variant<'rawContent', string>;
+    public static dataLocation = ["unloaded", undefined] as Variant<"unloaded", undefined> |
+                                                            Variant<"path", string> |
+                                                            Variant<"in-memory", undefined>;
+
     public static serverPort = undefined as undefined | number;
-    public static currentEnvFilePath = undefined as undefined | string;
     public static distFolderLocation = undefined as undefined | string;
-    public static sqliteFilePath = undefined as undefined | string;
-    public static sqliteInMemory = false;
+
     public static logsFolderPath = undefined as undefined | string;
     public static sslPemFullPath = undefined as undefined | string;
     public static sslKeyFullPath = undefined as undefined | string;
@@ -136,24 +133,38 @@ export class EnvManager
     public static restfulLogMode: RESTfulLogType;
     public static envType:EnvType = "Production";
 
-    public static readEnv(filePath:string): undefined | ReadEnvError<DirNotFoundError | Error>
+    public static readEnv
+    (
+        env:
+            Variant<'path', string|undefined> |
+            Variant<'rawContent', string>
+
+    ): undefined | ReadEnvError<DirNotFoundError | Error>
     {
         try
         {
-            EnvManager.currentEnvFilePath = filePath || process.argv[2] || ".env";
-            EnvManager.currentEnvFilePath = path.resolve(EnvManager.currentEnvFilePath);
-            if (!fs.existsSync(EnvManager.currentEnvFilePath))
-                return new ReadEnvError(new DirNotFoundError(EnvManager.currentEnvFilePath));
-
-            dotenvExpand.expand(dotenv.config({path: EnvManager.currentEnvFilePath}));
+            const envMode = env[0];
+            if (envMode === 'path') // Read env from path
+            {
+                const envPath = path.resolve(env[1] || process.argv[2] || ".env");
+                EnvManager.currentEnvFilePath = ['path', envPath];
+                if (!fs.existsSync(envPath))
+                    return new ReadEnvError(new DirNotFoundError(envPath));
+                dotenvExpand.expand(dotenv.config({ path: envPath }));
+            }
+            else // envMode === 'rawContent'
+            {
+                const envContent = env[1];
+                EnvManager.currentEnvFilePath = ['rawContent', envContent];
+                dotenvExpand.expand({ parsed: dotenv.parse(envContent) });
+            }
         }
         catch(e) { return new ReadEnvError(e); }
     }
 
     public static parseEnv(): null | ParseEnvError<
         UnknownEnvTypeError |
-        MissingSqliteConfigInEnvError |
-        InvalidSqliteConfigInEnvError |
+        DataLocationNotFoundError |
         InvalidServerPortInEnvError |
         MissingPropInEnvError |
         InvalidTokenExpireMsInEnvError |
@@ -173,17 +184,18 @@ export class EnvManager
             this.envType = loadedEnvType;
         }
 
+        dataLocation:
         {
-            const sqliteInMemory = process.env.SQLITE_IN_MEMORY === 'true';
-            const sqliteFilePath = process.env.SQLITE_FILE_PATH;
+            const dataLocation = process.env.DATA_LOCATION;
+            if (dataLocation === ':memory:')
+            {
+                EnvManager.dataLocation = ['in-memory', undefined];
+                break dataLocation;
+            }
 
-            if (!sqliteInMemory && !sqliteFilePath)
-                return new ParseEnvError(new MissingSqliteConfigInEnvError());
-            if (sqliteFilePath && sqliteInMemory)
-                return new ParseEnvError(new InvalidSqliteConfigInEnvError());
-
-            if (!sqliteInMemory) EnvManager.sqliteFilePath = path.resolve(process.env.SQLITE_FILE_PATH!);
-            else EnvManager.sqliteInMemory = true;
+            if (dataLocation === undefined || !fsExtra.pathExistsSync(dataLocation))
+                return new ParseEnvError(new DataLocationNotFoundError(dataLocation ?? '<undefined>'));
+            else EnvManager.dataLocation = ['path', dataLocation];
         }
 
         {

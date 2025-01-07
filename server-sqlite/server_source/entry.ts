@@ -1,5 +1,4 @@
 import 'reflect-metadata';
-import path from "path";
 import { EnvManager, RESTfulLogType } from "./env.js";
 import { ExtendedLog } from "./debug/extendedLog.js";
 import { Server } from "./router/server.js";
@@ -11,21 +10,28 @@ import { panic } from './std_errors/monadError.js';
 // `main` should be called to initialize the app.
 // This is the entry point of the app.
 
-export async function main(envFilePath: string | undefined)
+export async function main(envFilePath: ['path', string | undefined] | ['rawContent', string])
 {
     try
     {
         // Set precision of calculations
         Decimal.set({ precision: 32 });
 
-        // Read env file from disk
+        // Read env file from disk / Parse env file from raw content.
         {
-            const envPath = path.resolve(envFilePath || process.argv[2] || ".env");
+            const envPath = envFilePath || process.argv[2] || ".env";
             const envReadResult = EnvManager.readEnv(envPath);
             if (!!envReadResult) envReadResult.panic();
 
-            // Log will not be saved to file before env is successfully read
-            ExtendedLog.logGreen(`Successfully read env file from "${envPath}"`, false, true);
+            if (EnvManager.currentEnvFilePath[0] === 'path')
+            {
+                // Log will not be saved to file before env is successfully read
+                ExtendedLog.logGreen(`Successfully read env file from "${EnvManager.currentEnvFilePath[1]}"`, false, true);
+            }
+            else
+            {
+                ExtendedLog.logGreen(`Successfully read env file from raw string content.`, false, true);
+            }
         }
 
         // Parse env file
@@ -39,10 +45,12 @@ export async function main(envFilePath: string | undefined)
             else if (EnvManager.envType === 'UnitTest') ExtendedLog.logCyan(`EnvType determined to be "${EnvManager.envType}"`);
             else if (EnvManager.envType === "Production") ExtendedLog.logGreen(`EnvType determined to be "${EnvManager.envType}"`);
 
-            if (!EnvManager.sqliteInMemory)
-                ExtendedLog.logMagenta(`SQLite file path resolved to "${EnvManager.sqliteFilePath}"`);
+            if (EnvManager.dataLocation[0] === 'in-memory')
+                ExtendedLog.logYellow(`Data location set to in-memory.`);
+            else if (EnvManager.dataLocation[0] === 'path')
+                ExtendedLog.logYellow(`Data location set to path on disk: "${EnvManager.dataLocation[1]}".`);
             else
-                ExtendedLog.logYellow(`SQLite running in memory mode.`);
+                panic(`DataLocation is not correctly loaded in EnvManager: ${EnvManager.dataLocation}`);
 
             ExtendedLog.logMagenta(`Dist folder path resolved to "${EnvManager.distFolderLocation}"`);
 

@@ -9,13 +9,14 @@ import { Transaction } from "./entities/transaction.entity.js";
 import { TxnTag } from "./entities/txnTag.entity.js";
 import { CurrencyRateDatum } from "./entities/currencyRateDatum.entity.js";
 import { CurrencyRateSource } from "./entities/currencyRateSource.entity.js";
-import { MonadError, NestableError, NestableErrorSymbol } from "../std_errors/monadError.js";
+import { MonadError, NestableError, NestableErrorSymbol, panic } from "../std_errors/monadError.js";
 import { CurrencyRepository } from "./repositories/currency.repository.js";
 import { AccessTokenRepository } from "./repositories/accessToken.repository.js";
 import { ContainerRepository } from "./repositories/container.repository.js";
 import { CurrencyRateDatumRepository } from "./repositories/currencyRateDatum.repository.js";
 import { TransactionRepository } from "./repositories/transaction.repository.js";
 import { Fragment } from "./entities/fragment.entity.js";
+import { FileNotFoundError } from "../std_errors/fsErrors.js";
 
 export class DatabaseInitError<T extends Error> extends MonadError<typeof DatabaseInitError.ERROR_SYMBOL> implements NestableError
 {
@@ -53,17 +54,6 @@ export class CreateAppDataSourceError<T extends Error> extends MonadError<typeof
         super(CreateAppDataSourceError.ERROR_SYMBOL, `Error creating app data source: ${err}`);
         this.name = this.constructor.name;
         this.error = err;
-    }
-}
-
-export class SqliteFilePathMissingError extends MonadError<typeof SqliteFilePathMissingError.ERROR_SYMBOL>
-{
-    static readonly ERROR_SYMBOL: unique symbol;
-
-    constructor()
-    {
-        super(SqliteFilePathMissingError.ERROR_SYMBOL, `EnvManager.sqliteFilePath is not defined.`);
-        this.name = this.constructor.name;
     }
 }
 
@@ -160,19 +150,18 @@ export class Database
     }
 
     /** Create a Database data source from the env file. */
-    public static createAppDataSource(): DataSource | CreateAppDataSourceError<SqliteFilePathMissingError>
+    public static createAppDataSource(): DataSource | CreateAppDataSourceError<FileNotFoundError>
     {
-        if (!EnvManager.sqliteFilePath && !EnvManager.sqliteInMemory)
-            return new CreateAppDataSourceError(new SqliteFilePathMissingError());
+        if (EnvManager.dataLocation[0] === 'unloaded') throw panic(`DataLocation is not correct loaded.`);
 
         Database.AppDataSource = new DataSource(
         {
             type: "better-sqlite3",
             entities: [User, AccessToken, Currency, Container, Transaction, TxnTag, CurrencyRateDatum, CurrencyRateSource, Fragment],
-            database: EnvManager.sqliteInMemory ? ":memory:" : EnvManager.sqliteFilePath!,
+            database: EnvManager.dataLocation[0] === 'in-memory' ? ":memory:" : `${EnvManager.dataLocation[1]}/db.db`,
             synchronize: true,
             logging: ['warn'],
-            maxQueryExecutionTime: 100
+            maxQueryExecutionTime: 100,
         });
 
         return Database.AppDataSource;

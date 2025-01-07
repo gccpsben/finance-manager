@@ -1,3 +1,3 @@
 import { main } from "./entry.js";
 
-main(undefined);
+main(['path', undefined]);
