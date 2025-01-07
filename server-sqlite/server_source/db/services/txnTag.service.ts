@@ -114,9 +114,7 @@ export class TransactionTagService
         .where(`type.${nameofTT('name')} = :name AND type.${nameofTT('ownerId')} = :ownerId`, { name: name, ownerId: ownerId })
         .getOne();
 
-        return {
-            found: !!result,
-            obj: result as TxnTag | null
-        };
+        if (!!result) return { found: true as const, obj: result }
+        else return { found: false as const, obj: null }
     }
 }
