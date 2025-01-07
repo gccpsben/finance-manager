@@ -66,7 +66,7 @@ export class ContainerService
     )
     {
         let relevantTxns = await Database.getTransactionRepository()!.getContainersTransactions(ownerId, containers);
-        const containersBalancesMapping = await (async () =>
+        const containersBalancesMapping = (() =>
         {
             const output: { [containerId: string]: { [currencyId: string]: Decimal } } = {};
             const append = (containerId: string, currencyId:string, amount: string, isNegative = false) =>
