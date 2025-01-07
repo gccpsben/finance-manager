@@ -89,7 +89,7 @@ export function IsPassing(predicate: (value: any) => boolean | Promise<boolean>)
     {
         registerDecorator(
         {
-            name: 'isUTCDateIntString',
+            name: 'IsPassing',
             target: object.constructor,
             propertyName: propertyName,
             options: {
