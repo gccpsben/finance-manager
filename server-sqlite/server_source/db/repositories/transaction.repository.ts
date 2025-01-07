@@ -119,18 +119,37 @@ export class TransactionRepository extends MeteredRepository
                 ticker: queryResult.ticker,
             } : null;
         };
+        const findCurrByTicker = async (ticker: string): Promise<TransactionJSONQueryCurrency | null> =>
+        {
+            const queryResult = await currRepo.findCurrencyByIdNameTickerOne(userId, QUERY_IGNORE, QUERY_IGNORE, ticker, currencyListCache);
+            return queryResult ? {
+                fallbackRateAmount: queryResult.fallbackRateAmount,
+                fallbackRateCurrencyId: queryResult.fallbackRateCurrencyId,
+                id: queryResult.id,
+                isBase: queryResult.isBase,
+                ticker: queryResult.ticker,
+            } : null;
+        };
+
+        // Start parsing query language.
+        const expression = jsonata(query);
+        const tokensAST = TxnQueryASTCalculator.flattenASTTokens(expression.ast());
+        const isTokenInExpr = (token: string) => tokensAST.some(t => t.name === token || t.value === token);
+        const tokensPresence = {
+            delta: ["DELTA", "DELTA_NEG", "DELTA_POS", "changeInValue"].some(x => isTokenInExpr(x)),
+        };
 
         let sqlQuery = this.#repository.createQueryBuilder(alias);
+        sqlQuery = sqlQuery.where(`${alias}.${nameofT('ownerId')} = :ownerId`, { ownerId: userId });
         sqlQuery = sqlQuery.leftJoinAndSelect(`${alias}.${nameofT('tags')}`, "txn_tag");
         sqlQuery = sqlQuery.leftJoinAndSelect(`${alias}.${nameofT('fragments')}`, "frags");
-        sqlQuery = sqlQuery.where(`${alias}.${nameofT('ownerId')} = :ownerId`, { ownerId: userId });
+
         const sqlResults = await sqlQuery.getManyAndCount();
 
         // Check if id are all defined.
         if (sqlResults[0].some(x => !x.id))
             throw panic(`Some of the transactions queried from database has falsy primary keys.`);
 
-        const expression = jsonata(query);
         const matchedResults: TransactionJSONQueryItem[] = [];
         for (const txn of sqlResults[0].reverse())
         {
@@ -142,7 +161,8 @@ export class TransactionRepository extends MeteredRepository
                     title: txn.title!,
                     creationDate: txn.creationDate!,
                     description: txn.description,
-                    fragments: await Promise.all(txn.fragments.map(async x => ({
+                    fragments: await Promise.all((txn.fragments ?? []).map(async x => (
+                    {
                         fromAmount: x.fromAmount,
                         fromContainerId: x.fromContainerId,
                         fromCurrencyId: x.fromCurrencyId,
@@ -152,42 +172,49 @@ export class TransactionRepository extends MeteredRepository
                         toCurrencyId: x.toCurrencyId,
                         toCurrency: x.toCurrencyId ? await findCurrById(x.toCurrencyId) : null,
                     }))),
-                    tagIds: (txn.tags as { id: string }[]).map(x => x.id) ?? [],
-                    tagNames: (txn.tags as { name: string }[]).map(x => x.name) ?? [],
-                    changeInValue: 0,
+                    tagIds: ((txn.tags ?? []) as { id: string }[]).map(x => x.id) ?? [],
+                    tagNames: ((txn.tags ?? []) as { name: string }[]).map(x => x.name) ?? [],
+                    changeInValue: null as null | number, // Null for ignoring
                     excludedFromIncomesExpenses: txn.excludedFromIncomesExpenses
                 };
 
+                const containersCurrencies = TransactionService.getFragmentsContainersCurrenciesIds(objToBeMatched.fragments);
+
                 // Only calculate delta if it is referenced in the query
-                const tokensAST = TxnQueryASTCalculator.flattenASTTokens(expression.ast());
-                const isTokenInExpr = (token: string) => tokensAST.some(t => t.name === token || t.value === token);
-                if (["DELTA", "DELTA_NEG", "DELTA_POS", "changeInValue"].some(x => isTokenInExpr(x)))
+                if (tokensPresence.delta)
                 {
                     objToBeMatched.changeInValue = unwrap(
                         await TransactionService.getTxnIncreaseInValue(userId, objToBeMatched, currencyRateDatumsCache, baseRateCache, currencyListCache)
                     ).increaseInValue.toNumber();
                 }
 
+                const ageMs = (now - objToBeMatched.creationDate);
                 expression.assign("TITLE", objToBeMatched.title);
                 expression.assign("TITLE_LOWER", objToBeMatched.title.toLowerCase());
                 expression.assign("TITLE_UPPER", objToBeMatched.title.toUpperCase());
-                expression.assign("AGE_MS", now - objToBeMatched.creationDate);
-                expression.assign("AGE_SEC", (now - objToBeMatched.creationDate) / 1000);
-                expression.assign("AGE_MIN", (now - objToBeMatched.creationDate) / 1000 / 60);
-                expression.assign("AGE_HOUR", (now - objToBeMatched.creationDate) / 1000 / 60 / 60);
-                expression.assign("AGE_DAY", (now - objToBeMatched.creationDate) / 1000 / 60 / 60 / 24);
-                expression.assign("DELTA", objToBeMatched.changeInValue);
-                expression.assign("DELTA_NEG", objToBeMatched.changeInValue * -1);
-                expression.assign("DELTA_POS", objToBeMatched.changeInValue);
-                // expression.assign("IS_TRANSFER", (objToBeMatched.fromContainerId && objToBeMatched.toContainerId));
-                // expression.assign("IS_FROM", (objToBeMatched.fromContainerId && !objToBeMatched.toContainerId));
-                // expression.assign("IS_TO", (!objToBeMatched.fromContainerId && objToBeMatched.toContainerId));
-                // expression.assign("WITH_NON_BASE", objToBeMatched.fromCurrency?.isBase === false || objToBeMatched.toCurrency?.isBase === false);
-                // expression.assign("ONLY_BASE", objToBeMatched.fromCurrency?.isBase === false || objToBeMatched.toCurrency?.isBase === false);
-                // expression.assign("FROM_TICKER", objToBeMatched.fromCurrency?.ticker ?? null);
-                // expression.assign("TO_TICKER", objToBeMatched.toCurrency?.ticker ?? null);
+                expression.assign("AGE_MS", ageMs);
+                expression.assign("AGE_SEC", ageMs / 1000);
+                expression.assign("AGE_MIN", ageMs / 1000 / 60);
+                expression.assign("AGE_HOUR", ageMs / 1000 / 60 / 60);
+                expression.assign("AGE_DAY", ageMs / 1000 / 60 / 60 / 24);
+                if (objToBeMatched.changeInValue !== null)
+                {
+                    expression.assign("DELTA", objToBeMatched.changeInValue);
+                    expression.assign("DELTA_NEG", objToBeMatched.changeInValue * -1);
+                    expression.assign("DELTA_POS", objToBeMatched.changeInValue);
+                }
                 expression.registerFunction("withinInc", (value, minInclusive, maxInclusive) => value >= minInclusive && value <= maxInclusive, "<nnn:b>");
                 expression.registerFunction("withinExc", (value, minInclusive, maxInclusive) => value > minInclusive && value < maxInclusive, "<nnn:b>");
+                expression.registerFunction("withContainerId", containerId => containersCurrencies.containersSet.has(containerId), "<s:b>");
+                expression.registerFunction("withCurrencyId", currencyId => containersCurrencies.currenciesSet.has(currencyId), "<s:b>");
+
+                // TODO: withTicker is extremely slow uncached
+                expression.registerFunction("withTicker", async ticker =>
+                {
+                    const currWithTicker = await findCurrByTicker(ticker);
+                    if (!currWithTicker) return false;
+                    return containersCurrencies.currenciesSet.has(currWithTicker.id);
+                }, "<s:b>");
 
                 if (await expression.evaluate(objToBeMatched) === true)
                     matchedResults.push(objToBeMatched);
@@ -195,9 +222,20 @@ export class TransactionRepository extends MeteredRepository
             catch(e) { return new JSONQueryError(userId, `${e.message}`, query); }
         }
 
+        // Since delta is not calculated in the last loop, we need to calculate the delta of transactions that are sent to the clients.
+        // otherwise the returned transactions will all be delta=0.
+        const outputRangeItems = await Promise.all(matchedResults.map(async txn => {
+            return {
+                ...txn,
+                changeInValue: unwrap(
+                    await TransactionService.getTxnIncreaseInValue(userId, txn, currencyRateDatumsCache, baseRateCache, currencyListCache)
+                ).increaseInValue.toNumber()
+            }
+        }));
+
         return {
-            totalItems: matchedResults.length,
-            rangeItems: matchedResults.slice
+            totalItems: outputRangeItems.length,
+            rangeItems: outputRangeItems.slice
             (
                 startIndex ?? 0,
                 endIndex === null ? matchedResults.length + 1 : endIndex + 1

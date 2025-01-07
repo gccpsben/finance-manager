@@ -417,4 +417,26 @@ export class TransactionService
         }, queryRunner);
         return savedTxn;
     }
+
+    public static getFragmentsContainersCurrenciesIds(fragments: {
+        fromContainerId: string | null,
+        fromCurrencyId: string | null,
+        toContainerId: string | null,
+        toCurrencyId: string | null,
+    }[])
+    {
+        const containersSet = new Set<string>();
+        const currenciesSet = new Set<string>();
+        for (const fragment of fragments)
+        {
+            if (fragment.fromContainerId) containersSet.add(fragment.fromContainerId);
+            if (fragment.toContainerId) containersSet.add(fragment.toContainerId);
+            if (fragment.fromCurrencyId) currenciesSet.add(fragment.fromCurrencyId);
+            if (fragment.toCurrencyId) currenciesSet.add(fragment.toCurrencyId);
+        }
+        return {
+            containersSet,
+            currenciesSet
+        }
+    }
 }
