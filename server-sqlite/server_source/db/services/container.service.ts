@@ -164,7 +164,7 @@ export class ContainerService
             return output;
         })();
 
-        const containerValues: { [containerId: string]: Decimal } = await (async () =>
+        const containerValues: { [containerId: string]: Decimal } = (() =>
         {
             const output: { [containerId:string]:Decimal } = {};
             for (const [containerId, balances] of Object.entries(containerBalances))
