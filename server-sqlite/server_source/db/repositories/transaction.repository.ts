@@ -1,5 +1,5 @@
 import { DataSource, DeleteResult, QueryRunner, Repository } from "typeorm";
-import { Transaction } from "../entities/transaction.entity.js";
+import { nameofT, Transaction } from "../entities/transaction.entity.js";
 import { Database } from "../db.js";
 import { panic, unwrap } from "../../std_errors/monadError.js";
 import { MeteredRepository } from "../meteredRepository.js";
@@ -13,12 +13,9 @@ import { CurrencyRateDatumsCache } from "../caches/currencyRateDatumsCache.cache
 import { CurrencyToBaseRateCache } from "../caches/currencyToBaseRate.cache.js";
 import { TxnQueryASTCalculator } from "../../calculations/txnAST.js";
 import jsonata from "jsonata";
-import { nameof, ServiceUtils } from "../servicesUtils.js";
+import { ServiceUtils } from "../servicesUtils.js";
 import { SQLitePrimitiveOnly } from "../../index.d.js";
-import { Fragment, FragmentRaw } from "../entities/fragment.entity.js";
-
-const nameofT = (x: keyof Transaction) => nameof<Transaction>(x);
-const nameofF = (x: keyof Fragment) => nameof<Fragment>(x);
+import { Fragment, FragmentRaw, nameofF } from "../entities/fragment.entity.js";
 
 export class TransactionRepository extends MeteredRepository
 {
@@ -366,8 +363,6 @@ export class TransactionRepository extends MeteredRepository
 
     public async getUserEarliestTransaction(userId: string): Promise<SQLitePrimitiveOnly<Transaction> | null>
     {
-        const nameofT = (x: keyof Transaction) => nameof<Transaction>(x);
-
         let query = await this.#repository
         .createQueryBuilder(`txn`)
         .where(`${nameofT('ownerId')} = :ownerId`, { ownerId: userId ?? null })

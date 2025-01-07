@@ -1,9 +1,8 @@
 import { Decimal } from "decimal.js";
 import { CurrencyRepository } from "../repositories/currency.repository.js";
 import { UserRepository } from "../repositories/user.repository.js";
-import { Currency } from "../entities/currency.entity.js";
+import { Currency, nameofC } from "../entities/currency.entity.js";
 import { LinearInterpolator } from "../../calculations/linearInterpolator.js";
-import { nameof } from "../servicesUtils.js";
 import { CurrencyRateDatumsCache } from '../caches/currencyRateDatumsCache.cache.js';
 import { CurrencyCache } from "../caches/currencyListCache.cache.js";
 import { UserNotFoundError, UserService } from "./user.service.js";
@@ -21,7 +20,6 @@ export class CurrencyRefCurrencyIdAmountTupleError extends MonadError<typeof Cur
 
     constructor(currencyId: string | undefined, userId: string, amount: string | undefined)
     {
-        const nameofC = nameof<Currency>;
         super(CurrencyRefCurrencyIdAmountTupleError.ERROR_SYMBOL, `If ${nameofC('fallbackRateCurrency')} is given, ${nameofC('fallbackRateAmount')} must also be specified.`);
         this.name = this.constructor.name;
         this.currencyId = currencyId;

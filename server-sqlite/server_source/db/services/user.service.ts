@@ -1,10 +1,8 @@
 import argon2 from "argon2";
 import { UserRepository } from "../repositories/user.repository.js";
-import { User } from "../entities/user.entity.js";
+import { nameofU, User } from "../entities/user.entity.js";
 import { MonadError } from "../../std_errors/monadError.js";
 import { Database } from "../db.js";
-
-const nameofU = (x: keyof User) => x;
 
 export class UserNotFoundError extends MonadError<typeof UserNotFoundError.ERROR_SYMBOL>
 {

@@ -1,12 +1,10 @@
 import { TransactionTypeRepository as TransactionTagRepository } from "../repositories/txnTag.repository.js";
 import { UserRepository } from "../repositories/user.repository.js";
-import { TxnTag } from "../entities/txnTag.entity.js";
+import { nameofTT, TxnTag } from "../entities/txnTag.entity.js";
 import { ServiceUtils } from "../servicesUtils.js";
 import type { SQLitePrimitiveOnly } from "../../index.d.js";
 import { MonadError } from "../../std_errors/monadError.js";
 import { UserNotFoundError } from "./user.service.js";
-
-const nameofT = (x: keyof TxnTag) => x;
 
 export class TxnTagNotFoundError extends MonadError<typeof TxnTagNotFoundError.ERROR_SYMBOL>
 {
@@ -63,7 +61,7 @@ export class TransactionTagService
 
         const result = await TransactionTagRepository.getInstance()
         .createQueryBuilder(`tag`)
-        .where(`tag.${nameofT('id')} = :id AND tag.${nameofT('ownerId')} = :ownerId`, { id: id, ownerId: ownerId })
+        .where(`tag.${nameofTT('id')} = :id AND tag.${nameofTT('ownerId')} = :ownerId`, { id: id, ownerId: ownerId })
         .getOne();
 
         if (!result || !id) return new TxnTagNotFoundError({id: id}, ownerId);
@@ -86,9 +84,9 @@ export class TransactionTagService
 
         let query = TransactionTagRepository.getInstance()
         .createQueryBuilder(`tag`)
-        .where(`tag.${nameofT('ownerId')} = :ownerId`, {ownerId: ownerId });
+        .where(`tag.${nameofTT('ownerId')} = :ownerId`, {ownerId: ownerId });
 
-        if (config.name !== undefined) query = query.andWhere(`tag.${nameofT('name')} LIKE :name`, { title: `%${config.name}%` })
+        if (config.name !== undefined) query = query.andWhere(`tag.${nameofTT('name')} LIKE :name`, { title: `%${config.name}%` })
 
         query = ServiceUtils.paginateQuery(query, config);
         const queryResult = await query.getManyAndCount();
@@ -113,7 +111,7 @@ export class TransactionTagService
 
         const result = await TransactionTagRepository.getInstance()
         .createQueryBuilder(`type`)
-        .where(`type.${nameofT('name')} = :name AND type.${nameofT('ownerId')} = :ownerId`, { name: name, ownerId: ownerId })
+        .where(`type.${nameofTT('name')} = :name AND type.${nameofTT('ownerId')} = :ownerId`, { name: name, ownerId: ownerId })
         .getOne();
 
         return {

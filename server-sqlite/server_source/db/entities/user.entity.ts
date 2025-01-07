@@ -53,3 +53,5 @@ export class User extends EntityClass
     @EnsureNotPlainForeignKey()
     tags: TxnTag[] | null;
 }
+
+export const nameofU = (x: keyof User) => x;

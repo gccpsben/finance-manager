@@ -50,3 +50,5 @@ export class CurrencyRateDatum extends EntityClass
     @Index()
     date: number;
 }
+
+export const nameofCRD = (k: keyof CurrencyRateDatum) => k;

@@ -1,12 +1,13 @@
 import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, Relation, JoinColumn, Check } from "typeorm";
 import "reflect-metadata"
-import { IsNotEmpty, IsOptional, IsString, MaxLength } from "class-validator";
+import { IsOptional, IsString } from "class-validator";
 import { EntityClass } from "../dbEntityBase.js";
 import { EnsureNotPlainForeignKey, IsDecimalJSString } from "../validators.js";
 import { User } from "./user.entity.js";
 import { Currency } from "./currency.entity.js";
 import { Container } from "./container.entity.js";
 import { Transaction } from "./transaction.entity.js";
+import { nameof } from "../servicesUtils.js";
 
 @Entity()
 @Check
@@ -125,3 +126,5 @@ export type FragmentRaw =
     toContainerId: string | null,
     toCurrencyId: string | null,
 };
+
+export const nameofF = (x: keyof Fragment) => nameof<Fragment>(x);

@@ -2,10 +2,7 @@ import { ContainerNotFoundError } from "./container.service.js";
 import { CurrencyNotFoundError, CurrencyService } from "./currency.service.js";
 import { TransactionTagService, TxnTagNotFoundError } from "./txnTag.service.js";
 import { UserNotFoundError, UserService } from "./user.service.js";
-import { Transaction } from "../entities/transaction.entity.js";
 import { Decimal } from "decimal.js";
-import type { PartialNull } from "../../index.d.js";
-import { nameof } from "../servicesUtils.js";
 import { MonadError } from "../../std_errors/monadError.js";
 import { TxnTag } from "../entities/txnTag.entity.js";
 import { CurrencyToBaseRateCache } from "../caches/currencyToBaseRate.cache.js";
@@ -13,7 +10,7 @@ import { QUERY_IGNORE } from "../../symbols.js";
 import { Database } from "../db.js";
 import { CurrencyCache } from "../caches/currencyListCache.cache.js";
 import { CurrencyRateDatumsCache } from '../caches/currencyRateDatumsCache.cache.js';
-import { Fragment, FragmentRaw } from "../entities/fragment.entity.js";
+import { FragmentRaw, nameofF } from "../entities/fragment.entity.js";
 import { QueryRunner } from "typeorm";
 
 export class FragmentMissingContainerOrCurrency extends MonadError<typeof FragmentMissingContainerOrCurrency.ERROR_SYMBOL>
@@ -110,9 +107,6 @@ export type TransactionJSONQueryItem =
     fragments: FragmentRaw[]
     excludedFromIncomesExpenses: boolean
 }
-
-const nameofT = (x: keyof Transaction) => nameof<Transaction>(x);
-const nameofF = (x: keyof Fragment) => nameof<Fragment>(x);
 
 export class TransactionService
 {

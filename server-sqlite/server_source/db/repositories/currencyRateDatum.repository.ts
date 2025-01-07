@@ -1,5 +1,5 @@
 import { DataSource, QueryRunner, Repository } from "typeorm";
-import { CurrencyRateDatum } from "../entities/currencyRateDatum.entity.js";
+import { CurrencyRateDatum, nameofCRD } from "../entities/currencyRateDatum.entity.js";
 import { Database } from "../db.js";
 import { SQLitePrimitiveOnly } from "../../index.d.js";
 import { CurrencyRateDatumsCache } from "../caches/currencyRateDatumsCache.cache.js";
@@ -13,8 +13,6 @@ import { MeteredRepository } from "../meteredRepository.js";
 
 export type DifferenceHydratedCurrencyRateDatum = SQLitePrimitiveOnly<CurrencyRateDatum> &
 { difference: number }
-
-const nameofD = (k: keyof CurrencyRateDatum) => k;
 
 export class CurrencyRateDatumRepository extends MeteredRepository
 {
@@ -73,11 +71,11 @@ export class CurrencyRateDatumRepository extends MeteredRepository
 
         let query = this.#repository
         .createQueryBuilder(`datum`)
-        .where(`${nameofD('ownerId')} = :ownerId`, { ownerId: userId ?? null });
-        query = query.andWhere(`${nameofD('refCurrencyId')} = :refCurrencyId`, { refCurrencyId: currencyId ?? null });
+        .where(`${nameofCRD('ownerId')} = :ownerId`, { ownerId: userId ?? null });
+        query = query.andWhere(`${nameofCRD('refCurrencyId')} = :refCurrencyId`, { refCurrencyId: currencyId ?? null });
         query = query.addSelect("*");
-        if (startDate) query = query.andWhere(`${nameofD('date')} >= :startDate`, { startDate: startDate });
-        if (endDate) query = query.andWhere(`${nameofD('date')} <= :endDate`, { endDate: endDate });
+        if (startDate) query = query.andWhere(`${nameofCRD('date')} >= :startDate`, { startDate: startDate });
+        if (endDate) query = query.andWhere(`${nameofCRD('date')} <= :endDate`, { endDate: endDate });
 
         this.incrementRead();
         const results = await query.getMany();

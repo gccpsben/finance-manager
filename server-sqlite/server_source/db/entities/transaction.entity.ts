@@ -6,6 +6,7 @@ import { EnsureNotPlainForeignKey, IsUTCDateInt } from "../validators.js";
 import { User } from "./user.entity.js";
 import { TxnTag } from "./txnTag.entity.js";
 import { Fragment } from "./fragment.entity.js";
+import { nameof } from "../servicesUtils.js";
 
 @Entity()
 /**
@@ -63,3 +64,5 @@ export class Transaction extends EntityClass
         await super.validate();
     }
 }
+
+export const nameofT = (x: keyof Transaction) => nameof<Transaction>(x);

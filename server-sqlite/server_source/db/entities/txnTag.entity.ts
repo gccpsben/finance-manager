@@ -4,6 +4,7 @@ import { IsNotEmpty, IsString, MaxLength } from "class-validator";
 import { EntityClass } from "../dbEntityBase.js";
 import { EnsureNotPlainForeignKey } from "../validators.js";
 import { User } from "./user.entity.js";
+import { nameof } from "../servicesUtils.js";
 
 @Entity()
 export class TxnTag extends EntityClass
@@ -24,3 +25,5 @@ export class TxnTag extends EntityClass
     @EnsureNotPlainForeignKey()
     owner: Relation<User> | null;
 }
+
+export const nameofTT = (x: keyof TxnTag) => nameof<TxnTag>(x);

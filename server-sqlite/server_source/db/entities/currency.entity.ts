@@ -7,6 +7,7 @@ import { EntityClass } from "../dbEntityBase.js";
 import { EnsureNotPlainForeignKey, IsDecimalJSString } from "../validators.js";
 import { SQLitePrimitiveOnly } from "../../index.d.js";
 import { CurrencyRateSource } from "./currencyRateSource.entity.js";
+import { nameof } from "../servicesUtils.js";
 
 @Entity()
 @Unique("UniqueCurrencyNameWithinUser",["name", "owner"]) // For each user, no currencies with the same name is allowed
@@ -79,3 +80,5 @@ export type RateHydratedPrimitiveCurrency =
     currency: SQLitePrimitiveOnly<Currency>,
     rateToBase: string
 };
+
+export const nameofC = (x: keyof Currency) => nameof<Currency>(x);
