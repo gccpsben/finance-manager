@@ -12,6 +12,7 @@ import { CurrencyCache } from "../caches/currencyListCache.cache.js";
 import { CurrencyRateDatumsCache } from '../caches/currencyRateDatumsCache.cache.js';
 import { FragmentRaw, nameofF } from "../entities/fragment.entity.js";
 import { QueryRunner } from "typeorm";
+import { DecimalAdditionMapReducer } from "../servicesUtils.js";
 
 export class FragmentMissingContainerOrCurrency extends MonadError<typeof FragmentMissingContainerOrCurrency.ERROR_SYMBOL>
 {
@@ -193,9 +194,6 @@ export class TransactionService
             }
         }
 
-        const owner = await UserService.getUserById(userId);
-        if (!owner) return new UserNotFoundError(userId);
-
         const tnxTagObjs: { id: string; name: string; ownerId: string }[] = [];
         for (const txnTagId of obj.txnTagIds)
         {
@@ -219,6 +217,33 @@ export class TransactionService
             })),
             txnTagIds: obj.txnTagIds
         };
+    }
+
+    /**
+     * Check if a given list of fragments will cancel each other amount/currencies perfectly.
+     * This is useful for speeding up calculating change in value.
+     */
+    public static async willFragmentsCancelEachOthers(fragments: {
+        fromAmount: string | null;
+        fromCurrencyId: string | null;
+        toAmount: string | null;
+        toCurrencyId: string | null;
+    }[])
+    {
+        if (fragments.length === 0) return true;
+
+        const balanceReducer = new DecimalAdditionMapReducer<string>({});
+        for (const fragment of fragments)
+        {
+            if (fragment.fromCurrencyId !== null)
+                await balanceReducer.reduce(fragment.fromCurrencyId, new Decimal(fragment.fromAmount!).neg());
+            if (fragment.toCurrencyId !== null)
+                await balanceReducer.reduce(fragment.toCurrencyId, new Decimal(fragment.toAmount!));
+        }
+
+        const currenciesAmount = [...new Set(Object.values(balanceReducer.currentValue))];
+        if (currenciesAmount.some(x => !x.equals("0"))) return false;
+        return true;
     }
 
     public static getFragmentValueIncreaseRaw
@@ -310,6 +335,10 @@ export class TransactionService
             increaseInValue: await (async () =>
             {
                 let txnValueIncrease = new Decimal("0");
+
+                if (await TransactionService.willFragmentsCancelEachOthers(transaction.fragments))
+                    return txnValueIncrease;
+
                 for (const fragment of transaction.fragments)
                 {
                     txnValueIncrease = txnValueIncrease.add(this.getFragmentValueIncreaseRaw(
