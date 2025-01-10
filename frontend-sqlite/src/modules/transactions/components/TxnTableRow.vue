@@ -19,7 +19,9 @@
                              </div>
                          </TxnTooltip>
                          <div class="xLeft yTop" style="color: #555;">
-                             <DateTooltip :date="txn.creationDate">{{ getDateAge(txn.creationDate) }} ago</DateTooltip>
+                             <DateTooltip :date="txn.creationDate">
+                                {{ getDateAge(txn.creationDate) }} ago ({{ formatDate(new Date(txn.creationDate), 'YYYY-MM-DD') }})
+                            </DateTooltip>
                          </div>
                      </div>
                      <div class="bodyRowFromToGrid">
@@ -53,7 +55,7 @@ import TxnTooltip from './TxnTooltip.vue';
 import GaIcon from '@/modules/core/components/decorations/GaIcon.vue';
 import DateTooltip from '@/modules/core/components/data-display/DateTooltip.vue';
 import { vOnLongPress } from '@vueuse/components';
-import { getDateAge } from '@/modules/core/utils/date';
+import { formatDate, getDateAge } from '@/modules/core/utils/date';
 import { useContainersStore } from '@/modules/containers/stores/useContainersStore';
 import OverlapArea from '@/modules/core/components/layout/OverlapArea.vue';
 import { computed } from 'vue';
