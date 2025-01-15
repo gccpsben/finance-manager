@@ -152,7 +152,8 @@ export class Server
         {
             Server.expressApp = express();
             Server.expressApp.use(helmet());
-            Server.expressApp.use(express.json());
+            Server.expressApp.use(express.json({type: 'application/json'}));
+            Server.expressApp.use(express.raw({ limit: "50mb" })); // allow for larger file chunk upload
             Server.expressApp.use(compression());
 
             if (shouldAttachMorgan)
