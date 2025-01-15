@@ -6,6 +6,7 @@ import vBasic from '@/modules/core/directives/vBasic';
 <script lang="ts">
 import { useMainStore, type PageDefinition } from "../stores/store";
 import router from '@/router';
+import OverlapArea from '../components/layout/OverlapArea.vue';
 export default
 {
     directives: {vArea},
@@ -29,7 +30,7 @@ export default
 </script>
 
 <template>
-    <div id="routerViewTopDiv">
+    <OverlapArea id="routerViewTopDiv">
         <grid-shortcut v-basic="'#topGrid.fullSize'" columns="auto 1fr" rows="1fr" areas="'leftBar content'">
 
             <grid-shortcut v-basic="'#leftBar.fullSize'" v-area="'leftBar'" columns="1fr" rows="100px 1fr" class="rel" :class="{'hidden': !store.mainViewSidebarVisible}">
@@ -73,7 +74,8 @@ export default
             </div>
 
         </grid-shortcut>
-    </div>
+        <OverlapArea id="routerViewOverlay" style="pointer-events: none;"></OverlapArea>
+    </OverlapArea>
 </template>
 
 <style lang="less" scoped>
@@ -190,6 +192,13 @@ export default
 	text-align: center;
 	color: #2c3e50;
     overflow: hidden;
+
+    color:white;
+    top:0px;
+    left:0px;
+    right:0px;
+    bottom:0px;
+    position: fixed;
 }
 
 .page-transition-enter-active
