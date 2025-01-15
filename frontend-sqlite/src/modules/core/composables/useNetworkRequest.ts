@@ -7,7 +7,8 @@ export type NetworkQuery =
     url: string,
     query: Record<string, string>,
     method?: "PUT" | "POST" | "GET" | "DELETE" | "PATCH",
-    body?: unknown
+    body?: unknown,
+    headers?: Record<string, string>
 };
 
 function setCookie(cname:string, cvalue:string, exdays:number): void
@@ -121,10 +122,15 @@ export function useNetworkRequest<T>
                 else if (queryMethod === 'POST') return post;
                 else return put;
             })();
-            let response = await methodToUse(toValue(queryObjInner.value), { });
+            let response = await methodToUse(toValue(queryObjInner.value), (() =>
+            {
+                const inner = toValue(queryObjInner.value);
+                if (typeof inner === 'string') return {};
+                else return inner.headers ?? {};
+            })());
             lastAxiosStatusCode.value = response.status;
             lastSuccessfulData.value = response.data;
-            Promise.resolve<T>(lastSuccessfulData.value as T);
+            await Promise.resolve<T>(lastSuccessfulData.value as T);
             isLoading.value = false;
         }
         catch(err)
