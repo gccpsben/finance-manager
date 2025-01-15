@@ -28,7 +28,11 @@
             <br>
             <br />
             <div id="contentGrid">
-                <ContainerWorthHistoryCell style="height: 350px;" :container-id="urlRequestedID" />
+                <!-- <Cell>
+                    asdasd
+                </Cell> -->
+                <ContainerWorthHistoryCell v-area="'worthHistory'" :container-id="urlRequestedID" />
+                <ContainerWorthHistoryCell v-area="'currWorth'" :container-id="urlRequestedID" />
             </div>
         </div>
     </div>
@@ -102,6 +106,9 @@ const container = computed(() =>
     #contentGrid
     {
         display: grid;
+        grid-template-columns: 1fr 1fr;
+        grid-template-rows: 450px;
+        grid-template-areas: 'worthHistory currWorth' '_ _';
         gap: 14px;
     }
 }

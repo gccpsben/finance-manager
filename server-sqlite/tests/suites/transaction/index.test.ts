@@ -30,6 +30,7 @@ function getRandTxnBaseBody()
         title: simpleFaker.string.sample(),
         creationDate: simpleFaker.date.anytime().getTime(),
         description: simpleFaker.string.sample(),
+        fileIds: []
     };
 }
 
@@ -412,7 +413,8 @@ export default async function(this: Context)
                             creationDate: txnCreated.parsedBody.rangeItems[0].creationDate,
                             description: "changed desc",
                             title: "changed title",
-                            excludedFromIncomesExpenses: false
+                            excludedFromIncomesExpenses: false,
+                            fileIds: []
                         }
                     });
 

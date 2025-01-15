@@ -130,7 +130,7 @@ const getChartOptionsBottom = () =>
                     min: chartMinValueBottom.value,
                     beginAtZero: false,
                     border: { display: true, color: '#333', },
-                    grid: { display: props.showGridLines, drawOnChartArea: true, drawTicks: true, color: '#222' },
+                    grid: { drawOnChartArea: false, drawTicks: false },
                     ticks: { display: false },
                 }
             },
@@ -220,7 +220,7 @@ function updateMainChartAreaLeft()
 {
     if (!mainChartRef.value) return undefined;
     const instance = ((mainChartRef.value as any).chartInstance as Chart<'line'>);
-    mainChartAreaLeft.value = instance.getDatasetMeta(0).xScale!.left - 8;
+    mainChartAreaLeft.value = instance.getDatasetMeta(0).xScale!.left - 1;
 }
 watch(() => props.zoomedDatums, () => setTimeout(() => updateMainChartAreaLeft(), 100))
 

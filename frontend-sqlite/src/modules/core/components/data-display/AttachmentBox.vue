@@ -1,21 +1,26 @@
 <template>
     <div class="attachmentBoxRoot">
         <div class="attachmentBoxInner">
-            <div class="center">
-                <div class="chip">{{ props.extension.toUpperCase() }}</div>
-            </div>
-            <div class="titleArea">
-                <AbsEnclosure>
-                    <div class="fullSize yCenter">
-                        <div class="titleAreaInner">
-                            {{ props.fileName }}
+            <div class="attachmentBoxInnerGrid" v-if="!!fileInfo.networkRequest.lastSuccessfulData.value && !fileInfo.networkRequest.isLoading.value">
+                <div class="center">
+                    <div class="chip">{{ (extension ?? '...').toUpperCase() }}</div>
+                </div>
+                <div class="titleArea">
+                    <AbsEnclosure>
+                        <div class="fullSize yCenter">
+                            <div class="titleAreaInner">
+                                {{ fileInfo.networkRequest.lastSuccessfulData.value?.readableName ?? '...' }}
+                            </div>
                         </div>
-                    </div>
-                </AbsEnclosure>
+                    </AbsEnclosure>
+                </div>
+                <div class="actionsArea">
+                    <GaIcon v-if="deletable" icon="delete" class="btn"/>
+                    <GaIcon v-if="downloadable" icon="download" class="btn"/>
+                </div>
             </div>
-            <div class="actionsArea">
-                <GaIcon icon="delete" class="btn"/>
-                <GaIcon icon="download" class="btn"/>
+            <div class="fullSize center" v-else>
+                <NetworkCircularIndicator :is-loading="true" :error="fileInfo.networkRequest.error.value" style="width: 25px; height: 25px;"/>
             </div>
         </div>
     </div>
@@ -25,18 +30,34 @@
 import { computed } from 'vue';
 import AbsEnclosure from '../layout/AbsEnclosure.vue';
 import GaIcon from '../decorations/GaIcon.vue';
+import { useFileById } from '../../composables/useFileById';
+import { extractFileExtension } from '../../utils/files';
+import NetworkCircularIndicator from './NetworkCircularIndicator.vue';
 
 export type AttachmentBoxPropsType =
 {
-    extension: string,
-    fileName: string
+    fileId: string,
+    // extension: string,
+    // fileName: string,
+    deletable?: boolean,
+    downloadable?: boolean
 }
 
-const props = defineProps<AttachmentBoxPropsType>();
+const props = withDefaults(defineProps<AttachmentBoxPropsType>(), {
+    deletable: true,
+    downloadable: true
+});
+const fileInfo = useFileById(props.fileId);
+const extension = computed<string | null>(() =>
+{
+    if (!fileInfo.networkRequest.lastSuccessfulData.value) return null;
+    const extension = extractFileExtension(fileInfo.networkRequest.lastSuccessfulData.value.readableName)?.toLowerCase();
+    return extension ?? null;
+});
 const chipColor = computed<{bg:string, fore: string}>(() =>
 {
-    const extension = props.extension.toLowerCase();
-    switch(extension)
+    if (!fileInfo.networkRequest.lastSuccessfulData.value || !extension.value) return { bg: '#252525', fore: '#CCC' };
+    switch(extension.value)
     {
         case "png": return { bg: '#002222', fore: '#AAFFFF' };
         case 'pdf': return { bg: '#330000', fore: 'pink' };
@@ -67,10 +88,16 @@ const chipColor = computed<{bg:string, fore: string}>(() =>
         padding-right: 10px;
         margin-top: 6px;
         border-radius: 6px;
-        display: grid;
-        gap: 8px;
-        grid-template-columns: auto 1fr auto;
-        grid-template-rows: 1fr;
+
+        .attachmentBoxInnerGrid
+        {
+            .fullSize;
+            display: grid;
+            gap: 8px;
+            grid-template-columns: auto 1fr auto;
+            grid-template-rows: 1fr;
+        }
+
         &:hover:not(:has(.btn:hover))
         {
             background: @focusDark;

@@ -35,6 +35,14 @@ export class TypesafeRouter
             catch(e) { next(e); }
         });
     }
+    public postBinary<BodyType>(endpoint: string, config: TypesafeRouteConfig<BodyType>)
+    {
+        this._router.post(endpoint, express.raw({type: "application/octet-stream"}), async (req:express.Request, res:express.Response, next: NextFunction) =>
+        {
+            try { res.json(await config.handler(req, res)); }
+            catch(e) { next(e); }
+        });
+    }
     public put<BodyType>(endpoint: string, config: TypesafeRouteConfig<BodyType>)
     {
         this._router.put(endpoint, async (req:express.Request, res:express.Response, next: NextFunction) =>

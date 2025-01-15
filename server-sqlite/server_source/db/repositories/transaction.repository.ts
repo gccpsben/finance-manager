@@ -15,6 +15,8 @@ import { TxnQueryASTCalculator } from "../../calculations/txnAST.js";
 import jsonata from "jsonata";
 import { ServiceUtils } from "../servicesUtils.js";
 import { Fragment, FragmentRaw, nameofF } from "../entities/fragment.entity.js";
+import { File } from '../entities/file.entity.js';
+import { FileNotFoundError } from "../services/files.service.js";
 
 export class TransactionRepository extends MeteredRepository
 {
@@ -57,7 +59,8 @@ export class TransactionRepository extends MeteredRepository
             description: string,
             fragments: FragmentRaw[],
             tagIds: string[],
-            excludedFromIncomesExpenses: boolean
+            excludedFromIncomesExpenses: boolean,
+            files: string[]
         },
         queryRunner: QueryRunner
     )
@@ -76,6 +79,7 @@ export class TransactionRepository extends MeteredRepository
             parentTxnId: targetTxnId
         }, queryRunner);
 
+        // TODO: use batch process
         // Get all txn tags
         const tags: TxnTag[] = [];
         for (const tagId of obj.tagIds)
@@ -85,12 +89,23 @@ export class TransactionRepository extends MeteredRepository
             tags.push(tag);
         }
 
+        // TODO: use batch process
+        // Get all attachments / files
+        const files: File[] = [];
+        for (const fileId of obj.files)
+        {
+            const file = await queryRunner.manager.getRepository(File).findOne({where: { ownerId: userId, id: fileId }});
+            if (file === null) return new FileNotFoundError(userId, fileId);
+            files.push(file);
+        }
+
         return await queryRunner.manager.getRepository(Transaction).save(
         {
             id: targetTxnId,
             ...obj,
             tags: tags,
-            fragments: savedFragments
+            fragments: savedFragments,
+            files: files
         });
     }
 
@@ -143,6 +158,7 @@ export class TransactionRepository extends MeteredRepository
         sqlQuery = sqlQuery.where(`${alias}.${nameofT('ownerId')} = :ownerId`, { ownerId: userId });
         sqlQuery = sqlQuery.leftJoinAndSelect(`${alias}.${nameofT('tags')}`, "txn_tag");
         sqlQuery = sqlQuery.leftJoinAndSelect(`${alias}.${nameofT('fragments')}`, "frags");
+        sqlQuery = sqlQuery.leftJoinAndSelect(`${alias}.${nameofT('files')}`, "files");
 
         const sqlResults = await sqlQuery.orderBy(nameofT('creationDate'), 'ASC').getManyAndCount();
 
@@ -175,7 +191,8 @@ export class TransactionRepository extends MeteredRepository
                     tagIds: ((txn.tags ?? []) as { id: string }[]).map(x => x.id) ?? [],
                     tagNames: ((txn.tags ?? []) as { name: string }[]).map(x => x.name) ?? [],
                     changeInValue: null as null | number, // Null for ignoring
-                    excludedFromIncomesExpenses: txn.excludedFromIncomesExpenses
+                    excludedFromIncomesExpenses: txn.excludedFromIncomesExpenses,
+                    fileIds: ((txn.files ?? []) as { id: string }[]).map(x => x.id) ?? [],
                 };
 
                 const containersCurrencies = TransactionService.getFragmentsContainersCurrenciesIds(objToBeMatched.fragments);
@@ -258,7 +275,8 @@ export class TransactionRepository extends MeteredRepository
             description: string,
             fragments: FragmentRaw[],
             txnTagIds: string[],
-            excludedFromIncomesExpenses: boolean
+            excludedFromIncomesExpenses: boolean,
+            files: string[]
         },
         queryRunner: QueryRunner,
     )
@@ -272,6 +290,16 @@ export class TransactionRepository extends MeteredRepository
             tags.push(tag);
         }
 
+        // TODO: use batch process
+        // Get all attachments / files
+        const files: File[] = [];
+        for (const fileId of obj.files)
+        {
+            const file = await queryRunner.manager.getRepository(File).findOne({where: { ownerId: userId, id: fileId }});
+            if (file === null) return new FileNotFoundError(userId, fileId);
+            files.push(file);
+        }
+
         const savedObj = await queryRunner.manager.getRepository(Transaction).save(
         {
             ownerId: userId,
@@ -280,7 +308,8 @@ export class TransactionRepository extends MeteredRepository
             fragments: obj.fragments,
             tags: tags,
             title: obj.title,
-            excludedFromIncomesExpenses: obj.excludedFromIncomesExpenses
+            excludedFromIncomesExpenses: obj.excludedFromIncomesExpenses,
+            files: files
         });
 
         if (!savedObj.id)
@@ -298,9 +327,10 @@ export class TransactionRepository extends MeteredRepository
             fragments: savedFragments,
             id: savedObj.id,
             ownerId: savedObj.ownerId,
-            tags: savedObj.tags,
+            tags: savedObj.tags, // TODO: Fix this type
             title: savedObj.title,
-            excludedFromIncomesExpenses: savedObj.excludedFromIncomesExpenses
+            excludedFromIncomesExpenses: savedObj.excludedFromIncomesExpenses,
+            files: savedObj.files // TODO: Check type correct or not
         };
     }
 
@@ -350,6 +380,7 @@ export class TransactionRepository extends MeteredRepository
         let sqlQuery = this.#repository.createQueryBuilder(alias);
         sqlQuery = sqlQuery.leftJoinAndSelect(`${alias}.${nameofT('tags')}`, "txn_tag");
         sqlQuery = sqlQuery.leftJoinAndSelect(`${alias}.${nameofT('fragments')}`, "frags");
+        sqlQuery = sqlQuery.leftJoinAndSelect(`${alias}.${nameofT('files')}`, "files");
         sqlQuery = sqlQuery.orderBy(`${alias}.${nameofT('creationDate')}`, "DESC");
         sqlQuery = sqlQuery.where(`${alias}.${nameofT('ownerId')} = :ownerId`, { ownerId: userId });
 
@@ -395,7 +426,8 @@ export class TransactionRepository extends MeteredRepository
                     toContainerId: f.toContainerId,
                     toCurrencyId: f.toCurrencyId,
                 })),
-                excludedFromIncomesExpenses: x.excludedFromIncomesExpenses
+                excludedFromIncomesExpenses: x.excludedFromIncomesExpenses,
+                files: (x.files as { id: string }[]).map(x => x.id) ?? []
             })),
         };
     }
@@ -429,6 +461,7 @@ export class TransactionRepository extends MeteredRepository
         .createQueryBuilder(alias)
         .where(`${alias}.${nameofT('ownerId')} = :ownerId`, { ownerId: userId ?? null })
         .leftJoinAndSelect(`${alias}.${nameofT('fragments')}`, "frags")
+        .leftJoinAndSelect(`${alias}.${nameofT('files')}`, "files")
         .andWhere
         (
             /*sql*/`
@@ -454,8 +487,9 @@ export class TransactionRepository extends MeteredRepository
                 toAmount: f.toAmount,
                 toCurrencyId: f.toCurrencyId,
                 toContainerId: f.toContainerId,
-                ownerId: f.ownerId
-            }))
+                ownerId: f.ownerId,
+            })),
+            files: x.files
         }))
     }
 }

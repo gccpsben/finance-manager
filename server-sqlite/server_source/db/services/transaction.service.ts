@@ -13,6 +13,7 @@ import { CurrencyRateDatumsCache } from '../caches/currencyRateDatumsCache.cache
 import { FragmentRaw, nameofF } from "../entities/fragment.entity.js";
 import { QueryRunner } from "typeorm";
 import { DecimalAdditionMapReducer } from "../servicesUtils.js";
+import { FileNotFoundError, FilesService } from "./files.service.js";
 
 export class FragmentMissingContainerOrCurrency extends MonadError<typeof FragmentMissingContainerOrCurrency.ERROR_SYMBOL>
 {
@@ -106,7 +107,8 @@ export type TransactionJSONQueryItem =
     // toContainerId: string | null,
     // toCurrency: null | TransactionJSONQueryCurrency,
     fragments: FragmentRaw[]
-    excludedFromIncomesExpenses: boolean
+    excludedFromIncomesExpenses: boolean,
+    fileIds: string[]
 }
 
 export class TransactionService
@@ -124,7 +126,8 @@ export class TransactionService
             creationDate: number,
             description: string,
             fragments: Omit<FragmentRaw, 'id'>[],
-            txnTagIds: string[]
+            txnTagIds: string[],
+            files: string[]
         },
         currencyListCache: CurrencyCache | null
     ): Promise<
@@ -133,7 +136,8 @@ export class TransactionService
             creationDate: number,
             description: string,
             fragments: FragmentRaw[],
-            txnTagIds: string[]
+            txnTagIds: string[],
+            fileIds: string[]
         } |
         UserNotFoundError |
         TxnTagNotFoundError |
@@ -203,6 +207,16 @@ export class TransactionService
             tnxTagObjs.push(txnTag);
         }
 
+        const fileObjs: string[] = [];
+        for (const fileId of obj.files)
+        {
+            // TODO: Use repo + get single file instead
+            const file = (await Database.getFileRepository()!.getUserFiles(userId)).find(x => x.id === fileId);
+            if (file instanceof UserNotFoundError) return file;
+            if (file instanceof TxnTagNotFoundError) return file;
+            fileObjs.push(fileId);
+        }
+
         return {
             title: obj.title,
             creationDate: obj.creationDate,
@@ -215,7 +229,8 @@ export class TransactionService
                 toContainerId: f.toContainerId,
                 toCurrencyId: f.toCurrencyId
             })),
-            txnTagIds: obj.txnTagIds
+            txnTagIds: obj.txnTagIds,
+            fileIds: fileObjs
         };
     }
 
@@ -367,7 +382,8 @@ export class TransactionService
             description: string,
             fragments: Omit<FragmentRaw, 'id'>[],
             txnTagIds: string[],
-            excludedFromIncomesExpenses: boolean
+            excludedFromIncomesExpenses: boolean,
+            files: string[]
         },
         queryRunner: QueryRunner,
         currencyListCache: CurrencyCache | null,
@@ -379,7 +395,8 @@ export class TransactionService
             description: obj.description,
             fragments: obj.fragments,
             title: obj.title,
-            txnTagIds: obj.txnTagIds
+            txnTagIds: obj.txnTagIds,
+            files: obj.files
         }, currencyListCache);
 
         if (newTxn instanceof UserNotFoundError) return newTxn;
@@ -396,7 +413,8 @@ export class TransactionService
             fragments: newTxn.fragments,
             title: newTxn.title,
             txnTagIds: newTxn.txnTagIds,
-            excludedFromIncomesExpenses: obj.excludedFromIncomesExpenses
+            excludedFromIncomesExpenses: obj.excludedFromIncomesExpenses,
+            files: newTxn.fileIds
         }, queryRunner);
 
         if (savedTxn instanceof TxnTagNotFoundError) return savedTxn;
@@ -415,7 +433,8 @@ export class TransactionService
             description: string,
             fragments: Omit<FragmentRaw, 'id'>[],
             txnTagIds: string[],
-            excludedFromIncomesExpenses: boolean
+            excludedFromIncomesExpenses: boolean,
+            files: string[]
         },
         queryRunner: QueryRunner,
         currencyListCache: CurrencyCache | null
@@ -426,7 +445,8 @@ export class TransactionService
             description: obj.description,
             fragments: obj.fragments,
             title: obj.title,
-            txnTagIds: obj.txnTagIds
+            txnTagIds: obj.txnTagIds,
+            files: obj.files
         }, currencyListCache);
 
         if (newTxn instanceof UserNotFoundError) return newTxn;
@@ -435,14 +455,16 @@ export class TransactionService
         if (newTxn instanceof ContainerNotFoundError) return newTxn;
         if (newTxn instanceof FragmentMissingContainerOrCurrency) return newTxn;
         if (newTxn instanceof CurrencyNotFoundError) return newTxn;
+        if (newTxn instanceof TxnNoFragmentsError) return newTxn;
 
         const savedTxn = await Database.getTransactionRepository()!.updateTransaction(userId, targetTxnId, {
-            creationDate: obj.creationDate,
-            description: obj.description,
-            fragments: obj.fragments,
-            tagIds: obj.txnTagIds,
-            title: obj.title,
-            excludedFromIncomesExpenses: obj.excludedFromIncomesExpenses
+            creationDate: newTxn.creationDate,
+            description: newTxn.description,
+            fragments: newTxn.fragments,
+            tagIds: newTxn.txnTagIds,
+            title: newTxn.title,
+            excludedFromIncomesExpenses: obj.excludedFromIncomesExpenses,
+            files: newTxn.fileIds
         }, queryRunner);
         return savedTxn;
     }

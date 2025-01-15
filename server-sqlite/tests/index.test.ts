@@ -119,7 +119,7 @@ export let serverURL: string;
 
 await (async () =>
 {
-    await main(".test.env");
+    await main(['path', '.test.env']);
 
     if (!EnvManager.serverPort)
         throw new Error(`Unit Tests cannot start because port is not defined in the env file.`);

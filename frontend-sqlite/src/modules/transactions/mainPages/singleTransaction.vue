@@ -68,7 +68,9 @@
                         <ChipsSelector field-name="Tags" v-area="'tags'" v-model:values="txnWorkingCopy.currentData.value!.tagIds"
                                        :options="selectableTxnTagsOptions" />
 
-                        <AttachmentsField :files="['pdf',2,'jpg',4,'jpeg',6,'png',8,9,'docx','txt',12,13,14].map(x => ({extension: `${x}`, fileName: `${x} a long name here a long name here a long name here a long name here a long name here`}))"
+                        <!-- <AttachmentsField :files="['pdf',2,'jpg',4,'jpeg',6,'png',8,9,'docx','txt',12,13,14].map(x => ({extension: `${x}`, fileName: `${x} a long name here a long name here a long name here a long name here a long name here`}))"
+                                          v-area="'attachments'"/> -->
+                        <AttachmentsField :files="[]"
                                           v-area="'attachments'"/>
 
                         <CustomCheckbox v-area="'excludedFromIE'"

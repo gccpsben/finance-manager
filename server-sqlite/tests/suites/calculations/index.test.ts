@@ -163,7 +163,8 @@ export default async function(this: Context)
                                                     }
                                                 }),
                                                 tagIds: [choice(txnTypes).txnId],
-                                                excludedFromIncomesExpenses: txnToPost.excludedFromExpensesIncomes
+                                                excludedFromIncomesExpenses: txnToPost.excludedFromExpensesIncomes,
+                                                fileIds: []
                                             }
                                         ]
                                     },
@@ -310,7 +311,8 @@ export default async function(this: Context)
                                         }
                                     }),
                                     tagIds: [choice(txnTypes).txnId],
-                                    excludedFromIncomesExpenses: false
+                                    excludedFromIncomesExpenses: false,
+                                    fileIds: []
                                 }
                             ]
                         },
@@ -565,7 +567,8 @@ export default async function(this: Context)
                                         }
                                     }),
                                     tagIds: [choice(txnTypes).txnId],
-                                    excludedFromIncomesExpenses: false
+                                    excludedFromIncomesExpenses: false,
+                                    fileIds: []
                                 }
                             ]
                         },

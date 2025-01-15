@@ -17,6 +17,12 @@ import { CurrencyRateDatumRepository } from "./repositories/currencyRateDatum.re
 import { TransactionRepository } from "./repositories/transaction.repository.js";
 import { Fragment } from "./entities/fragment.entity.js";
 import { FileNotFoundError } from "../std_errors/fsErrors.js";
+import { File } from "./entities/file.entity.js";
+import { FileRepository } from "./repositories/file.repository.js";
+import { createReadStream, createWriteStream, readFile, rename, writeFile } from "fs";
+import { FileReceiver } from "../io/fileReceiver.js";
+import { randomUUID } from "crypto";
+import path from "path";
 
 export class DatabaseInitError<T extends Error> extends MonadError<typeof DatabaseInitError.ERROR_SYMBOL> implements NestableError
 {
@@ -86,8 +92,19 @@ export class Database
     private static containerRepository: ContainerRepository | null;
     private static currencyRateDatumRepository: CurrencyRateDatumRepository | null;
     private static transactionRepository: TransactionRepository | null;
+    private static filesRepository: FileRepository | null;
+    private static fs:
+    {
+        readFile: typeof readFile,
+        writeFile: typeof writeFile,
+        createReadStream: typeof createReadStream,
+        createWriteStream: typeof createWriteStream,
+        rename: typeof rename
+    };
+    private static fileReceiver: FileReceiver | null;
 
     private static transactionsQueue = new AsyncQueue();
+
     public static AppDataSource: DataSource | undefined = undefined;
 
     /**
@@ -157,7 +174,7 @@ export class Database
         Database.AppDataSource = new DataSource(
         {
             type: "better-sqlite3",
-            entities: [User, AccessToken, Currency, Container, Transaction, TxnTag, CurrencyRateDatum, CurrencyRateSource, Fragment],
+            entities: [User, AccessToken, Currency, Container, Transaction, TxnTag, CurrencyRateDatum, CurrencyRateSource, Fragment, File],
             database: EnvManager.dataLocation[0] === 'in-memory' ? ":memory:" : `${EnvManager.dataLocation[1]}/db.db`,
             synchronize: true,
             logging: ['warn'],
@@ -180,6 +197,35 @@ export class Database
             Database.accessTokenRepository = new AccessTokenRepository(dataSource);
             Database.currencyRateDatumRepository = new CurrencyRateDatumRepository(dataSource);
             Database.transactionRepository = new TransactionRepository(dataSource);
+            Database.filesRepository = new FileRepository(dataSource);
+
+            if (EnvManager.dataLocation[0] === 'path')
+            {
+                Database.fs =
+                {
+                    createReadStream: createReadStream,
+                    createWriteStream: createWriteStream,
+                    readFile: readFile,
+                    writeFile: writeFile,
+                    rename: rename
+                };
+            }
+            else throw panic(`not done`); // TODO: not done
+
+            const tempFolderFullPath = Database.getTempFolderPath();
+            const filesFolderFullPath = Database.getFilesStoragePath();
+            if (tempFolderFullPath === null) throw panic(`Temp folder is not found!`); // TODO: Properly handle
+            if (filesFolderFullPath === null) throw panic(`Files folder is not found!`); // TODO: Properly handle
+            this.fileReceiver = new FileReceiver(
+            {
+                fs: Database.fs,
+                sessionIdGenerator: (userId: string) => `${randomUUID()}`,
+                tempFolderFullPath: tempFolderFullPath,
+                filesFolderFullPath: filesFolderFullPath,
+                timeoutCheckMs: 1000,
+                timeoutMs: 120000,
+            });
+
             return dataSource;
         }
         catch(e)
@@ -190,9 +236,24 @@ export class Database
         }
     }
 
+    public static getFileReceiver() { return this.fileReceiver; }
+
+    public static getTempFolderPath()
+    {
+        if (EnvManager.dataLocation[0] === 'unloaded') return null;
+        return EnvManager.dataLocation[0] === 'path' ? path.join(EnvManager.dataLocation[1], '/tmp') : '/tmp';
+    }
+
+    public static getFilesStoragePath()
+    {
+        if (EnvManager.dataLocation[0] === 'unloaded') return null;
+        return EnvManager.dataLocation[0] === 'path' ? path.join(EnvManager.dataLocation[1], '/files') : '/files';
+    }
+
     public static getCurrencyRepository() { return this.currencyRepository; }
     public static getAccessTokenRepository() { return this.accessTokenRepository; }
     public static getContainerRepository() { return this.containerRepository; }
     public static getCurrencyRateDatumRepository() { return this.currencyRateDatumRepository; }
     public static getTransactionRepository() { return this.transactionRepository; }
+    public static getFileRepository() { return this.filesRepository; }
 }

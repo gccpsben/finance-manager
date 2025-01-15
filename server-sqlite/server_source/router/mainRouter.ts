@@ -10,6 +10,7 @@ import transactionsRouter from './routes/transaction.router.js';
 import calculationsRouter from './routes/calculations.router.js';
 import currencyRateDatumRouter from './routes/currencyRateDatum.router.js';
 import currencyRateDatumSrcsRouter from './routes/currencyRateSource.router.js';
+import filesRouter from './routes/files.router.js';
 import { ExtendedLog } from '../debug/extendedLog.js';
 
 export function getMainRouter()
@@ -29,6 +30,7 @@ export function getMainRouter()
     router.use("/", calculationsRouter);
     router.use("/", currencyRateDatumRouter);
     router.use("/", currencyRateDatumSrcsRouter);
+    router.use("/", filesRouter);
 
     if (EnvManager.distFolderLocation)
         router.use(express.static(EnvManager.distFolderLocation));

@@ -18,6 +18,7 @@ import { GlobalCurrencyToBaseRateCache } from '../../db/caches/currencyToBaseRat
 import { CurrencyNotFoundError } from '../../db/services/currency.service.js';
 import { GlobalCurrencyCache } from '../../db/caches/currencyListCache.cache.js';
 import { GlobalCurrencyRateDatumsCache } from '../../db/caches/currencyRateDatumsCache.cache.js';
+import { FileNotFoundError } from '../../db/services/files.service.js';
 
 const router = new TypesafeRouter(Express.Router());
 
@@ -44,6 +45,7 @@ router.post<PostTxnAPI.ResponseDTO>("/api/v1/transactions",
                 @IsOptional() @IsUTCDateInt() creationDate?: number | undefined;
                 @IsOptional() @IsString() description?: string | undefined;
                 @IsArray() @IsNotEmpty() tagIds: string[];
+                @IsArray() @IsNotEmpty() fileIds: string[];
                 @IsNotEmpty() @IsBoolean() excludedFromIncomesExpenses: boolean;
 
                 @IsArray()
@@ -86,6 +88,7 @@ router.post<PostTxnAPI.ResponseDTO>("/api/v1/transactions",
                         toContainerId: f.toContainer,
                         toCurrencyId: f.toCurrency,
                     })),
+                    files: item.fileIds,
                     excludedFromIncomesExpenses: item.excludedFromIncomesExpenses
                 }, transactionalContext.queryRunner, GlobalCurrencyCache);
 
@@ -96,6 +99,7 @@ router.post<PostTxnAPI.ResponseDTO>("/api/v1/transactions",
                 if (transactionCreated instanceof FragmentMissingContainerOrCurrency) throw createHttpError(400, transactionCreated.message);
                 if (transactionCreated instanceof CurrencyNotFoundError) throw createHttpError(400, transactionCreated.message);
                 if (transactionCreated instanceof TxnNoFragmentsError) throw createHttpError(400, transactionCreated.message);
+                if (transactionCreated instanceof FileNotFoundError) throw createHttpError(400, transactionCreated.message);
 
                 idsCreated.push(transactionCreated.id);
             }
@@ -140,6 +144,7 @@ router.put<PutTxnAPI.ResponseDTO>("/api/v1/transactions",
                 @IsOptional() @IsUTCDateInt() creationDate?: number | undefined;
                 @IsOptional() @IsString() description?: string | undefined;
                 @IsArray() @IsNotEmpty() tagIds: string[];
+                @IsArray() @IsNotEmpty() fileIds: string[];
                 @IsNotEmpty() @IsBoolean() excludedFromIncomesExpenses: boolean;
             }
 
@@ -170,7 +175,8 @@ router.put<PutTxnAPI.ResponseDTO>("/api/v1/transactions",
                     toContainerId: f.toContainer,
                     toCurrencyId: f.toCurrency
                 })),
-                excludedFromIncomesExpenses: parsedBody.excludedFromIncomesExpenses
+                excludedFromIncomesExpenses: parsedBody.excludedFromIncomesExpenses,
+                files: parsedBody.fileIds
             }, transactionalContext.queryRunner, GlobalCurrencyCache);
 
             if (updatedTxn instanceof UserNotFoundError) throw createHttpError(401);
@@ -179,6 +185,7 @@ router.put<PutTxnAPI.ResponseDTO>("/api/v1/transactions",
             if (updatedTxn instanceof ContainerNotFoundError) throw createHttpError(400, updatedTxn.message);
             if (updatedTxn instanceof FragmentMissingFromToAmountError) throw createHttpError(400, updatedTxn.message);
             if (updatedTxn instanceof FragmentMissingContainerOrCurrency) throw createHttpError(400, updatedTxn.message);
+            if (updatedTxn instanceof FileNotFoundError) throw createHttpError(400, updatedTxn.message);
 
             await transactionalContext.endSuccess();
             return {};
@@ -251,7 +258,8 @@ router.get<GetTxnAPI.ResponseDTO>(`/api/v1/transactions/json-query`,
                     tagIds: item.tagIds,
                     fragments: item.fragments,
                     changeInValue: txnChangeInValue.toString(),
-                    excludedFromIncomesExpenses: item.excludedFromIncomesExpenses
+                    excludedFromIncomesExpenses: item.excludedFromIncomesExpenses,
+                    fileIds: item.fileIds
                 });
             }
             return results;
@@ -278,7 +286,8 @@ router.get<GetTxnAPI.ResponseDTO>(`/api/v1/transactions/json-query`,
                 tagIds: item.tagIds,
                 title: item.title,
                 changeInValue: item.changeInValue,
-                excludedFromIncomesExpenses: item.excludedFromIncomesExpenses
+                excludedFromIncomesExpenses: item.excludedFromIncomesExpenses,
+                fileIds: item.fileIds
             })),
             totalItems: matchedResults.totalItems
         } satisfies GetTxnJsonQueryAPI.ResponseDTO
@@ -350,7 +359,8 @@ router.get<GetTxnAPI.ResponseDTO>(`/api/v1/transactions`,
                     tagIds: item.tagIds,
                     fragments: item.fragments,
                     changeInValue: txnChangeInValue.toString(),
-                    excludedFromIncomesExpenses: item.excludedFromIncomesExpenses
+                    excludedFromIncomesExpenses: item.excludedFromIncomesExpenses,
+                    fileIds: item.files
                 });
             }
             return result;
@@ -380,7 +390,8 @@ router.get<GetTxnAPI.ResponseDTO>(`/api/v1/transactions`,
                     tagIds: item.tagIds,
                     title: item.title,
                     changeInValue: item.changeInValue,
-                    excludedFromIncomesExpenses: item.excludedFromIncomesExpenses
+                    excludedFromIncomesExpenses: item.excludedFromIncomesExpenses,
+                    fileIds: item.fileIds
                 };
                 return output;
             })

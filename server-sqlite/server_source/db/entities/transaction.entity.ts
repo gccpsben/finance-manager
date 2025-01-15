@@ -7,6 +7,7 @@ import { User } from "./user.entity.js";
 import { TxnTag } from "./txnTag.entity.js";
 import { Fragment } from "./fragment.entity.js";
 import { nameof } from "../servicesUtils.js";
+import { File } from './file.entity.js';
 
 @Entity()
 /**
@@ -51,6 +52,10 @@ export class Transaction extends EntityClass
 
     @OneToMany(() => Fragment, (fragment) => fragment.parentTxn)
     fragments: Fragment[];
+
+    @ManyToMany(() => File)
+    @JoinTable()
+    files: File[];
 
     @Column({ nullable: false, type: Boolean })
     @IsNotEmpty()

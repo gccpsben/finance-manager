@@ -19,6 +19,7 @@ export namespace PostTxnAPI
         tagIds: string[];
         fragments: PostTxnAPI.FragmentDTO[]
         excludedFromIncomesExpenses: boolean;
+        fileIds: string[];
     };
 
     export type RequestDTO =
@@ -49,6 +50,7 @@ export namespace PutTxnAPI
         tagIds: string[];
         fragments: PutTxnAPI.FragmentDTO[];
         excludedFromIncomesExpenses: boolean;
+        fileIds: string[];
     };
 
     export type RequestQueryDTO = { targetTxnId: string; };
@@ -79,6 +81,7 @@ export namespace GetTxnAPI
         changeInValue: string;
         fragments: FragmentDTO[];
         excludedFromIncomesExpenses: boolean;
+        fileIds: string[];
     }
     export type RequestDTO = {};
     export type ResponseDTO = PaginationAPIResponse<TxnDTO>;
@@ -109,6 +112,7 @@ export namespace GetTxnJsonQueryAPI
         changeInValue: string;
         fragments: FragmentDTO[];
         excludedFromIncomesExpenses: boolean;
+        fileIds: string[];
     }
     export type QueryDTO =
     {

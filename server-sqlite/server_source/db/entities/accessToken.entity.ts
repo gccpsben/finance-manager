@@ -11,7 +11,7 @@ export class AccessToken extends EntityClass
     @PrimaryColumn({nullable: false})
     token: string;
 
-    @Column({type: "int", nullable:false})
+    @Column({type: 'int', nullable:false})
     @IsUTCDateInt()
     creationDate: number;
 

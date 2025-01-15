@@ -16,7 +16,9 @@
 	},
 	"devDependencies": {
 		"@faker-js/faker": "^8.4.1",
-		"@types/node": "^20.14.11"
+		"@types/jest": "^29.5.14",
+		"@types/node": "^20.14.11",
+		"@vitest/coverage-v8": "^2.1.8"
 	},
 	"browserslist": [
 		"> 1%",

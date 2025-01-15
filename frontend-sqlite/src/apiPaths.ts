@@ -18,3 +18,7 @@ export const API_DELETE_TRANSACTIONS_PATH = "/api/v1/transactions";
 export const API_GET_CURRENCIES_RATE_SRCS_PATH = "/api/v1/currencyRateSources";
 export const API_PATCH_CURRENCIES_RATE_SRCS_PATH = "/api/v1/currencyRateSources";
 export const API_POST_CURRENCIES_RATE_SRCS_PATH = "/api/v1/currencyRateSources";
+export const API_FILES_INIT_SESSION_PATH = "/api/v1/files/init";
+export const API_FILES_APPEND_CHUNK_PATH = "/api/v1/files/append";
+export const API_FILES_LIST_PATH = "/api/v1/files";
+export const API_FILE_BY_ID_PATH = "/api/v1/files/id";

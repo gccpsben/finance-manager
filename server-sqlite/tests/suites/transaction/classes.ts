@@ -24,6 +24,7 @@ export namespace GetTxnJSONQueryAPIClass
         @IsString() owner: string;
         @IsOptional() @IsUTCDateInt()  creationDate: number;
         @IsArray() tagIds: string[];
+        @IsArray() fileIds: string[];
         @IsNotEmpty() @IsDecimalJSString() changeInValue: string;
         @IsNotEmpty() @IsBoolean() excludedFromIncomesExpenses: boolean;
 
@@ -66,6 +67,7 @@ export namespace GetTxnAPIClass
         @IsString() owner: string;
         @IsOptional() @IsUTCDateInt()  creationDate: number;
         @IsArray() tagIds: string[];
+        @IsArray() fileIds: string[];
         @IsNotEmpty() @IsDecimalJSString() changeInValue: string;
         @IsNotEmpty() @IsBoolean() excludedFromIncomesExpenses: boolean;
 
@@ -107,6 +109,7 @@ export namespace PostTxnAPIClass
         @IsOptional() @IsString() description?: string | undefined;
         @IsArray() tagIds: string[];
         @IsNotEmpty() @IsBoolean() excludedFromIncomesExpenses: boolean;
+        @IsArray() fileIds: string[];
 
         @IsArray()
         @ValidateNested({ each: true })
@@ -146,6 +149,7 @@ export namespace PutTxnAPIClass
         @IsOptional() @IsUTCDateInt() creationDate?: number | undefined;
         @IsOptional() @IsString() description?: string | undefined;
         @IsArray() tagIds: string[];
+        @IsArray() fileIds: string[];
         @IsNotEmpty() @IsBoolean() excludedFromIncomesExpenses: boolean;
 
         @IsArray()
