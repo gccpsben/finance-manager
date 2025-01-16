@@ -42,9 +42,7 @@
                          {{ parseFloat(txn.changeInValue).toFixed(2) }}
                      </div>
                  </div>
-                 <div v-if="isSelected" class="fullSize center" style="pointer-events: none;">
-                     <GaIcon class="selectionCheckmark" icon="check"/>
-                 </div>
+                 <SelectionMark v-if="isSelected" />
              </OverlapArea>
         </div>
     </div>
@@ -52,13 +50,13 @@
 
 <script lang="ts" setup>
 import TxnTooltip from './TxnTooltip.vue';
-import GaIcon from '@/modules/core/components/decorations/GaIcon.vue';
 import DateTooltip from '@/modules/core/components/data-display/DateTooltip.vue';
 import { vOnLongPress } from '@vueuse/components';
 import { formatDate, getDateAge } from '@/modules/core/utils/date';
 import { useContainersStore } from '@/modules/containers/stores/useContainersStore';
 import OverlapArea from '@/modules/core/components/layout/OverlapArea.vue';
 import { computed } from 'vue';
+import SelectionMark from '@/modules/core/components/decorations/SelectionMark.vue';
 
 /** A symbol that represents a from / to side contains multiple containers. */
 const MULTIPLE: unique symbol = Symbol();
@@ -193,16 +191,6 @@ function onTxnLongPressed() { emits('onLongPress'); }
         &.increase { color: @success; }
         &.noChange { color: orange; }
     }
-}
-
-.selectionCheckmark
-{
-    font-size: 24px;
-    background: @focusDark;
-    border-radius: 100%;
-    color: @focus;
-    padding: 4px;
-    user-select: none;
 }
 
 @mobileCutoffWidth: 650px;
