@@ -257,7 +257,7 @@ export class TransactionRepository extends MeteredRepository
         }));
 
         return {
-            totalItems: valueHydratedResults.length,
+            totalItems: matchedResults.length,
             rangeItems: valueHydratedResults
         };
     }
