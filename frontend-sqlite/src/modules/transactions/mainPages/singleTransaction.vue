@@ -51,11 +51,14 @@
                                     @update:text="txnWorkingCopy.currentData.value!.fragments[currentFragmentIndex].toAmount = $event === '' ? null : $event"/>
 
                         <div id="fragPaginationContainer" v-area="'fragPagination'" >
-                            <div class="xLeft">
+                            <div>
                                 <BaseButton @click="addFragment" style="margin-right: 4px;">Add</BaseButton>
+                            </div>
+                            <div>
                                 <BaseButton @click="deleteFragment" :disabled="(txnWorkingCopy.currentData.value?.fragments.length ?? 0) <= 1">Delete</BaseButton>
                             </div>
-                            <div class="xRight">
+                            <div class="dummy"></div>
+                            <div>
                                 <NumberPagination :max-page-readable="txnWorkingCopy.currentData.value?.fragments.length"
                                                   :min-page-readable="1" v-model="currentFragmentIndex"/>
                             </div>
@@ -126,9 +129,9 @@
             <BaseDialog v-model:is-open="isDeleteDialogOpen">
                 <template #headerTitle>Confirm Deletion</template>
                 <template #content>
-                    <div class="">
+                    <div class="deleteConfirmDialog">
                         Are you sure you want to delete this transaction? <br /> <br />
-                        <div class="leftRightGrid">
+                        <div class="deleteConfirmDialogBtnContainer">
                             <div class="xLeft">
                                 <BaseButton @click="isDeleteDialogOpen = false">Cancel</BaseButton>
                             </div>
@@ -385,7 +388,9 @@ fieldset
 
     #fragPaginationContainer
     {
-        .leftRightGrid;
+        display: grid;
+        grid-template-columns: auto auto 1fr auto;
+        grid-template-rows: 1fr;
         margin-bottom: 14px;
     }
 
@@ -396,6 +401,11 @@ fieldset
         .xLeft;
         text-align: start;
     }
+}
+
+.deleteConfirmDialogBtnContainer
+{
+    .leftRightGrid;
 }
 
 .nowButtonContainer
@@ -437,7 +447,7 @@ fieldset
             'toContainer     toContainer     ' minmax(0px, 45px)
             'toAmount        toCurrency      ' minmax(0px, 45px)
             'fragPagination  fragPagination  ' auto
-            '_               _               ' 5px
+            '_               _               ' 0px
             'desc            desc            ' minmax(0px, 100px)
             'tags            tags            ' 150px
             'attachments     attachments     ' 250px
@@ -446,6 +456,36 @@ fieldset
             'actions         actions         ' auto
             'id              id              ' auto
             / 1fr            0.4fr !important;
+    }
+
+    #resetSaveContainer
+    {
+        grid-template-columns: 1fr !important;
+        grid-template-rows: auto auto auto 26px !important;
+        gap: 0px;
+
+        .dummy { display: none !important; }
+
+        .baseButtonRoot { .mobileBaseButton; }
+    }
+
+    .deleteConfirmDialogBtnContainer
+    {
+        grid-template-columns: 1fr !important;
+        grid-template-rows: auto auto  !important;
+        gap: 7px;
+        .baseButtonRoot { .mobileBaseButton !important; }
+    };
+
+    #fragPaginationContainer
+    {
+        grid-template-columns: 1fr !important;
+        grid-template-rows: auto auto auto auto !important;
+        gap: 7px;
+
+        .dummy { display: none; }
+        .baseButtonRoot { .mobileBaseButton; }
+        & > div:nth-child(4) { .xRight; }
     }
 }
 </style>

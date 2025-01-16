@@ -76,15 +76,19 @@
                             <custom-dropdown :options="selectableCurrenciesOptions"
                                 class="fullSize" field-name="Ref Amount Currency"
                                 v-model:selected-option="editCurrencyRateSourceHook.currentData.value.refAmountCurrencyId" />
-                            <div class="yCenter xRight">
-                                <BaseButton :disabled="!editCurrencyRateSourceHook.isChanged.value"
+                            <div class="currencyRateSrcDialogBtnContainer">
+                                <div>
+                                    <BaseButton :disabled="!editCurrencyRateSourceHook.isChanged.value"
                                             @click="editCurrencyRateSourceHook.reset">
-                                    Reset
-                                </BaseButton>
-                                <BaseButton style="margin-left: 6px;" @click="submitCurrencyRateSrcPatchPostRequest"
+                                        Reset
+                                    </BaseButton>
+                                </div>
+                                <div>
+                                    <BaseButton @click="submitCurrencyRateSrcPatchPostRequest"
                                             :disabled="!editCurrencyRateSourceHook.isChanged.value">
-                                    Save
-                                </BaseButton>
+                                        Save
+                                    </BaseButton>
+                                </div>
                             </div>
                         </div>
                     </OverlapArea>
@@ -241,8 +245,22 @@ function onDialogIsOpenChanging(isOpen: boolean)
     container-type: size;
 }
 
-@container rateApiSrcCellContentRoot (width <= 400px)
+.currencyRateSrcDialogBtnContainer
 {
-    // .lastFetchTimeCell { font-size: 12px }
+    .leftRightGrid;
+    & > *:nth-child(2) { .xRight; }
+}
+
+@media only screen and (max-width: 500px)
+{
+    .currencyRateSrcDialogBtnContainer
+    {
+        display: grid;
+        grid-template-columns: 1fr !important;
+        grid-template-rows: auto auto !important;
+        gap: 14px;
+
+        .baseButtonRoot { .mobileBaseButton; }
+    }
 }
 </style>

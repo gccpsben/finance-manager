@@ -1,5 +1,5 @@
 <template>
-    <button>
+    <button class="baseButtonRoot">
         <div class="baseBtnInner" :class="{'noIcon': !icon}">
             <div class="center fullSize" v-if="icon">
                 <GaIcon :style="{ fontSize: iconSize }" :icon="icon"/>
