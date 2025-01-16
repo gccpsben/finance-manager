@@ -1,14 +1,17 @@
 <template>
     <div class="attachmentsFieldRoot">
-        <FileDialog v-model:is-open="isFileDialogOpen"></FileDialog>
+        <FileDialog @on-change="e => emit('update:fileIds', e.map(x => x.fileId))" v-model:is-open="isFileDialogOpen" />
         <CustomFieldset tabindex="0" :should-text-float="true"
                     :should-highlight="false" :field-name="'Attachments / Files'">
             <template #content>
-                <AbsEnclosure v-if="props.files.length > 0">
+                <AbsEnclosure v-if="props.fileIds.length > 0">
                     <div style="overflow-y: scroll; padding: 14px; padding-top: 0px; transform: translateY(15px); height: calc(100% - 15px);" class="fullSize">
                         <div id="boxesContainer">
-                            <template v-for="file in props.files">
-                                <AttachmentBox :file-id="file.fileId"/>
+                            <template v-for="file in props.fileIds">
+                                <AttachmentBox :file-id="file" :deletable="false" removable
+                                               @delete="onAttachmentBoxClicked(file,'delete')"
+                                               @remove="onAttachmentBoxClicked(file,'remove')"
+                                               @download="onAttachmentBoxClicked(file,'download')"/>
                             </template>
                         </div>
                     </div>
@@ -19,7 +22,9 @@
                             <GaIcon icon="info" style="font-size: 24px;"/>
                             <div>
                                 <div>No Attachments Found</div>
-                                <a href="#" class="clickableLink" @click="isFileDialogOpen = true">Upload or Select Files</a>
+                                <a href="#" class="clickableLink" @click="isFileDialogOpen = true">
+                                    Upload or Select Files
+                                </a>
                             </div>
                         </div>
                     </div>
@@ -30,23 +35,32 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref, watch } from 'vue';
+import { ref } from 'vue';
 import GaIcon from '../decorations/GaIcon.vue';
 import FileDialog from '../inputs/FileDialog.vue';
 import AbsEnclosure from '../layout/AbsEnclosure.vue';
 import CustomFieldset from './CustomFieldset.vue';
 import AttachmentBox from '@/modules/core/components/data-display/AttachmentBox.vue';
-import { useFileById } from '../../composables/useFileById';
-import NetworkCircularIndicator from './NetworkCircularIndicator.vue';
-import { extractFileExtension } from '../../utils/files';
 
 export type AttachmentsBoxPropsType =
 {
-    files: { fileId: string }[];
+    fileIds: string[];
+};
+export type AttachmentsBoxEmitsType =
+{
+    (e: 'update:fileIds', v: string[]): void,
 };
 
+const emit = defineEmits<AttachmentsBoxEmitsType>();
 const props = defineProps<AttachmentsBoxPropsType>();
 const isFileDialogOpen = ref(false);
+
+function onAttachmentBoxClicked(fileId: string, state: 'delete' | 'remove' | 'download') 
+{
+    if (state === 'delete') return;
+    else if (state === 'download') return;
+    else emit('update:fileIds', props.fileIds.filter(x => x !== fileId));
+}
 </script>
 
 <style lang="less" scoped>

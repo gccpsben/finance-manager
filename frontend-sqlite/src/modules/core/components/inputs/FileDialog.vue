@@ -41,20 +41,27 @@
                     </div>
                 </template>
                 <template v-else-if="dialogState.state === 'PreviouslyUploaded'">
-                    <OverlapArea class="fullSize">
-                        <div style="overflow-y: scroll; position: relative" >
-                            <AbsEnclosure class="fullWidth">
-                                <div class="fullWidth" style="overflow-y: scroll; height: 100%;">
-                                    <div v-for="file of serverFiles.lastSuccessfulData.value?.files" class="fileBoxes">
-                                        <AttachmentBox :file-id="file.id"/>
+                    <div class="previouslyUploadedArea">
+                        <OverlapArea class="fullSize">
+                            <div style="overflow-y: scroll; position: relative" >
+                                <AbsEnclosure class="fullWidth">
+                                    <div class="existingFilesList" style="overflow-y: scroll; height: 100%;">
+                                        <div v-for="file of serverFiles.lastSuccessfulData.value?.files" class="fileBoxes">
+                                            <AttachmentBox :file-id="file.id" :selected="selectedExistingFiles.has(file.id)"
+                                                        @click="selectedExistingFiles.toggle(file.id)"/>
+                                        </div>
                                     </div>
-                                </div>
-                            </AbsEnclosure>
+                                </AbsEnclosure>
+                            </div>
+                            <div class="center" v-if="serverFiles.isLoading.value">
+                                <NetworkCircularIndicator :error="serverFiles.error.value" :is-loading="true"/>
+                            </div>
+                        </OverlapArea>
+                        <div class="xRight">
+                            <BaseButton :disabled="selectedExistingFiles.toArray().length == 0"
+                                        @click="finish">Finish</BaseButton>
                         </div>
-                        <div class="center" v-if="serverFiles.isLoading.value">
-                            <NetworkCircularIndicator :error="serverFiles.error.value" :is-loading="true"/>
-                        </div>
-                    </OverlapArea>
+                    </div>
                 </template>
                 <template v-else-if="dialogState.state === 'UploadNew'">
                     <div class="uploadNewAreaGrid">
@@ -112,7 +119,7 @@ import OverlapArea from '../layout/OverlapArea.vue';
 import NetworkCircularIndicator from '../data-display/NetworkCircularIndicator.vue';
 import type { GetServerFilesAPI } from '../../../../../../api-types/files';
 import AbsEnclosure from '../layout/AbsEnclosure.vue';
-import { extractFileExtension } from '../../utils/files';
+import { ToggleList } from '../../utils/toggleList';
 
 type FileDialogState = { state: "Pick" } | { state: "PreviouslyUploaded" } | { state: "UploadNew" };
 
@@ -129,6 +136,7 @@ const serverFiles = useNetworkRequest<GetServerFilesAPI.ResponseDTO>
     { query: {}, url: API_FILES_LIST_PATH, method: "GET" },
     { autoResetOnUnauthorized: true, includeAuthHeaders: true, updateOnMount: false }
 );
+const selectedExistingFiles = ref<ToggleList<string>>(new ToggleList([]));
 
 const emit = defineEmits<FileDialogEmitsType>();
 const props = withDefaults(defineProps<FileDialogPropsType>(), { isOpen: false });
@@ -158,19 +166,35 @@ function handleFileUploads(files: FileList)
 
 function finish()
 {
-    emit('update:isOpen', false);
-    if (dialogState.value.state === 'PreviouslyUploaded')
+    const isPartialUpload = fileUploads.value.some(x => x.state.type !== 'FINISHED_UPLOAD');
+    const uploadingMsg = `Some files are not finished uploading...`;
+    if (isPartialUpload && !confirm(uploadingMsg)) return;
+
+    if (dialogState.value.state === 'UploadNew')
     {
-        if (fileUploads.value.some(x => x.state.type !== 'FINISHED_UPLOAD')) return;
+        const fileIds = fileUploads.value.map(x =>
+        {
+            if (x.state.type !== 'FINISHED_UPLOAD') return undefined;
+            return { fileId: x.state.fileId };
+        }).filter(x => x !== undefined);
+
         emit
         (
             'onChange',
-            fileUploads.value.map(x =>
-            {
-                if (x.state.type !== 'FINISHED_UPLOAD') return undefined;
-                return { fileId: x.state.fileId };
-            }).filter(x => x !== undefined)
+            fileIds
         );
+
+        emit('update:isOpen', false);
+    }
+    else if (dialogState.value.state === 'PreviouslyUploaded')
+    {
+        emit
+        (
+            'onChange',
+            selectedExistingFiles.value.toArray().map(x => ({ fileId: x }))
+        );
+
+        emit('update:isOpen', false);
     }
 }
 </script>
@@ -211,6 +235,19 @@ function finish()
     .fullSize;
 }
 
+.previouslyUploadedArea
+{
+    display: grid;
+    .fullSize;
+    grid-template-columns: 1fr;
+    grid-template-rows: 1fr auto;
+}
+
+.existingFilesList
+{
+    & > div { margin-bottom: 6px; }
+}
+
 .uploadNewAreaGrid
 {
     .fullSize;
@@ -225,6 +262,6 @@ function finish()
         display: grid;
         grid-template-columns: 1fr;
         grid-template-rows: auto auto 1fr;
-    }
+   }
 }
 </style>

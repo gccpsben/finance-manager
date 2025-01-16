@@ -187,7 +187,8 @@ export function useEditTxn()
                         toContainer: f.toContainer ?? null,
                         toCurrency: f.toCurrency ?? null
                     })),
-                    excludedFromIncomesExpenses: transformedTxn.excludedFromIncomesExpenses
+                    excludedFromIncomesExpenses: transformedTxn.excludedFromIncomesExpenses,
+                    fileIds: transformedTxn.fileIds
                 } satisfies PutTxnAPI.RequestBodyDTO
             },
             {
@@ -237,7 +238,8 @@ export function useAddTxn()
                 toContainer: null,
             }],
             tagIds: [],
-            excludedFromIncomesExpenses: false
+            excludedFromIncomesExpenses: false,
+            fileIds: []
         };
 
         txnWorkingCopyHook.txnToBeEdited.markSafePoint(emptyRawTxn);
@@ -293,7 +295,8 @@ export function useAddTxn()
                                     toCurrency: transformedTxn.fragments[0].toCurrency ?? null
                                 }
                             ],
-                            excludedFromIncomesExpenses: transformedTxn.excludedFromIncomesExpenses
+                            excludedFromIncomesExpenses: transformedTxn.excludedFromIncomesExpenses,
+                            fileIds: transformedTxn.fileIds
                         }
                     ]
                 } satisfies PostTxnAPI.RequestDTO

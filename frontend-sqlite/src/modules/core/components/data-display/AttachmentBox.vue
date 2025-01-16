@@ -1,28 +1,34 @@
 <template>
-    <div class="attachmentBoxRoot">
-        <div class="attachmentBoxInner">
-            <div class="attachmentBoxInnerGrid" v-if="!!fileInfo.networkRequest.lastSuccessfulData.value && !fileInfo.networkRequest.isLoading.value">
-                <div class="center">
-                    <div class="chip">{{ (extension ?? '...').toUpperCase() }}</div>
-                </div>
-                <div class="titleArea">
-                    <AbsEnclosure>
-                        <div class="fullSize yCenter">
-                            <div class="titleAreaInner">
-                                {{ fileInfo.networkRequest.lastSuccessfulData.value?.readableName ?? '...' }}
+    <div class="attachmentBoxRoot" :class="{'selected': selected}">
+        <OverlapArea class="fullSize">
+            <div class="fullSize">
+                <SelectionMark v-if="selected"/>
+            </div>
+            <div class="attachmentBoxInner">
+                <div class="attachmentBoxInnerGrid" v-if="!!fileInfo.networkRequest.lastSuccessfulData.value && !fileInfo.networkRequest.isLoading.value">
+                    <div class="center">
+                        <div class="chip">{{ (extension ?? '...').toUpperCase() }}</div>
+                    </div>
+                    <div class="titleArea">
+                        <AbsEnclosure>
+                            <div class="fullSize yCenter">
+                                <div class="titleAreaInner">
+                                    {{ fileInfo.networkRequest.lastSuccessfulData.value?.readableName ?? '...' }}
+                                </div>
                             </div>
-                        </div>
-                    </AbsEnclosure>
+                        </AbsEnclosure>
+                    </div>
+                    <div class="actionsArea">
+                        <GaIcon v-if="deletable" @click="emit('delete')" icon="delete" class="btn"/>
+                        <GaIcon v-if="downloadable" @click="emit('download')" icon="download" class="btn"/>
+                        <GaIcon v-if="removable" @click="emit('remove')" icon="close" class="btn"/>
+                    </div>
                 </div>
-                <div class="actionsArea">
-                    <GaIcon v-if="deletable" icon="delete" class="btn"/>
-                    <GaIcon v-if="downloadable" icon="download" class="btn"/>
+                <div class="fullSize center" v-else>
+                    <NetworkCircularIndicator :is-loading="true" :error="fileInfo.networkRequest.error.value" style="width: 25px; height: 25px;"/>
                 </div>
             </div>
-            <div class="fullSize center" v-else>
-                <NetworkCircularIndicator :is-loading="true" :error="fileInfo.networkRequest.error.value" style="width: 25px; height: 25px;"/>
-            </div>
-        </div>
+        </OverlapArea>
     </div>
 </template>
 
@@ -33,19 +39,32 @@ import GaIcon from '../decorations/GaIcon.vue';
 import { useFileById } from '../../composables/useFileById';
 import { extractFileExtension } from '../../utils/files';
 import NetworkCircularIndicator from './NetworkCircularIndicator.vue';
+import OverlapArea from '../layout/OverlapArea.vue';
+import SelectionMark from '../decorations/SelectionMark.vue';
 
 export type AttachmentBoxPropsType =
 {
     fileId: string,
-    // extension: string,
-    // fileName: string,
     deletable?: boolean,
-    downloadable?: boolean
+    downloadable?: boolean,
+    removable?: boolean,
+    selected?: boolean
 }
 
-const props = withDefaults(defineProps<AttachmentBoxPropsType>(), {
+export type AttachmentBoxEmitsType =
+{
+    (e: 'download'): void,
+    (e: 'remove'): void,
+    (e: 'delete'): void,
+};
+
+const emit = defineEmits<AttachmentBoxEmitsType>();
+const props = withDefaults(defineProps<AttachmentBoxPropsType>(),
+{
     deletable: true,
-    downloadable: true
+    downloadable: true,
+    removable: true,
+    selected: false
 });
 const fileInfo = useFileById(props.fileId);
 const extension = computed<string | null>(() =>
@@ -74,6 +93,12 @@ const chipColor = computed<{bg:string, fore: string}>(() =>
 
 .attachmentBoxRoot
 {
+    &.selected
+    {
+        .attachmentBoxInner { background: fade(@focus, 10%); }
+        .attachmentBoxInner { opacity: 0.5; }
+    }
+
     .fullSize;
     cursor: pointer;
     color:@foreground;
@@ -86,7 +111,6 @@ const chipColor = computed<{bg:string, fore: string}>(() =>
         border: 1px solid @border;
         padding-left: 10px;
         padding-right: 10px;
-        margin-top: 6px;
         border-radius: 6px;
 
         .attachmentBoxInnerGrid
