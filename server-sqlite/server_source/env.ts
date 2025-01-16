@@ -3,7 +3,7 @@ import dotenv from 'dotenv';
 import dotenvExpand from 'dotenv-expand';
 import { isInt, isNumberString } from 'class-validator';
 import path from 'path';
-import fsExtra from 'fs-extra/esm';
+import fsExtra from 'fs-extra';
 import { MonadError, NestableError, NestableErrorSymbol } from './std_errors/monadError.js';
 import { DirNotFoundError } from './std_errors/fsErrors.js';
 import { Variant } from './index.d.js';
