@@ -95,7 +95,8 @@ export type FileReceiverOptions =
         writeFile: typeof fs.writeFile,
         createReadStream: typeof fs.createReadStream,
         createWriteStream: typeof fs.createWriteStream,
-        rename: typeof fs.rename
+        rename: typeof fs.rename,
+        openPromise: typeof fs.promises.open
     },
     sessionIdGenerator: (userId: string, fileReceiver: FileReceiver) => string,
     tempFolderFullPath: string,
@@ -138,6 +139,7 @@ export class FileReceiver
     writeFile: typeof fs.writeFile;
     createReadStream: typeof fs.createReadStream;
     createWriteStream: typeof fs.createWriteStream;
+    openPromise: typeof fs.promises.open;
 
     public constructor(options: FileReceiverOptions)
     {
@@ -167,7 +169,7 @@ export class FileReceiver
 
         if (this.sessions[sessionId] !== undefined) throw panic(`Repeated session id at the same time is disallowed!`);
 
-        const fileHandle = await fs.promises.open(
+        const fileHandle = await this.#options.fs.openPromise(
             path.join(this.#options.tempFolderFullPath, sessionId),
             'a'
         );

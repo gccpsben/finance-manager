@@ -23,6 +23,8 @@ import { createReadStream, createWriteStream, readFile, rename, writeFile } from
 import { FileReceiver } from "../io/fileReceiver.js";
 import { randomUUID } from "crypto";
 import path from "path";
+import { memfs } from "memfs";
+import { open } from "fs/promises";
 
 export class DatabaseInitError<T extends Error> extends MonadError<typeof DatabaseInitError.ERROR_SYMBOL> implements NestableError
 {
@@ -99,7 +101,8 @@ export class Database
         writeFile: typeof writeFile,
         createReadStream: typeof createReadStream,
         createWriteStream: typeof createWriteStream,
-        rename: typeof rename
+        rename: typeof rename,
+        openPromise: typeof open
     };
     private static fileReceiver: FileReceiver | null;
 
@@ -207,10 +210,34 @@ export class Database
                     createWriteStream: createWriteStream,
                     readFile: readFile,
                     writeFile: writeFile,
-                    rename: rename
+                    rename: rename,
+                    openPromise: open
                 };
             }
-            else throw panic(`not done`); // TODO: not done
+            else
+            {
+                const memfsInstance = memfs({
+                    "tmp": null,
+                    "files": null
+                });
+
+                // TODO: make TS happy here
+                Database.fs =
+                {
+                    // @ts-expect-error
+                    createReadStream: memfsInstance.fs.createReadStream,
+                    // @ts-expect-error
+                    createWriteStream: memfsInstance.fs.createWriteStream,
+                    // @ts-expect-error
+                    readFile: memfsInstance.fs.readFile,
+                    // @ts-expect-error
+                    writeFile: memfsInstance.fs.writeFile,
+                    // @ts-expect-error
+                    rename: memfsInstance.fs.rename,
+                    // @ts-expect-error
+                    openPromise: memfsInstance.fs.promises.open
+                };
+            }
 
             const tempFolderFullPath = Database.getTempFolderPath();
             const filesFolderFullPath = Database.getFilesStoragePath();
