@@ -1,6 +1,8 @@
 <template>
     <div class="fileDragZoneRoot" :class="{'dragOver': isDragOver}">
-        <input type="file" ref="fileInput" @change="onFileInputClicked" multiple style="display: none;"/>
+        <!-- TODO: Make this support all files on mobile, maybe via UI change -->
+        <input type="file" ref="fileInput" @change="onFileInputClicked" style="display: none;"
+               multiple accept="image/*, video/*, audio/*" capture="environment" />
         <div id="fileDragZoneClickableArea" @click="$refs.fileInput.click()"
              @dragenter.prevent="onDragEnter"
              @dragleave.prevent="onDragLeave"
