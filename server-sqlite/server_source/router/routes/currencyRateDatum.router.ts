@@ -3,7 +3,7 @@ import { AccessTokenService, InvalidLoginTokenError } from '../../db/services/ac
 import { IsArray, IsString, ValidateNested } from 'class-validator';
 import { ExpressValidations } from '../validation.js';
 import { IsDecimalJSString, IsUTCDateInt } from '../../db/validators.js';
-import type { PostCurrencyRateAPI } from "../../../../api-types/currencyRateDatum.js";
+import type { PostCurrencyRateAPI } from "../../../../api-types/currencyRateDatum.d.ts";
 import { TypesafeRouter } from '../typescriptRouter.js';
 import { CurrencyRateDatumService } from '../../db/services/currencyRateDatum.service.js';
 import createHttpError from 'http-errors';

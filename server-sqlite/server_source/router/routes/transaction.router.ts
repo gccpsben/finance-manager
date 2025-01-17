@@ -1,6 +1,6 @@
 import { IsArray, IsBoolean, IsNotEmpty, IsOptional, IsString, ValidateNested } from 'class-validator';
 import Express from 'express';
-import { type PutTxnAPI, type GetTxnAPI, type PostTxnAPI, type DeleteTxnAPI, GetTxnJsonQueryAPI } from '../../../../api-types/txn.js';
+import type { PutTxnAPI, GetTxnAPI, PostTxnAPI, DeleteTxnAPI, GetTxnJsonQueryAPI } from '../../../../api-types/txn.d.ts';
 import { AccessTokenService, InvalidLoginTokenError } from '../../db/services/accessToken.service.js';
 import { JSONQueryError, TransactionService, FragmentMissingContainerOrCurrency, FragmentMissingFromToAmountError, TxnNotFoundError, TxnNoFragmentsError } from '../../db/services/transaction.service.js';
 import { IsDecimalJSString, IsIntString, IsUTCDateInt } from '../../db/validators.js';

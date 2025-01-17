@@ -4,7 +4,7 @@ import { IsNotEmpty, IsOptional, IsString } from 'class-validator';
 import { ExpressValidations } from '../validation.js';
 import { ContainerExistsError, ContainerNotFoundError, ContainerService } from '../../db/services/container.service.js';
 import { TypesafeRouter } from '../typescriptRouter.js';
-import type { GetContainerAPI, GetContainerTimelineAPI, PostContainerAPI } from '../../../../api-types/container.js';
+import type { GetContainerAPI, GetContainerTimelineAPI, PostContainerAPI } from '../../../../api-types/container.d.ts';
 import { OptionalPaginationAPIQueryRequest, PaginationAPIResponseClass } from '../pagination.js';
 import { IsIntString, IsUTCDateIntString } from '../../db/validators.js';
 import { ServiceUtils } from '../../db/servicesUtils.js';

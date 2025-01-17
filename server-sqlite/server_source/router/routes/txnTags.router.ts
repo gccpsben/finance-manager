@@ -4,7 +4,7 @@ import { IsNotEmpty, IsOptional, IsString } from 'class-validator';
 import { ExpressValidations } from '../validation.js';
 import { TxnTagService, TxnTagExistsError } from '../../db/services/txnTag.service.js';
 import { TypesafeRouter } from '../typescriptRouter.js';
-import type { GetTxnTagsAPI, PostTxnTagsAPI } from '../../../../api-types/txnTag.js';
+import type { GetTxnTagsAPI, PostTxnTagsAPI } from '../../../../api-types/txnTag.d.ts';
 import { OptionalPaginationAPIQueryRequest, PaginationAPIResponseClass } from '../pagination.js';
 import createHttpError from 'http-errors';
 import { UserNotFoundError } from '../../db/services/user.service.js';

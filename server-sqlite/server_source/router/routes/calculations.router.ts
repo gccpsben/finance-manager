@@ -2,7 +2,7 @@ import express from 'express';
 import { AccessTokenService } from '../../db/services/accessToken.service.js';
 import { TypesafeRouter } from '../typescriptRouter.js';
 import { CalculationsService } from '../../db/services/calculations.service.js';
-import { GetExpensesAndIncomesAPI, GetUserBalanceHistoryAPI, GetUserNetworthHistoryAPI } from '../../../../api-types/calculations.js';
+import type { GetExpensesAndIncomesAPI, GetUserBalanceHistoryAPI, GetUserNetworthHistoryAPI } from '../../../../api-types/calculations.d.ts';
 import { ServiceUtils } from '../../db/servicesUtils.js';
 import { IsPositiveIntString, IsUTCDateIntString } from '../../db/validators.js';
 import { IsNotEmpty, IsOptional } from 'class-validator';

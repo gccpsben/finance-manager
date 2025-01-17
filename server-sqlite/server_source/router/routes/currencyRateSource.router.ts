@@ -1,6 +1,6 @@
 import { TypesafeRouter } from "../typescriptRouter.js";
 import express from 'express';
-import { type GetCurrencyRateSrcAPI, type PostCurrencyRateSrcAPI, type PatchCurrencyRateSrcAPI, type GetCurrencyRateSrcBySrcIdAPI, DeleteCurrencyRateSrcAPI } from "../../../../api-types/currencyRateSource.js";
+import type { GetCurrencyRateSrcAPI, PostCurrencyRateSrcAPI, PatchCurrencyRateSrcAPI, GetCurrencyRateSrcBySrcIdAPI, DeleteCurrencyRateSrcAPI } from "../../../../api-types/currencyRateSource.d.ts";
 import { IsString } from "class-validator";
 import { AccessTokenService, InvalidLoginTokenError } from "../../db/services/accessToken.service.js";
 import createHttpError from "http-errors";

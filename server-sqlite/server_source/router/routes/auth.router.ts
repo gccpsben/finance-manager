@@ -3,7 +3,7 @@ import { UserNotFoundError, UserService } from '../../db/services/user.service.j
 import express from 'express';
 import { ExpressValidations } from '../validation.js';
 import createHttpError from 'http-errors';
-import type { PostLoginAPI } from '../../../../api-types/auth.js';
+import type { PostLoginAPI } from '../../../../api-types/auth.d.ts';
 import { TypesafeRouter } from '../typescriptRouter.js';
 import { Database } from '../../db/db.js';
 

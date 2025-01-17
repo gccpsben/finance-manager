@@ -1,6 +1,6 @@
 import { TypesafeRouter } from "../typescriptRouter.js";
 import express from 'express';
-import { type GetServerFilesByIdAPI, type FilesAppendChunkAPI, type FilesInitSessionAPI, type GetOngoingFileSessionsAPI, type GetServerFilesAPI } from '../../../../api-types/files.d.js';
+import type { GetServerFilesByIdAPI, FilesAppendChunkAPI, FilesInitSessionAPI, GetOngoingFileSessionsAPI, GetServerFilesAPI } from '../../../../api-types/files.d.ts';
 import { IsInt, IsNotEmpty, IsString } from "class-validator";
 import { ExpressValidations } from "../validation.js";
 import { AccessTokenService, InvalidLoginTokenError } from "../../db/services/accessToken.service.js";

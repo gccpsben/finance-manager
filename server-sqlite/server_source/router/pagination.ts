@@ -1,5 +1,5 @@
 import { IsNumber, IsArray, IsOptional, IsNumberString } from "class-validator";
-import type { PaginationAPIResponse } from "../../../api-types/lib.js";
+import type { PaginationAPIResponse } from "../../../api-types/lib.d.ts";
 
 export class PaginationAPIResponseClass<T> implements PaginationAPIResponse<T>
 {

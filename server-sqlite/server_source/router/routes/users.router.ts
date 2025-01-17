@@ -3,7 +3,7 @@ import { UserNameTakenError, UserService } from '../../db/services/user.service.
 import express from 'express';
 import { ExpressValidations } from '../validation.js';
 import createHttpError from 'http-errors';
-import type { DeleteUserAPI, PostUserAPI } from '../../../../api-types/user.js';
+import type { DeleteUserAPI, PostUserAPI } from '../../../../api-types/user.d.ts';
 import { TypesafeRouter } from '../typescriptRouter.js';
 
 const router = new TypesafeRouter(express.Router());
