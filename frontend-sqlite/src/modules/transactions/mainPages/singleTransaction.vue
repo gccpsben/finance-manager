@@ -247,7 +247,12 @@ if (ensureIsEditMode(editTxnHook))
     );
 }
 
-useLeaveGuard(txnWorkingCopy.value.isChanged);
+useLeaveGuard(computed<boolean>(() =>
+{
+    if (shouldDisplayNotFoundScreen.value) return false; // Do not activate guard if error is present
+    if (txnWorkingCopy.value.isChanged.value) return true;
+    return false;
+}));
 autoFillCurrentDateTime();
 
 async function handleSaveBtn()
