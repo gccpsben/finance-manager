@@ -1,11 +1,13 @@
 <template>
-    <VTooltip class="mainTxnTooltip" :location="'bottom start'" :close-delay="props.closeDelay ?? 500" :open-delay="props.openDelay ?? 500">
+    <VTooltip class="mainTxnTooltip" :location="'bottom start'" :disabled="isTouchScreen"
+              :close-delay="props.closeDelay ?? 500" :open-delay="props.openDelay ?? 500">
         <template v-slot:activator="{ props }">
             <div v-bind="props">
                 <slot></slot>
             </div>
         </template>
         <div style="display: grid; grid-template-columns: 1fr; grid-auto-rows: auto; grid-auto-flow: row;">
+            {{ isTouchScreen }}
             <div class="dateLabel">Transaction at {{ formatDate(new Date(props.txn.creationDate)) }}</div>
             <div class="ageLabel">{{ dateAge }} ago</div>
             <div class="titleLabel">{{ props.txn.title }}</div>
@@ -27,10 +29,10 @@ import type { GetTxnAPI } from '../../../../../api-types/txn';
 import { formatDate, getDateAgeFull } from '@/modules/core/utils/date';
 import { useTxnTagsStore } from '@/modules/txnTypes/stores/useTxnTypesStore';
 import { useCurrenciesStore } from '@/modules/currencies/stores/useCurrenciesStore';
-import { useNow } from '@vueuse/core';
-
+import { useMediaQuery, useNow } from '@vueuse/core';
 
 export type TxnTooltipProps = { txn: DeepReadonly<GetTxnAPI.TxnDTO>; openDelay?: number; closeDelay?: number; };
+const isTouchScreen = useMediaQuery(`(pointer: coarse)`);
 const props = defineProps<TxnTooltipProps>();
 const txnTagsStore = useTxnTagsStore();
 const currenciesStore = useCurrenciesStore();

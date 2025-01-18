@@ -1,5 +1,6 @@
 <template>
-    <VTooltip class="mainTxnTooltip" :location="'bottom start'" :close-delay="500" :open-delay="500">
+    <VTooltip class="mainTxnTooltip" :location="'bottom start'" :disabled="isTouchScreen"
+              :close-delay="500" :open-delay="500">
         <template v-slot:activator="{ props }">
             <div v-bind="props">
                 <slot></slot>
@@ -42,9 +43,10 @@
 import { computed } from 'vue';
 import { VTooltip } from 'vuetify/components';
 import { formatDate, getDateAgeFull, getDateAgeFullComponents } from '../../utils/date';
-import { useNow } from '@vueuse/core';
+import { useMediaQuery, useNow } from '@vueuse/core';
 
 export type DateTooltipProps = { date: number | Date; };
+const isTouchScreen = useMediaQuery(`(pointer: coarse)`);
 const props = defineProps<DateTooltipProps>();
 const computedDate = computed(() => typeof props.date === 'number' ? new Date(props.date) : props.date);
 const dateAge = computed(() => getDateAgeFull(computedDate.value.getTime(), 'combined', now.value.getTime()));
