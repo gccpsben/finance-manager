@@ -40,11 +40,12 @@ export default
                     </div> -->
                 </div>
                 <div id="leftButtonsContainer" style="overflow: hidden;">
-                    <div v-for="page in store.availablePages" @click="goToPage(page)"
-                    :class="{'activeButton': isSelected(page)}">
-                        <i :class="page.iconClass"></i>
-                        <div class="iconTitle">{{page.displayName}}</div>
-                    </div>
+                    <RouterLink class="allUnset" :to="{ name: page.name }" v-for="page in store.availablePages">
+                        <div :class="{'activeButton': isSelected(page)}">
+                            <i :class="page.iconClass"></i>
+                            <div class="iconTitle">{{page.displayName}}</div>
+                        </div>
+                    </RouterLink>
                 </div>
                 <div class="xRight yCenter abs fullSize" style="pointer-events:none">
                     <div id="sideBarButton" @click="store.mainViewSidebarVisible = !store.mainViewSidebarVisible" style="pointer-events:all">
@@ -128,7 +129,7 @@ export default
 
     #leftButtonsContainer
     {
-        & > div
+        & > a > div
         {
             .center; .gridBase;
             transition: all 0.3s ease;
