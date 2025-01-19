@@ -137,7 +137,7 @@ function changeToClass(changeInValue: string)
 
 function onClickRelease()
 {
-    if (!isLongPressInProgress.value && lastClickType.value === 'left' || isTouchScreen.value)
+    if (!isLongPressInProgress.value && (lastClickType.value === 'left' || isTouchScreen.value))
         emits('onClick');
     isLongPressInProgress.value = false;
 }
@@ -150,7 +150,7 @@ function recordMouseButtonClickType(e: PointerEvent | MouseEvent)
 function onTxnLongPressed()
 {
     isLongPressInProgress.value = true;
-    if (lastClickType.value === 'left') emits('onLongPress');
+    if (lastClickType.value === 'left' || isTouchScreen.value) emits('onLongPress');
 }
 
 function eventButtonIdToType(e: PointerEvent | MouseEvent)
