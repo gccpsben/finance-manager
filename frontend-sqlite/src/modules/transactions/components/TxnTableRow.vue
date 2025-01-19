@@ -1,11 +1,16 @@
 <template>
     <div class="txnTableRowRoot">
         <div :class="{'selected': isSelected}" class="fullSize"
+             @mousedown="event => recordMouseButtonClickType(event)"
              v-on-long-press="
              [
                 () => onTxnLongPressed(),
-                { onMouseUp: (_, _2, longPress) => onTxnClicked(longPress), delay: 500 },
-             ]">
+                {
+                    onMouseUp: (_, _2, _3) => onClickRelease(),
+                    delay: 500
+                },
+             ]"
+             >
              <OverlapArea class="fullSize">
                  <div class="txnTableRowInner">
                      <div class="bodyRowNameGrid">
@@ -55,8 +60,9 @@ import { vOnLongPress } from '@vueuse/components';
 import { formatDate, getDateAge } from '@/modules/core/utils/date';
 import { useContainersStore } from '@/modules/containers/stores/useContainersStore';
 import OverlapArea from '@/modules/core/components/layout/OverlapArea.vue';
-import { computed } from 'vue';
+import { computed, ref } from 'vue';
 import SelectionMark from '@/modules/core/components/decorations/SelectionMark.vue';
+import { useMediaQuery } from '@vueuse/core';
 
 /** A symbol that represents a from / to side contains multiple containers. */
 const MULTIPLE: unique symbol = Symbol();
@@ -95,6 +101,9 @@ export type TxnTableRowEmits =
     (e: 'onClick'): void
 };
 
+const isLongPressInProgress = ref<boolean>(false);
+const isTouchScreen = useMediaQuery(`(pointer: coarse)`);
+const lastClickType = ref<'left'|'right'|'middle'|null>(null); // This is needed to track if the press is left click or not.
 const emits = defineEmits<TxnTableRowEmits>();
 const props = withDefaults(defineProps<TxnTableRowProps>(), { isSelected: false });
 const { findContainerById } = useContainersStore();
@@ -126,13 +135,31 @@ function changeToClass(changeInValue: string)
     else return 'noChange';
 }
 
-function onTxnClicked(isLongPress: boolean)
+function onClickRelease()
 {
-    if (isLongPress) return;
-    emits('onClick');
+    if (!isLongPressInProgress.value && lastClickType.value === 'left' || isTouchScreen.value)
+        emits('onClick');
+    isLongPressInProgress.value = false;
 }
 
-function onTxnLongPressed() { emits('onLongPress'); }
+function recordMouseButtonClickType(e: PointerEvent | MouseEvent)
+{
+    lastClickType.value = eventButtonIdToType(e);
+}
+
+function onTxnLongPressed()
+{
+    isLongPressInProgress.value = true;
+    if (lastClickType.value === 'left') emits('onLongPress');
+}
+
+function eventButtonIdToType(e: PointerEvent | MouseEvent)
+{
+    if (e.button === 0) return 'left';
+    else if (e.button === 1) return 'middle';
+    else if (e.button === 2) return 'right';
+    return null;
+}
 </script>
 
 <style lang="less" scoped>
