@@ -67,7 +67,8 @@ export class AccessTokenCache extends CacheBase
     {
         for (const cacheKey of this.#nodeCache.keys())
         {
-            const allTokensOfKey = this.#nodeCache.get<AccessTokenEntry[]>(cacheKey)!;
+            const allTokensOfKey = this.#nodeCache.get<AccessTokenEntry[]>(cacheKey);
+            if (!allTokensOfKey) continue;
             const potentialTargetObj = allTokensOfKey.find(t => t.token === token);
             if (!potentialTargetObj) continue;
             this.markCacheHit();
