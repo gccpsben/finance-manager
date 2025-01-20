@@ -7,6 +7,7 @@ import { UserRepository } from "./user.repository.js";
 import { EnvManager } from "../../env.js";
 import { QUERY_IGNORE } from "../../symbols.js";
 import { MeteredRepository } from "../meteredRepository.js";
+import { AccessTokenEntry, GlobalAccessTokenCache } from "../caches/accessTokens.cache.js";
 
 function validateUserIdExhaustiveCheck(userId: unknown): asserts userId is string
 {
@@ -22,7 +23,6 @@ export class AccessTokenRepository extends MeteredRepository
 
     public async getAccessTokens
     (
-
         userId: string | typeof QUERY_IGNORE,
         token: string | typeof QUERY_IGNORE,
     )
@@ -30,6 +30,58 @@ export class AccessTokenRepository extends MeteredRepository
         if (userId === QUERY_IGNORE && token === QUERY_IGNORE) throw panic(`Having both userId and token ignored is forbidden.`);
         if (userId !== QUERY_IGNORE) validateUserIdExhaustiveCheck(userId);
         if (token !== QUERY_IGNORE) validateUserIdExhaustiveCheck(token);
+
+        const cachedUserTokens = (() =>
+        {
+            if (userId === QUERY_IGNORE && token !== QUERY_IGNORE)
+            {
+                const obj = GlobalAccessTokenCache.queryToken(token);
+                if (!obj) return undefined;
+                return [obj];
+            }
+            else if (userId !== QUERY_IGNORE && token === QUERY_IGNORE)
+                return GlobalAccessTokenCache.queryTokensOfUser(userId);
+            else if (userId !== QUERY_IGNORE  && token !== QUERY_IGNORE)
+            {
+                const obj = GlobalAccessTokenCache.queryTokenOfUser(userId, token);
+                if (!obj) return undefined;
+                return [obj];
+            }
+        })();
+
+        // Try looking for the token in cache first (if any)
+        const cachedUserTokenResult = (() =>
+        {
+            if (cachedUserTokens === undefined) return undefined;
+            if (userId === QUERY_IGNORE && token !== QUERY_IGNORE)
+            {
+                const target = cachedUserTokens.filter(x => x.token === token);
+                if (!!target) return target;
+            }
+            else if (userId !== QUERY_IGNORE && token === QUERY_IGNORE)
+            {
+                const target = cachedUserTokens.filter(x => x.ownerId === userId);
+                if (!!target) return target;
+            }
+            else if (userId !== QUERY_IGNORE  && token !== QUERY_IGNORE)
+            {
+                const target = cachedUserTokens.filter(x => x.ownerId === userId && x.token === token);
+                if (!!target) return target;
+            }
+        })();
+
+        const explicitMapperFunc = (x: AccessToken | AccessTokenEntry) =>
+        {
+            return {
+                expiryDate: x.expiryDate,
+                creationDate: x.creationDate,
+                token: x.token,
+                ownerId: x.ownerId
+            }
+        };
+
+        // If we successfully found the token in cache, return it
+        if (cachedUserTokenResult) return cachedUserTokenResult.map(explicitMapperFunc);
 
         this.incrementRead();
         const accessTokens = await this.#repository.find
@@ -42,20 +94,26 @@ export class AccessTokenRepository extends MeteredRepository
                 }
             }
         );
-        return accessTokens.map(x =>
+
+        // After reading tokens from database, cache them.
+        for (const token of accessTokens)
         {
-            return {
-                expiryDate: x.expiryDate,
-                creationDate: x.creationDate,
-                token: x.token,
-                ownerId: x.ownerId
-            }
-        });
+            GlobalAccessTokenCache.cacheToken(
+            {
+                creationDate: token.creationDate,
+                expiryDate: token.expiryDate,
+                ownerId: token.ownerId,
+                token: token.token
+            });
+        }
+
+        return accessTokens.map(explicitMapperFunc);
     }
 
     public async deleteTokensOfUser(userId: unknown)
     {
         validateUserIdExhaustiveCheck(userId);
+        GlobalAccessTokenCache.invalidateUserTokens(userId);
         this.incrementWrite();
         const result = await this.#repository
         .delete({ owner: { id: userId } });
@@ -65,6 +123,7 @@ export class AccessTokenRepository extends MeteredRepository
     public async deleteToken(token: string)
     {
         validateUserIdExhaustiveCheck(token);
+        GlobalAccessTokenCache.invalidateToken(token);
         this.incrementWrite();
         const result = await this.#repository
         .delete({ token: token });
@@ -100,6 +159,13 @@ export class AccessTokenRepository extends MeteredRepository
         this.incrementWrite();
         const newlySavedToken = await this.#repository.save(newToken);
         if (!newlySavedToken.token) throw panic(`Newly saved token contains falsy token column.`);
+
+        GlobalAccessTokenCache.cacheToken({
+            creationDate: newToken.creationDate,
+            expiryDate: newToken.expiryDate,
+            ownerId: newToken.ownerId,
+            token: newToken.token
+        });
 
         return {
             creationDate: newToken.creationDate,
