@@ -54,7 +54,7 @@ export class FilesService
                 const newFileRow = await Database.getFileRepository()!.saveNewFile(userId, session.fileNameReadable, transactionalContext.queryRunner);
 
                 // Move file from tmp to files storage
-                const moveResult = await Database.getFileReceiver()!.commitFile(sessionId);
+                const moveResult = await Database.getFileReceiver()!.commitFile(sessionId, newFileRow.id);
 
                 if (moveResult instanceof AppendBytesCommitFileIOError)
                 {

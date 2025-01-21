@@ -226,13 +226,13 @@ export class FileReceiver
      * Move files that are finished uploading to the files storage.
      * This will remove the session automatically if the move is successful.
      */
-    public async commitFile(sessionId: string): Promise<AppendBytesCommitFileIOError<unknown> | "OK">
+    public async commitFile(sessionId: string, fileId: string): Promise<AppendBytesCommitFileIOError<unknown> | "OK">
     {
         return await new Promise<AppendBytesCommitFileIOError<unknown> | "OK">(resolve =>
         {
             this.#options.fs.rename(
                 path.join(this.#options.tempFolderFullPath, sessionId),
-                path.join(this.#options.filesFolderFullPath, sessionId),
+                path.join(this.#options.filesFolderFullPath, fileId),
                 async err =>
                 {
                     if (err) return resolve(new AppendBytesCommitFileIOError(sessionId, err));
