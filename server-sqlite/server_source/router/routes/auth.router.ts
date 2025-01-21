@@ -28,7 +28,7 @@ router.post<PostLoginAPI.ResponseDTO>("/api/v1/auth/login",
         if (newToken instanceof UserNotFoundError) throw createHttpError(401);
 
         return {
-            token: newToken.token,
+            token: newToken.tokenRaw,
             creationDate: newToken.creationDate,
             expiryDate: newToken.expiryDate,
             owner: newToken.ownerId

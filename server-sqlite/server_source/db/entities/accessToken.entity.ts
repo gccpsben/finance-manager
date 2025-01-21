@@ -9,7 +9,7 @@ import { EnsureNotPlainForeignKey, IsUTCDateInt } from "../validators.js";
 export class AccessToken extends EntityClass
 {
     @PrimaryColumn({nullable: false})
-    token: string;
+    tokenHashed: string;
 
     @Column({type: 'int', nullable:false})
     @IsUTCDateInt()

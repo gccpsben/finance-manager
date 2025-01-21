@@ -3,7 +3,7 @@ import { CacheBase } from "../cacheBase.js";
 
 export type AccessTokenEntry =
 {
-    token: string,
+    tokenHashed: string,
     ownerId: string,
     creationDate: number,
     expiryDate: number
@@ -26,7 +26,7 @@ export class AccessTokenCache extends CacheBase
     {
         const tokensOfUser = this.#nodeCache.get<AccessTokenEntry[]>(this.makeEntryKey(ownerId));
         if (!tokensOfUser) return;
-        const targetIndex = tokensOfUser.findIndex(t => t.token === token && t.ownerId === ownerId);
+        const targetIndex = tokensOfUser.findIndex(t => t.tokenHashed === token && t.ownerId === ownerId);
         if (targetIndex !== -1) tokensOfUser.splice(targetIndex, 1);
     }
 
@@ -36,7 +36,7 @@ export class AccessTokenCache extends CacheBase
         {
             const tokensOfUser = this.#nodeCache.get<AccessTokenEntry[]>(cacheKey);
             if (!tokensOfUser) continue;
-            const targetIndex = tokensOfUser.findIndex(t => t.token === token);
+            const targetIndex = tokensOfUser.findIndex(t => t.tokenHashed === token);
             if (targetIndex !== -1) tokensOfUser.splice(targetIndex, 1);
         }
     }
@@ -57,7 +57,7 @@ export class AccessTokenCache extends CacheBase
     public queryTokenOfUser(ownerId: string, token: string): AccessTokenEntry | undefined
     {
         const tokensOfUser = this.#nodeCache.get<AccessTokenEntry[]>(this.makeEntryKey(ownerId));
-        const tokenObj = tokensOfUser?.find(x => x.token === token && x.ownerId === ownerId);
+        const tokenObj = tokensOfUser?.find(x => x.tokenHashed === token && x.ownerId === ownerId);
         if (tokenObj === undefined) this.markCacheMiss();
         else this.markCacheHit();
         return tokenObj;
@@ -69,7 +69,7 @@ export class AccessTokenCache extends CacheBase
         {
             const allTokensOfKey = this.#nodeCache.get<AccessTokenEntry[]>(cacheKey);
             if (!allTokensOfKey) continue;
-            const potentialTargetObj = allTokensOfKey.find(t => t.token === token);
+            const potentialTargetObj = allTokensOfKey.find(t => t.tokenHashed === token);
             if (!potentialTargetObj) continue;
             this.markCacheHit();
             return potentialTargetObj;

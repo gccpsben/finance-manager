@@ -8,13 +8,17 @@ import { EnvManager } from "../../env.js";
 import { QUERY_IGNORE } from "../../symbols.js";
 import { MeteredRepository } from "../meteredRepository.js";
 import { AccessTokenEntry, GlobalAccessTokenCache } from "../caches/accessTokens.cache.js";
+import { sha256 } from "../../crypto.js";
 
-function validateUserIdExhaustiveCheck(userId: unknown): asserts userId is string
+function hashToken(token: string) { return sha256(token); }
+Object.freeze(hashToken);
+function stringExhaustiveCheck(userId: unknown): asserts userId is string
 {
     if (typeof userId !== 'string') throw panic(`The given userId is not a string.`);
     if (userId === null) throw panic(`The given userId is null.`);
     if (userId === undefined) throw panic(`The given userId is undefined.`);
 }
+Object.freeze(stringExhaustiveCheck);
 
 export class AccessTokenRepository extends MeteredRepository
 {
@@ -24,26 +28,30 @@ export class AccessTokenRepository extends MeteredRepository
     public async getAccessTokens
     (
         userId: string | typeof QUERY_IGNORE,
-        token: string | typeof QUERY_IGNORE,
+        tokenRaw: string | typeof QUERY_IGNORE,
     )
     {
-        if (userId === QUERY_IGNORE && token === QUERY_IGNORE) throw panic(`Having both userId and token ignored is forbidden.`);
-        if (userId !== QUERY_IGNORE) validateUserIdExhaustiveCheck(userId);
-        if (token !== QUERY_IGNORE) validateUserIdExhaustiveCheck(token);
+        // const tokenHashed = hashToken(tokenRaw);
+
+        if (userId === QUERY_IGNORE && tokenRaw === QUERY_IGNORE) throw panic(`Having both userId and token ignored is forbidden.`);
+        if (userId !== QUERY_IGNORE) stringExhaustiveCheck(userId);
+        if (tokenRaw !== QUERY_IGNORE) stringExhaustiveCheck(tokenRaw);
 
         const cachedUserTokens = (() =>
         {
-            if (userId === QUERY_IGNORE && token !== QUERY_IGNORE)
+            if (userId === QUERY_IGNORE && tokenRaw !== QUERY_IGNORE)
             {
-                const obj = GlobalAccessTokenCache.queryToken(token);
+                const obj = GlobalAccessTokenCache.queryToken(hashToken(tokenRaw));
                 if (!obj) return undefined;
                 return [obj];
             }
-            else if (userId !== QUERY_IGNORE && token === QUERY_IGNORE)
-                return GlobalAccessTokenCache.queryTokensOfUser(userId);
-            else if (userId !== QUERY_IGNORE  && token !== QUERY_IGNORE)
+            else if (userId !== QUERY_IGNORE && tokenRaw === QUERY_IGNORE)
             {
-                const obj = GlobalAccessTokenCache.queryTokenOfUser(userId, token);
+                return GlobalAccessTokenCache.queryTokensOfUser(userId);
+            }
+            else if (userId !== QUERY_IGNORE  && tokenRaw !== QUERY_IGNORE)
+            {
+                const obj = GlobalAccessTokenCache.queryTokenOfUser(userId, hashToken(tokenRaw));
                 if (!obj) return undefined;
                 return [obj];
             }
@@ -53,19 +61,19 @@ export class AccessTokenRepository extends MeteredRepository
         const cachedUserTokenResult = (() =>
         {
             if (cachedUserTokens === undefined) return undefined;
-            if (userId === QUERY_IGNORE && token !== QUERY_IGNORE)
+            if (userId === QUERY_IGNORE && tokenRaw !== QUERY_IGNORE)
             {
-                const target = cachedUserTokens.filter(x => x.token === token);
+                const target = cachedUserTokens.filter(x => x.tokenHashed === hashToken(tokenRaw));
                 if (!!target) return target;
             }
-            else if (userId !== QUERY_IGNORE && token === QUERY_IGNORE)
+            else if (userId !== QUERY_IGNORE && tokenRaw === QUERY_IGNORE)
             {
                 const target = cachedUserTokens.filter(x => x.ownerId === userId);
                 if (!!target) return target;
             }
-            else if (userId !== QUERY_IGNORE  && token !== QUERY_IGNORE)
+            else if (userId !== QUERY_IGNORE  && tokenRaw !== QUERY_IGNORE)
             {
-                const target = cachedUserTokens.filter(x => x.ownerId === userId && x.token === token);
+                const target = cachedUserTokens.filter(x => x.ownerId === userId && x.tokenHashed === hashToken(tokenRaw));
                 if (!!target) return target;
             }
         })();
@@ -75,7 +83,7 @@ export class AccessTokenRepository extends MeteredRepository
             return {
                 expiryDate: x.expiryDate,
                 creationDate: x.creationDate,
-                token: x.token,
+                tokenHashed: x.tokenHashed,
                 ownerId: x.ownerId
             }
         };
@@ -90,7 +98,7 @@ export class AccessTokenRepository extends MeteredRepository
                 where:
                 {
                     ...(userId === QUERY_IGNORE ? { } : { ownerId: userId }),
-                    ...(token === QUERY_IGNORE ? { } : { token: token })
+                    ...(tokenRaw === QUERY_IGNORE ? { } : { tokenHashed: hashToken(tokenRaw) })
                 }
             }
         );
@@ -103,7 +111,7 @@ export class AccessTokenRepository extends MeteredRepository
                 creationDate: token.creationDate,
                 expiryDate: token.expiryDate,
                 ownerId: token.ownerId,
-                token: token.token
+                tokenHashed: token.tokenHashed
             });
         }
 
@@ -112,7 +120,7 @@ export class AccessTokenRepository extends MeteredRepository
 
     public async deleteTokensOfUser(userId: unknown)
     {
-        validateUserIdExhaustiveCheck(userId);
+        stringExhaustiveCheck(userId);
         GlobalAccessTokenCache.invalidateUserTokens(userId);
         this.incrementWrite();
         const result = await this.#repository
@@ -122,11 +130,11 @@ export class AccessTokenRepository extends MeteredRepository
 
     public async deleteToken(token: string)
     {
-        validateUserIdExhaustiveCheck(token);
+        stringExhaustiveCheck(token);
         GlobalAccessTokenCache.invalidateToken(token);
         this.incrementWrite();
         const result = await this.#repository
-        .delete({ token: token });
+        .delete({ tokenHashed: token });
         return result;
     }
 
@@ -142,36 +150,42 @@ export class AccessTokenRepository extends MeteredRepository
         creationDate: number,
         expiryDate: number,
         ownerId: string,
-        token: string
+        tokenHashed: string,
+        tokenRaw: string
     }>
     {
-        validateUserIdExhaustiveCheck(userId);
+        stringExhaustiveCheck(userId);
         if (!EnvManager.tokenExpiryMs) throw panic(`AccessTokenService.generateTokenForUser: EnvManager.tokenExpiryMs is not defined.`);
 
         const targetUser = await UserRepository.getInstance().findOne({where: {id: userId}});
         if (!targetUser) return new UserNotFoundError(userId);
 
+        // TODO: Consider adding salt to prevent rainbow-table attacks.
+        // TODO: Using sha256 for now for performance reason.
         const newToken = this.#repository.create();
-        newToken.token = randomUUID();
+        const tokenRaw = randomUUID();
+        newToken.tokenHashed = hashToken(tokenRaw); // randomUUID should be cryptographically secure
         newToken.owner = targetUser;
         newToken.creationDate = nowEpoch;
         newToken.expiryDate = newToken.creationDate + EnvManager.tokenExpiryMs;
+
         this.incrementWrite();
         const newlySavedToken = await this.#repository.save(newToken);
-        if (!newlySavedToken.token) throw panic(`Newly saved token contains falsy token column.`);
+        if (!newlySavedToken.tokenHashed) throw panic(`Newly saved token contains falsy token column.`);
 
         GlobalAccessTokenCache.cacheToken({
             creationDate: newToken.creationDate,
             expiryDate: newToken.expiryDate,
             ownerId: newToken.ownerId,
-            token: newToken.token
+            tokenHashed: newToken.tokenHashed
         });
 
         return {
             creationDate: newToken.creationDate,
             expiryDate: newToken.expiryDate,
             ownerId: newToken.ownerId,
-            token: newToken.token
+            tokenHashed: newToken.tokenHashed,
+            tokenRaw: tokenRaw
         };
     }
 
