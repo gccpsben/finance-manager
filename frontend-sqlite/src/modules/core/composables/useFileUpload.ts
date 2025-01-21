@@ -175,23 +175,19 @@ export function useFileUpload(file: File)
         else if (stateType === 'INITIALIZING_SESSION') { return; }
         else if (stateType === 'SESSION_INITIALIZED' || stateType === 'LAST_CHUNK_UPLOADED')
         {
-
-            let isLastChunk = false;
             const sessionId = state.value.sessionId;
             const nextStartByteToUpload = stateType === 'LAST_CHUNK_UPLOADED' ? (state.value.lastEndBytes) : 0;
             let nextEndByteToUpload = stateType === 'LAST_CHUNK_UPLOADED' ? (state.value.lastEndBytes + chunkSize.value) : chunkSize.value;
-            if (nextEndByteToUpload >= file.size) { isLastChunk = true; nextEndByteToUpload = file.size; }
-            console.log(`Uploading ${nextStartByteToUpload} - ${nextEndByteToUpload}`);
+            if (nextEndByteToUpload >= file.size) { nextEndByteToUpload = file.size; }
             await uploadChunk(nextStartByteToUpload, nextEndByteToUpload, sessionId);
         }
         else if (stateType === 'LAST_CHUNK_UPLOAD_ERROR')
         {
             chunkSize.value = minSizePerChunk;
-            let isLastChunk = false;
             const sessionId = state.value.sessionId;
             const nextStartByteToUpload = state.value.failedStartBytes;
             let nextEndByteToUpload = state.value.failedStartBytes + chunkSize.value;
-            if (nextEndByteToUpload >= file.size) { isLastChunk = true; nextEndByteToUpload = file.size; }
+            if (nextEndByteToUpload >= file.size) { nextEndByteToUpload = file.size; }
             console.log(`Uploading ${nextStartByteToUpload} - ${nextEndByteToUpload}`);
             await uploadChunk(nextStartByteToUpload, nextEndByteToUpload, sessionId);
         }

@@ -1,5 +1,6 @@
 import router from '@/router';
-import axios from 'axios';
+import axios, { type AxiosRequestConfig, type AxiosResponse } from 'axios';
+
 import { ref, watchEffect, toValue, readonly } from 'vue';
 
 export type NetworkQuery =
@@ -8,7 +9,8 @@ export type NetworkQuery =
     query: Record<string, string>,
     method?: "PUT" | "POST" | "GET" | "DELETE" | "PATCH",
     body?: unknown,
-    headers?: Record<string, string>
+    headers?: Record<string, string>,
+    axiosOptions?: AxiosRequestConfig
 };
 
 function setCookie(cname:string, cvalue:string, exdays:number): void
@@ -32,7 +34,8 @@ function getCookie(cname: string): string
 }
 function clearCookie(cname:string) { setCookie(cname, "", -1); }
 
-type UseNetworkRequestInterface = {
+type UseNetworkRequestInterface =
+{
     autoResetOnUnauthorized?: boolean;
     includeAuthHeaders?: boolean;
     updateOnMount?: boolean;
@@ -52,6 +55,7 @@ export function useNetworkRequest<T>
     const isLoading = ref<boolean>(false);
     const lastSuccessfulData = ref<T | null>(null);
     const lastAxiosStatusCode = ref<number | null>(null);
+    const lastAxiosResponse = ref<AxiosResponse<any,any> | null>(null);
     const error = ref<any>(null);
 
     const resetAuth = () =>
@@ -60,47 +64,47 @@ export function useNetworkRequest<T>
         router.push("/login");
     };
 
-    const get = async (queryObj:NetworkQuery|string, extraHeaders:Record<string,string> = {}) =>
+    const get = async (queryObj:NetworkQuery|string, extraHeaders:Record<string,string> = {}, extraAxiosOptions: AxiosRequestConfig = {}) =>
     {
         const url = typeof queryObj === 'string' ? queryObj : `${queryObj.url}?${new URLSearchParams(queryObj.query).toString()}`;
         const config = { headers: { ...extraHeaders } };
         if (shouldIncludeAuthHeaders) config.headers["Authorization"] = getCookie("jwt");
-        return axios.get(url, config);
+        return axios.get(url, { ...config, ...extraAxiosOptions });
     };
 
-    const del = async (queryObj:NetworkQuery|string, extraHeaders:Record<string,string> = {}) =>
+    const del = async (queryObj:NetworkQuery|string, extraHeaders:Record<string,string> = {}, extraAxiosOptions: AxiosRequestConfig = {}) =>
     {
         const url = typeof queryObj === 'string' ? queryObj : `${queryObj.url}?${new URLSearchParams(queryObj.query).toString()}`;
         const config = { headers: { ...extraHeaders } };
         if (shouldIncludeAuthHeaders) config.headers["Authorization"] = getCookie("jwt");
-        return axios.delete(url, config);
+        return axios.delete(url, { ...config, ...extraAxiosOptions });
     };
 
-    const post = async (queryObj:NetworkQuery|string, extraHeaders:Record<string,string> = {}) =>
+    const post = async (queryObj:NetworkQuery|string, extraHeaders:Record<string,string> = {}, extraAxiosOptions: AxiosRequestConfig = {}) =>
     {
         const body = typeof queryObj === 'string' ? queryObj : queryObj.body;
         const url = typeof queryObj === 'string' ? queryObj : `${queryObj.url}?${new URLSearchParams(queryObj.query).toString()}`;
         const config = { headers: { ...extraHeaders } };
         if (shouldIncludeAuthHeaders) config.headers["Authorization"] = getCookie("jwt");
-        return axios.post(url, body, config);
+        return axios.post(url, body, { ...config, ...extraAxiosOptions });
     };
 
-    const put = async (queryObj:NetworkQuery|string, extraHeaders:Record<string,string> = {}) =>
+    const put = async (queryObj:NetworkQuery|string, extraHeaders:Record<string,string> = {}, extraAxiosOptions: AxiosRequestConfig = {}) =>
     {
         const body = typeof queryObj === 'string' ? queryObj : queryObj.body;
         const url = typeof queryObj === 'string' ? queryObj : `${queryObj.url}?${new URLSearchParams(queryObj.query).toString()}`;
         const config = { headers: { ...extraHeaders } };
         if (shouldIncludeAuthHeaders) config.headers["Authorization"] = getCookie("jwt");
-        return axios.put(url, body, config);
+        return axios.put(url, body, { ...config, ...extraAxiosOptions });
     };
 
-    const patch = async (queryObj:NetworkQuery|string, extraHeaders:Record<string,string> = {}) =>
+    const patch = async (queryObj:NetworkQuery|string, extraHeaders:Record<string,string> = {}, extraAxiosOptions: AxiosRequestConfig = {}) =>
     {
         const body = typeof queryObj === 'string' ? queryObj : queryObj.body;
         const url = typeof queryObj === 'string' ? queryObj : `${queryObj.url}?${new URLSearchParams(queryObj.query).toString()}`;
         const config = { headers: { ...extraHeaders } };
         if (shouldIncludeAuthHeaders) config.headers["Authorization"] = getCookie("jwt");
-        return axios.patch(url, body, config);
+        return axios.patch(url, body, { ...config, ...extraAxiosOptions });
     };
 
     const updateData: () => Promise<undefined|T> = async () =>
@@ -122,12 +126,24 @@ export function useNetworkRequest<T>
                 else if (queryMethod === 'POST') return post;
                 else return put;
             })();
-            let response = await methodToUse(toValue(queryObjInner.value), (() =>
-            {
-                const inner = toValue(queryObjInner.value);
-                if (typeof inner === 'string') return {};
-                else return inner.headers ?? {};
-            })());
+            let response = await methodToUse
+            (
+                toValue(queryObjInner.value),
+                (() =>
+                {
+                    const inner = toValue(queryObjInner.value);
+                    if (typeof inner === 'string') return {};
+                    else return inner.headers ?? {};
+                })(),
+                (() =>
+                {
+                    const inner = toValue(queryObjInner.value);
+                    if (typeof inner === 'string') return {};
+                    else return inner.axiosOptions ?? {};
+                })(),
+            );
+
+            lastAxiosResponse.value = response;
             lastAxiosStatusCode.value = response.status;
             lastSuccessfulData.value = response.data;
             await Promise.resolve<T>(lastSuccessfulData.value as T);
@@ -162,6 +178,7 @@ export function useNetworkRequest<T>
         updateData,
         resetAuth,
         setQueryObj: (query: NetworkQuery|string) => queryObjInner.value = query,
-        queryObj: readonly(queryObjInner)
+        queryObj: readonly(queryObjInner),
+        lastAxiosResponse
     }
 }

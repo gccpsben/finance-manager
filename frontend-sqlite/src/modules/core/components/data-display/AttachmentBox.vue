@@ -1,6 +1,6 @@
 <template>
     <div class="attachmentBoxRoot" :class="{'selected': selected}">
-        <OverlapArea class="fullSize">
+        <OverlapArea class="fullSize" @click="download">
             <div class="fullSize">
                 <SelectionMark v-if="selected"/>
             </div>
@@ -37,10 +37,12 @@ import { computed } from 'vue';
 import AbsEnclosure from '../layout/AbsEnclosure.vue';
 import GaIcon from '../decorations/GaIcon.vue';
 import { useFileById } from '../../composables/useFileById';
-import { extractFileExtension } from '../../utils/files';
+import { downloadFileFromAxiosResponse, extractFileExtension } from '../../utils/files';
 import NetworkCircularIndicator from './NetworkCircularIndicator.vue';
 import OverlapArea from '../layout/OverlapArea.vue';
 import SelectionMark from '../decorations/SelectionMark.vue';
+import { API_FILES_DOWNLOAD_PATH } from '@/apiPaths';
+import { useNetworkRequest } from '../../composables/useNetworkRequest';
 
 export type AttachmentBoxPropsType =
 {
@@ -86,6 +88,27 @@ const chipColor = computed<{bg:string, fore: string}>(() =>
         default: return { bg: '#252525', fore: '#CCC' };
     }
 });
+
+async function download()
+{
+    const networkRequest = useNetworkRequest
+    (
+        {
+            url: API_FILES_DOWNLOAD_PATH,
+            query: {"id": props.fileId},
+            axiosOptions: { responseType: 'blob' }
+        },
+        {
+            autoResetOnUnauthorized: true,
+            includeAuthHeaders: true,
+            updateOnMount: false
+        }
+    );
+
+    await networkRequest.updateData();
+
+    downloadFileFromAxiosResponse(networkRequest.lastAxiosResponse.value!);
+}
 </script>
 
 <style lang="less" scoped>

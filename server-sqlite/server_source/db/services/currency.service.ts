@@ -266,7 +266,8 @@ export class CurrencyCalculator
 
         const dateToDatumTable = ServiceUtils.reverseMap(currencyRateDatums.map(x => ([`${x.date}`, x])));
 
-        return await LinearInterpolatorVirtual.fromEntries(
+        const output = await LinearInterpolatorVirtual.fromEntries
+        (
             currencyRateDatums,
             async d => new Decimal(d.date),
             async datumKey =>
@@ -295,6 +296,8 @@ export class CurrencyCalculator
                 return new Decimal(datum.amount).mul(currencyRateAtDate);
             }
         );
+
+        return output;
     }
 };
 

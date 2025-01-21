@@ -19,6 +19,14 @@ export class TypesafeRouter
             catch(e) { next(e); }
         });
     }
+    public custom<BodyType>(endpoint: string, config: TypesafeRouteConfig<BodyType>)
+    {
+        this._router.get(endpoint, async (req:express.Request, res:express.Response, next: NextFunction) =>
+        {
+            try { await config.handler(req, res) }
+            catch(e) { next(e); }
+        });
+    }
     public patch<BodyType>(endpoint: string, config: TypesafeRouteConfig<BodyType>)
     {
         this._router.patch(endpoint, async (req:express.Request, res:express.Response, next: NextFunction) =>

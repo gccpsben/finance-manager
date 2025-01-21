@@ -9,6 +9,7 @@ import { Database } from "../../db/db.js";
 import { FilesService } from "../../db/services/files.service.js";
 import { UserNotFoundError } from "../../db/services/user.service.js";
 import { AppendBytesCommitFileIOError, AppendBytesOutOfBoundError, AppendBytesSessionNotFoundError, AppendBytesUserMismatchError, AppendBytesWriteBufferIOError } from "../../io/fileReceiver.js";
+import path from "path";
 
 const router = new TypesafeRouter(express.Router());
 
@@ -113,6 +114,28 @@ router.postBinary<FilesAppendChunkAPI.ResponseDTO>(`/api/v1/files/append`,
             status: appendBytesResult.state,
             fileIdCreated: appendBytesResult.fileIdCreated
         };
+    }
+});
+
+router.custom<object>(`/api/v1/files/view`,
+{
+    handler: async (req, res) =>
+    {
+        const now = Date.now();
+        const authResult = await AccessTokenService.validateRequestTokenValidated(req, now);
+        if (authResult instanceof InvalidLoginTokenError) throw createHttpError(401);
+
+        class query { @IsString() id: string }
+        const parsedQuery = await ExpressValidations.validateBodyAgainstModel<query>(query, req.query);
+
+        const dbFiles = await Database.getFileRepository()!.getUserFiles(authResult.ownerUserId);
+        const dbFile = dbFiles.find(d => d.id === parsedQuery.id);
+        if (!dbFile || !Database.getFilesStoragePath()) throw createHttpError(404);
+
+        console.log(dbFile.fileNameReadable);
+        res.setHeader("Content-Disposition", `attachment; filename="${encodeURI(dbFile.fileNameReadable)}"`);
+        res.sendFile(path.join(Database.getFilesStoragePath()!, dbFile.id));
+        return {};
     }
 });
 
