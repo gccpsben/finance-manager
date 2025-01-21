@@ -7,7 +7,6 @@
             </div>
         </template>
         <div style="display: grid; grid-template-columns: 1fr; grid-auto-rows: auto; grid-auto-flow: row;">
-            {{ isTouchScreen }}
             <div class="dateLabel">Transaction at {{ formatDate(new Date(props.txn.creationDate)) }}</div>
             <div class="ageLabel">{{ dateAge }} ago</div>
             <div class="titleLabel">{{ props.txn.title }}</div>
