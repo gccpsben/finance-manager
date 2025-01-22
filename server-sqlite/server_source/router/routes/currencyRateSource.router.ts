@@ -67,12 +67,12 @@ router.patch<PatchCurrencyRateSrcAPI.ResponseDTO>(`/api/v1/currencyRateSources`,
     {
         class body implements PatchCurrencyRateSrcAPI.RequestDTO
         {
-            @IsString() id: string;
-            @IsString() refAmountCurrencyId: string;
-            @IsString() hostname: string;
-            @IsString() path: string;
-            @IsString() jsonQueryString: string;
-            @IsString() name: string;
+            @IsString() id!: string;
+            @IsString() refAmountCurrencyId!: string;
+            @IsString() hostname!: string;
+            @IsString() path!: string;
+            @IsString() jsonQueryString!: string;
+            @IsString() name!: string;
         }
 
         const now = Date.now();
@@ -129,12 +129,12 @@ router.post<PostCurrencyRateSrcAPI.ResponseDTO>(`/api/v1/currencyRateSources`,
     {
         class body implements PostCurrencyRateSrcAPI.RequestDTO
         {
-            @IsString() refCurrencyId: string;
-            @IsString() refAmountCurrencyId: string;
-            @IsString() hostname: string;
-            @IsString() path: string;
-            @IsString() jsonQueryString: string;
-            @IsString() name: string;
+            @IsString() refCurrencyId!: string;
+            @IsString() refAmountCurrencyId!: string;
+            @IsString() hostname!: string;
+            @IsString() path!: string;
+            @IsString() jsonQueryString!: string;
+            @IsString() name!: string;
         }
 
         const now = Date.now();

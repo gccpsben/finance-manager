@@ -35,7 +35,7 @@ export async function main(envFilePath: ['path', string | undefined] | ['rawCont
         {
             const envPath = envFilePath || process.argv[2] || ".env";
             const envReadResult = EnvManager.readEnv(envPath);
-            if (!!envReadResult) envReadResult.panic();
+            if (envReadResult) envReadResult.panic();
 
             if (EnvManager.currentEnvFilePath[0] === 'path')
             {
@@ -51,7 +51,7 @@ export async function main(envFilePath: ['path', string | undefined] | ['rawCont
         // Parse env file
         {
             const envParseResult = EnvManager.parseEnv();
-            if (!!envParseResult) envParseResult.panic();
+            if (envParseResult) envParseResult.panic();
 
             ExtendedLog.logGreen(`Successfully parsed env file.`, false, true); // Log will not be saved to file before env is successfully parsed
 

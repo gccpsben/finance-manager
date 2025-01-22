@@ -41,9 +41,10 @@ export class ExtendedLog
         fse.mkdirs(EnvManager.logsFolderPath);
         ExtendedLog.writeStream = createStream
         (
-            (time: Date, index: number) =>
+            (time: number | Date, index?: number) =>
             {
-                return path.join(EnvManager.logsFolderPath!, ExtendedLog.generateLogFileName(time, index));
+                const date = typeof time === 'number' ? new Date(time) : time;
+                return path.join(EnvManager.logsFolderPath!, ExtendedLog.generateLogFileName(date, index ?? 0));
             },
             {
                 interval: '1M'

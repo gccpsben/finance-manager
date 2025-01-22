@@ -21,8 +21,8 @@ router.get<GetTxnTagsAPI.ResponseDTO>(`/api/v1/transactionTags`,
 
         class query extends OptionalPaginationAPIQueryRequest
         {
-            @IsOptional() @IsString() id: string;
-            @IsOptional() @IsString() name: string;
+            @IsOptional() @IsString() id!: string;
+            @IsOptional() @IsString() name!: string;
         }
 
         const parsedQuery = await ExpressValidations.validateBodyAgainstModel<query>(query, req.query);
@@ -65,7 +65,7 @@ router.post<PostTxnTagsAPI.ResponseDTO>(`/api/v1/transactionTags`,
     {
         class body implements PostTxnTagsAPI.RequestDTO
         {
-            @IsString() @IsNotEmpty() name: string;
+            @IsString() @IsNotEmpty() name!: string;
         }
 
         const now = Date.now();

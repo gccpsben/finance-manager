@@ -105,9 +105,9 @@ export function minAndMax<T> (array: T[], getter: (obj:T) => number)
 export class MapReducer<K extends string | symbol, V>
 {
     public currentValue: Record<K, V>;
-    public reducer: (key: K, oldVal: V | undefined, newVal: V | undefined) => Promise<V> | V;
+    public reducer: (key: K, oldVal: V | undefined, newVal: V) => Promise<V> | V;
 
-    public constructor(initialValue: Record<K, V>, reducer: (key: K, oldVal: V | undefined, newVal: V) => Promise<V> | V)
+    public constructor(initialValue: Record<K, V>, reducer: (key: K, oldVal: V | undefined, newVal: V ) => Promise<V> | V)
     {
         this.currentValue = initialValue;
         this.reducer = reducer;
@@ -131,7 +131,7 @@ export class DecimalAdditionMapReducer<K extends string | symbol> extends MapRed
  * This method is for dev-only.
  * @devOnly
  */
-export async function safeWhile(maxTries:number, condition: () => boolean, callback: Function)
+export async function safeWhile(maxTries:number, condition: () => boolean, callback: CallableFunction)
 {
     for (let i = 0; i < maxTries; i++)
     {

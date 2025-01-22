@@ -17,10 +17,10 @@ import { CurrencyRateDatumsCache } from "../caches/currencyRateDatumsCache.cache
 export class InvalidNumberError extends MonadError<typeof InvalidNumberError.ERROR_SYMBOL>
 {
     static readonly ERROR_SYMBOL: unique symbol;
-    public valueGiven: string;
+    public valueGiven: unknown;
     public userId: string;
 
-    constructor(valueGiven: any, userId: string)
+    constructor(valueGiven: unknown, userId: string)
     {
         super(InvalidNumberError.ERROR_SYMBOL, `The given argument is ${valueGiven} (typeof ${typeof valueGiven}), which is not a valid number.`);
         this.name = this.constructor.name;

@@ -17,9 +17,9 @@ export namespace TransactionHelpers
         id?: string
     })
     {
-        const searchParams: Record<any,any> = {  };
-        if (config.start !== undefined && config.start !== null) searchParams['start'] = config.start;
-        if (config.end !== undefined && config.end !== null) searchParams['end'] = config.end;
+        const searchParams: Record<string,  string> = {  };
+        if (config.start !== undefined && config.start !== null) searchParams['start'] = `${config.start}`;
+        if (config.end !== undefined && config.end !== null) searchParams['end'] = `${config.end}`;
         if (config.id !== undefined && config.id !== null) searchParams['id'] = config.id;
 
         const assertBody = config.assertBody === undefined ? true : config.assertBody;
@@ -48,9 +48,9 @@ export namespace TransactionHelpers
         end?: number,
     })
     {
-        const searchParams: Record<any,any> = {  };
-        if (config.start !== undefined && config.start !== null) searchParams['start'] = config.start;
-        if (config.end !== undefined && config.end !== null) searchParams['end'] = config.end;
+        const searchParams: Record<string, string> = {  };
+        if (config.start !== undefined && config.start !== null) searchParams['start'] = `${config.start}`;
+        if (config.end !== undefined && config.end !== null) searchParams['end'] = `${config.end}`;
         if (config.query !== undefined && config.query !== null) searchParams['query'] = config.query;
 
         const assertBody = config.assertBody === undefined ? true : config.assertBody;
@@ -87,7 +87,7 @@ export namespace TransactionHelpers
                 headers: { "authorization": config.token },
             }
         );
-        return response as AssertFetchReturns<{}>;
+        return response as AssertFetchReturns<object>;
     }
 
     export async function postCreateTransaction(config:

@@ -36,7 +36,8 @@ export function areFunctionBindingsInAST(query: string)
     const flattenedTokens = flattenASTTokens(jsonata(query).ast());
     for (const token of flattenedTokens)
     {
-        // @ts-expect-error
+        // TODO: Check if type definitions are outdated.
+        // @ts-expect-error Seems like token.type can actually be other values. Maybe the type definitions of this package is not updated?
         if (token.type === 'bind' && token.rhs?.type === 'lambda')
             return true;
     }

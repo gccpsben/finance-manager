@@ -236,7 +236,13 @@ export class TransactionRepository extends MeteredRepository
                 if (await expression.evaluate(objToBeMatched) === true)
                     matchedResults.push(objToBeMatched);
             }
-            catch(e) { return new JSONQueryError(userId, `${e.message}`, query); }
+            catch(e: unknown)
+            {
+                if (e !== null && typeof e === 'object' && 'message' in e)
+                    return new JSONQueryError(userId, `${e['message']}`, query);
+
+                return new JSONQueryError(userId, `${e}`, query);
+            }
         }
 
         // Since delta is not calculated in the last loop, we need to calculate the delta of transactions that are sent to the clients.

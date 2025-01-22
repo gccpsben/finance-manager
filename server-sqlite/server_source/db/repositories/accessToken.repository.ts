@@ -64,17 +64,17 @@ export class AccessTokenRepository extends MeteredRepository
             if (userId === QUERY_IGNORE && tokenRaw !== QUERY_IGNORE)
             {
                 const target = cachedUserTokens.filter(x => x.tokenHashed === hashToken(tokenRaw));
-                if (!!target) return target;
+                if (target) return target;
             }
             else if (userId !== QUERY_IGNORE && tokenRaw === QUERY_IGNORE)
             {
                 const target = cachedUserTokens.filter(x => x.ownerId === userId);
-                if (!!target) return target;
+                if (target) return target;
             }
             else if (userId !== QUERY_IGNORE  && tokenRaw !== QUERY_IGNORE)
             {
                 const target = cachedUserTokens.filter(x => x.ownerId === userId && x.tokenHashed === hashToken(tokenRaw));
-                if (!!target) return target;
+                if (target) return target;
             }
         })();
 

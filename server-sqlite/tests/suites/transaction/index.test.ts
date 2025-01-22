@@ -100,7 +100,7 @@ export default async function(this: Context)
                 {
                     serverURL: serverURL,
                     body: { name: `TxnType1` },
-                    token: firstUser.token,
+                    ... firstUser.token === undefined ? {} : { token: firstUser.token },
                     assertBody: true
                 });
                 testContext.txnTagId1 = response.parsedBody.id;
@@ -113,7 +113,7 @@ export default async function(this: Context)
                 {
                     serverURL: serverURL,
                     body: { name: `TxnType2` },
-                    token: firstUser.token,
+                    ... firstUser.token === undefined ? {} : { token: firstUser.token },
                     assertBody: true
                 });
                 testContext.txnTagId2 = response.parsedBody.id;
@@ -146,9 +146,10 @@ export default async function(this: Context)
                         await TransactionHelpers.postCreateTransaction(
                         {
                             serverURL: serverURL,
-                            // @ts-expect-error
+
+                            // @ts-expect-error Type errors are expected since this is made to be intentionally incorrect for testing purposes.
                             body: { transactions: [ testCase.obj ] },
-                            token: firstUser.token,
+                            ... firstUser.token === undefined ? {} : { token: firstUser.token },
                             assertBody: false,
                             expectedCode: 400
                         });
@@ -161,7 +162,7 @@ export default async function(this: Context)
                     {
                         serverURL: serverURL,
                         body: { transactions: [ { ...baseObj, fragments: [] } ] },
-                        token: firstUser.token,
+                        ... firstUser.token === undefined ? {} : { token: firstUser.token },
                         assertBody: false,
                         expectedCode: 400
                     });
@@ -173,7 +174,7 @@ export default async function(this: Context)
                     {
                        serverURL: serverURL,
                        body: { transactions: [ { ...baseObj, description: undefined } ] },
-                       token: firstUser.token,
+                       ... firstUser.token === undefined ? {} : { token: firstUser.token },
                        assertBody: true,
                        expectedCode: 200
                     });
@@ -185,7 +186,7 @@ export default async function(this: Context)
                     {
                         serverURL: serverURL,
                         body: { transactions: [ { ...baseObj, creationDate: undefined } ] },
-                        token: firstUser.token,
+                        ... firstUser.token === undefined ? {} : { token: firstUser.token },
                         assertBody: true,
                         expectedCode: 200
                     });
@@ -196,7 +197,7 @@ export default async function(this: Context)
                     await TransactionHelpers.postCreateTransaction(
                     {
                         serverURL: serverURL, body: { transactions: [ baseObj ] },
-                        token: firstUser.token, assertBody: true, expectedCode: 200
+                        ... firstUser.token === undefined ? {} : { token: firstUser.token }, assertBody: true, expectedCode: 200
                     });
                 });
 
@@ -204,7 +205,7 @@ export default async function(this: Context)
                 {
                     const allTxnBeforeBatchPOST = await TransactionHelpers.getTransaction(
                     {
-                        serverURL: serverURL, token: firstUser.token,
+                        serverURL: serverURL, ... firstUser.token === undefined ? {} : { token: firstUser.token },
                         assertBody: true, expectedCode: 200,
                     });
 
@@ -226,12 +227,12 @@ export default async function(this: Context)
                                 }
                             ]
                         },
-                        token: firstUser.token, assertBody: true, expectedCode: 200
+                        ... firstUser.token === undefined ? {} : { token: firstUser.token }, assertBody: true, expectedCode: 200
                     });
 
                     const allTxnAfterBatchPOST = await TransactionHelpers.getTransaction(
                     {
-                        serverURL: serverURL, token: firstUser.token,
+                        serverURL: serverURL, ... firstUser.token === undefined ? {} : { token: firstUser.token },
                         assertBody: true, expectedCode: 200,
                     });
 
@@ -243,7 +244,7 @@ export default async function(this: Context)
                 {
                     const txnCountBeforeBatchPOST = (await TransactionHelpers.getTransaction(
                     {
-                        serverURL: serverURL, token: firstUser.token,
+                        serverURL: serverURL, ... firstUser.token === undefined ? {} : { token: firstUser.token },
                         assertBody: true, expectedCode: 200,
                     })).parsedBody.rangeItems.length;
 
@@ -254,7 +255,7 @@ export default async function(this: Context)
                         {
                             return async () => await TransactionHelpers.postCreateTransaction(
                             {
-                                serverURL: serverURL,token: firstUser.token, assertBody: false, expectedCode: 400,
+                                serverURL: serverURL,... firstUser.token === undefined ? {} : { token: firstUser.token }, assertBody: false, expectedCode: 400,
                                 body:
                                 {
                                     transactions:
@@ -263,7 +264,8 @@ export default async function(this: Context)
                                         baseObj,
                                         {
                                             ...baseObj,
-                                            // @ts-expect-error
+
+                                            // @ts-expect-error Type errors are expected since this is made to be intentionally incorrect for testing purposes.
                                             creationDate: "this value should fail validations"
                                         }
                                     ]
@@ -277,7 +279,7 @@ export default async function(this: Context)
                             {
                                 await TransactionHelpers.postCreateTransaction(
                                 {
-                                    serverURL: serverURL,token: firstUser.token, assertBody: false, expectedCode: 200,
+                                    serverURL: serverURL,... firstUser.token === undefined ? {} : { token: firstUser.token }, assertBody: false, expectedCode: 200,
                                     body: { transactions: [ baseObj, baseObj, ] }
                                 });
                             };
@@ -285,7 +287,7 @@ export default async function(this: Context)
 
                         const validRequestsGET = fillArray(burstCount, () =>
                         {
-                            return async () =>
+                            return () =>
                             {
                                 return new Promise<void>(resolve =>
                                 {
@@ -293,7 +295,7 @@ export default async function(this: Context)
                                     {
                                         await TransactionHelpers.getTransaction(
                                         {
-                                            serverURL: serverURL, token: firstUser.token,
+                                            serverURL: serverURL, ... firstUser.token === undefined ? {} : { token: firstUser.token },
                                             assertBody: true, expectedCode: 200,
                                         });
 
@@ -305,7 +307,7 @@ export default async function(this: Context)
 
                         const validRequestsGETQuery = fillArray(burstCount, () =>
                         {
-                            return async () =>
+                            return () =>
                             {
                                 return new Promise<void>(resolve =>
                                 {
@@ -313,7 +315,7 @@ export default async function(this: Context)
                                     {
                                         await TransactionHelpers.getTransactionJSONQuery(
                                         {
-                                            serverURL: serverURL, token: firstUser.token,
+                                            serverURL: serverURL, ... firstUser.token === undefined ? {} : { token: firstUser.token },
                                             assertBody: true, expectedCode: 200,
                                             query: "$DELTA<0 or $not($contains($TITLE_LOWER, 'dinner'))"
                                         });
@@ -329,7 +331,7 @@ export default async function(this: Context)
 
                     const txnCountAfterBatchPOST = (await TransactionHelpers.getTransaction(
                     {
-                        serverURL: serverURL, token: firstUser.token,
+                        serverURL: serverURL, ... firstUser.token === undefined ? {} : { token: firstUser.token },
                         assertBody: true, expectedCode: 200,
                     })).parsedBody.rangeItems.length;
 
@@ -364,7 +366,7 @@ export default async function(this: Context)
                     {
                         serverURL: serverURL,
                         body: { transactions: [ baseObj ] },
-                        token: firstUser.token,
+                        ... firstUser.token === undefined ? {} : { token: firstUser.token },
                         assertBody: true,
                         expectedCode: 200
                     });
@@ -378,7 +380,7 @@ export default async function(this: Context)
                     txnCreated = await TransactionHelpers.getTransaction(
                     {
                         serverURL: serverURL,
-                        token: firstUser.token,
+                        ... firstUser.token === undefined ? {} : { token: firstUser.token },
                         assertBody: true,
                         expectedCode: 200,
                         id: createdTxnId
@@ -396,7 +398,7 @@ export default async function(this: Context)
                     await TransactionHelpers.putTransaction(
                     {
                         serverURL: serverURL,
-                        token: firstUser.token,
+                        ... firstUser.token === undefined ? {} : { token: firstUser.token },
                         expectedCode: 200,
                         targetTxnId: createdTxnId,
                         body:
@@ -421,7 +423,7 @@ export default async function(this: Context)
                     const txnAfterMutated = await TransactionHelpers.getTransaction(
                     {
                         serverURL: serverURL,
-                        token: firstUser.token,
+                        ... firstUser.token === undefined ? {} : { token: firstUser.token },
                         assertBody: true,
                         expectedCode: 200,
                         id: createdTxnId
@@ -449,7 +451,7 @@ export default async function(this: Context)
                     const txns = await TransactionHelpers.getTransactionJSONQuery(
                     {
                         serverURL: serverURL,
-                        token: firstUser.token,
+                        ... firstUser.token === undefined ? {} : { token: firstUser.token },
                         assertBody: true,
                         expectedCode: 200,
                         query: `id = "${createdTxnId}"`
@@ -465,7 +467,7 @@ export default async function(this: Context)
                     const txns = await TransactionHelpers.getTransactionJSONQuery(
                     {
                         serverURL: serverURL,
-                        token: firstUser.token,
+                        ... firstUser.token === undefined ? {} : { token: firstUser.token },
                         assertBody: true,
                         expectedCode: 200,
                         query: `id = "${createdTxnId}" and 1 = 2`
@@ -479,7 +481,7 @@ export default async function(this: Context)
                     await TransactionHelpers.getTransactionJSONQuery(
                     {
                         serverURL: serverURL,
-                        token: firstUser.token,
+                        ... firstUser.token === undefined ? {} : { token: firstUser.token },
                         assertBody: false,
                         expectedCode: 400,
                         query: `
@@ -496,7 +498,7 @@ export default async function(this: Context)
                     const txns = await TransactionHelpers.getTransactionJSONQuery(
                     {
                         serverURL: serverURL,
-                        token: firstUser.token,
+                        ... firstUser.token === undefined ? {} : { token: firstUser.token },
                         assertBody: true,
                         expectedCode: 200,
                         query: `$DELTA=-171`
@@ -512,7 +514,7 @@ export default async function(this: Context)
                 {
                     await TransactionHelpers.deleteTransaction({
                         serverURL: serverURL,
-                        token: firstUser.token,
+                        ... firstUser.token === undefined ? {} : { token: firstUser.token },
                         expectedCode: 400,
                         txnId: undefined
                     });
@@ -522,7 +524,7 @@ export default async function(this: Context)
                 {
                     await TransactionHelpers.deleteTransaction({
                         serverURL: serverURL,
-                        token: firstUser.token,
+                        ... firstUser.token === undefined ? {} : { token: firstUser.token },
                         expectedCode: 404,
                         txnId: createdTxnId + "123"
                     });
@@ -532,7 +534,7 @@ export default async function(this: Context)
                 {
                     await TransactionHelpers.deleteTransaction({
                         serverURL: serverURL,
-                        token: firstUser.token,
+                        ... firstUser.token === undefined ? {} : { token: firstUser.token },
                         expectedCode: 200,
                         txnId: createdTxnId
                     });
@@ -540,7 +542,7 @@ export default async function(this: Context)
                     const response = await TransactionHelpers.getTransaction(
                     {
                         serverURL: serverURL,
-                        token: firstUser.token,
+                        ... firstUser.token === undefined ? {} : { token: firstUser.token },
                         assertBody: true,
                         expectedCode: 200,
                         id: createdTxnId

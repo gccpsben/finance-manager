@@ -333,13 +333,13 @@ export class CurrencyService
         // Check for repeated currency name.
         {
             const currencyWithName = await cRepo.findCurrencyByIdNameTickerOne(userId,QUERY_IGNORE,name,QUERY_IGNORE,currencyCache);
-            if (!!currencyWithName) return new CurrencyNameTakenError(name, userId);
+            if (currencyWithName !== null) return new CurrencyNameTakenError(name, userId);
         }
 
         // Check for repeated ticker
         {
             const currencyWithTicker = await cRepo.findCurrencyByIdNameTickerOne(userId, QUERY_IGNORE, QUERY_IGNORE, ticker,currencyCache);
-            if (!!currencyWithTicker) return new CurrencyTickerTakenError(ticker, userId);
+            if (currencyWithTicker !== null) return new CurrencyTickerTakenError(ticker, userId);
         }
 
         if ((amount !== undefined && refCurrencyId === undefined) || (amount === undefined && refCurrencyId !== undefined))

@@ -31,27 +31,27 @@ router.post<PostTxnAPI.ResponseDTO>("/api/v1/transactions",
         {
             class fragmentItem implements PostTxnAPI.FragmentDTO
             {
-                @IsOptional() @IsDecimalJSString() fromAmount: string | null;
-                @IsOptional() @IsString() fromCurrency: string | null;
-                @IsOptional() @IsString() fromContainer: string | null;
-                @IsOptional() @IsDecimalJSString() toAmount: string | null;
-                @IsOptional() @IsString() toCurrency: string | null;
-                @IsOptional() @IsString() toContainer: string | null;
+                @IsOptional() @IsDecimalJSString() fromAmount!: string | null;
+                @IsOptional() @IsString() fromCurrency!: string | null;
+                @IsOptional() @IsString() fromContainer!: string | null;
+                @IsOptional() @IsDecimalJSString() toAmount!: string | null;
+                @IsOptional() @IsString() toCurrency!: string | null;
+                @IsOptional() @IsString() toContainer!: string | null;
             }
 
             class bodyItem implements PostTxnAPI.RequestItemDTO
             {
-                @IsString() @IsNotEmpty() title: string;
+                @IsString() @IsNotEmpty() title!: string;
                 @IsOptional() @IsUTCDateInt() creationDate?: number | undefined;
                 @IsOptional() @IsString() description?: string | undefined;
-                @IsArray() @IsNotEmpty() tagIds: string[];
-                @IsArray() @IsNotEmpty() fileIds: string[];
-                @IsNotEmpty() @IsBoolean() excludedFromIncomesExpenses: boolean;
+                @IsArray() @IsNotEmpty() tagIds!: string[];
+                @IsArray() @IsNotEmpty() fileIds!: string[];
+                @IsNotEmpty() @IsBoolean() excludedFromIncomesExpenses!: boolean;
 
                 @IsArray()
                 @ValidateNested({ each: true })
                 @Type(() => fragmentItem)
-                fragments: PostTxnAPI.FragmentDTO[];
+                fragments!: PostTxnAPI.FragmentDTO[];
             }
 
             class body implements PostTxnAPI.RequestDTO
@@ -59,7 +59,7 @@ router.post<PostTxnAPI.ResponseDTO>("/api/v1/transactions",
                 @IsArray()
                 @ValidateNested({ each: true })
                 @Type(() => bodyItem)
-                transactions: bodyItem[];
+                transactions!: bodyItem[];
             }
 
             // Check for auth
@@ -125,12 +125,12 @@ router.put<PutTxnAPI.ResponseDTO>("/api/v1/transactions",
         {
             class fragmentItem implements PostTxnAPI.FragmentDTO
             {
-                @IsOptional() @IsDecimalJSString() fromAmount: string | null;
-                @IsOptional() @IsString() fromCurrency: string | null;
-                @IsOptional() @IsString() fromContainer: string | null;
-                @IsOptional() @IsDecimalJSString() toAmount: string | null;
-                @IsOptional() @IsString() toCurrency: string | null;
-                @IsOptional() @IsString() toContainer: string | null;
+                @IsOptional() @IsDecimalJSString() fromAmount!: string | null;
+                @IsOptional() @IsString() fromCurrency!: string | null;
+                @IsOptional() @IsString() fromContainer!: string | null;
+                @IsOptional() @IsDecimalJSString() toAmount!: string | null;
+                @IsOptional() @IsString() toCurrency!: string | null;
+                @IsOptional() @IsString() toContainer!: string | null;
             }
 
             class body implements PutTxnAPI.RequestBodyDTO
@@ -138,19 +138,19 @@ router.put<PutTxnAPI.ResponseDTO>("/api/v1/transactions",
                 @IsArray()
                 @ValidateNested({ each: true })
                 @Type(() => fragmentItem)
-                fragments: PutTxnAPI.FragmentDTO[];
+                fragments!: PutTxnAPI.FragmentDTO[];
 
-                @IsString() @IsNotEmpty() title: string;
+                @IsString() @IsNotEmpty() title!: string;
                 @IsOptional() @IsUTCDateInt() creationDate?: number | undefined;
                 @IsOptional() @IsString() description?: string | undefined;
-                @IsArray() @IsNotEmpty() tagIds: string[];
-                @IsArray() @IsNotEmpty() fileIds: string[];
-                @IsNotEmpty() @IsBoolean() excludedFromIncomesExpenses: boolean;
+                @IsArray() @IsNotEmpty() tagIds!: string[];
+                @IsArray() @IsNotEmpty() fileIds!: string[];
+                @IsNotEmpty() @IsBoolean() excludedFromIncomesExpenses!: boolean;
             }
 
             class query implements PutTxnAPI.RequestQueryDTO
             {
-                @IsString() @IsNotEmpty() targetTxnId: string;
+                @IsString() @IsNotEmpty() targetTxnId!: string;
             }
 
             const now = Date.now();
@@ -205,7 +205,7 @@ router.get<GetTxnAPI.ResponseDTO>(`/api/v1/transactions/json-query`,
     {
         class query implements GetTxnJsonQueryAPI.QueryDTO
         {
-            @IsNotEmpty() @IsString() query: string;
+            @IsNotEmpty() @IsString() query!: string;
             @IsOptional() @IsIntString() startIndex: string | undefined;
             @IsOptional() @IsIntString() endIndex: string | undefined;
         }
@@ -300,8 +300,8 @@ router.get<GetTxnAPI.ResponseDTO>(`/api/v1/transactions`,
     {
         class query extends OptionalPaginationAPIQueryRequest
         {
-            @IsOptional() @IsString() title: string;
-            @IsOptional() @IsString() id: string;
+            @IsOptional() @IsString() title!: string;
+            @IsOptional() @IsString() id!: string;
             @IsOptional() @IsIntString() startDate?: string | undefined;
             @IsOptional() @IsIntString() endDate?: string | undefined;
         }
@@ -408,7 +408,7 @@ router.delete<DeleteTxnAPI.ResponseDTO>(`/api/v1/transactions`,
         {
             class query implements DeleteTxnAPI.RequestQueryDTO
             {
-                @IsNotEmpty() @IsString() id: string;
+                @IsNotEmpty() @IsString() id!: string;
             }
 
             const now = Date.now();

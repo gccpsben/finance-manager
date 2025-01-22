@@ -14,8 +14,8 @@ router.post<PostUserAPI.ResponseDTO>(`/api/v1/users`,
     {
         class body implements PostUserAPI.RequestDTO
         {
-            @IsString() @IsNotEmpty() username: string;
-            @IsString() @IsNotEmpty() password: string;
+            @IsString() @IsNotEmpty() username!: string;
+            @IsString() @IsNotEmpty() password!: string;
         };
 
         await ExpressValidations.validateBodyAgainstModel<body>(body, req.body);
@@ -32,7 +32,7 @@ router.delete<DeleteUserAPI.ResponseDTO>("/api/v1/users",
     {
         class body implements DeleteUserAPI.RequestDTO
         {
-            @IsNotEmpty() @IsString() userId: string;
+            @IsNotEmpty() @IsString() userId!: string;
         }
 
         const parsedBody = await ExpressValidations.validateBodyAgainstModel<body>(body, req.body);

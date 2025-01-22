@@ -29,10 +29,10 @@ router.post<PostCurrencyAPI.ResponseDTO>(`/api/v1/currencies`,
 
         class body implements PostCurrencyAPI.RequestDTO
         {
-            @IsString() name: string;
-            @IsOptional() @IsString() @IsDecimalJSString() fallbackRateAmount: string | null;
-            @IsOptional() @IsString() fallbackRateCurrencyId: string | null;
-            @IsString() ticker: string;
+            @IsString() name!: string;
+            @IsOptional() @IsString() @IsDecimalJSString() fallbackRateAmount!: string | null;
+            @IsOptional() @IsString() fallbackRateCurrencyId!: string | null;
+            @IsString() ticker!: string;
         }
 
         const parsedBody = await ExpressValidations.validateBodyAgainstModel<body>(body, req.body);
@@ -66,10 +66,10 @@ router.get<GetCurrencyAPI.ResponseDTO>(`/api/v1/currencies`,
 
         class query extends OptionalPaginationAPIQueryRequest
         {
-            @IsOptional() @IsString() name: string;
-            @IsOptional() @IsString() id: string;
+            @IsOptional() @IsString() name!: string;
+            @IsOptional() @IsString() id!: string;
             /** Which date should the rate of this currency be calculated against */
-            @IsOptional() @IsNumberString() date: string;
+            @IsOptional() @IsNumberString() date!: string;
         }
 
         const parsedQuery = await ExpressValidations.validateBodyAgainstModel<query>(query, req.query);
@@ -140,8 +140,8 @@ router.get<GetCurrencyRateHistoryAPI.ResponseDTO>(`/api/v1/currencies/history`,
 
         class query implements GetCurrencyRateHistoryAPI.RequestQueryDTO
         {
-            @IsString() id: string;
-            @IsOptional() @IsIntString() division: string;
+            @IsString() id!: string;
+            @IsOptional() @IsIntString() division!: string;
             @IsOptional() @IsIntString() startDate?: string;
             @IsOptional() @IsIntString() endDate?: string;
         }

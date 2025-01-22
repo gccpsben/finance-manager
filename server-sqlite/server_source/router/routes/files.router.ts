@@ -67,8 +67,8 @@ router.post<FilesInitSessionAPI.ResponseDTO>("/api/v1/files/init",
 
         class body implements FilesInitSessionAPI.RequestDTO
         {
-            @IsString() @IsNotEmpty() readableName: string;
-            @IsInt() @IsNotEmpty() totalBytes: number;
+            @IsString() @IsNotEmpty() readableName!: string;
+            @IsInt() @IsNotEmpty() totalBytes!: number;
         };
 
         const parsedBody = await ExpressValidations.validateBodyAgainstModel<body>(body, req.body);
@@ -93,7 +93,7 @@ router.postBinary<FilesAppendChunkAPI.ResponseDTO>(`/api/v1/files/append`,
         const authResult = await AccessTokenService.validateRequestTokenValidated(req, now);
         if (authResult instanceof InvalidLoginTokenError) throw createHttpError(401);
 
-        class query implements FilesAppendChunkAPI.QueryDTO { @IsString() sessionId: string }
+        class query implements FilesAppendChunkAPI.QueryDTO { @IsString() sessionId!: string }
         const parsedQuery = await ExpressValidations.validateBodyAgainstModel<query>(query, req.query);
 
         const appendBytesResult = await FilesService.appendBytes(
@@ -126,7 +126,7 @@ router.custom<object>(`/api/v1/files/view`,
         const authResult = await AccessTokenService.validateRequestTokenValidated(req, now);
         if (authResult instanceof InvalidLoginTokenError) throw createHttpError(401);
 
-        class query { @IsString() id: string }
+        class query { @IsString() id!: string }
         const parsedQuery = await ExpressValidations.validateBodyAgainstModel<query>(query, req.query);
 
         const dbFiles = await Database.getFileRepository()!.getUserFiles(authResult.ownerUserId);
@@ -148,7 +148,7 @@ router.get<GetServerFilesByIdAPI.ResponseDTO>(`/api/v1/files/id`,
         const authResult = await AccessTokenService.validateRequestTokenValidated(req, now);
         if (authResult instanceof InvalidLoginTokenError) throw createHttpError(401);
 
-        class query implements GetServerFilesByIdAPI.QueryDTO { @IsString() id: string }
+        class query implements GetServerFilesByIdAPI.QueryDTO { @IsString() id!: string }
         const parsedQuery = await ExpressValidations.validateBodyAgainstModel<query>(query, req.query);
         console.log(parsedQuery.id);
 

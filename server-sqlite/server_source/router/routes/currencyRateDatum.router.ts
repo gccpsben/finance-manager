@@ -23,10 +23,10 @@ router.post<PostCurrencyRateAPI.ResponseDTO>(`/api/v1/currencyRateDatums`,
     {
         class bodyItem implements PostCurrencyRateAPI.RequestItemDTO
         {
-            @IsDecimalJSString() amount: string;
-            @IsString() refCurrencyId: string;
-            @IsString() refAmountCurrencyId: string;
-            @IsUTCDateInt() date: number;
+            @IsDecimalJSString() amount!: string;
+            @IsString() refCurrencyId!: string;
+            @IsString() refAmountCurrencyId!: string;
+            @IsUTCDateInt() date!: number;
         }
 
         class body implements PostCurrencyRateAPI.RequestDTO
@@ -34,7 +34,7 @@ router.post<PostCurrencyRateAPI.ResponseDTO>(`/api/v1/currencyRateDatums`,
             @IsArray()
             @ValidateNested({ each: true })
             @Type(() => bodyItem)
-            datums: bodyItem[];
+            datums!: bodyItem[];
         }
 
         const now = Date.now();

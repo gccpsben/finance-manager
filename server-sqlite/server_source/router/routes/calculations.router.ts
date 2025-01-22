@@ -28,8 +28,8 @@ router.get<GetExpensesAndIncomesAPI.ResponseDTO>("/api/v1/calculations/expensesA
 
         class query implements GetExpensesAndIncomesAPI.RequestQueryDTO
         {
-            @IsNotEmpty() @IsUTCDateIntString() currentMonthStartEpoch: string;
-            @IsNotEmpty() @IsUTCDateIntString() currentWeekStartEpoch: string;
+            @IsNotEmpty() @IsUTCDateIntString() currentMonthStartEpoch!: string;
+            @IsNotEmpty() @IsUTCDateIntString() currentWeekStartEpoch!: string;
         }
         const parsedQuery = await ExpressValidations.validateBodyAgainstModel<query>(query, req.query);
 
@@ -161,10 +161,8 @@ router.get<GetUserBalanceHistoryAPI.ResponseDTO>(`/api/v1/calculations/balanceHi
 
         return (() =>
         {
-            const outputMap = {};
+            const outputMap: {[key: string]: {[key: string]: string}} = {};
             for (const epoch of Object.keys(calResults.historyMap))
-                // TODO: Fix this TS type error
-                // @ts-expect-error
                 outputMap[epoch] = mapObjectValues(calResults.historyMap[epoch], decimal => decimal.toString());
             return {
                 map: outputMap

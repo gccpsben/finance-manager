@@ -37,7 +37,7 @@ router.get<GetContainerAPI.ResponseDTO>(`/api/v1/containers`,
             @IsOptional() @IsString() name: string | undefined;
 
             /** If this is set, the value of each container will use the rate of each currency's rate at the given date. This defaults to now. */
-            @IsOptional() @IsUTCDateIntString() currencyRateDate: string;
+            @IsOptional() @IsUTCDateIntString() currencyRateDate!: string;
         }
 
         const parsedQuery = await ExpressValidations.validateBodyAgainstModel<query>(query, req.query);
@@ -102,7 +102,7 @@ router.post<PostContainerAPI.ResponseDTO>(`/api/v1/containers`,
         const authResult = await AccessTokenService.validateRequestTokenValidated(req, now);
         if (authResult instanceof InvalidLoginTokenError) throw createHttpError(401);
 
-        class body implements PostContainerAPI.RequestDTO { @IsString() name: string; }
+        class body implements PostContainerAPI.RequestDTO { @IsString() name!: string; }
 
         const parsedBody = await ExpressValidations.validateBodyAgainstModel<body>(body, req.body);
         const containerCreated = await ContainerService.createContainer(authResult.ownerUserId, parsedBody.name);
@@ -123,7 +123,7 @@ router.get<GetContainerTimelineAPI.ResponseDTO>(`/api/v1/containers/timeline`,
 
         class query implements GetContainerTimelineAPI.RequestQueryDTO
         {
-            @IsNotEmpty() @IsString() containerId: string;
+            @IsNotEmpty() @IsString() containerId!: string;
             @IsOptional() @IsIntString() division?: string | undefined;
             @IsOptional() @IsIntString() endDate?: string | undefined;
             @IsOptional() @IsIntString() startDate?: string | undefined;

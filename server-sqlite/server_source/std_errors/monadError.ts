@@ -86,6 +86,7 @@ export interface NestableError
 
 export function isNestableError(target: object): target is NestableError
 {
+    // @ts-expect-error NestableErrorSymbol should be present in target to be nestable
     if (target[NestableErrorSymbol]) return true;
     return false;
 }

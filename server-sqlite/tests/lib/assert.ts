@@ -38,21 +38,21 @@ export async function assert(fn: () => Promise<boolean>)
         throw new UnitTestAssertion(`Assertion failed (returned false).`);
 }
 
-export function assertEqual(actualValue: any, expectedValue: any, msg?: string)
+export function assertEqual(actualValue: unknown, expectedValue: unknown, msg?: string)
 {
     if (actualValue == expectedValue) return;
     const extraMsg = msg === undefined ? `` : `, (${msg})`;
     throw new UnitTestAssertion(`Expected ${expectedValue} but got ${actualValue}${extraMsg}`);
 }
 
-export function assertStrictEqual(actualValue: any, expectedValue: any, msg?: string)
+export function assertStrictEqual(actualValue: unknown, expectedValue: unknown, msg?: string)
 {
     if (actualValue === expectedValue) return;
     const extraMsg = msg === undefined ? `` : `, (${msg})`;
     throw new UnitTestAssertion(`Expected strictly ${expectedValue} (typeof ${typeof expectedValue}) but got ${actualValue} (typeof ${typeof expectedValue})${extraMsg}`);
 }
 
-export function assertJSONEqual(actualValue: any, expectedValue: any, msg?: string)
+export function assertJSONEqual(actualValue: unknown, expectedValue: unknown, msg?: string)
 {
     if (JSON.stringify(actualValue) === JSON.stringify(expectedValue)) return;
     const extraMsg = msg === undefined ? `` : `, (${msg})`;
@@ -88,7 +88,7 @@ export type AssertFetchConfig<ExpectedBodyType extends object> =
     expectedStatus?: number;
     init?: RequestInit;
     method?: string;
-    body?: ReadableStream<Uint8Array> | string | Object | null;
+    body?: ReadableStream<Uint8Array> | string | object | null;
     baseURL?: string;
     headers?: Record<string, string> | undefined;
     expectedBodyType?: ClassConstructor<ExpectedBodyType> | undefined;
@@ -98,7 +98,7 @@ export type AssertFetchReturns<ExpectedBodyType extends object> =
 {
     res: Response;
     parsedBody?: ExpectedBodyType | undefined;
-    rawBody: any;
+    rawBody: unknown;
 }
 
 export class HTTPAssert
@@ -109,7 +109,7 @@ export class HTTPAssert
             throw new UnitTestAssertion(`Expected response from ${response.url} to have status ${status} but got ${response.status}`);
     }
 
-    public static async assertFetch<ExpectedBodyType extends Object>
+    public static async assertFetch<ExpectedBodyType extends object>
     (
         input: string | URL | globalThis.Request,
         config: AssertFetchConfig<ExpectedBodyType>

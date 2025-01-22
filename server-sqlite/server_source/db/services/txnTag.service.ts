@@ -13,10 +13,11 @@ export class TxnTagNotFoundError extends MonadError<typeof TxnTagNotFoundError.E
 
     constructor(txnTagNameOrId: { id: string, name?: never } | { name: string, id?: never }, userId: string)
     {
-        if ("id" in txnTagNameOrId)
-            super(TxnTagNotFoundError.ERROR_SYMBOL, `Cannot find the given txn tag with id = ${txnTagNameOrId.id}`);
-        else
-            super(TxnTagNotFoundError.ERROR_SYMBOL, `Cannot find the given txn tag with name = ${(txnTagNameOrId as {name: string}).name}`);
+        super(
+            TxnTagNotFoundError.ERROR_SYMBOL,
+            "id" in txnTagNameOrId ? `Cannot find the given txn tag with id = ${txnTagNameOrId.id}`
+                                   : `Cannot find the given txn tag with name = ${(txnTagNameOrId as {name: string}).name}`
+        );
 
         this.name = this.constructor.name;
         this.txnTagNameOrId = txnTagNameOrId;
@@ -116,7 +117,7 @@ export class TxnTagService
         .where(`type.${nameofTT('name')} = :name AND type.${nameofTT('ownerId')} = :ownerId`, { name: name, ownerId: ownerId })
         .getOne();
 
-        if (!!result) return { found: true as const, obj: result }
+        if (result) return { found: true as const, obj: result }
         else return { found: false as const, obj: null }
     }
 }

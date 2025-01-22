@@ -133,14 +133,11 @@ export type FileReceiverSession =
  */
 export class FileReceiver
 {
-    evictionTimer: NodeJS.Timeout;
+    evictionTimer: number;
     sessions: { [sessionId: string]: FileReceiverSession } = {};
     #options: FileReceiverOptions;
     readFile: typeof fs.readFile;
     writeFile: typeof fs.writeFile;
-    createReadStream: typeof fs.createReadStream;
-    createWriteStream: typeof fs.createWriteStream;
-    openPromise: typeof fs.promises.open;
 
     public constructor(options: FileReceiverOptions)
     {
@@ -210,7 +207,7 @@ export class FileReceiver
             {
                 session.writeStream.write(bytes, err =>
                 {
-                    if (!!err) { ioErr = err; reject(); }
+                    if (err) { ioErr = err; reject(); }
                     else resolve();
                 });
             });
