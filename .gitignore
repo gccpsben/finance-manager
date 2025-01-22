@@ -14,12 +14,14 @@
 /server-sqlite/dev
 /server-sqlite/*.db
 /server-sqlite/server_ut-build
+/server-sqlite/data/*
 /dist
 /dist/*
 .vscode
 *.env
 !.template.env
 *.ignore
+/server-sqlite/coverage
 
 # used for unit test
 !server/test.env
