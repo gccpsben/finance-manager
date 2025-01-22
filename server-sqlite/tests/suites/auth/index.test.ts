@@ -47,7 +47,7 @@ export default async function(this: Context)
                             expectedBodyType: PostUserAPIClass.ResponseDTO
                         }
                     );
-                    firstUserID = response.parsedBody.userid;
+                    _firstUserID = response.parsedBody.userid;
                 });
             });
         });

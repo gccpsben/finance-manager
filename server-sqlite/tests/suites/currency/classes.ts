@@ -1,4 +1,4 @@
-import { IsString, IsBoolean, IsOptional, IsNumber, IsArray, ValidateNested } from "class-validator";
+import { IsString, IsBoolean, IsOptional, IsNumber, IsArray, ValidateNested, IsPositive } from "class-validator";
 import { IsDecimalJSString } from "../../../server_source/db/validators.ts";
 import { CurrencyDTO, PostCurrencyAPI, GetCurrencyAPI, GetCurrencyRateHistoryAPI } from "../../../../api-types/currencies.d.ts";
 import { PostCurrencyRateAPI } from "../../../../api-types/currencyRateDatum.d.ts";
@@ -80,14 +80,14 @@ export namespace GetCurrencyRatesHistoryAPIClass
     export class RequestQueryDTO implements GetCurrencyRateHistoryAPI.RequestQueryDTO
     {
         @IsString() id: string;
-        @IsOptional() @IsDecimalJSString() startDate?: string;
-        @IsOptional() @IsDecimalJSString() endDate?: string;
+        @IsOptional() @IsPositive() startDate?: string;
+        @IsOptional() @IsPositive() endDate?: string;
     }
 
     export class ResponseDTO implements GetCurrencyRateHistoryAPI.ResponseDTO
     {
-        @IsOptional() @IsDecimalJSString() startDate: number;
-        @IsOptional() @IsDecimalJSString() endDate: number;
+        @IsOptional() @IsPositive() startDate: number;
+        @IsOptional() @IsPositive() endDate: number;
         @IsBoolean() historyAvailable: boolean;
 
         @IsArray()
