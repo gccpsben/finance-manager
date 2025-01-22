@@ -1,3 +1,4 @@
+// deno-lint-ignore-file no-namespace
 import { IsString } from "class-validator";
 import { PostUserAPI } from "../../../../api-types/user.d.ts";
 import { PostLoginAPI } from "../../../../api-types/auth.d.ts";

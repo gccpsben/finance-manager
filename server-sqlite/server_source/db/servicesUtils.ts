@@ -2,102 +2,99 @@ import { Decimal } from "decimal.js";
 import { ObjectLiteral, SelectQueryBuilder } from "typeorm";
 
 export const nameof = <T>(name: Extract<keyof T, string>): string => name;
-export namespace ServiceUtils
+export function paginateQuery<T extends ObjectLiteral>
+(
+    dbQuery: SelectQueryBuilder<T>,
+    query:
+    {
+        startIndex?: number | undefined,
+        endIndex?: number | undefined
+    } | undefined
+)
 {
-    export function paginateQuery<T extends ObjectLiteral>
-    (
-        dbQuery: SelectQueryBuilder<T>,
-        query:
-        {
-            startIndex?: number | undefined,
-            endIndex?: number | undefined
-        } | undefined
-    )
+    if (query?.startIndex !== undefined && query?.endIndex !== undefined)
     {
-        if (query?.startIndex !== undefined && query?.endIndex !== undefined)
+        dbQuery = dbQuery
+        .limit(query.endIndex - query.startIndex)
+        .offset(query.startIndex);
+    }
+    else if (query?.startIndex !== undefined && query?.endIndex === undefined)
+    {
+        dbQuery = dbQuery.skip(query.startIndex);
+    }
+    else if (query?.startIndex === undefined && query?.endIndex !== undefined)
+    {
+        dbQuery = dbQuery.limit(query.startIndex);
+    }
+    return dbQuery;
+}
+
+export function normalizeEntitiesToIds<T extends {[P in IdKey]: string}, IdKey extends keyof T>
+(
+    array: T[] | string[],
+    key: IdKey
+): string[]
+{
+    if (array.every(i => typeof i === "string")) return array;
+    else return array.map(x => x[key]);
+}
+
+/**
+ * Given a dictionary, transform each value using a mapper.
+ */
+export function mapObjectValues<T, R>(dict: { [ key: string ] : T}, mapper: (arg : T) => R)
+{
+    const output: { [key: string]: R } = {};
+    for (const [key, value] of Object.entries(dict))
+        output[key] = mapper(value);
+    return output;
+}
+
+/**
+ * Construct a dictionary from a list of entries.
+ */
+export function reverseMap<T>(entries: [string, T][])
+{
+    const output: {[key: string]: T} = {};
+    for (const entry of entries)
+        output[entry[0]] = entry[1];
+    return output;
+}
+
+export function ensureEntityOwnership(entity: { ownerId: string }[] | { ownerId: string }, expectedOwnerId: string)
+{
+    const entities = Array.isArray(entity) ? entity : [entity];
+    for (const entity of entities)
+    {
+        if (entity.ownerId !== expectedOwnerId)
+            throw new Error("Owner mismatch.");
+    }
+}
+
+export function minAndMax<T> (array: T[], getter: (obj:T) => number)
+{
+    let lowest = Number.POSITIVE_INFINITY;
+    let highest = Number.NEGATIVE_INFINITY;
+    let lowestObj: T | undefined = undefined;
+    let highestObj: T | undefined = undefined;
+    const arrayLength = array.length;
+    for (let i = 0; i < arrayLength; i++)
+    {
+        const obj = array[i];
+        const objValue = getter(obj);
+
+        if (objValue >= highest)
         {
-            dbQuery = dbQuery
-            .limit(query.endIndex - query.startIndex)
-            .offset(query.startIndex);
+            highest = objValue;
+            highestObj = obj;
         }
-        else if (query?.startIndex !== undefined && query?.endIndex === undefined)
+        if (objValue <= lowest)
         {
-            dbQuery = dbQuery.skip(query.startIndex);
-        }
-        else if (query?.startIndex === undefined && query?.endIndex !== undefined)
-        {
-            dbQuery = dbQuery.limit(query.startIndex);
-        }
-        return dbQuery;
-    }
-
-    export function normalizeEntitiesToIds<T extends {[P in IdKey]: string}, IdKey extends keyof T>
-    (
-        array: T[] | string[],
-        key: IdKey
-    ): string[]
-    {
-        if (array.every(i => typeof i === "string")) return array;
-        else return array.map(x => x[key]);
-    }
-
-    /**
-     * Given a dictionary, transform each value using a mapper.
-     */
-    export function mapObjectValues<T, R>(dict: { [ key: string ] : T}, mapper: (arg : T) => R)
-    {
-        const output: { [key: string]: R } = {};
-        for (const [key, value] of Object.entries(dict))
-            output[key] = mapper(value);
-        return output;
-    }
-
-    /**
-     * Construct a dictionary from a list of entries.
-     */
-    export function reverseMap<T>(entries: [string, T][])
-    {
-        const output: {[key: string]: T} = {};
-        for (const entry of entries)
-            output[entry[0]] = entry[1];
-        return output;
-    }
-
-    export function ensureEntityOwnership(entity: { ownerId: string }[] | { ownerId: string }, expectedOwnerId: string)
-    {
-        const entities = Array.isArray(entity) ? entity : [entity];
-        for (const entity of entities)
-        {
-            if (entity.ownerId !== expectedOwnerId)
-                throw new Error("Owner mismatch.");
+            lowest = objValue;
+            lowestObj = obj;
         }
     }
-
-    export function minAndMax<T> (array: T[], getter: (obj:T) => number)
-    {
-        let lowest = Number.POSITIVE_INFINITY;
-        let highest = Number.NEGATIVE_INFINITY;
-        let lowestObj: T | undefined = undefined;
-        let highestObj: T | undefined = undefined;
-        const arrayLength = array.length;
-        for (let i = 0; i < arrayLength; i++)
-        {
-            const obj = array[i];
-            const objValue = getter(obj);
-
-            if (objValue >= highest)
-            {
-                highest = objValue;
-                highestObj = obj;
-            }
-            if (objValue <= lowest)
-            {
-                lowest = objValue;
-                lowestObj = obj;
-            }
-        }
-        return { minObj: lowestObj, maxObj: highestObj, min: lowest, max: highest }
-    }
+    return { minObj: lowestObj, maxObj: highestObj, min: lowest, max: highest }
 }
 
 /**

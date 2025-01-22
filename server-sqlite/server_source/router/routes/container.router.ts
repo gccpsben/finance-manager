@@ -7,7 +7,6 @@ import { TypesafeRouter } from '../typescriptRouter.ts';
 import type { GetContainerAPI, GetContainerTimelineAPI, PostContainerAPI } from '../../../../api-types/container.d.ts';
 import { OptionalPaginationAPIQueryRequest, PaginationAPIResponseClass } from '../pagination.ts';
 import { IsIntString, IsUTCDateIntString } from '../../db/validators.ts';
-import { ServiceUtils } from '../../db/servicesUtils.ts';
 import { Decimal } from 'decimal.js';
 import createHttpError from 'http-errors';
 import { unwrap } from '../../std_errors/monadError.ts';
@@ -20,6 +19,7 @@ import { GlobalCurrencyRateDatumsCache } from '../../db/caches/currencyRateDatum
 import { CalculationsService } from '../../db/services/calculations.service.ts';
 import { LinearStepper } from '../../calculations/linearStepper.ts';
 import { CurrencyService } from '../../db/services/currency.service.ts';
+import { mapObjectValues } from "../../db/servicesUtils.ts";
 
 const router = new TypesafeRouter(express.Router());
 
@@ -84,7 +84,7 @@ router.get<GetContainerAPI.ResponseDTO>(`/api/v1/containers`,
                 name: item.name,
                 owner: item.ownerId,
                 value: (containerValues.values[item.id] ?? new Decimal(`0`)).toString(),
-                balances: containerValues.balances[item.id] ? ServiceUtils.mapObjectValues
+                balances: containerValues.balances[item.id] ? mapObjectValues
                 (
                     containerValues.balances[item.id],
                     x => x.toString()
@@ -179,7 +179,7 @@ router.get<GetContainerTimelineAPI.ResponseDTO>(`/api/v1/containers/timeline`,
             )
 
             output.timeline[currentDivisionEpoch.toString()] = {
-                containerBalance: ServiceUtils.mapObjectValues(balanceAtDivisionEpoch, d => d.toString()),
+                containerBalance: mapObjectValues(balanceAtDivisionEpoch, d => d.toString()),
                 containerWorth: worthAtDivisionEpoch.totalWorth.toString()
             }
         }

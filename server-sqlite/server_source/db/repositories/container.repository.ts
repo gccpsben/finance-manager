@@ -2,8 +2,8 @@ import { DataSource, Repository } from "typeorm";
 import { Container } from "../entities/container.entity.ts";
 import { panic } from "../../std_errors/monadError.ts";
 import { QUERY_IGNORE } from "../../symbols.ts";
-import { ServiceUtils } from "../servicesUtils.ts";
 import { MeteredRepository } from "../meteredRepository.ts";
+import { paginateQuery } from "../servicesUtils.ts";
 
 export class ContainerRepository extends MeteredRepository
 {
@@ -65,7 +65,7 @@ export class ContainerRepository extends MeteredRepository
         .createQueryBuilder(`con`)
         .where(this.getWhereQuery(ownerId, containerId, containerName));
 
-        dbQuery = ServiceUtils.paginateQuery(dbQuery, { endIndex: endIndex, startIndex: startIndex });
+        dbQuery = paginateQuery(dbQuery, { endIndex: endIndex, startIndex: startIndex });
 
         this.incrementRead();
         const queryResult = await dbQuery.getManyAndCount();

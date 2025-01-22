@@ -1,9 +1,9 @@
 import { TransactionTypeRepository as TxnTagRepository } from "../repositories/txnTag.repository.ts";
 import { UserRepository } from "../repositories/user.repository.ts";
 import { nameofTT } from "../entities/txnTag.entity.ts";
-import { ServiceUtils } from "../servicesUtils.ts";
 import { MonadError } from "../../std_errors/monadError.ts";
 import { UserNotFoundError } from "./user.service.ts";
+import { paginateQuery } from "../servicesUtils.ts";
 
 export class TxnTagNotFoundError extends MonadError<typeof TxnTagNotFoundError.ERROR_SYMBOL>
 {
@@ -92,7 +92,7 @@ export class TxnTagService
 
         if (config.name !== undefined) query = query.andWhere(`tag.${nameofTT('name')} LIKE :name`, { title: `%${config.name}%` })
 
-        query = ServiceUtils.paginateQuery(query, config);
+        query = paginateQuery(query, config);
         const queryResult = await query.getManyAndCount();
 
         return {

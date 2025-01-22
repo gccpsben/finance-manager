@@ -7,7 +7,7 @@ import { CurrencyToBaseRateCache } from "../caches/currencyToBaseRate.cache.ts";
 import { Database } from "../db.ts";
 import { CurrencyCache } from "../caches/currencyListCache.cache.ts";
 import { CurrencyRateDatumsCache } from "../caches/currencyRateDatumsCache.cache.ts";
-import { ServiceUtils } from "../servicesUtils.ts";
+import { minAndMax } from "../servicesUtils.ts";
 
 export class CurrencyRateDatumService
 {
@@ -83,7 +83,7 @@ export class CurrencyRateDatumService
             }
         }
 
-        const datumsStat = ServiceUtils.minAndMax(datumsWithinRange, x => x.date);
+        const datumsStat = minAndMax(datumsWithinRange, x => x.date);
         const interpolator = unwrap(
             await CurrencyCalculator.getCurrencyToBaseRateInterpolator(
                 ownerId,

@@ -1,6 +1,5 @@
 import { Decimal } from "decimal.js";
 import { TransactionService } from "./transaction.service.ts";
-import { DecimalAdditionMapReducer, ServiceUtils } from "../servicesUtils.ts";
 import { CurrencyCalculator, CurrencyService } from "./currency.service.ts";
 import { CurrencyCache } from "../caches/currencyListCache.cache.ts";
 import { UserNotFoundError, UserService } from "./user.service.ts";
@@ -14,6 +13,7 @@ import { CurrencyRateDatumsCache } from "../caches/currencyRateDatumsCache.cache
 import { FragmentRaw } from "../entities/fragment.entity.ts";
 import { ContainerNotFoundError } from "./container.service.ts";
 import { LinearInterpolatorVirtual } from "../../calculations/linearInterpolatorVirtual.ts";
+import { DecimalAdditionMapReducer, reverseMap } from "../servicesUtils.ts";
 
 /** An object that represents a query of a time range. */
 export type TimeRangeQuery =
@@ -423,7 +423,7 @@ export class CalculationsService
             balanceToNetworthEntries.push([epoch, valueOfAllCurrenciesSum.toString()]);
         }
 
-        const balanceToNetworthHistory = ServiceUtils.reverseMap(balanceToNetworthEntries);
+        const balanceToNetworthHistory = reverseMap(balanceToNetworthEntries);
 
         return balanceToNetworthHistory;
     }

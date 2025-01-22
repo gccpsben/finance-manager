@@ -1,3 +1,4 @@
+// deno-lint-ignore-file no-namespace
 import { AssertFetchReturns, HTTPAssert } from "../../lib/assert.ts";
 import { GetTxnAPI, GetTxnJsonQueryAPI, PutTxnAPI } from "../../../../api-types/txn.d.ts";
 import { GetTxnAPIClass, GetTxnJSONQueryAPIClass, PostTxnAPIClass } from "./classes.ts";

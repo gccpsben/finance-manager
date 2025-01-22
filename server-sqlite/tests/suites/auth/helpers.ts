@@ -1,3 +1,4 @@
+// deno-lint-ignore-file no-namespace
 import { TESTS_ENDPOINTS, TestUserDict, TestUserEntry } from "../../index.test.ts";
 import { HTTPAssert } from '../../lib/assert.ts';
 import { randomUUID } from "node:crypto";

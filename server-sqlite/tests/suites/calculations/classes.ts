@@ -1,3 +1,4 @@
+// deno-lint-ignore-file no-namespace
 import { GetExpensesAndIncomesAPI, GetUserBalanceHistoryAPI, GetUserNetworthHistoryAPI } from "../../../../api-types/calculations.d.ts";
 import { isDecimalJSString, IsDecimalJSString, IsEpochKeyedMap, IsPassing } from "../../../server_source/db/validators.ts";
 

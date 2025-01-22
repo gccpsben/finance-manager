@@ -8,7 +8,7 @@ import { CurrencyToBaseRateCache } from "../caches/currencyToBaseRate.cache.ts";
 import { Database } from "../db.ts";
 import { QUERY_IGNORE } from "../../symbols.ts";
 import { CurrencyRateDatumsCache } from '../caches/currencyRateDatumsCache.cache.ts';
-import { ServiceUtils } from "../servicesUtils.ts";
+import { reverseMap } from "../servicesUtils.ts";
 
 export class ContainerNotFoundError extends MonadError<typeof ContainerNotFoundError.ERROR_SYMBOL>
 {
@@ -123,7 +123,7 @@ export class ContainerService
             return new Set([...currencyIds]);
         })());
 
-        const relevantCurrencies = ServiceUtils.reverseMap
+        const relevantCurrencies = reverseMap
         (
             await Promise.all(relevantCurrencyIds.map
             (

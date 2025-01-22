@@ -1,3 +1,4 @@
+// deno-lint-ignore-file no-namespace
 import { PostCurrencyRateSrcAPI } from "../../../../api-types/currencyRateSource.d.ts";
 import { TESTS_ENDPOINTS } from "../../index.test.ts";
 import { HTTPAssert } from "../../lib/assert.ts";

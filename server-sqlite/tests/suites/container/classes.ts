@@ -1,3 +1,4 @@
+// deno-lint-ignore-file no-namespace
 import { BalancesHydratedContainerDTO, ContainerDTO, GetContainerAPI, GetContainerTimelineAPI, PostContainerAPI, ValueHydratedContainerDTO } from "../../../../api-types/container.d.ts";
 import { IsArray, IsDefined, IsNotEmpty, IsNumber, IsObject, IsString, ValidateNested } from "class-validator";
 import { IsDecimalJSString, IsEpochKeyedMap, IsPassing, IsStringToDecimalJSStringDict, IsUTCDateInt } from "../../../server_source/db/validators.ts";

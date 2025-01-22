@@ -11,12 +11,12 @@ import { TxnTag } from "../entities/txnTag.entity.ts";
 import { TxnTagNotFoundError } from "../services/txnTag.service.ts";
 import { CurrencyRateDatumsCache } from "../caches/currencyRateDatumsCache.cache.ts";
 import { CurrencyToBaseRateCache } from "../caches/currencyToBaseRate.cache.ts";
-import { TxnQueryASTCalculator } from "../../calculations/txnAST.ts";
 import jsonata from "jsonata";
-import { ServiceUtils } from "../servicesUtils.ts";
 import { Fragment, FragmentRaw, nameofF } from "../entities/fragment.entity.ts";
 import { File } from '../entities/file.entity.ts';
 import { FileNotFoundError } from "../services/files.service.ts";
+import * as txnQueryASTCalculator from "../../calculations/txnQueryASTCalculator.ts";
+import { normalizeEntitiesToIds, paginateQuery } from "../servicesUtils.ts";
 
 export class TransactionRepository extends MeteredRepository
 {
@@ -119,7 +119,7 @@ export class TransactionRepository extends MeteredRepository
         startIndex: number | null, endIndex: number | null
     )
     {
-        if (TxnQueryASTCalculator.areFunctionBindingsInAST(query))
+        if (txnQueryASTCalculator.areFunctionBindingsInAST(query))
             return new JSONQueryError(userId, `Function bindings are currently prohibited.`, query);
 
         const [now, alias, currRepo] = [Date.now(), 'txn', Database.getCurrencyRepository()!];
@@ -148,7 +148,7 @@ export class TransactionRepository extends MeteredRepository
 
         // Start parsing query language.
         const expression = jsonata(query);
-        const tokensAST = TxnQueryASTCalculator.flattenASTTokens(expression.ast());
+        const tokensAST = txnQueryASTCalculator.flattenASTTokens(expression.ast());
         const isTokenInExpr = (token: string) => tokensAST.some(t => t.name === token || t.value === token);
         const tokensPresence = {
             delta: ["DELTA", "DELTA_NEG", "DELTA_POS", "changeInValue"].some(x => isTokenInExpr(x)),
@@ -400,7 +400,7 @@ export class TransactionRepository extends MeteredRepository
             sqlQuery = sqlQuery.andWhere(`${nameofT('creationDate')} <= :endDate`, { endDate: query.endDate });
 
         sqlQuery.orderBy(nameofT('creationDate'), 'DESC');
-        sqlQuery = ServiceUtils.paginateQuery(sqlQuery, query ?? {});
+        sqlQuery = paginateQuery(sqlQuery, query ?? {});
 
         const queryResult = await sqlQuery.getManyAndCount();
 
@@ -455,7 +455,7 @@ export class TransactionRepository extends MeteredRepository
     public async getContainersTransactions(userId: string, containerIds: string[] | { id: string }[])
     {
         const alias = "txn";
-        const targetContainerIds = ServiceUtils.normalizeEntitiesToIds(containerIds, 'id');
+        const targetContainerIds = normalizeEntitiesToIds(containerIds, 'id');
 
         const queryResult = await this.#repository
         .createQueryBuilder(alias)

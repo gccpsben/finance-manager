@@ -1,3 +1,4 @@
+// deno-lint-ignore-file no-namespace
 import { HTTPAssert } from "../../lib/assert.ts";
 import { Generator } from "../../shortcuts/generator.ts";
 import { PostContainerAPI } from "../../../../api-types/container.d.ts";

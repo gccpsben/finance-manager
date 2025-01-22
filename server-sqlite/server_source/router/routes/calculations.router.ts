@@ -1,9 +1,9 @@
 import express from 'express';
 import { AccessTokenService } from '../../db/services/accessToken.service.ts';
+import { mapObjectValues } from "../../db/servicesUtils.ts";
 import { TypesafeRouter } from '../typescriptRouter.ts';
 import { CalculationsService } from '../../db/services/calculations.service.ts';
 import type { GetExpensesAndIncomesAPI, GetUserBalanceHistoryAPI, GetUserNetworthHistoryAPI } from '../../../../api-types/calculations.d.ts';
-import { ServiceUtils } from '../../db/servicesUtils.ts';
 import { IsPositiveIntString, IsUTCDateIntString } from '../../db/validators.ts';
 import { IsNotEmpty, IsOptional } from 'class-validator';
 import { ExpressValidations } from '../validation.ts';
@@ -165,7 +165,7 @@ router.get<GetUserBalanceHistoryAPI.ResponseDTO>(`/api/v1/calculations/balanceHi
             for (const epoch of Object.keys(calResults.historyMap))
                 // TODO: Fix this TS type error
                 // @ts-expect-error
-                outputMap[epoch] = ServiceUtils.mapObjectValues(calResults.historyMap[epoch], decimal => decimal.toString());
+                outputMap[epoch] = mapObjectValues(calResults.historyMap[epoch], decimal => decimal.toString());
             return {
                 map: outputMap
             };

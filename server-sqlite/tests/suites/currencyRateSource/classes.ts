@@ -1,3 +1,4 @@
+// deno-lint-ignore-file no-namespace
 import { IsArray, IsNumber, IsOptional, IsString, ValidateNested } from "class-validator";
 import { DeleteCurrencyRateSrcAPI, GetCurrencyRateSrcAPI, PostCurrencyRateSrcAPI } from "../../../../api-types/currencyRateSource.d.ts";
 import { Type } from "class-transformer";

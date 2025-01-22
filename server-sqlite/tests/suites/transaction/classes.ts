@@ -1,8 +1,8 @@
+// deno-lint-ignore-file no-namespace
 import { IsString, IsNotEmpty, IsOptional, IsArray, ValidateNested, IsNumber, IsBoolean } from "class-validator";
 import { IsDecimalJSString, IsUTCDateInt } from "../../../server_source/db/validators.ts";
 import { GetTxnAPI, GetTxnJsonQueryAPI, PostTxnAPI, PutTxnAPI } from "../../../../api-types/txn.d.ts";
 import { Type } from "class-transformer";
-
 
 export namespace GetTxnJSONQueryAPIClass
 {

@@ -1,3 +1,4 @@
+// deno-lint-ignore-file no-namespace
 import { IsString, IsBoolean, IsOptional, IsNumber, IsArray, ValidateNested, IsPositive } from "class-validator";
 import { IsDecimalJSString } from "../../../server_source/db/validators.ts";
 import { CurrencyDTO, PostCurrencyAPI, GetCurrencyAPI, GetCurrencyRateHistoryAPI } from "../../../../api-types/currencies.d.ts";

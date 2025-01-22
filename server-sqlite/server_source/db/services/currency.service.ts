@@ -11,7 +11,7 @@ import { CurrencyToBaseRateCache } from "../caches/currencyToBaseRate.cache.ts";
 import { Database } from "../db.ts";
 import { QUERY_IGNORE } from "../../symbols.ts";
 import { LinearInterpolatorVirtual } from "../../calculations/linearInterpolatorVirtual.ts";
-import { ServiceUtils } from "../servicesUtils.ts";
+import { reverseMap } from "../servicesUtils.ts";
 
 export class CurrencyRefCurrencyIdAmountTupleError extends MonadError<typeof CurrencyRefCurrencyIdAmountTupleError.ERROR_SYMBOL>
 {
@@ -264,7 +264,7 @@ export class CurrencyCalculator
             currencyRateDatumsCache
         );
 
-        const dateToDatumTable = ServiceUtils.reverseMap(currencyRateDatums.map(x => ([`${x.date}`, x])));
+        const dateToDatumTable = reverseMap(currencyRateDatums.map(x => ([`${x.date}`, x])));
 
         const output = await LinearInterpolatorVirtual.fromEntries
         (

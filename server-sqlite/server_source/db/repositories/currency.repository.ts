@@ -4,7 +4,7 @@ import { CURRENCY_RATE_SOURCE_ENTITY_TABLE_NAME, CurrencyRateSource } from "../e
 import { panic } from "../../std_errors/monadError.ts";
 import { DataSource } from "typeorm/browser";
 import { PATCH_IGNORE, QUERY_IGNORE } from "../../symbols.ts";
-import { nameof, ServiceUtils } from "../servicesUtils.ts";
+import { nameof, paginateQuery } from "../servicesUtils.ts";
 import { UserRepository } from "./user.repository.ts";
 import { UserNotFoundError } from "../services/user.service.ts";
 import { CurrencyCache } from "../caches/currencyListCache.cache.ts";
@@ -289,7 +289,7 @@ export class CurrencyRepository extends MeteredRepository
 
         if (query.name) dbQuery = dbQuery.andWhere("name = :name", { name: query.name ?? null })
         if (query.id) dbQuery = dbQuery.andWhere("id = :id", { id: query.id ?? null })
-        dbQuery = ServiceUtils.paginateQuery(dbQuery, query);
+        dbQuery = paginateQuery(dbQuery, query);
 
         this.incrementRead();
         const queryResult = await dbQuery.getManyAndCount();

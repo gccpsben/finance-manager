@@ -1,3 +1,4 @@
+// deno-lint-ignore-file no-namespace
 import { Generator } from "../../shortcuts/generator.ts";
 import { HTTPAssert } from "../../lib/assert.ts";
 import { Decimal } from "decimal.js";
