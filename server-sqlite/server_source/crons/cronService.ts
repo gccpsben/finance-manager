@@ -1,21 +1,27 @@
 import { CurrencyRatesCRON } from "./currencyRates.cron.ts";
+import { ExtendedLogger } from '../debug/extendedLog.ts';
 
 export interface CronService
 {
-    init(): Promise<void> | void;
     start(): Promise<void> | void;
     stop(): Promise<void> | void;
+    destroy(): Promise<void> | void;
     getIsRunning(): boolean;
 };
 
 export class CronRunner
 {
     #crons: CronService[] = [];
+    #logger: ExtendedLogger;
+
+    public constructor(logger: ExtendedLogger)
+    {
+        this.#logger = logger;
+    }
 
     public async initAll(): Promise<void>
     {
-        this.#crons.push(new CurrencyRatesCRON());
-        await Promise.all(this.#crons.map(x => x.init()));
+        this.#crons.push(CurrencyRatesCRON.create(this.#logger));
     }
 
     public async startAll(): Promise<void>
@@ -26,5 +32,10 @@ export class CronRunner
     public async stopAll(): Promise<void>
     {
         await Promise.all(this.#crons.map(x => x.stop()));
+    }
+
+    public async destroyAll(): Promise<void>
+    {
+        await Promise.all(this.#crons.map(x => x.destroy()));
     }
 }

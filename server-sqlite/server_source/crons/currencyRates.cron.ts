@@ -3,7 +3,7 @@ import { CurrencyRateSourceRepository } from "../db/repositories/currencyRateSou
 import { CurrencyNotFoundError } from "../db/services/currency.service.ts";
 import { CurrencyRateSourceService, ExecuteCurrencyRateSourceError } from "../db/services/currencyRateSource.service.ts";
 import { UserNotFoundError } from "../db/services/user.service.ts";
-import { ExtendedLog } from "../debug/extendedLog.ts";
+import { ExtendedLogger } from "../debug/extendedLog.ts";
 import { CronService } from "./cronService.ts";
 import { QUERY_IGNORE } from "../symbols.ts";
 import { GlobalCurrencyCache } from "../db/caches/currencyListCache.cache.ts";
@@ -12,19 +12,25 @@ import { GlobalCurrencyRateDatumsCache } from "../db/caches/currencyRateDatumsCa
 
 export class CurrencyRatesCRON implements CronService
 {
+    #logger: ExtendedLogger | null = null;
     #isRunning = false;
     mainIntervalId: number | null = null;
 
-    async init(): Promise<void> {
-        ExtendedLog.logCyan(`Initializing currency rates CRON.`);
-        await new Promise<void>(resolve => resolve());
-        ExtendedLog.logCyan(`Initialized currency rates CRON.`);
+    private constructor() {  }
+
+    public static create(logger: ExtendedLogger): CurrencyRatesCRON
+    {
+        const newCRON = new CurrencyRatesCRON();
+        newCRON.#logger = logger;
+        newCRON.#logger?.logCyan(`Initializing currency rates CRON.`);
+        newCRON.#logger?.logCyan(`Initialized currency rates CRON.`);
+        return newCRON;
     }
 
     start(): void
     {
         this.#isRunning = true;
-        ExtendedLog.logCyan(`Starting currency rates CRON.`);
+        this.#logger?.logCyan(`Starting currency rates CRON.`);
         const currRepo = Database.getCurrencyRepository()!;
 
         this.mainIntervalId = setInterval(async () =>
@@ -56,7 +62,7 @@ export class CurrencyRatesCRON implements CronService
                     currencyObj.lastRateCronUpdateTime = now;
                     await Database.getCurrencyRepository()!.updateCurrency(currencyObj, GlobalCurrencyCache);
 
-                    ExtendedLog.logCyan(`Fetching rate of ticker='${currency.ticker}', hostname='${fullRateSrc.hostname}', path='${fullRateSrc.path}' using source name='${src.name}'`);
+                    this.#logger?.logCyan(`Fetching rate of ticker='${currency.ticker}', hostname='${fullRateSrc.hostname}', path='${fullRateSrc.path}' using source name='${src.name}'`);
 
                     const transactionContext = await Database.createTransactionalContext();
                     const fetchResult = await CurrencyRateSourceService.executeCurrencyRateSource
@@ -73,7 +79,7 @@ export class CurrencyRatesCRON implements CronService
                     if (fetchResult instanceof ExecuteCurrencyRateSourceError)
                     {
                         await transactionContext.endFailure();
-                        ExtendedLog.logCyan(`Error fetching ticker='${currency.ticker}', hostname='${fullRateSrc.hostname}', path='${fullRateSrc.path}': ${fetchResult.message}`);
+                        this.#logger?.logCyan(`Error fetching ticker='${currency.ticker}', hostname='${fullRateSrc.hostname}', path='${fullRateSrc.path}': ${fetchResult.message}`);
                         if (fetchResult.error instanceof CurrencyNotFoundError) continue;
                         if (fetchResult.error instanceof UserNotFoundError) continue;
                         if (fetchResult.error instanceof UserNotFoundError) continue;
@@ -82,20 +88,28 @@ export class CurrencyRatesCRON implements CronService
                     else
                     {
                         await transactionContext.endSuccess();
-                        ExtendedLog.logGreen(`Successfully fetched latest rate of ${currency.ticker} (id='${currency.id}').`);
+                        this.#logger?.logGreen(`Successfully fetched latest rate of ${currency.ticker} (id='${currency.id}').`);
                         break;
                     }
                 }
             }
         }, 10000);
 
-        ExtendedLog.logCyan(`Started currency rates CRON.`);
+        this.#logger?.logCyan(`Started currency rates CRON.`);
     }
+
     async stop(): Promise<void> {
         this.#isRunning = false;
-        ExtendedLog.logCyan(`Stopping currency rates CRON.`);
+        this.#logger?.logCyan(`Stopping currency rates CRON.`);
         await new Promise<void>(resolve => resolve());
-        ExtendedLog.logCyan(`Stopped currency rates CRON.`);
+        this.#logger?.logCyan(`Stopped currency rates CRON.`);
     }
+
     getIsRunning() { return this.#isRunning; }
+
+    destroy(): Promise<void> | void
+    {
+        if (this.mainIntervalId !== null)
+            clearInterval(this.mainIntervalId);
+    }
 }

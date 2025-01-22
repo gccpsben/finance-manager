@@ -1,8 +1,14 @@
 import { validate } from "class-validator";
 import { BeforeInsert, BeforeUpdate } from "typeorm";
 import { InternalValidationError } from "../router/validation.ts";
-import { ExtendedLog } from "../debug/extendedLog.ts";
+import { ExtendedLogger } from "../debug/extendedLog.ts";
 import { randomUUID } from "node:crypto";
+
+let GlobalEntityValidationLogger: ExtendedLogger | null = null;
+export function setGlobalEntityValidationLogger(logger: ExtendedLogger | null)
+{
+    GlobalEntityValidationLogger = logger;
+}
 
 export class EntityClass
 {
@@ -19,8 +25,8 @@ export class EntityClass
             const logFileMsg = `One of the EntityClass failed internal validator (ErrorRefNo: ${msgUUID}).`
             + `\n${JSON.stringify(internalValidationError, null, 4)}`
             + `\nAbove error stack trace: ${internalValidationError.stack}`;
-            ExtendedLog.logRed(consoleMsg, false, true);
-            ExtendedLog.logRed(logFileMsg, true, false);
+            GlobalEntityValidationLogger?.logRed(consoleMsg, false, true);
+            GlobalEntityValidationLogger?.logRed(logFileMsg, true, false);
             throw internalValidationError;
         }
     }

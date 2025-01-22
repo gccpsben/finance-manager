@@ -7,9 +7,27 @@ import { EnvManager } from '../env.ts';
 
 // let pastLines:any = [];
 
-export class ExtendedLog
+export class ExtendedLogger
 {
-    public static writeStream: RotatingFileStream;
+    public writeStream: RotatingFileStream | null;
+
+    public constructor()
+    {
+        if (!EnvManager.logsFolderPath) throw new Error(`ensureWriteStream: EnvManager.logsFolderPath is not defined.`);
+
+        fse.mkdirs(EnvManager.logsFolderPath);
+        this.writeStream = createStream
+        (
+            (time: number | Date, index?: number) =>
+            {
+                const date = typeof time === 'number' ? new Date(time) : time;
+                return path.join(EnvManager.logsFolderPath!, ExtendedLogger.generateLogFileName(date, index ?? 0));
+            },
+            {
+                interval: '1M'
+            }
+        );
+    }
 
     private static formatDateTime(time: Date)
     {
@@ -33,79 +51,65 @@ export class ExtendedLog
         return `${year}-${month}-(${index ?? 0}).log`;
     }
 
-    private static ensureWriteStream()
+    private logToFile(msg: string)
     {
-        if (ExtendedLog.writeStream) return;
-        if (!EnvManager.logsFolderPath) throw new Error(`ensureWriteStream: EnvManager.logsFolderPath is not defined.`);
-
-        fse.mkdirs(EnvManager.logsFolderPath);
-        ExtendedLog.writeStream = createStream
-        (
-            (time: number | Date, index?: number) =>
-            {
-                const date = typeof time === 'number' ? new Date(time) : time;
-                return path.join(EnvManager.logsFolderPath!, ExtendedLog.generateLogFileName(date, index ?? 0));
-            },
-            {
-                interval: '1M'
-            }
-        );
-    }
-
-    private static async logToFile(msg: string)
-    {
-        await ExtendedLog.ensureWriteStream();
         // we want to support multi-line error, and the preserve the error format too: [DATE_TIME] [ERROR]
         const lines = msg.split("\n");
-        const linePrefix = `[${ExtendedLog.formatDateTime(new Date())}]`;
-        for (const line of lines) ExtendedLog.writeStream.write(`\n${linePrefix} ${line}`);
+        const linePrefix = `[${ExtendedLogger.formatDateTime(new Date())}]`;
+        if (this.writeStream)
+            for (const line of lines) this.writeStream.write(`\n${linePrefix} ${line}`);
     }
 
-    public static async log(arg: unknown, logToFile=true, logToConsole=true)
+    public log(arg: unknown, logToFile=true, logToConsole=true)
     {
-        if (logToFile) await ExtendedLog.logToFile(`${arg}`);
+        if (logToFile) this.logToFile(`${arg}`);
         if (logToConsole) console.log(arg);
     }
 
-    public static async logGray(arg: unknown, logToFile=true, logToConsole=true)
+    public async logGray(arg: unknown, logToFile=true, logToConsole=true)
     {
-        if (logToFile) await ExtendedLog.logToFile(`${arg}`);
+        if (logToFile) await this.logToFile(`${arg}`);
         if (logToConsole) console.log(chalk.dim.gray(`${arg}`));
     }
 
-    public static async logGreen(arg: unknown, logToFile=true, logToConsole=true)
+    public logGreen(arg: unknown, logToFile=true, logToConsole=true)
     {
-        if (logToFile) await ExtendedLog.logToFile(`${arg}`);
+        if (logToFile) this.logToFile(`${arg}`);
         if (logToConsole) console.log(chalk.green(`${arg}`));
     }
 
-    public static async logRed(arg: unknown, logToFile=true, logToConsole=true)
+    public logRed(arg: unknown, logToFile=true, logToConsole=true)
     {
-        if (logToFile) await ExtendedLog.logToFile(`${arg}`);
+        if (logToFile) this.logToFile(`${arg}`);
         if (logToConsole) console.log(chalk.red(`${arg}`));
     }
 
-    public static async logYellow(arg: unknown, logToFile=true, logToConsole=true)
+    public logYellow(arg: unknown, logToFile=true, logToConsole=true)
     {
-        if (logToFile) await ExtendedLog.logToFile(`${arg}`);
+        if (logToFile) this.logToFile(`${arg}`);
         if (logToConsole) console.log(chalk.yellow(`${arg}`));
     }
 
-    public static async logCyan(arg: unknown, logToFile=true, logToConsole=true)
+    public logCyan(arg: unknown, logToFile=true, logToConsole=true)
     {
-        if (logToFile) await ExtendedLog.logToFile(`${arg}`);
+        if (logToFile) this.logToFile(`${arg}`);
         if (logToConsole) console.log(chalk.cyan(`${arg}`));
     }
 
-    public static async logMagenta(arg: unknown, logToFile=true, logToConsole=true)
+    public logMagenta(arg: unknown, logToFile=true, logToConsole=true)
     {
-        if (logToFile) await ExtendedLog.logToFile(`${arg}`);
+        if (logToFile) this.logToFile(`${arg}`);
         if (logToConsole) console.log(chalk.magenta(`${arg}`));
     }
 
-    public static async logBlue(arg: unknown, logToFile=true, logToConsole=true)
+    public logBlue(arg: unknown, logToFile=true, logToConsole=true)
     {
-        if (logToFile) await ExtendedLog.logToFile(`${arg}`);
+        if (logToFile) this.logToFile(`${arg}`);
         if (logToConsole) console.log(chalk.blue(`${arg}`));
+    }
+
+    public shutdown()
+    {
+        this.writeStream?.destroy();
     }
 }

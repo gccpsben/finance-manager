@@ -273,4 +273,9 @@ export class FileReceiver
         await session.fileHandle.close();
         delete this.sessions[sessionId];
     }
+
+    public close()
+    {
+        clearInterval(this.evictionTimer);
+    }
 }

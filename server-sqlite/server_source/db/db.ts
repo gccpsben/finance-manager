@@ -2,7 +2,7 @@ import { DataSource, QueryRunner } from "typeorm";
 import { User } from "./entities/user.entity.ts";
 import { AccessToken } from "./entities/accessToken.entity.ts";
 import { EnvManager } from "../env.ts";
-import { ExtendedLog } from "../debug/extendedLog.ts";
+import { ExtendedLogger } from "../debug/extendedLog.ts";
 import { Currency } from "./entities/currency.entity.ts";
 import { Container } from "./entities/container.entity.ts";
 import { Transaction } from "./entities/transaction.entity.ts";
@@ -89,6 +89,7 @@ export class AsyncQueue
 
 export class Database
 {
+    private static logger: ExtendedLogger | null;
     private static currencyRepository: CurrencyRepository | null;
     private static accessTokenRepository: AccessTokenRepository | null;
     private static containerRepository: ContainerRepository | null;
@@ -189,7 +190,7 @@ export class Database
         return Database.AppDataSource;
     }
 
-    public static async init(): Promise<DataSource | DatabaseInitError<Error | DatabaseInitMissingDataSourceError>>
+    public static async init(logger: ExtendedLogger): Promise<DataSource | DatabaseInitError<Error | DatabaseInitMissingDataSourceError>>
     {
         if (!Database.AppDataSource)
             return new DatabaseInitError(new DatabaseInitMissingDataSourceError());
@@ -259,7 +260,7 @@ export class Database
         }
         catch(e)
         {
-            ExtendedLog.logRed(`Error while initializing database. The database might contain entries violating database constrains.`);
+            logger.logRed(`Error while initializing database. The database might contain entries violating database constrains.`);
             console.log(e);
             return new DatabaseInitError(e instanceof Error ? e : new Error("Generic error: " + e));
         }

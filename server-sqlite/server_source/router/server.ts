@@ -1,5 +1,5 @@
 import express from 'express';
-import { ExtendedLog } from '../debug/extendedLog.ts';
+import { ExtendedLogger } from '../debug/extendedLog.ts';
 import { getMainRouter } from './mainRouter.ts';
 import morgan from 'morgan';
 import { PassThrough } from 'node:stream';
@@ -16,181 +16,221 @@ import helmet from "helmet";
 import compression from 'compression';
 import { Buffer } from "node:buffer";
 import { CronRunner } from "../crons/cronService.ts";
+import { Database } from "../db/db.ts";
+import { setGlobalEntityValidationLogger } from '../db/dbEntityBase';
 
 export type StartServerConfig =
 {
     attachMorgan: boolean;
 }
 
-export class Server
+export function getDefaultMorganLoggerMiddleware(
+    toFile = true,
+    toConsole = true,
+    onLogCallback: (msg: string, toFile: boolean, toConsole: boolean) => void
+)
 {
-    private static expressApp: express.Express;
-    private static _expressServer: HTTPSServer | HTTPServer;
-    public static CRONRunner: CronRunner | null;
-    public static get expressServer() { return Server._expressServer; }
-    private static set expressServer(value: HTTPSServer | HTTPServer) { Server._expressServer = value; }
+    // Create an empty stream for morgan, we will handle the logging ourself
+    const xs = new PassThrough({objectMode: true});
 
-    private static getMorganLoggerMiddleware(toFile = true, toConsole = true)
+    return morgan((tokens, req, res) =>
     {
-        // Create an empty stream for morgan, we will handle the logging ourself
-        const xs = new PassThrough({objectMode: true});
+        // @ts-ignore
+        const ip = (req.headers['x-forwarded-for'] || req.connection.remoteAddress || '').split(',')[0].trim();
+        const msg =
+        [
+            ip,
+            tokens.method(req, res),
+            tokens.url(req, res),
+            tokens.status(req, res),
+            tokens.res(req, res, 'content-length'), '-',
+            tokens['response-time'](req, res), 'ms'
+        ].join(' ');
 
-        return morgan((tokens, req, res) =>
-        {
-            // @ts-ignore
-            const ip = (req.headers['x-forwarded-for'] || req.connection.remoteAddress || '').split(',')[0].trim();
-            const msg =
-            [
-                ip,
-                tokens.method(req, res),
-                tokens.url(req, res),
-                tokens.status(req, res),
-                tokens.res(req, res, 'content-length'), '-',
-                tokens['response-time'](req, res), 'ms'
-            ].join(' ');
+        if (toFile || toConsole) onLogCallback(msg, toFile, toConsole);
+        return '';
+    }, { skip: () => false, stream: xs })
+}
 
-            if (toFile || toConsole) ExtendedLog.logGray(msg, toFile, toConsole);
-            return '';
-        }, { skip: () => false, stream: xs })
-    }
-
-    public static getErrorHandlerMiddleware()
+export function getDefaultErrorHandlerMiddleware(onLog: (msg: string, toFile: boolean, toConsole: boolean) => void)
+{
+    const returnErrorToRes = (res:express.Response, code: number, returns: { msg: string, name: string, details: object | undefined, errorRef: string | undefined }) =>
     {
-        const returnErrorToRes = (res:express.Response, code: number, returns: { msg: string, name: string, details: Object | undefined, errorRef: string | undefined }) =>
+        return res.status(code).json(returns);
+    };
+
+    return (err: Error, _req: express.Request, res: express.Response, _next: CallableFunction) =>
+    {
+        if (err instanceof ValidationError)
         {
-            return res.status(code).json(returns);
-        };
-
-        return (err: Error, _req: express.Request, res: express.Response, _next: Function) =>
+            return returnErrorToRes(res, 400,
+            {
+                details: err,
+                msg: "Request failed with validation error(s)",
+                name: "ValidationError",
+                errorRef: undefined
+            });
+        }
+        if (err instanceof createHttpError.HttpError && err.status !== 500)
         {
-            if (err instanceof ValidationError)
-            {
-                return returnErrorToRes(res, 400,
-                {
-                    details: err,
-                    msg: "Request failed with validation error(s)",
-                    name: "ValidationError",
-                    errorRef: undefined
-                });
-            }
-            if (err instanceof createHttpError.HttpError && err.status !== 500)
-            {
-                return returnErrorToRes(res, err.statusCode,
-                {
-                    details: undefined,
-                    msg: err.message,
-                    name: err.name,
-                    errorRef: undefined
-                });
-            }
-            if (err instanceof QueryFailedError)
-            {
-                const msgUUID = randomUUID();
-                const consoleMsg = `Error while querying database (ErrorRefNo: ${msgUUID})`;
-                const logFileMsg = `Error while querying database (ErrorRefNo: ${msgUUID}).`
-                + `\n${JSON.stringify(err, null, 4)}`
-                + `\nAbove error stack trace: ${err.stack}`;
-                ExtendedLog.logRed(consoleMsg, false, true);
-                ExtendedLog.logRed(logFileMsg, true, false);
-
-                return returnErrorToRes(res, 500,
-                {
-                    details: undefined,
-                    msg: "Error while querying database",
-                    name: err.name,
-                    errorRef: msgUUID
-                });
-            }
-            if (err instanceof UserNameTakenError)
-            {
-                return returnErrorToRes(res, 400,
-                {
-                    details: undefined,
-                    msg: err.message,
-                    name: err.name,
-                    errorRef: undefined
-                });
-            }
-
-            const msgUUID = randomUUID();
-            const consoleMsg = `Uncaught error from handler middleware (ErrorRefNo: ${msgUUID})`;
-            const logFileMsg = `Uncaught error from handler middleware (ErrorRefNo: ${msgUUID}).`
-            + `\n${JSON.stringify(err, null, 4)}`
-            + `\nAbove error stack trace: ${err.stack}`;
-            ExtendedLog.logRed(consoleMsg, false, true);
-            ExtendedLog.logRed(logFileMsg, true, false);
-
-            return returnErrorToRes(res, 500,
+            return returnErrorToRes(res, err.statusCode,
             {
                 details: undefined,
                 msg: err.message,
                 name: err.name,
+                errorRef: undefined
+            });
+        }
+        if (err instanceof QueryFailedError)
+        {
+            const msgUUID = randomUUID();
+            const consoleMsg = `Error while querying database (ErrorRefNo: ${msgUUID})`;
+            const logFileMsg = `Error while querying database (ErrorRefNo: ${msgUUID}).`
+            + `\n${JSON.stringify(err, null, 4)}`
+            + `\nAbove error stack trace: ${err.stack}`;
+            onLog(consoleMsg, false, true);
+            onLog(logFileMsg, true, false);
+
+            return returnErrorToRes(res, 500,
+            {
+                details: undefined,
+                msg: "Error while querying database",
+                name: err.name,
                 errorRef: msgUUID
             });
-        };
+        }
+        if (err instanceof UserNameTakenError)
+        {
+            return returnErrorToRes(res, 400,
+            {
+                details: undefined,
+                msg: err.message,
+                name: err.name,
+                errorRef: undefined
+            });
+        }
+
+        const msgUUID = randomUUID();
+        const consoleMsg = `Uncaught error from handler middleware (ErrorRefNo: ${msgUUID})`;
+        const logFileMsg = `Uncaught error from handler middleware (ErrorRefNo: ${msgUUID}).`
+        + `\n${JSON.stringify(err, null, 4)}`
+        + `\nAbove error stack trace: ${err.stack}`;
+        onLog(consoleMsg, false, true);
+        onLog(logFileMsg, true, false);
+
+        return returnErrorToRes(res, 500,
+        {
+            details: undefined,
+            msg: err.message,
+            name: err.name,
+            errorRef: msgUUID
+        });
+    };
+}
+
+export class Server
+{
+    private logger: ExtendedLogger;
+    private expressApp: express.Express;
+    private expressServer: HTTPSServer | HTTPServer;
+    public CRONRunner: CronRunner | null;
+
+    private constructor(
+        app: express.Express,
+        server: HTTPSServer | HTTPServer,
+        CRONRunner: CronRunner | null,
+        logger: ExtendedLogger
+    )
+    {
+        this.logger = logger;
+        this.CRONRunner = CRONRunner;
+        this.expressApp = app;
+        this.expressServer = server;
     }
 
-    public static async startServer(port:number, config: Partial<StartServerConfig> = {})
+    public static async startServer(
+        port:number,
+        config: Partial<StartServerConfig> = {},
+        logger: ExtendedLogger
+    ): Promise<Server | null>
     {
-        const shouldAttachMorgan = config?.attachMorgan ?? true;
+        setGlobalEntityValidationLogger(logger);
+
+        // Load certs if needed
         let sslKeyFile = undefined as undefined | Buffer;
         let sslPemFile = undefined as undefined | Buffer;
-
-        if (EnvManager.isSSLDefined())
         {
-            try
+            if (EnvManager.isSSLDefined())
             {
-                sslKeyFile = readFileSync(EnvManager.sslKeyFullPath!);
-                sslPemFile = readFileSync(EnvManager.sslPemFullPath!);
-            }
-            catch(e)
-            {
-                ExtendedLog.logRed(`Error loading SSL key or pem: ${e}`);
-                return;
+                try
+                {
+                    sslKeyFile = readFileSync(EnvManager.sslKeyFullPath!);
+                    sslPemFile = readFileSync(EnvManager.sslPemFullPath!);
+                }
+                catch(e)
+                {
+                    logger.logRed(`Error loading SSL key or pem: ${e}`);
+                    return null;
+                }
             }
         }
 
+        const cronRunner = new CronRunner(logger);
+        const expressApp = express();
+        const expressServer = EnvManager.isSSLDefined() ?
+                                createHttpsServer({ key: sslKeyFile, cert: sslPemFile }, expressApp) :
+                                createHttpServer(expressApp);
+
+        const shouldAttachMorgan = config?.attachMorgan ?? true;
+
         // Start CRON services
         {
-            const cronRunner = new CronRunner();
             await cronRunner.initAll();
             await cronRunner.startAll();
         }
 
-        return new Promise<void>(resolve =>
+        await new Promise<void>(resolve =>
         {
-            Server.expressApp = express();
-            Server.expressApp.use(helmet());
-            Server.expressApp.use(express.json({type: 'application/json'}));
-            Server.expressApp.use(express.raw({ limit: "50mb" })); // allow for larger file chunk upload
-            Server.expressApp.use(compression());
+            expressApp.use(helmet());
+            expressApp.use(express.json({type: 'application/json'}));
+            expressApp.use(express.raw({ limit: "50mb" })); // allow for larger file chunk upload
+            expressApp.use(compression());
 
             if (shouldAttachMorgan)
-                Server.expressApp.use(Server.getMorganLoggerMiddleware
+                expressApp.use(getDefaultMorganLoggerMiddleware
                 (
                     EnvManager.restfulLogMode === RESTfulLogType.TO_BOTH || EnvManager.restfulLogMode === RESTfulLogType.TO_FILE_ONLY,
-                    EnvManager.restfulLogMode === RESTfulLogType.TO_BOTH || EnvManager.restfulLogMode === RESTfulLogType.TO_CONSOLE_ONLY
+                    EnvManager.restfulLogMode === RESTfulLogType.TO_BOTH || EnvManager.restfulLogMode === RESTfulLogType.TO_CONSOLE_ONLY,
+                    (msg, toFile, toConsole) => logger.logGray(msg, toFile, toConsole)
                 ));
 
-            Server.expressApp.use("/", getMainRouter());
-            Server.expressApp.use(Server.getErrorHandlerMiddleware());
+            expressApp.use("/", getMainRouter(logger));
+            expressApp.use(getDefaultErrorHandlerMiddleware(
+                (msg, toFile, toConsole) => logger.logRed(msg, toFile, toConsole)
+            ));
 
-            Server.expressServer = EnvManager.isSSLDefined() ?
-                createHttpsServer({ key: sslKeyFile, cert: sslPemFile }, Server.expressApp) :
-                createHttpServer(Server.expressApp);
-
-            Server.expressServer.listen(port, () =>
+            expressServer.listen(port, () =>
             {
-                ExtendedLog.logGreen(`${EnvManager.isSSLDefined() ? 'HTTPS' : 'HTTP'} server running at port ${port}`);
+                logger.logGreen(`${EnvManager.isSSLDefined() ? 'HTTPS' : 'HTTP'} server running at port ${port}`);
                 resolve();
             });
         });
+
+        return new Server(
+            expressApp,
+            expressServer,
+            cronRunner,
+            logger
+        );
     }
 
-    public static shutdownServer()
+    public shutdownServer()
     {
+        this.CRONRunner?.stopAll();
+        this.CRONRunner?.destroyAll();
+        Database.getFileReceiver()?.close();
         this.expressServer.closeAllConnections();
         this.expressServer.close();
-        this.CRONRunner?.stopAll();
+        this.logger.shutdown();
     }
 }

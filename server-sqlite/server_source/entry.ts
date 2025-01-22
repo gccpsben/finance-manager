@@ -12,11 +12,12 @@ export function preventEval()
 preventEval();
 
 import { EnvManager, RESTfulLogType } from "./env.ts";
-import { ExtendedLog } from "./debug/extendedLog.ts";
+import { ExtendedLogger } from "./debug/extendedLog.ts";
 import { Server } from "./router/server.ts";
 import { CreateAppDataSourceError, Database, DatabaseInitError } from "./db/db.ts";
 import { Decimal } from 'decimal.js';
 import { panic } from './std_errors/monadError.ts';
+import { green, red } from "jsr:@std/internal@^1.0.5/styles";
 
 // `main` should be called to initialize the app.
 // This is the entry point of the app.
@@ -24,6 +25,8 @@ import { panic } from './std_errors/monadError.ts';
 export async function main(envFilePath: ['path', string | undefined] | ['rawContent', string])
 {
     preventEval();
+
+    let logger: ExtendedLogger | null = null;
 
     try
     {
@@ -39,11 +42,11 @@ export async function main(envFilePath: ['path', string | undefined] | ['rawCont
             if (EnvManager.currentEnvFilePath[0] === 'path')
             {
                 // Log will not be saved to file before env is successfully read
-                ExtendedLog.logGreen(`Successfully read env file from "${EnvManager.currentEnvFilePath[1]}"`, false, true);
+                console.log(green(`Successfully read env file from "${EnvManager.currentEnvFilePath[1]}"`));
             }
             else
             {
-                ExtendedLog.logGreen(`Successfully read env file from raw string content.`, false, true);
+                console.log(green(`Successfully read env file from raw string content.`));
             }
         }
 
@@ -52,44 +55,45 @@ export async function main(envFilePath: ['path', string | undefined] | ['rawCont
             const envParseResult = EnvManager.parseEnv();
             if (envParseResult) envParseResult.panic();
 
-            ExtendedLog.logGreen(`Successfully parsed env file.`, false, true); // Log will not be saved to file before env is successfully parsed
+            logger = new ExtendedLogger();
+            logger.logGreen(`Successfully parsed env file.`, false, true); // Log will not be saved to file before env is successfully parsed
 
-            if (EnvManager.envType === "Development") ExtendedLog.logRed(`EnvType determined to be "${EnvManager.envType}"`);
-            else if (EnvManager.envType === 'UnitTest') ExtendedLog.logCyan(`EnvType determined to be "${EnvManager.envType}"`);
-            else if (EnvManager.envType === "Production") ExtendedLog.logGreen(`EnvType determined to be "${EnvManager.envType}"`);
+            if (EnvManager.envType === "Development") logger.logRed(`EnvType determined to be "${EnvManager.envType}"`);
+            else if (EnvManager.envType === 'UnitTest') logger.logCyan(`EnvType determined to be "${EnvManager.envType}"`);
+            else if (EnvManager.envType === "Production") logger.logGreen(`EnvType determined to be "${EnvManager.envType}"`);
 
             if (EnvManager.dataLocation[0] === 'in-memory')
-                ExtendedLog.logYellow(`Data location set to in-memory.`);
+                logger.logYellow(`Data location set to in-memory.`);
             else if (EnvManager.dataLocation[0] === 'path')
-                ExtendedLog.logYellow(`Data location set to path on disk: "${EnvManager.dataLocation[1]}".`);
+                logger.logYellow(`Data location set to path on disk: "${EnvManager.dataLocation[1]}".`);
             else
                 panic(`DataLocation is not correctly loaded in EnvManager: ${EnvManager.dataLocation}`);
 
-            ExtendedLog.logMagenta(`Dist folder path resolved to "${EnvManager.distFolderLocation}"`);
+            logger.logMagenta(`Dist folder path resolved to "${EnvManager.distFolderLocation}"`);
 
             EnvManager.isSSLDefined() ?
-                ExtendedLog.logGreen(`SSL is defined, will run in HTTPS mode.`) :
-                ExtendedLog.logYellow(`SSL is not defined, will run in HTTP mode.`);
+                logger.logGreen(`SSL is defined, will run in HTTPS mode.`) :
+                logger.logYellow(`SSL is not defined, will run in HTTP mode.`);
 
-            if (EnvManager.restfulLogMode === RESTfulLogType.DISABLED) ExtendedLog.logYellow(`RESTFUL logging is disabled.`);
-            else if (EnvManager.restfulLogMode === RESTfulLogType.TO_BOTH) ExtendedLog.logGreen(`RESTFUL logging is enabled for file and console.`);
-            else if (EnvManager.restfulLogMode === RESTfulLogType.TO_FILE_ONLY) ExtendedLog.logYellow(`RESTFUL logging is enabled only for file.`);
-            else if (EnvManager.restfulLogMode === RESTfulLogType.TO_CONSOLE_ONLY) ExtendedLog.logYellow(`RESTFUL logging is enabled only for console.`);
+            if (EnvManager.restfulLogMode === RESTfulLogType.DISABLED) logger.logYellow(`RESTFUL logging is disabled.`);
+            else if (EnvManager.restfulLogMode === RESTfulLogType.TO_BOTH) logger.logGreen(`RESTFUL logging is enabled for file and console.`);
+            else if (EnvManager.restfulLogMode === RESTfulLogType.TO_FILE_ONLY) logger.logYellow(`RESTFUL logging is enabled only for file.`);
+            else if (EnvManager.restfulLogMode === RESTfulLogType.TO_CONSOLE_ONLY) logger.logYellow(`RESTFUL logging is enabled only for console.`);
         }
 
         // Initialize database
         {
-            ExtendedLog.logGray(`Initializing AppDataSource and database...`);
+            logger.logGray(`Initializing AppDataSource and database...`);
             const createAppDataSourceResults = Database.createAppDataSource();
 
             if (createAppDataSourceResults instanceof CreateAppDataSourceError)
                 return createAppDataSourceResults.panic();
 
-            const databaseInitResults = await Database.init();
+            const databaseInitResults = await Database.init(logger);
             if (databaseInitResults instanceof DatabaseInitError)
                 return databaseInitResults.panic();
 
-            ExtendedLog.logGreen(`AppDataSource and database successfully initialized.`);
+            logger.logGreen(`AppDataSource and database successfully initialized.`);
         }
 
         // Start Server
@@ -97,17 +101,17 @@ export async function main(envFilePath: ['path', string | undefined] | ['rawCont
             if (!EnvManager.serverPort)
                 throw panic("Server port is not defined in env.");
 
-            await Server.startServer
+            return await Server.startServer
             (
                 EnvManager.serverPort,
-                {
-                    attachMorgan: EnvManager.restfulLogMode !== RESTfulLogType.DISABLED
-                }
+                { attachMorgan: EnvManager.restfulLogMode !== RESTfulLogType.DISABLED },
+                logger
             );
         }
     }
     catch(e)
     {
-        ExtendedLog.logRed(e);
+        if (logger) logger.logRed(e);
+        else console.log(red(`${e}`));
     }
 }
