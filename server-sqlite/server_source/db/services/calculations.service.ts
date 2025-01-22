@@ -1,7 +1,6 @@
 import { Decimal } from "decimal.js";
 import { TransactionService } from "./transaction.service.ts";
 import { DecimalAdditionMapReducer, ServiceUtils } from "../servicesUtils.ts";
-import { LinearInterpolator } from "../../calculations/linearInterpolator.ts";
 import { CurrencyCalculator, CurrencyService } from "./currency.service.ts";
 import { CurrencyCache } from "../caches/currencyListCache.cache.ts";
 import { UserNotFoundError, UserService } from "./user.service.ts";

@@ -13,7 +13,7 @@ const router = new TypesafeRouter(express.Router());
 
 router.get<GetTxnTagsAPI.ResponseDTO>(`/api/v1/transactionTags`,
 {
-    handler: async (req: express.Request, res: express.Response) =>
+    handler: async (req: express.Request, _res: express.Response) =>
     {
         const now = Date.now();
         const authResult = await AccessTokenService.validateRequestTokenValidated(req, now);
@@ -61,7 +61,7 @@ router.get<GetTxnTagsAPI.ResponseDTO>(`/api/v1/transactionTags`,
 
 router.post<PostTxnTagsAPI.ResponseDTO>(`/api/v1/transactionTags`,
 {
-    handler: async (req: express.Request, res: express.Response) =>
+    handler: async (req: express.Request, _res: express.Response) =>
     {
         class body implements PostTxnTagsAPI.RequestDTO
         {

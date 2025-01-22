@@ -1,7 +1,7 @@
 import { Decimal } from "decimal.js";
 import { CurrencyRepository } from "../repositories/currency.repository.ts";
 import { UserRepository } from "../repositories/user.repository.ts";
-import { Currency, nameofC } from "../entities/currency.entity.ts";
+import { nameofC } from "../entities/currency.entity.ts";
 import { LinearInterpolator } from "../../calculations/linearInterpolator.ts";
 import { CurrencyRateDatumsCache } from '../caches/currencyRateDatumsCache.cache.ts';
 import { CurrencyCache } from "../caches/currencyListCache.cache.ts";

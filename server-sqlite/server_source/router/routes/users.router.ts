@@ -10,7 +10,7 @@ const router = new TypesafeRouter(express.Router());
 
 router.post<PostUserAPI.ResponseDTO>(`/api/v1/users`,
 {
-    handler: async (req:express.Request, res:express.Response) =>
+    handler: async (req:express.Request, _res:express.Response) =>
     {
         class body implements PostUserAPI.RequestDTO
         {
@@ -28,7 +28,7 @@ router.post<PostUserAPI.ResponseDTO>(`/api/v1/users`,
 
 router.delete<DeleteUserAPI.ResponseDTO>("/api/v1/users",
 {
-    handler: async (req: express.Request, res:express.Response) =>
+    handler: async (req: express.Request, _res:express.Response) =>
     {
         class body implements DeleteUserAPI.RequestDTO
         {

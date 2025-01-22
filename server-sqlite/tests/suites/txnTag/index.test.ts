@@ -17,7 +17,7 @@ export default async function(this: Context)
         await this.module(TESTS_ENDPOINTS['transactionTags']['get'], async function()
         {
             const userCreds = await AuthHelpers.registerRandMockUsers(serverURL, 1);
-            const { username:firstUserName, token:firstUserToken } = Object.values(userCreds)[0];
+            const { username: _firstUserName, token:firstUserToken } = Object.values(userCreds)[0];
             const baseValidObj = createPostTxnTypeBody(`TESTING TXN TAG`);
             let postedTxnTag = undefined as undefined | ResponsePostTxnTagsDTOBody;
 

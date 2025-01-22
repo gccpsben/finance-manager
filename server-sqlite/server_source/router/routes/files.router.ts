@@ -16,7 +16,7 @@ const router = new TypesafeRouter(express.Router());
 
 router.get<GetServerFilesAPI.ResponseDTO>("/api/v1/files",
 {
-    handler: async (req: express.Request, res: express.Response) =>
+    handler: async (req: express.Request, _res: express.Response) =>
     {
         const now = Date.now();
         const authResult = await AccessTokenService.validateRequestTokenValidated(req, now);
@@ -34,7 +34,7 @@ router.get<GetServerFilesAPI.ResponseDTO>("/api/v1/files",
 
 router.post<GetOngoingFileSessionsAPI.ResponseDTO>("/api/v1/files/sessions",
 {
-    handler: async (req:express.Request, res:express.Response) =>
+    handler: async (req:express.Request, _res:express.Response) =>
     {
         const now = Date.now();
         const authResult = await AccessTokenService.validateRequestTokenValidated(req, now);
@@ -59,7 +59,7 @@ router.post<GetOngoingFileSessionsAPI.ResponseDTO>("/api/v1/files/sessions",
 
 router.post<FilesInitSessionAPI.ResponseDTO>("/api/v1/files/init",
 {
-    handler: async (req:express.Request, res:express.Response) =>
+    handler: async (req:express.Request, _res:express.Response) =>
     {
         const now = Date.now();
         const authResult = await AccessTokenService.validateRequestTokenValidated(req, now);
@@ -87,7 +87,7 @@ router.post<FilesInitSessionAPI.ResponseDTO>("/api/v1/files/init",
 
 router.postBinary<FilesAppendChunkAPI.ResponseDTO>(`/api/v1/files/append`,
 {
-    handler: async (req:express.Request, res:express.Response) =>
+    handler: async (req:express.Request, _res:express.Response) =>
     {
         const now = Date.now();
         const authResult = await AccessTokenService.validateRequestTokenValidated(req, now);
@@ -142,7 +142,7 @@ router.custom<object>(`/api/v1/files/view`,
 
 router.get<GetServerFilesByIdAPI.ResponseDTO>(`/api/v1/files/id`,
 {
-    handler: async (req:express.Request, res:express.Response) =>
+    handler: async (req:express.Request, _res:express.Response) =>
     {
         const now = Date.now();
         const authResult = await AccessTokenService.validateRequestTokenValidated(req, now);

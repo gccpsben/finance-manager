@@ -1,7 +1,7 @@
 import { registerDecorator, ValidationOptions, ValidationArguments, isInt, isPositive, isNumber, isNumberString, isString } from 'class-validator';
 import { Decimal } from 'decimal.js';
 
-export function EnsureNotPlainForeignKey(validationOptions?: ValidationOptions)
+export function EnsureNotPlainForeignKey(_validationOptions?: ValidationOptions)
 {
     return function (object: Object, propertyName: string)
     {
@@ -15,7 +15,7 @@ export function EnsureNotPlainForeignKey(validationOptions?: ValidationOptions)
             },
             validator:
             {
-                validate(value: any, args: ValidationArguments)
+                validate(value: any, _args: ValidationArguments)
                 {
                     return typeof value !== 'string';
                 },
@@ -26,8 +26,8 @@ export function EnsureNotPlainForeignKey(validationOptions?: ValidationOptions)
 
 export function isDecimalJSString(value: any)
 {
-    try { const test = new Decimal(value); return true; }
-    catch(e) { return false; }
+    try { const _test = new Decimal(value); return true; }
+    catch(_e) { return false; }
 }
 export function IsDecimalJSString()
 {
@@ -43,7 +43,7 @@ export function IsDecimalJSString()
             },
             validator:
             {
-                validate(value: any, args: ValidationArguments)
+                validate(value: any, _args: ValidationArguments)
                 {
                     if (!isDecimalJSString(value)) return false;
                     return true;
@@ -73,7 +73,7 @@ export function IsEpochKeyedMap()
             },
             validator:
             {
-                validate(value: any, args: ValidationArguments)
+                validate(value: any, _args: ValidationArguments)
                 {
                     if (!isEpochKeyedMap(value)) return false;
                     return true;
@@ -97,7 +97,7 @@ export function IsPassing(predicate: (value: any) => boolean | Promise<boolean>)
             },
             validator:
             {
-                async validate(value: any, args: ValidationArguments)
+                async validate(value: any, _args: ValidationArguments)
                 {
                     if (! await predicate(value)) return false;
                     return true;
@@ -117,7 +117,7 @@ export function isUTCDateIntString(value: any)
         if (!isInt(parsed)) return false;
         return true;
     }
-    catch(e) { return false; }
+    catch(_e) { return false; }
 }
 export function IsUTCDateIntString()
 {
@@ -133,7 +133,7 @@ export function IsUTCDateIntString()
             },
             validator:
             {
-                validate(value: any, args: ValidationArguments)
+                validate(value: any, _args: ValidationArguments)
                 {
                     if (!isUTCDateIntString(value)) return false;
                     return true;
@@ -152,7 +152,7 @@ export function isUTCDateInt(value: any)
         if (!isPositive(value)) return false;
         return true;
     }
-    catch(e) { return false; }
+    catch(_e) { return false; }
 }
 export function IsUTCDateInt()
 {
@@ -168,7 +168,7 @@ export function IsUTCDateInt()
             },
             validator:
             {
-                validate(value: any, args: ValidationArguments)
+                validate(value: any, _args: ValidationArguments)
                 {
                     if (!isUTCDateInt(value)) return false;
                     return true;
@@ -187,7 +187,7 @@ export function isPositiveIntString(value: any)
         if (parseInt(value) <= 0) return false;
         return true;
     }
-    catch(e) { return false; }
+    catch(_e) { return false; }
 }
 export function IsPositiveIntString()
 {
@@ -203,7 +203,7 @@ export function IsPositiveIntString()
             },
             validator:
             {
-                validate(value: any, args: ValidationArguments)
+                validate(value: any, _args: ValidationArguments)
                 {
                     if (!isIntString(value)) return false;
                     return true;
@@ -221,7 +221,7 @@ export function isIntString(value: any)
         if (!isInt(parseFloat(value))) return false;
         return true;
     }
-    catch(e) { return false; }
+    catch(_e) { return false; }
 }
 export function IsIntString()
 {
@@ -237,7 +237,7 @@ export function IsIntString()
             },
             validator:
             {
-                validate(value: any, args: ValidationArguments)
+                validate(value: any, _args: ValidationArguments)
                 {
                     if (!isIntString(value)) return false;
                     return true;
@@ -257,7 +257,7 @@ export function isStringToStringDict(value :any)
         if (Object.values(value).some(x => !isString(x))) return false;
         return true;
     }
-    catch(e) { return false; }
+    catch(_e) { return false; }
 }
 export function IsStringToStringDict()
 {
@@ -273,7 +273,7 @@ export function IsStringToStringDict()
             },
             validator:
             {
-                validate(value: any, args: ValidationArguments)
+                validate(value: any, _args: ValidationArguments)
                 {
                     if (!isStringToStringDict(value)) return false;
                     return true;
@@ -291,7 +291,7 @@ export function isStringToDecimalJSStringDict(value:any)
         if (Object.values(value).some(x => !isDecimalJSString(x))) return false;
         return true;
     }
-    catch(e) { return false; }
+    catch(_e) { return false; }
 }
 export function IsStringToDecimalJSStringDict()
 {
@@ -307,7 +307,7 @@ export function IsStringToDecimalJSStringDict()
             },
             validator:
             {
-                validate(value: any, args: ValidationArguments)
+                validate(value: any, _args: ValidationArguments)
                 {
                     if (!isStringToDecimalJSStringDict(value)) return false;
                     return true;

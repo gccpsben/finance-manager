@@ -38,7 +38,7 @@ export default async function(this: Context)
                 {
                     const userCreds = await AuthHelpers.registerRandMockUsers(serverURL, 3);
 
-                    for (const [userKeyname, userObj] of Object.entries(userCreds))
+                    for (const [_userKeyname, userObj] of Object.entries(userCreds))
                     {
                         const baseConfig = { serverURL, token: userObj.token, assertBody: true, expectedCode: 200 };
                         const txnTypes = await TxnTagHelpers.postRandomTxnTags({ ...baseConfig, txnCount: 3, });

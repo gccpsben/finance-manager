@@ -20,7 +20,7 @@ const router = new TypesafeRouter(express.Router());
 
 router.get<GetExpensesAndIncomesAPI.ResponseDTO>("/api/v1/calculations/expensesAndIncomes",
 {
-    handler: async (req:express.Request, res:express.Response) =>
+    handler: async (req:express.Request, _res:express.Response) =>
     {
         const now = Date.now();
         const authResults = await AccessTokenService.validateRequestTokenValidated(req, now);
@@ -67,7 +67,7 @@ router.get<GetExpensesAndIncomesAPI.ResponseDTO>("/api/v1/calculations/expensesA
 
 router.get<GetUserNetworthHistoryAPI.ResponseDTO>(`/api/v1/calculations/networthHistory`,
 {
-    handler: async (req: express.Request, res: express.Response) =>
+    handler: async (req: express.Request, _res: express.Response) =>
     {
         const now = Date.now();
         const authResults = await AccessTokenService.validateRequestTokenValidated(req, now);
@@ -120,7 +120,7 @@ router.get<GetUserNetworthHistoryAPI.ResponseDTO>(`/api/v1/calculations/networth
 
 router.get<GetUserBalanceHistoryAPI.ResponseDTO>(`/api/v1/calculations/balanceHistory`,
 {
-    handler: async (req: express.Request, res: express.Response) =>
+    handler: async (req: express.Request, _res: express.Response) =>
     {
         const now = Date.now();
         const authResults = await AccessTokenService.validateRequestTokenValidated(req, now);

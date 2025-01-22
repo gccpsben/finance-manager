@@ -32,7 +32,7 @@ export default async function(this: Context)
                     });
                 }
 
-                let firstUserID = undefined as undefined | string;
+                let _firstUserID = undefined as undefined | string;
 
                 await this.test(`Allow creating users with valid body`, async function()
                 {

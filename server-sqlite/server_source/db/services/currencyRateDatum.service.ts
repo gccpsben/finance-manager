@@ -3,7 +3,6 @@ import { CurrencyCalculator, CurrencyNotFoundError } from "./currency.service.ts
 import { Decimal } from "decimal.js";
 import { unwrap } from "../../std_errors/monadError.ts";
 import { QueryRunner } from "typeorm";
-import { User } from "../entities/user.entity.ts";
 import { CurrencyToBaseRateCache } from "../caches/currencyToBaseRate.cache.ts";
 import { Database } from "../db.ts";
 import { CurrencyCache } from "../caches/currencyListCache.cache.ts";

@@ -1,7 +1,6 @@
 import { Database } from "../db/db.ts";
-import { CurrencyRepository } from "../db/repositories/currency.repository.ts";
 import { CurrencyRateSourceRepository } from "../db/repositories/currencyRateSource.repository.ts";
-import { CurrencyNotFoundError, CurrencyService } from "../db/services/currency.service.ts";
+import { CurrencyNotFoundError } from "../db/services/currency.service.ts";
 import { CurrencyRateSourceService, ExecuteCurrencyRateSourceError } from "../db/services/currencyRateSource.service.ts";
 import { UserNotFoundError } from "../db/services/user.service.ts";
 import { ExtendedLog } from "../debug/extendedLog.ts";

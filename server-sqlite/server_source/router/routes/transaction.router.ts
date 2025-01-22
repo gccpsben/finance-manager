@@ -24,7 +24,7 @@ const router = new TypesafeRouter(Express.Router());
 
 router.post<PostTxnAPI.ResponseDTO>("/api/v1/transactions",
 {
-    handler: async (req: Express.Request, res: Express.Response) =>
+    handler: async (req: Express.Request, _res: Express.Response) =>
     {
         let transactionalContext: null | Awaited<ReturnType<typeof Database.createTransactionalContext>> = null;
         try
@@ -118,7 +118,7 @@ router.post<PostTxnAPI.ResponseDTO>("/api/v1/transactions",
 
 router.put<PutTxnAPI.ResponseDTO>("/api/v1/transactions",
 {
-    handler: async (req: Express.Request, res: Express.Response) =>
+    handler: async (req: Express.Request, _res: Express.Response) =>
     {
         let transactionalContext: null | Awaited<ReturnType<typeof Database.createTransactionalContext>> = null;
         try
@@ -201,7 +201,7 @@ router.put<PutTxnAPI.ResponseDTO>("/api/v1/transactions",
 
 router.get<GetTxnAPI.ResponseDTO>(`/api/v1/transactions/json-query`,
 {
-    handler: async (req: Express.Request, res: Express.Response) =>
+    handler: async (req: Express.Request, _res: Express.Response) =>
     {
         class query implements GetTxnJsonQueryAPI.QueryDTO
         {
@@ -296,7 +296,7 @@ router.get<GetTxnAPI.ResponseDTO>(`/api/v1/transactions/json-query`,
 
 router.get<GetTxnAPI.ResponseDTO>(`/api/v1/transactions`,
 {
-    handler: async (req: Express.Request, res: Express.Response) =>
+    handler: async (req: Express.Request, _res: Express.Response) =>
     {
         class query extends OptionalPaginationAPIQueryRequest
         {
@@ -401,7 +401,7 @@ router.get<GetTxnAPI.ResponseDTO>(`/api/v1/transactions`,
 
 router.delete<DeleteTxnAPI.ResponseDTO>(`/api/v1/transactions`,
 {
-    handler: async (req: Express.Request, res: Express.Response) =>
+    handler: async (req: Express.Request, _res: Express.Response) =>
     {
         let transactionalContext: null | Awaited<ReturnType<typeof Database.createTransactionalContext>> = null;
         try

@@ -4,7 +4,6 @@ import { TxnTagService, TxnTagNotFoundError } from "./txnTag.service.ts";
 import { UserNotFoundError, UserService } from "./user.service.ts";
 import { Decimal } from "decimal.js";
 import { MonadError } from "../../std_errors/monadError.ts";
-import { TxnTag } from "../entities/txnTag.entity.ts";
 import { CurrencyToBaseRateCache } from "../caches/currencyToBaseRate.cache.ts";
 import { QUERY_IGNORE } from "../../symbols.ts";
 import { Database } from "../db.ts";
@@ -13,7 +12,6 @@ import { CurrencyRateDatumsCache } from '../caches/currencyRateDatumsCache.cache
 import { FragmentRaw, nameofF } from "../entities/fragment.entity.ts";
 import { QueryRunner } from "typeorm";
 import { DecimalAdditionMapReducer } from "../servicesUtils.ts";
-import { FileNotFoundError, FilesService } from "./files.service.ts";
 
 export class FragmentMissingContainerOrCurrency extends MonadError<typeof FragmentMissingContainerOrCurrency.ERROR_SYMBOL>
 {

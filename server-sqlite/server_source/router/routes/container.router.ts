@@ -25,7 +25,7 @@ const router = new TypesafeRouter(express.Router());
 
 router.get<GetContainerAPI.ResponseDTO>(`/api/v1/containers`,
 {
-    handler: async (req: express.Request, res: express.Response) =>
+    handler: async (req: express.Request, _res: express.Response) =>
     {
         const now = Date.now();
         const authResult = await AccessTokenService.validateRequestTokenValidated(req, now);
@@ -96,7 +96,7 @@ router.get<GetContainerAPI.ResponseDTO>(`/api/v1/containers`,
 
 router.post<PostContainerAPI.ResponseDTO>(`/api/v1/containers`,
 {
-    handler: async (req: express.Request, res: express.Response) =>
+    handler: async (req: express.Request, _res: express.Response) =>
     {
         const now = Date.now();
         const authResult = await AccessTokenService.validateRequestTokenValidated(req, now);
@@ -115,7 +115,7 @@ router.post<PostContainerAPI.ResponseDTO>(`/api/v1/containers`,
 
 router.get<GetContainerTimelineAPI.ResponseDTO>(`/api/v1/containers/timeline`,
 {
-    handler: async (req: express.Request, res: express.Response) =>
+    handler: async (req: express.Request, _res: express.Response) =>
     {
         const now = Date.now();
         const authResult = await AccessTokenService.validateRequestTokenValidated(req, now);

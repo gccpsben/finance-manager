@@ -19,7 +19,7 @@ const router = new TypesafeRouter(express.Router());
 
 router.post<PostCurrencyRateAPI.ResponseDTO>(`/api/v1/currencyRateDatums`,
 {
-    handler: async (req: express.Request, res: express.Response) =>
+    handler: async (req: express.Request, _res: express.Response) =>
     {
         class bodyItem implements PostCurrencyRateAPI.RequestItemDTO
         {

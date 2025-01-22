@@ -49,7 +49,7 @@ export class BodyGenerator
      */
     public static enumeratePrimarySubPrimaryMatrixUUID(primaryCount = 4, subValueCount = 2)
     {
-        const generateIDs = (count: number) => new Array(count).fill(undefined).map(x => randomUUID());
+        const generateIDs = (count: number) => new Array(count).fill(undefined).map(_ => randomUUID());
         const userIDs = generateIDs(primaryCount);
         const subValueIDs = generateIDs(subValueCount);
         const output:

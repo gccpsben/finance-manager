@@ -208,7 +208,7 @@ export default async function(this: Context)
                         assertBody: true, expectedCode: 200,
                     });
 
-                    const response = await TransactionHelpers.postCreateTransaction(
+                    const _response = await TransactionHelpers.postCreateTransaction(
                     {
                         serverURL: serverURL, body:
                         {

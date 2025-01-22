@@ -13,7 +13,7 @@ const router = new TypesafeRouter(express.Router());
 
 router.get<GetCurrencyRateSrcBySrcIdAPI.ResponseDTO>(`/api/v1/currencyRateSources/:id` satisfies GetCurrencyRateSrcBySrcIdAPI.Path<':id'>,
 {
-    handler: async (req: express.Request, res: express.Response) =>
+    handler: async (req: express.Request, _res: express.Response) =>
     {
         const now = Date.now();
         const authResult = await AccessTokenService.validateRequestTokenValidated(req, now);
@@ -37,7 +37,7 @@ router.get<GetCurrencyRateSrcBySrcIdAPI.ResponseDTO>(`/api/v1/currencyRateSource
 
 router.get<GetCurrencyRateSrcAPI.ResponseDTO>(`/api/v1/:id/currencyRateSources` satisfies GetCurrencyRateSrcAPI.Path<':id'>,
 {
-    handler: async (req: express.Request, res: express.Response) =>
+    handler: async (req: express.Request, _res: express.Response) =>
     {
         const now = Date.now();
         const authResult = await AccessTokenService.validateRequestTokenValidated(req, now);
@@ -63,7 +63,7 @@ router.get<GetCurrencyRateSrcAPI.ResponseDTO>(`/api/v1/:id/currencyRateSources` 
 
 router.patch<PatchCurrencyRateSrcAPI.ResponseDTO>(`/api/v1/currencyRateSources`,
 {
-    handler: async (req: express.Request, res: express.Response) =>
+    handler: async (req: express.Request, _res: express.Response) =>
     {
         class body implements PatchCurrencyRateSrcAPI.RequestDTO
         {
@@ -111,7 +111,7 @@ router.patch<PatchCurrencyRateSrcAPI.ResponseDTO>(`/api/v1/currencyRateSources`,
 
 router.delete<DeleteCurrencyRateSrcAPI.ResponseDTO>(`/api/v1/currencyRateSources/:id` satisfies DeleteCurrencyRateSrcAPI.Path<string>,
 {
-    handler: async (req: express.Request, res: express.Response) =>
+    handler: async (req: express.Request, _res: express.Response) =>
     {
         const now = Date.now();
         const authResult = await AccessTokenService.validateRequestTokenValidated(req, now);
@@ -125,7 +125,7 @@ router.delete<DeleteCurrencyRateSrcAPI.ResponseDTO>(`/api/v1/currencyRateSources
 
 router.post<PostCurrencyRateSrcAPI.ResponseDTO>(`/api/v1/currencyRateSources`,
 {
-    handler: async (req: express.Request, res: express.Response) =>
+    handler: async (req: express.Request, _res: express.Response) =>
     {
         class body implements PostCurrencyRateSrcAPI.RequestDTO
         {
