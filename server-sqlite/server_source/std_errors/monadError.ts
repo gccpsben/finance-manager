@@ -3,7 +3,7 @@ import { get, StackFrame } from "stack-trace";
 import type { NoUnion } from "../index.d.ts";
 import process from "node:process";
 
-export class MonadError<T extends Symbol> extends Error
+export class MonadError<T extends symbol> extends Error
 {
     #errorSymbol: T;
     #stackFrame: StackFrame[] = [];
@@ -20,10 +20,12 @@ export class MonadError<T extends Symbol> extends Error
         this.#errorSymbol = symbol;
     }
 
-    public unwrapErrorChain(): (Error | MonadError<any>)[]
+    public unwrapErrorChain(): (Error | MonadError<symbol>)[]
     {
-        const output: (Error | MonadError<any>)[] = [];
-        const current: Error | MonadError<any> = this;
+        const output: (Error | MonadError<symbol>)[] = [];
+
+        // deno-lint-ignore no-this-alias
+        let current: Error | MonadError<symbol> = this;
 
         for (let i = 0; i < 999; i++)
         {
@@ -39,7 +41,7 @@ export class MonadError<T extends Symbol> extends Error
     {
         let msg = ``;
         msg += `\n${chalk.red(this)}`;
-        const chain: (Error | MonadError<any>)[] = [this, ...this.unwrapErrorChain()];
+        const chain: (Error | MonadError<symbol>)[] = [this, ...this.unwrapErrorChain()];
         for (const chainItem of chain)
         {
             if (chainItem instanceof MonadError) msg += "\n" + chainItem.#stackFrame.join("\n  > ");
@@ -54,18 +56,16 @@ export class MonadError<T extends Symbol> extends Error
  * This function disallows using union as the generic parameter T.
  * If you need to catch all errors, use ``unwrapAny``.
  * */
-export function unwrap<T extends NoUnion<Symbol>, V>(errOrValue: MonadError<T> | V, msg?: string): V
+export function unwrap<T extends NoUnion<symbol>, V>(errOrValue: MonadError<T> | V, msg?: string): V
 {
-    // @ts-expect-error
-    if (errOrValue instanceof MonadError) return void(panic(msg ?? ""));
+    if (errOrValue instanceof MonadError) throw panic(msg ?? "");
     return errOrValue;
 }
 
 /** Given a monad error, panic if it is an error, return the value as is if it is not. */
-export function unwrapAny<T extends Symbol, V>(errOrValue: MonadError<T> | V, msg?: string): V
+export function unwrapAny<T extends symbol, V>(errOrValue: MonadError<T> | V, msg?: string): V
 {
-    // @ts-expect-error
-    if (errOrValue instanceof MonadError) return void(panic(msg ?? ""));
+    if (errOrValue instanceof MonadError) throw panic(msg ?? "");
     return errOrValue;
 }
 
@@ -81,10 +81,10 @@ export const NestableErrorSymbol: unique symbol = Symbol();
 export interface NestableError
 {
     [NestableErrorSymbol]: true;
-    error: Error | MonadError<any>;
+    error: Error | MonadError<symbol>;
 }
 
-export function isNestableError(target: any): target is NestableError
+export function isNestableError(target: object): target is NestableError
 {
     if (target[NestableErrorSymbol]) return true;
     return false;

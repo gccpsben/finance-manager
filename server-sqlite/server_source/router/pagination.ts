@@ -3,12 +3,12 @@ import type { PaginationAPIResponse } from "../../../api-types/lib.d.ts";
 
 export class PaginationAPIResponseClass<T> implements PaginationAPIResponse<T>
 {
-    @IsNumber() totalItems: number;
-    @IsNumber() startingIndex: number;
-    @IsNumber() endingIndex: number;
-    @IsArray() rangeItems: T[];
+    @IsNumber() totalItems!: number;
+    @IsNumber() startingIndex!: number;
+    @IsNumber() endingIndex!: number;
+    @IsArray() rangeItems!: T[];
 
-    public static async prepareFromQueryItems<T>
+    public static prepareFromQueryItems<T>
     (
         queriedItems:
         {
@@ -18,7 +18,7 @@ export class PaginationAPIResponseClass<T> implements PaginationAPIResponse<T>
         userQueryStartIndex: number | undefined
     )
     {
-        const response: PaginationAPIResponseClass<T> = await (async () =>
+        const response: PaginationAPIResponseClass<T> = (() =>
         {
             const output = new PaginationAPIResponseClass<T>();
             output.startingIndex = userQueryStartIndex ?? 0;

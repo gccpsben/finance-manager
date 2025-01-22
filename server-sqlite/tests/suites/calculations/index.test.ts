@@ -674,7 +674,7 @@ export async function testForCalculationsInternals(this: Context)
 {
     await this.test(`Linear Interpolator Correctness `, async function()
     {
-        await (async function()
+        (function()
         {
             const definedPoints =
             [
@@ -703,7 +703,7 @@ export async function testForCalculationsInternals(this: Context)
 
         }).bind(this)();
 
-        await (async function()
+        (function()
         {
             const definedPoints =
             [
@@ -776,7 +776,7 @@ export async function testForCalculationsInternals(this: Context)
 
         }).bind(this)();
 
-        await (async function()
+        (function()
         {
             const definedPoints =
             [
@@ -807,6 +807,7 @@ export async function testForCalculationsInternals(this: Context)
         }).bind(this)();
     });
 
+    // deno-lint-ignore require-await
     await this.test(`Linear Stepper Correctness`, async function()
     {
         const refTest = { test: 1, test3: 3 };

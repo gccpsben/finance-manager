@@ -68,8 +68,8 @@ export class CreateAppDataSourceError<T extends Error> extends MonadError<typeof
 export class AsyncQueue
 {
     private running = false;
-    private callbacks: Function[] = [];
-    public async addToQueue(callback: () => Promise<void>)
+    private callbacks: (() => void)[] = [];
+    public addToQueue(callback: () => Promise<void>)
     {
         this.callbacks.push(callback);
         this.run();
@@ -119,25 +119,25 @@ export class Database
      * ```
      * ***WARN: The database will be locked in a transaction until the `endFailure` and `endSuccess` methods are called.***
      */
-    public static async createTransactionalContext()
+    public static createTransactionalContext()
     {
         type ReturnType = {
             endFailure: () => Promise<void>,
             endSuccess: () => Promise<void>,
             queryRunner: QueryRunner,
-            attachEndSuccessCallback: (callback: Function) => number,
+            attachEndSuccessCallback: (callback: () => void) => number,
             getIsTransactionEnded: () => boolean
         };
 
-        return new Promise<ReturnType>(async resolve =>
+        return new Promise<ReturnType>(resolve =>
         {
-            this.transactionsQueue.addToQueue(async () =>
+            this.transactionsQueue.addToQueue(() =>
             {
-                return new Promise<void>(async resolveInner =>
+                return new Promise<void>(resolveInner =>
                 {
                     let isEnded = false;
                     const runner = Database.AppDataSource!.createQueryRunner();
-                    const endSuccessCallbacks: Function[] = [];
+                    const endSuccessCallbacks: (() => void)[] = [];
                     const endFailure = async () =>
                     {
                         if (isEnded) return;
@@ -155,14 +155,16 @@ export class Database
                         resolveInner();
                         isEnded = true;
                     };
-                    await runner.startTransaction();
-                    return resolve(
+                    runner.startTransaction().then(_newSQLTransaction =>
                     {
-                        "endFailure": endFailure,
-                        "endSuccess": endSuccess,
-                        "queryRunner": runner,
-                        attachEndSuccessCallback: (callback: Function) => endSuccessCallbacks.push(callback),
-                        getIsTransactionEnded: () => isEnded
+                        return resolve(
+                        {
+                            "endFailure": endFailure,
+                            "endSuccess": endSuccess,
+                            "queryRunner": runner,
+                            attachEndSuccessCallback: (callback: () => void) => endSuccessCallbacks.push(callback),
+                            getIsTransactionEnded: () => isEnded
+                        });
                     });
                 });
             });
@@ -224,17 +226,17 @@ export class Database
                 // TODO: make TS happy here
                 Database.fs =
                 {
-                    // @ts-expect-error
+                    // @ts-expect-error Although the types differ, it should be a drop-in-replacement for fs.
                     createReadStream: memfsInstance.fs.createReadStream,
-                    // @ts-expect-error
+                    // @ts-expect-error Although the types differ, it should be a drop-in-replacement for fs.
                     createWriteStream: memfsInstance.fs.createWriteStream,
-                    // @ts-expect-error
+                    // @ts-expect-error Although the types differ, it should be a drop-in-replacement for fs.
                     readFile: memfsInstance.fs.readFile,
-                    // @ts-expect-error
+                    // @ts-expect-error Although the types differ, it should be a drop-in-replacement for fs.
                     writeFile: memfsInstance.fs.writeFile,
-                    // @ts-expect-error
+                    // @ts-expect-error Although the types differ, it should be a drop-in-replacement for fs.
                     rename: memfsInstance.fs.rename,
-                    // @ts-expect-error
+                    // @ts-expect-error Although the types differ, it should be a drop-in-replacement for fs.
                     openPromise: memfsInstance.fs.promises.open
                 };
             }

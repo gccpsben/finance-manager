@@ -2,9 +2,9 @@ import { CurrencyRatesCRON } from "./currencyRates.cron.ts";
 
 export interface CronService
 {
-    init(): Promise<void>;
-    start(): Promise<void>;
-    stop(): Promise<void>;
+    init(): Promise<void> | void;
+    start(): Promise<void> | void;
+    stop(): Promise<void> | void;
     getIsRunning(): boolean;
 };
 

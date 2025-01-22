@@ -13,14 +13,15 @@ import { GlobalCurrencyRateDatumsCache } from "../db/caches/currencyRateDatumsCa
 export class CurrencyRatesCRON implements CronService
 {
     #isRunning = false;
-    mainIntervalId: NodeJS.Timeout;
+    mainIntervalId: number | null = null;
 
     async init(): Promise<void> {
         ExtendedLog.logCyan(`Initializing currency rates CRON.`);
         await new Promise<void>(resolve => resolve());
         ExtendedLog.logCyan(`Initialized currency rates CRON.`);
     }
-    async start(): Promise<void>
+
+    start(): void
     {
         this.#isRunning = true;
         ExtendedLog.logCyan(`Starting currency rates CRON.`);

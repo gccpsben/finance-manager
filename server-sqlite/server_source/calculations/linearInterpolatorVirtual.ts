@@ -4,14 +4,14 @@ export class LinearInterpolatorVirtual
 {
     private decimal2 = new Decimal("2");
     public keys: Decimal[] = [];
-    private valueFunc: (entry: Decimal) => Promise<Decimal>;
-    private constructor(keys: Decimal[], valueFunc: (entry: Decimal) => Promise<Decimal>)
+    private valueFunc: (entry: Decimal) => Promise<Decimal> | Decimal;
+    private constructor(keys: Decimal[], valueFunc: (entry: Decimal) => Promise<Decimal> | Decimal)
     {
         this.keys = keys;
         this.valueFunc = valueFunc;
     }
 
-    public static async fromEntries<T>(entries:T[], keyingFunc: (entry:T) => Promise<Decimal>, valueFunc: (entry: Decimal) => Promise<Decimal>): Promise<LinearInterpolatorVirtual>
+    public static async fromEntries<T>(entries:T[], keyingFunc: (entry:T) => Promise<Decimal> | Decimal, valueFunc: (entry: Decimal) => Promise<Decimal> | Decimal): Promise<LinearInterpolatorVirtual>
     {
         const keys = (await Promise.all(entries.map(x => keyingFunc(x)))).sort((a,b) => b.sub(a).toNumber());
         return new LinearInterpolatorVirtual(keys, valueFunc);

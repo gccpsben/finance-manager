@@ -269,7 +269,7 @@ export class CurrencyCalculator
         const output = await LinearInterpolatorVirtual.fromEntries
         (
             currencyRateDatums,
-            async d => new Decimal(d.date),
+            d => new Decimal(d.date),
             async datumKey =>
             {
                 const datum = dateToDatumTable[datumKey.toString()];
