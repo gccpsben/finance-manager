@@ -3,7 +3,7 @@ import { resetDatabase, serverURL, TESTS_ENDPOINTS } from "../../index.test.js";
 import { BodyGenerator } from "../../lib/bodyGenerator.js";
 import { assertBodyConfirmToModel, assertStrictEqual, HTTPAssert } from "../../lib/assert.js";
 import { Decimal } from "decimal.js";
-import { randomUUID } from "crypto";
+import { randomUUID } from "node:crypto";
 import { AuthHelpers } from "../auth/helpers.js";
 import { postBaseCurrency, postCurrency } from "../currency/index.test.js";
 import { PostCurrencyAPIClass } from "../currency/classes.js";

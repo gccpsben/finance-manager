@@ -1,4 +1,16 @@
-import 'reflect-metadata';
+import process from "node:process";
+export function preventEval()
+{
+    // Lame attempt to limit eval, since `disallow-code-generation-from-strings` breaks depd.
+    globalThis.eval = (arg: string) =>
+    {
+        console.log(`Someone called eval with "${arg}", exiting process.`);
+        process.exit(-1);
+    };
+}
+
+preventEval();
+
 import { EnvManager, RESTfulLogType } from "./env.js";
 import { ExtendedLog } from "./debug/extendedLog.js";
 import { Server } from "./router/server.js";
@@ -12,6 +24,8 @@ import { panic } from './std_errors/monadError.js';
 
 export async function main(envFilePath: ['path', string | undefined] | ['rawContent', string])
 {
+    preventEval();
+
     try
     {
         // Set precision of calculations

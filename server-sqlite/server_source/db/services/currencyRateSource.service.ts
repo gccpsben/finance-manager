@@ -1,6 +1,5 @@
-import path from "path";
+import path from "node:path";
 import { MonadError, NestableError, NestableErrorSymbol, panic, unwrap } from "../../std_errors/monadError.js";
-import { CurrencyRateSource } from "../entities/currencyRateSource.entity.js";
 import { CurrencyRateSourceRepository } from "../repositories/currencyRateSource.repository.js";
 import { CurrencyNotFoundError } from "./currency.service.js";
 import { UserNotFoundError } from "./user.service.js";
@@ -64,7 +63,7 @@ export class PatchCurrencySrcValidationError extends MonadError<typeof InvalidNu
 
 export class ExecuteCurrencyRateSourceError<T extends Error> extends MonadError<typeof ExecuteCurrencyRateSourceError.ERROR_SYMBOL> implements NestableError
 {
-    [NestableErrorSymbol]: true;
+    [NestableErrorSymbol]: true = true;
     static readonly ERROR_SYMBOL: unique symbol;
     userId: string;
     currencyId: string;
@@ -375,7 +374,7 @@ export class CurrencyRateSourceService
             if (e instanceof Error)
                 return new ExecuteCurrencyRateSourceError(e, refCurrencyId, ownerId);
 
-            throw new ExecuteCurrencyRateSourceError(e, refCurrencyId, ownerId).panic();
+            throw new ExecuteCurrencyRateSourceError(new Error("Generic error: " + e), refCurrencyId, ownerId).panic();
         }
     }
 

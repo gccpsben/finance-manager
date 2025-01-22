@@ -5,14 +5,15 @@
 	"private": true,
 	"type": "module",
 	"scripts": {
-		"dev_watch": "tsc-watch -p \"./tsconfig.json\" --onSuccess \"node server_build/index.js ./.dev.env\"",
-		"dev_once": "tsc && node server_build/index.js ./dev.env",
-		"run_prod": "node ./server_production/index.js ./.env",
-		"build_prod": "tsc --outDir ./server_production",
-		"docs:dev": "vuepress dev docs",
-		"docs:build": "vuepress build docs",
-		"test": "tsc -p ./tests/tsconfig.json && node ./server_ut-build/tests/index.test.js",
-		"test-no-type": "tsc --noCheck -p ./tests/tsconfig.json && node ./server_ut-build/tests/index.test.js"
+		"dev_watch": "deno run --watch --allow-all server_source/index.ts ./.dev.env",
+		"dev_watch_node": "tsc-watch -p \"./tsconfig.json\" --onSuccess \"node server_build/index.js ./.dev.env\"",
+		"dev_once_node": "tsc && node server_build/index.js ./dev.env",
+		"run_prod_node": "node ./server_production/index.js ./.env",
+		"build_prod_node": "tsc --outDir ./server_production",
+		"docs:dev_node": "vuepress dev docs",
+		"docs:build_node": "vuepress build docs",
+		"test_node": "tsc -p ./tests/tsconfig.json && node ./server_ut-build/tests/index.test.js",
+		"test-no-type_node": "tsc --noCheck -p ./tests/tsconfig.json && node ./server_ut-build/tests/index.test.js"
 	},
 	"devDependencies": {
 		"@faker-js/faker": "^8.4.1",
@@ -36,7 +37,6 @@
 		"@types/morgan": "^1.9.9",
 		"@types/stack-trace": "^0.0.33",
 		"argon2": "^0.41.1",
-		"better-sqlite3": "^9.6.0",
 		"chalk": "^5.4.1",
 		"class-transformer": "^0.5.1",
 		"class-validator": "^0.14.1",

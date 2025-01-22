@@ -1,4 +1,4 @@
-import { randomUUID } from "crypto";
+import { randomUUID } from "node:crypto";
 import { resetDatabase, serverURL, TESTS_ENDPOINTS, TestUserEntry } from "../../index.test.js";
 import { assertBodyConfirmToModel, assertJSONEqual, assertStrictEqual, HTTPAssert } from "../../lib/assert.js";
 import { Context } from "../../lib/context.js";

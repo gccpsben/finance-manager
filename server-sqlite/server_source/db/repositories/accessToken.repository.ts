@@ -1,7 +1,7 @@
 import { DataSource, Repository } from "typeorm";
 import { AccessToken } from "../entities/accessToken.entity.js";
 import { panic } from "../../std_errors/monadError.js";
-import { randomUUID } from "crypto";
+import { randomUUID } from "node:crypto";
 import { UserNotFoundError } from "../services/user.service.js";
 import { UserRepository } from "./user.repository.js";
 import { EnvManager } from "../../env.js";

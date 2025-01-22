@@ -1,8 +1,8 @@
-import * as fs from 'fs';
+import * as fs from 'node:fs';
 import dotenv from 'dotenv';
 import dotenvExpand from 'dotenv-expand';
 import { isInt, isNumberString } from 'class-validator';
-import path from 'path';
+import path from 'node:path';
 import fsExtra from 'fs-extra';
 import { MonadError, NestableError, NestableErrorSymbol } from './std_errors/monadError.js';
 import { DirNotFoundError } from './std_errors/fsErrors.js';
@@ -12,7 +12,7 @@ export enum RESTfulLogType { "DISABLED","TO_FILE_ONLY","TO_CONSOLE_ONLY","TO_BOT
 
 export class ReadEnvError<T extends Error> extends MonadError<typeof ReadEnvError.ERROR_SYMBOL> implements NestableError
 {
-    [NestableErrorSymbol]: true;
+    [NestableErrorSymbol]: true = true;
     static readonly ERROR_SYMBOL: unique symbol;
 
     error: T;
@@ -26,7 +26,7 @@ export class ReadEnvError<T extends Error> extends MonadError<typeof ReadEnvErro
 
 export class ParseEnvError<T extends Error> extends MonadError<typeof ParseEnvError.ERROR_SYMBOL> implements NestableError
 {
-    [NestableErrorSymbol]: true;
+    [NestableErrorSymbol]: true = true;
     static readonly ERROR_SYMBOL: unique symbol;
 
     error: T;
@@ -159,7 +159,7 @@ export class EnvManager
                 dotenvExpand.expand({ parsed: dotenv.parse(envContent) });
             }
         }
-        catch(e) { return new ReadEnvError(e); }
+        catch(e) { return new ReadEnvError(e instanceof Error ? e : new Error(`Generic error: ` + e)); }
     }
 
     public static parseEnv(): null | ParseEnvError<

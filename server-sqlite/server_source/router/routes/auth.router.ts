@@ -15,8 +15,8 @@ router.post<PostLoginAPI.ResponseDTO>("/api/v1/auth/login",
     {
         class body implements PostLoginAPI.RequestDTO
         {
-            @IsString() @IsNotEmpty() username: string;
-            @IsString() @IsNotEmpty() password: string;
+            @IsString() @IsNotEmpty() username!: string;
+            @IsString() @IsNotEmpty() password!: string;
         };
 
         const now = Date.now();

@@ -6,7 +6,7 @@ import { AuthHelpers } from "../auth/helpers.js";
 import { CurrencyHelpers } from "./helpers.js";
 import { BodyGenerator } from "../../lib/bodyGenerator.js";
 import { fillArray } from "../../lib/utils.js";
-import { randomUUID } from "crypto";
+import { randomUUID } from "node:crypto";
 import { simpleFaker } from "@faker-js/faker";
 import { GetCurrencyAPIClass, GetCurrencyRatesHistoryAPIClass, PostCurrencyAPIClass, PostCurrencyRateDatumAPIClass } from "./classes.js";
 import { Decimal } from "decimal.js";

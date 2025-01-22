@@ -1,6 +1,6 @@
 import { ClassConstructor } from "class-transformer";
 import { validate, ValidationError, ValidationOptions } from "class-validator";
-import path from "path";
+import path from "node:path";
 import { validateArrayAgainstModel, validateBodyAgainstModel } from "./validation.js";
 
 export class UnitTestAssertion extends Error

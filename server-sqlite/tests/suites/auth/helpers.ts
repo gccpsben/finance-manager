@@ -1,6 +1,6 @@
 import { TESTS_ENDPOINTS, TestUserDict, TestUserEntry } from "../../index.test.js";
 import { HTTPAssert } from '../../lib/assert.js';
-import { randomUUID } from "crypto";
+import { randomUUID } from "node:crypto";
 import { PostLoginAPIClass } from "./classes.js";
 
 export namespace AuthHelpers

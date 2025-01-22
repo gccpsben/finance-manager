@@ -1,20 +1,20 @@
 import express from 'express';
-import * as core from "express-serve-static-core";
 import { ExtendedLog } from '../debug/extendedLog.js';
 import { getMainRouter } from './mainRouter.js';
 import morgan from 'morgan';
-import { PassThrough } from 'stream';
+import { PassThrough } from 'node:stream';
 import { ValidationError } from 'class-validator';
-import { randomUUID } from 'crypto';
+import { randomUUID } from 'node:crypto';
 import createHttpError from 'http-errors';
 import { QueryFailedError } from 'typeorm';
 import { UserNameTakenError } from '../db/services/user.service.js';
 import { EnvManager, RESTfulLogType } from '../env.js';
-import { readFileSync } from 'fs';
-import { createServer as createHttpServer, Server as HTTPServer } from 'http';
-import { createServer as createHttpsServer, Server as HTTPSServer } from 'https';
+import { readFileSync } from 'node:fs';
+import { createServer as createHttpServer, Server as HTTPServer } from 'node:http';
+import { createServer as createHttpsServer, Server as HTTPSServer } from 'node:https';
 import helmet from "helmet";
 import compression from 'compression';
+import { Buffer } from "node:buffer";
 
 export type StartServerConfig =
 {
@@ -23,7 +23,7 @@ export type StartServerConfig =
 
 export class Server
 {
-    private static expressApp: core.Express;
+    private static expressApp: express.Express;
     private static _expressServer: HTTPSServer | HTTPServer;
     public static get expressServer() { return Server._expressServer; }
     private static set expressServer(value: HTTPSServer | HTTPServer) { Server._expressServer = value; }

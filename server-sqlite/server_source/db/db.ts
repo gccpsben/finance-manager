@@ -19,16 +19,16 @@ import { Fragment } from "./entities/fragment.entity.js";
 import { FileNotFoundError } from "../std_errors/fsErrors.js";
 import { File } from "./entities/file.entity.js";
 import { FileRepository } from "./repositories/file.repository.js";
-import { createReadStream, createWriteStream, readFile, rename, writeFile } from "fs";
+import { createReadStream, createWriteStream, readFile, rename, writeFile } from "node:fs";
 import { FileReceiver } from "../io/fileReceiver.js";
-import { randomUUID } from "crypto";
-import path from "path";
+import { randomUUID } from "node:crypto";
+import path from "node:path";
 import { memfs } from "memfs";
-import { open } from "fs/promises";
+import { open } from "node:fs/promises";
 
 export class DatabaseInitError<T extends Error> extends MonadError<typeof DatabaseInitError.ERROR_SYMBOL> implements NestableError
 {
-    [NestableErrorSymbol]: true;
+    [NestableErrorSymbol]: true = true;
     static readonly ERROR_SYMBOL: unique symbol;
 
     error: T;
@@ -53,7 +53,7 @@ export class DatabaseInitMissingDataSourceError extends MonadError<typeof Databa
 
 export class CreateAppDataSourceError<T extends Error> extends MonadError<typeof CreateAppDataSourceError.ERROR_SYMBOL> implements NestableError
 {
-    [NestableErrorSymbol]: true;
+    [NestableErrorSymbol]: true = true;
     static readonly ERROR_SYMBOL: unique symbol;
 
     error: T;
@@ -176,7 +176,7 @@ export class Database
 
         Database.AppDataSource = new DataSource(
         {
-            type: "better-sqlite3",
+            type: 'sqlite',
             entities: [User, AccessToken, Currency, Container, Transaction, TxnTag, CurrencyRateDatum, CurrencyRateSource, Fragment, File],
             database: EnvManager.dataLocation[0] === 'in-memory' ? ":memory:" : `${EnvManager.dataLocation[1]}/db.db`,
             synchronize: true,
@@ -259,7 +259,7 @@ export class Database
         {
             ExtendedLog.logRed(`Error while initializing database. The database might contain entries violating database constrains.`);
             console.log(e);
-            return new DatabaseInitError(e);
+            return new DatabaseInitError(e instanceof Error ? e : new Error("Generic error: " + e));
         }
     }
 

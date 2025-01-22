@@ -3,7 +3,7 @@ import { resetDatabase, serverURL, TESTS_ENDPOINTS } from "../../index.test.js";
 import { assertJSONEqual, assertStrictEqual } from "../../lib/assert.js";
 import { Context } from "../../lib/context.js";
 import { Decimal } from "decimal.js";
-import { randomUUID } from "crypto";
+import { randomUUID } from "node:crypto";
 import { simpleFaker } from "@faker-js/faker";
 import { GetUserBalanceHistoryAPI, GetUserNetworthHistoryAPI } from "../../../../api-types/calculations.js";
 import { shuffleArray } from '../../lib/utils.js';

@@ -1,0 +1,18 @@
+{
+  "tasks": {},
+  "imports": {
+    "@std/assert": "jsr:@std/assert@1"
+  },
+  "compilerOptions": {
+    "experimentalDecorators": true,
+    "strictNullChecks": true,
+    "strictBindCallApply": true,
+    "noImplicitAny": true,
+    "noImplicitOverride": true,
+    "noImplicitThis": true,
+    "lib": ["ES6", "dom"]
+  },
+  "unstable": [
+    "sloppy-imports"
+  ]
+}

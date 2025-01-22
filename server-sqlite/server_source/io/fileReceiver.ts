@@ -1,6 +1,6 @@
-import * as fs from 'fs';
+import * as fs from 'node:fs';
 import { MonadError, panic } from '../std_errors/monadError.js';
-import path from 'path';
+import path from 'node:path';
 
 export class AppendBytesCommitFileIOError<T> extends MonadError<typeof AppendBytesCommitFileIOError.ERROR_SYMBOL>
 {

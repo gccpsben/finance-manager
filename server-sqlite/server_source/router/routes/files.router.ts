@@ -9,7 +9,7 @@ import { Database } from "../../db/db.js";
 import { FilesService } from "../../db/services/files.service.js";
 import { UserNotFoundError } from "../../db/services/user.service.js";
 import { AppendBytesCommitFileIOError, AppendBytesOutOfBoundError, AppendBytesSessionNotFoundError, AppendBytesUserMismatchError, AppendBytesWriteBufferIOError } from "../../io/fileReceiver.js";
-import path from "path";
+import path from "node:path";
 
 const router = new TypesafeRouter(express.Router());
 
