@@ -1,5 +1,4 @@
 import { Entity, PrimaryGeneratedColumn, Column, BeforeInsert, BeforeUpdate, JoinColumn, Check, Unique, Relation, OneToMany } from "typeorm";
-import "reflect-metadata"
 import { ManyToOne } from "typeorm";
 import { User } from "./user.entity.js";
 import { IsBoolean, IsNotEmpty, IsOptional, IsString, MaxLength } from "class-validator";
@@ -17,50 +16,50 @@ import { nameof } from "../servicesUtils.js";
 export class Currency extends EntityClass
 {
     @PrimaryGeneratedColumn('uuid')
-    id: string | null;
+    id!: string | null;
 
-    @Column({nullable: false})
+    @Column({nullable: false, type: "varchar"})
     @IsNotEmpty()
     @IsString()
     @MaxLength(128)
-    name: string;
+    name!: string;
 
-    @Column({nullable: true, type: String})
+    @Column({nullable: true, type: "varchar"})
     @IsOptional()
     @IsString()
     @IsDecimalJSString()
     fallbackRateAmount?: string | null;
 
-    @Column( { nullable: true, type: String })
+    @Column( { nullable: true, type: "varchar" })
     fallbackRateCurrencyId?: string | null;
 
     @ManyToOne(type => Currency, currency => currency.fallbackRateCurrency, { nullable: true })
     @JoinColumn()
     @EnsureNotPlainForeignKey()
-    fallbackRateCurrency: Omit<Omit<Relation<Currency>, 'owner'>, 'refCurrency'> | null;
+    fallbackRateCurrency!: Omit<Omit<Relation<Currency>, 'owner'>, 'refCurrency'> | null;
 
-    @Column( { nullable: false })
-    ownerId: string;
+    @Column( { nullable: false, type: "varchar" })
+    ownerId!: string;
 
     @ManyToOne(type => User, user => user.currencies, { nullable: false })
     @JoinColumn()
     @EnsureNotPlainForeignKey()
-    owner: Relation<User> | null;
+    owner!: Relation<User> | null;
 
     @OneToMany(type => CurrencyRateSource, currencyRateSource => currencyRateSource.refCurrency)
     @EnsureNotPlainForeignKey()
-    currenciesRateSources: CurrencyRateSource[];
+    currenciesRateSources!: CurrencyRateSource[];
 
-    @Column()
+    @Column({ type: 'boolean' })
     @IsBoolean()
     @IsNotEmpty()
-    isBase: boolean;
+    isBase!: boolean;
 
-    @Column()
+    @Column({ type: "varchar" })
     @IsNotEmpty()
-    ticker: string;
+    ticker!: string;
 
-    @Column({ nullable: true, type: Number })
+    @Column({ nullable: true, type: 'int' })
     lastRateCronUpdateTime?: number | null;
 
     @BeforeInsert()

@@ -1,5 +1,5 @@
 import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, Relation } from "typeorm";
-import "reflect-metadata"
+
 import { IsNotEmpty, IsString, MaxLength } from "class-validator";
 import { EntityClass } from "../dbEntityBase.js";
 import { EnsureNotPlainForeignKey } from "../validators.js";
@@ -10,20 +10,20 @@ import { nameof } from "../servicesUtils.js";
 export class TxnTag extends EntityClass
 {
     @PrimaryGeneratedColumn("uuid")
-    id: string;
+    id!: string;
 
-    @Column({ unique: false, nullable: false })
+    @Column({ unique: false, nullable: false, type: "varchar" })
     @IsString()
     @IsNotEmpty()
     @MaxLength(256)
-    name: string;
+    name!: string;
 
-    @Column( { nullable: false })
-    ownerId: string;
+    @Column( { nullable: false, type: "varchar" })
+    ownerId!: string;
 
     @ManyToOne(type => User, user => user.tags)
     @EnsureNotPlainForeignKey()
-    owner: Relation<User> | null;
+    owner!: Relation<User> | null;
 }
 
 export const nameofTT = (x: keyof TxnTag) => nameof<TxnTag>(x);

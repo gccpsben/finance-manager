@@ -1,5 +1,5 @@
 import { Entity, PrimaryGeneratedColumn, Column, JoinColumn, Relation } from "typeorm";
-import "reflect-metadata"
+
 import { ManyToOne } from "typeorm";
 import { User } from "./user.entity.js";
 import { EntityClass } from "../dbEntityBase.js";
@@ -11,44 +11,44 @@ export const CURRENCY_RATE_SOURCE_ENTITY_TABLE_NAME = "currency_rate_source";
 export class CurrencyRateSource extends EntityClass
 {
     @PrimaryGeneratedColumn('uuid')
-    id: string | null;
+    id!: string | null;
 
-    @Column( { nullable: false })
-    refCurrencyId: string;
-
-    @ManyToOne(type => Currency, { nullable: false })
-    @JoinColumn()
-    @EnsureNotPlainForeignKey()
-    refCurrency: Omit<Omit<Relation<Currency>, 'owner'>, 'refCurrency'> | null;
-
-    @Column( { nullable: false })
-    refAmountCurrencyId: string;
+    @Column( { nullable: false, type: "varchar" })
+    refCurrencyId!: string;
 
     @ManyToOne(type => Currency, { nullable: false })
     @JoinColumn()
     @EnsureNotPlainForeignKey()
-    refAmountCurrency: Omit<Omit<Relation<Currency>, 'owner'>, 'refCurrency'> | null;
+    refCurrency!: Omit<Omit<Relation<Currency>, 'owner'>, 'refCurrency'> | null;
 
-    @Column( { nullable: false })
-    ownerId: string;
+    @Column( { nullable: false, type: "varchar" })
+    refAmountCurrencyId!: string;
+
+    @ManyToOne(type => Currency, { nullable: false })
+    @JoinColumn()
+    @EnsureNotPlainForeignKey()
+    refAmountCurrency!: Omit<Omit<Relation<Currency>, 'owner'>, 'refCurrency'> | null;
+
+    @Column( { nullable: false, type: "varchar" })
+    ownerId!: string;
 
     @ManyToOne(type => User, user => user.currencies, { nullable: false })
     @JoinColumn()
     @EnsureNotPlainForeignKey()
-    owner: Relation<User> | null;
+    owner!: Relation<User> | null;
 
-    @Column( { nullable: false } )
-    hostname: string;
+    @Column( { nullable: false, type: "varchar" } )
+    hostname!: string;
 
-    @Column( { nullable: false } )
-    path: string;
+    @Column( { nullable: false, type: "varchar" } )
+    path!: string;
 
-    @Column( { nullable: false } )
-    jsonQueryString: string;
+    @Column( { nullable: false, type: "varchar" } )
+    jsonQueryString!: string;
 
-    @Column( { nullable: false } )
-    name: string;
+    @Column( { nullable: false, type: "varchar" } )
+    name!: string;
 
-    @Column({ nullable: true, type: Number })
-    lastExecuteTime: number | null;
+    @Column({ nullable: true, type: 'int' })
+    lastExecuteTime!: number | null;
 }

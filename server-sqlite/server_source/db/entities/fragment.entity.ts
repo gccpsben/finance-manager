@@ -1,5 +1,5 @@
 import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, Relation, JoinColumn, Check } from "typeorm";
-import "reflect-metadata"
+
 import { IsOptional, IsString } from "class-validator";
 import { EntityClass } from "../dbEntityBase.js";
 import { EnsureNotPlainForeignKey, IsDecimalJSString } from "../validators.js";
@@ -51,70 +51,70 @@ import { nameof } from "../servicesUtils.js";
 export class Fragment extends EntityClass
 {
     @PrimaryGeneratedColumn("uuid")
-    id: string;
+    id!: string;
 
-    @Column({nullable: false})
-    parentTxnId: string;
+    @Column({nullable: false, type: "varchar"})
+    parentTxnId!: string;
 
     @JoinColumn({ name: "parentTxnId" })
     @EnsureNotPlainForeignKey()
     @ManyToOne(type => Transaction, { nullable: false })
-    parentTxn: Relation<Transaction>;
+    parentTxn!: Relation<Transaction>;
 
     // #region From
-    @Column( { nullable: true, type: String } )
+    @Column( { nullable: true, type: "varchar" } )
     @IsOptional()
     @IsString()
     @IsDecimalJSString()
-    fromAmount: string | null;
+    fromAmount!: string | null;
 
-    @Column({nullable: true, type: String})
-    fromCurrencyId: string | null;
+    @Column({nullable: true, type: "varchar"})
+    fromCurrencyId!: string | null;
 
     @JoinColumn({ name: "fromCurrencyId" })
     @EnsureNotPlainForeignKey()
     @ManyToOne(type => Currency, { nullable: true })
-    fromCurrency: Relation<Currency> | null;
+    fromCurrency!: Relation<Currency> | null;
 
-    @Column({nullable: true})
-    fromContainerId: string | null;
+    @Column({nullable: true, type: "varchar"})
+    fromContainerId!: string | null;
 
     @JoinColumn({ name: "fromContainerId" })
     @EnsureNotPlainForeignKey()
     @ManyToOne(type => Container, { nullable: true })
-    fromContainer: Relation<Container> | null;
+    fromContainer!: Relation<Container> | null;
     // #endregion
 
     // #region To
-    @Column( { nullable: true, type: String } )
+    @Column( { nullable: true, type: "varchar" } )
     @IsOptional()
     @IsString()
     @IsDecimalJSString()
-    toAmount: string | null;
+    toAmount!: string | null;
 
-    @Column({nullable: true})
-    toCurrencyId: string | null;
+    @Column({nullable: true, type: "varchar"})
+    toCurrencyId!: string | null;
 
     @JoinColumn({ name: "toCurrencyId" })
     @EnsureNotPlainForeignKey()
     @ManyToOne(type => Currency, { nullable: true })
-    toCurrency: Relation<Currency> | null;
+    toCurrency!: Relation<Currency> | null;
 
-    @Column({nullable: true})
-    toContainerId: string | null;
+    @Column({nullable: true, type: "varchar"})
+    toContainerId!: string | null;
 
     @JoinColumn({ name: "toContainerId" })
     @EnsureNotPlainForeignKey()
     @ManyToOne(type => Container, { nullable: true })
-    toContainer: Relation<Container> | null;
+    toContainer!: Relation<Container> | null;
     // #endregion
 
-    @Column( { nullable: false })
-    ownerId: string;
+    @Column( { nullable: false, type: "varchar" })
+    ownerId!: string;
 
     @ManyToOne(type => User, user => user.tags)
     @EnsureNotPlainForeignKey()
-    owner: Relation<User> | null;
+    owner!: Relation<User> | null;
 }
 
 export type FragmentRaw =

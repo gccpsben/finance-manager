@@ -1,5 +1,5 @@
 import { Entity, PrimaryGeneratedColumn, Column } from "typeorm";
-import "reflect-metadata"
+
 import { OneToMany } from "typeorm";
 import { AccessToken } from "./accessToken.entity.js";
 import { IsNotEmpty, IsString, MaxLength } from "class-validator";
@@ -15,43 +15,43 @@ import { CurrencyRateSource } from "./currencyRateSource.entity.js";
 export class User extends EntityClass
 {
     @PrimaryGeneratedColumn("uuid")
-    id: string;
+    id!: string;
 
-    @Column({ unique: true, nullable: false })
+    @Column({ unique: true, nullable: false, type: "varchar" })
     @IsString()
     @IsNotEmpty()
     @MaxLength(256)
-    username: string;
+    username!: string;
 
-    @Column({nullable: false, select: false})
+    @Column({nullable: false, select: false, type: "varchar"})
     @IsString()
     @IsNotEmpty()
     @MaxLength(256)
-    passwordHash: string;
+    passwordHash!: string;
 
     @OneToMany(type => AccessToken, accessToken => accessToken.owner)
     @EnsureNotPlainForeignKey()
-    accessTokens: AccessToken[] | null;
+    accessTokens!: AccessToken[] | null;
 
     @OneToMany(type => Currency, currency => currency.owner)
     @EnsureNotPlainForeignKey()
-    currencies: Currency[] | null;
+    currencies!: Currency[] | null;
 
     @OneToMany(type => CurrencyRateSource, currencyRateSource => currencyRateSource.owner)
     @EnsureNotPlainForeignKey()
-    currenciesRateSources: CurrencyRateSource[] | null;
+    currenciesRateSources!: CurrencyRateSource[] | null;
 
     @OneToMany(type => Container, container => container.owner)
     @EnsureNotPlainForeignKey()
-    containers: Container[] | null;
+    containers!: Container[] | null;
 
     @OneToMany(type => Transaction, transaction => transaction.owner)
     @EnsureNotPlainForeignKey()
-    transactions: Transaction[] | null;
+    transactions!: Transaction[] | null;
 
     @OneToMany(type => TxnTag, tag => tag.owner)
     @EnsureNotPlainForeignKey()
-    tags: TxnTag[] | null;
+    tags!: TxnTag[] | null;
 }
 
 export const nameofU = (x: keyof User) => x;

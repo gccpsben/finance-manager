@@ -1,5 +1,5 @@
 import { Entity, PrimaryGeneratedColumn, Column, JoinColumn, Unique, Check, Index, Relation } from "typeorm";
-import "reflect-metadata"
+
 import { ManyToOne } from "typeorm";
 import { User } from "./user.entity.js";
 import { EntityClass } from "../dbEntityBase.js";
@@ -12,43 +12,43 @@ import { Currency } from "./currency.entity.js";
 export class CurrencyRateDatum extends EntityClass
 {
     @PrimaryGeneratedColumn('uuid')
-    id: string | null;
+    id!: string | null;
 
-    @Column({ nullable: false })
+    @Column({ nullable: false, type: "varchar" })
     @IsDecimalJSString()
-    amount: string;
+    amount!: string;
 
-    @Column( { nullable: false })
+    @Column( { nullable: false, type: "varchar" })
     @Index()
-    refCurrencyId: string;
+    refCurrencyId!: string;
 
     @ManyToOne(type => Currency, { nullable: false })
     @JoinColumn()
     @EnsureNotPlainForeignKey()
-    refCurrency: Relation<Currency> | null;
+    refCurrency!: Relation<Currency> | null;
 
-    @Column( { nullable: false })
+    @Column( { nullable: false, type: "varchar" })
     @Index()
-    refAmountCurrencyId: string;
+    refAmountCurrencyId!: string;
 
     @ManyToOne(type => Currency, { nullable: false })
     @JoinColumn()
     @EnsureNotPlainForeignKey()
-    refAmountCurrency: Relation<Currency> | null;
+    refAmountCurrency!: Relation<Currency> | null;
 
-    @Column( { nullable: false })
+    @Column( { nullable: false, type: "varchar" })
     @Index()
-    ownerId: string;
+    ownerId!: string;
 
     @ManyToOne(type => User, { nullable: false })
     @JoinColumn()
     @EnsureNotPlainForeignKey()
-    owner: Relation<User> | null;
+    owner!: Relation<User> | null;
 
     @Column({ type: "int", nullable: false })
     @IsUTCDateInt()
     @Index()
-    date: number;
+    date!: number;
 }
 
 export const nameofCRD = (k: keyof CurrencyRateDatum) => k;

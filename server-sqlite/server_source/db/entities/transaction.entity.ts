@@ -1,5 +1,5 @@
 import { Entity, PrimaryGeneratedColumn, Column, BeforeInsert, BeforeUpdate, ManyToOne, JoinColumn, Index, Relation, ManyToMany, JoinTable, OneToMany } from "typeorm";
-import "reflect-metadata"
+
 import { IsBoolean, IsNotEmpty, IsOptional, IsString, MaxLength } from "class-validator";
 import { EntityClass } from "../dbEntityBase.js";
 import { EnsureNotPlainForeignKey, IsUTCDateInt } from "../validators.js";
@@ -17,50 +17,50 @@ import { File } from './file.entity.js';
 export class Transaction extends EntityClass
 {
     @PrimaryGeneratedColumn("uuid")
-    id: string | null;
+    id!: string | null;
 
-    @Column({ nullable: false })
+    @Column({ nullable: false, type: "varchar" })
     @IsString()
     @IsNotEmpty()
     @MaxLength(256)
     @Index({fulltext: true})
-    title: string;
+    title!: string;
 
-    @Column({ nullable: true, type: String })
+    @Column({ nullable: true, type: "varchar" })
     @IsOptional()
     @IsString()
     @MaxLength(5128)
     @Index({fulltext: true})
-    description: string | null;
+    description!: string | null;
 
-    @Column( { nullable: false })
-    ownerId: string;
+    @Column( { nullable: false, type: "varchar" })
+    ownerId!: string;
 
     @ManyToOne(type => User, user => user.transactions, { nullable: false })
     @JoinColumn({ name: "ownerId" })
     @EnsureNotPlainForeignKey()
-    owner: Relation<User> | null;
+    owner!: Relation<User> | null;
 
     @Column({ type: "int", nullable: false })
     @IsUTCDateInt()
-    creationDate: number;
+    creationDate!: number;
 
     @ManyToMany((type) => TxnTag, { cascade: true })
     @JoinTable()
     @EnsureNotPlainForeignKey()
-    tags: TxnTag[] | string[] | null;
+    tags!: TxnTag[] | string[] | null;
 
     @OneToMany(() => Fragment, (fragment) => fragment.parentTxn)
-    fragments: Fragment[];
+    fragments!: Fragment[];
 
     @ManyToMany(() => File)
     @JoinTable()
-    files: File[];
+    files!: File[];
 
-    @Column({ nullable: false, type: Boolean })
+    @Column({ nullable: false, type: 'boolean' })
     @IsNotEmpty()
     @IsBoolean()
-    excludedFromIncomesExpenses: boolean;
+    excludedFromIncomesExpenses!: boolean;
 
     @BeforeInsert()
     @BeforeUpdate()

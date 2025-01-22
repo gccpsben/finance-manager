@@ -9,23 +9,23 @@ import { EnsureNotPlainForeignKey, IsUTCDateInt } from "../validators.js";
 export class Container extends EntityClass
 {
     @PrimaryGeneratedColumn('uuid')
-    id: string | null;
+    id!: string | null;
 
-    @Column({ nullable: false, unique: false })
+    @Column({ nullable: false, unique: false, type: "varchar" })
     @MaxLength(256)
     @IsNotEmpty()
     @IsString()
-    name: string;
+    name!: string;
 
     @Column({ type: "int", nullable: false })
     @IsUTCDateInt()
-    creationDate: number;
+    creationDate!: number;
 
-    @Column( { nullable: false })
-    ownerId: string;
+    @Column( { nullable: false, type: "varchar" })
+    ownerId!: string;
 
     @ManyToOne(type => User, user => user.containers, { nullable: false })
     @JoinColumn()
     @EnsureNotPlainForeignKey()
-    owner: Relation<User> | null;
+    owner!: Relation<User> | null;
 }
