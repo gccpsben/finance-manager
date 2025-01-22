@@ -1,5 +1,5 @@
 import NodeCache from "node-cache";
-import { CacheBase } from "../cacheBase.js";
+import { CacheBase } from "../cacheBase.ts";
 
 export type AccessTokenEntry =
 {

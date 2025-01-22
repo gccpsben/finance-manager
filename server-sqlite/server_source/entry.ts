@@ -11,13 +11,13 @@ export function preventEval()
 
 preventEval();
 
-import { EnvManager, RESTfulLogType } from "./env.js";
-import { ExtendedLog } from "./debug/extendedLog.js";
-import { Server } from "./router/server.js";
-import { CreateAppDataSourceError, Database, DatabaseInitError } from "./db/db.js";
+import { EnvManager, RESTfulLogType } from "./env.ts";
+import { ExtendedLog } from "./debug/extendedLog.ts";
+import { Server } from "./router/server.ts";
+import { CreateAppDataSourceError, Database, DatabaseInitError } from "./db/db.ts";
 import { Decimal } from 'decimal.js';
-import { CronRunner } from './crons/cronService.js';
-import { panic } from './std_errors/monadError.js';
+import { CronRunner } from './crons/cronService.ts';
+import { panic } from './std_errors/monadError.ts';
 
 // `main` should be called to initialize the app.
 // This is the entry point of the app.

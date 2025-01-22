@@ -1,7 +1,7 @@
 import { Repository } from "typeorm";
-import { Database } from "../db.js";
-import { CurrencyRateSource } from "../entities/currencyRateSource.entity.js";
-import { panic } from "../../std_errors/monadError.js";
+import { Database } from "../db.ts";
+import { CurrencyRateSource } from "../entities/currencyRateSource.entity.ts";
+import { panic } from "../../std_errors/monadError.ts";
 
 export class CurrencyRateSourceRepository
 {

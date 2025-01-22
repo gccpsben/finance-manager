@@ -1,17 +1,17 @@
 import { Decimal } from "decimal.js";
-import { CurrencyRepository } from "../repositories/currency.repository.js";
-import { UserRepository } from "../repositories/user.repository.js";
-import { Currency, nameofC } from "../entities/currency.entity.js";
-import { LinearInterpolator } from "../../calculations/linearInterpolator.js";
-import { CurrencyRateDatumsCache } from '../caches/currencyRateDatumsCache.cache.js';
-import { CurrencyCache } from "../caches/currencyListCache.cache.js";
-import { UserNotFoundError, UserService } from "./user.service.js";
-import { MonadError, unwrap } from "../../std_errors/monadError.js";
-import { CurrencyToBaseRateCache } from "../caches/currencyToBaseRate.cache.js";
-import { Database } from "../db.js";
-import { QUERY_IGNORE } from "../../symbols.js";
-import { LinearInterpolatorVirtual } from "../../calculations/linearInterpolatorVirtual.js";
-import { ServiceUtils } from "../servicesUtils.js";
+import { CurrencyRepository } from "../repositories/currency.repository.ts";
+import { UserRepository } from "../repositories/user.repository.ts";
+import { Currency, nameofC } from "../entities/currency.entity.ts";
+import { LinearInterpolator } from "../../calculations/linearInterpolator.ts";
+import { CurrencyRateDatumsCache } from '../caches/currencyRateDatumsCache.cache.ts';
+import { CurrencyCache } from "../caches/currencyListCache.cache.ts";
+import { UserNotFoundError, UserService } from "./user.service.ts";
+import { MonadError, unwrap } from "../../std_errors/monadError.ts";
+import { CurrencyToBaseRateCache } from "../caches/currencyToBaseRate.cache.ts";
+import { Database } from "../db.ts";
+import { QUERY_IGNORE } from "../../symbols.ts";
+import { LinearInterpolatorVirtual } from "../../calculations/linearInterpolatorVirtual.ts";
+import { ServiceUtils } from "../servicesUtils.ts";
 
 export class CurrencyRefCurrencyIdAmountTupleError extends MonadError<typeof CurrencyRefCurrencyIdAmountTupleError.ERROR_SYMBOL>
 {

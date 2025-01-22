@@ -1,15 +1,16 @@
-import { TypesafeRouter } from "../typescriptRouter.js";
+import { TypesafeRouter } from "../typescriptRouter.ts";
 import express from 'express';
 import type { GetServerFilesByIdAPI, FilesAppendChunkAPI, FilesInitSessionAPI, GetOngoingFileSessionsAPI, GetServerFilesAPI } from '../../../../api-types/files.d.ts';
 import { IsInt, IsNotEmpty, IsString } from "class-validator";
-import { ExpressValidations } from "../validation.js";
-import { AccessTokenService, InvalidLoginTokenError } from "../../db/services/accessToken.service.js";
+import { ExpressValidations } from "../validation.ts";
+import { AccessTokenService, InvalidLoginTokenError } from "../../db/services/accessToken.service.ts";
 import createHttpError from "http-errors";
-import { Database } from "../../db/db.js";
-import { FilesService } from "../../db/services/files.service.js";
-import { UserNotFoundError } from "../../db/services/user.service.js";
-import { AppendBytesCommitFileIOError, AppendBytesOutOfBoundError, AppendBytesSessionNotFoundError, AppendBytesUserMismatchError, AppendBytesWriteBufferIOError } from "../../io/fileReceiver.js";
+import { Database } from "../../db/db.ts";
+import { FilesService } from "../../db/services/files.service.ts";
+import { UserNotFoundError } from "../../db/services/user.service.ts";
+import { AppendBytesCommitFileIOError, AppendBytesOutOfBoundError, AppendBytesSessionNotFoundError, AppendBytesUserMismatchError, AppendBytesWriteBufferIOError } from "../../io/fileReceiver.ts";
 import path from "node:path";
+import { Buffer } from "node:buffer";
 
 const router = new TypesafeRouter(express.Router());
 

@@ -1,7 +1,8 @@
-import { Database } from "../db.js";
-import { UserNotFoundError, UserService } from "./user.service.js";
-import { MonadError, panic } from "../../std_errors/monadError.js";
-import { AppendBytesCommitFileIOError, AppendBytesOutOfBoundError, AppendBytesSessionNotFoundError, AppendBytesUserMismatchError, AppendBytesWriteBufferIOError } from "../../io/fileReceiver.js";
+import { Database } from "../db.ts";
+import { UserNotFoundError, UserService } from "./user.service.ts";
+import { MonadError, panic } from "../../std_errors/monadError.ts";
+import { AppendBytesCommitFileIOError, AppendBytesOutOfBoundError, AppendBytesSessionNotFoundError, AppendBytesUserMismatchError, AppendBytesWriteBufferIOError } from "../../io/fileReceiver.ts";
+import { Buffer } from "node:buffer";
 
 export class FileNotFoundError extends MonadError<typeof FileNotFoundError.ERROR_SYMBOL>
 {

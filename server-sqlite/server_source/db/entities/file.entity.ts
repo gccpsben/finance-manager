@@ -1,9 +1,9 @@
-import { Entity, Column, PrimaryColumn, Relation, PrimaryGeneratedColumn } from "typeorm";
+import { Entity, Column, Relation, PrimaryGeneratedColumn } from "typeorm";
 
 import { ManyToOne } from "typeorm";
-import { User } from "./user.entity.js";
-import { EntityClass } from "../dbEntityBase.js";
-import { EnsureNotPlainForeignKey } from "../validators.js";
+import { User } from "./user.entity.ts";
+import { EntityClass } from "../dbEntityBase.ts";
+import { EnsureNotPlainForeignKey } from "../validators.ts";
 
 @Entity()
 export class File extends EntityClass
@@ -14,7 +14,7 @@ export class File extends EntityClass
     @Column( { nullable: false, type: "varchar" })
     ownerId!: string;
 
-    @ManyToOne(type => User, { nullable: false })
+    @ManyToOne(_type => User, { nullable: false })
     @EnsureNotPlainForeignKey()
     owner!: Relation<User> | null;
 

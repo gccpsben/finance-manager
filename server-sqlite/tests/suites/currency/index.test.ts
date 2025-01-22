@@ -1,14 +1,14 @@
-import { Context } from "vm";
-import { PostCurrencyAPI } from "../../../../api-types/currencies.js";
-import { resetDatabase, serverURL, TESTS_ENDPOINTS, TestUserDict, TestUserEntry } from "../../index.test.js";
-import { assertBodyConfirmToModel, assertStrictEqual, HTTPAssert } from "../../lib/assert.js";
-import { AuthHelpers } from "../auth/helpers.js";
-import { CurrencyHelpers } from "./helpers.js";
-import { BodyGenerator } from "../../lib/bodyGenerator.js";
-import { fillArray } from "../../lib/utils.js";
+import { Context } from "node:vm";
+import { PostCurrencyAPI } from "../../../../api-types/currencies.d.ts";
+import { resetDatabase, serverURL, TESTS_ENDPOINTS, TestUserDict, TestUserEntry } from "../../index.test.ts";
+import { assertBodyConfirmToModel, assertStrictEqual, HTTPAssert } from "../../lib/assert.ts";
+import { AuthHelpers } from "../auth/helpers.ts";
+import { CurrencyHelpers } from "./helpers.ts";
+import { BodyGenerator } from "../../lib/bodyGenerator.ts";
+import { fillArray } from "../../lib/utils.ts";
 import { randomUUID } from "node:crypto";
 import { simpleFaker } from "@faker-js/faker";
-import { GetCurrencyAPIClass, GetCurrencyRatesHistoryAPIClass, PostCurrencyAPIClass, PostCurrencyRateDatumAPIClass } from "./classes.js";
+import { GetCurrencyAPIClass, GetCurrencyRatesHistoryAPIClass, PostCurrencyAPIClass, PostCurrencyRateDatumAPIClass } from "./classes.ts";
 import { Decimal } from "decimal.js";
 
 export function createBaseCurrencyPostBody(name: string, ticker: string)
@@ -371,7 +371,7 @@ export default async function(this: Context)
                     {
                         await resetDatabase();
                         const testUsersCreds = await AuthHelpers.registerRandMockUsers(serverURL, 1);
-                        const { username:firstUserName, token:firstUserToken } = Object.values(testUsersCreds)[0];
+                        const { username: _firstUserName, token:firstUserToken } = Object.values(testUsersCreds)[0];
 
                         const offsetDate = (d: number) => testDateTimestamp + d * 100 * 1000; // convert the mock date in test case to real date
 

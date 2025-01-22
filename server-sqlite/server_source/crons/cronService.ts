@@ -1,4 +1,4 @@
-import { CurrencyRatesCRON } from "./currencyRates.cron.js";
+import { CurrencyRatesCRON } from "./currencyRates.cron.ts";
 
 export interface CronService
 {

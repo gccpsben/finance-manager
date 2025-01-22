@@ -1,15 +1,15 @@
 import { Entity, PrimaryGeneratedColumn, Column } from "typeorm";
 
 import { OneToMany } from "typeorm";
-import { AccessToken } from "./accessToken.entity.js";
+import { AccessToken } from "./accessToken.entity.ts";
 import { IsNotEmpty, IsString, MaxLength } from "class-validator";
-import { EntityClass } from "../dbEntityBase.js";
-import { Currency } from "./currency.entity.js";
-import { Container } from "./container.entity.js";
-import { EnsureNotPlainForeignKey } from "../validators.js";
-import { Transaction } from "./transaction.entity.js";
-import { TxnTag } from "./txnTag.entity.js";
-import { CurrencyRateSource } from "./currencyRateSource.entity.js";
+import { EntityClass } from "../dbEntityBase.ts";
+import { Currency } from "./currency.entity.ts";
+import { Container } from "./container.entity.ts";
+import { EnsureNotPlainForeignKey } from "../validators.ts";
+import { Transaction } from "./transaction.entity.ts";
+import { TxnTag } from "./txnTag.entity.ts";
+import { CurrencyRateSource } from "./currencyRateSource.entity.ts";
 
 @Entity()
 export class User extends EntityClass
@@ -29,27 +29,27 @@ export class User extends EntityClass
     @MaxLength(256)
     passwordHash!: string;
 
-    @OneToMany(type => AccessToken, accessToken => accessToken.owner)
+    @OneToMany(_type => AccessToken, accessToken => accessToken.owner)
     @EnsureNotPlainForeignKey()
     accessTokens!: AccessToken[] | null;
 
-    @OneToMany(type => Currency, currency => currency.owner)
+    @OneToMany(_type => Currency, currency => currency.owner)
     @EnsureNotPlainForeignKey()
     currencies!: Currency[] | null;
 
-    @OneToMany(type => CurrencyRateSource, currencyRateSource => currencyRateSource.owner)
+    @OneToMany(_type => CurrencyRateSource, currencyRateSource => currencyRateSource.owner)
     @EnsureNotPlainForeignKey()
     currenciesRateSources!: CurrencyRateSource[] | null;
 
-    @OneToMany(type => Container, container => container.owner)
+    @OneToMany(_type => Container, container => container.owner)
     @EnsureNotPlainForeignKey()
     containers!: Container[] | null;
 
-    @OneToMany(type => Transaction, transaction => transaction.owner)
+    @OneToMany(_type => Transaction, transaction => transaction.owner)
     @EnsureNotPlainForeignKey()
     transactions!: Transaction[] | null;
 
-    @OneToMany(type => TxnTag, tag => tag.owner)
+    @OneToMany(_type => TxnTag, tag => tag.owner)
     @EnsureNotPlainForeignKey()
     tags!: TxnTag[] | null;
 }

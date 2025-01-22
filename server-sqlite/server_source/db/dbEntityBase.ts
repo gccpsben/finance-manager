@@ -1,7 +1,7 @@
 import { validate } from "class-validator";
 import { BeforeInsert, BeforeUpdate } from "typeorm";
-import { InternalValidationError } from "../router/validation.js";
-import { ExtendedLog } from "../debug/extendedLog.js";
+import { InternalValidationError } from "../router/validation.ts";
+import { ExtendedLog } from "../debug/extendedLog.ts";
 import { randomUUID } from "node:crypto";
 
 export class EntityClass

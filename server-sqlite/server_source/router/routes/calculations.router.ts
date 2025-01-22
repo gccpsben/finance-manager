@@ -1,20 +1,20 @@
 import express from 'express';
-import { AccessTokenService } from '../../db/services/accessToken.service.js';
-import { TypesafeRouter } from '../typescriptRouter.js';
-import { CalculationsService } from '../../db/services/calculations.service.js';
+import { AccessTokenService } from '../../db/services/accessToken.service.ts';
+import { TypesafeRouter } from '../typescriptRouter.ts';
+import { CalculationsService } from '../../db/services/calculations.service.ts';
 import type { GetExpensesAndIncomesAPI, GetUserBalanceHistoryAPI, GetUserNetworthHistoryAPI } from '../../../../api-types/calculations.d.ts';
-import { ServiceUtils } from '../../db/servicesUtils.js';
-import { IsPositiveIntString, IsUTCDateIntString } from '../../db/validators.js';
+import { ServiceUtils } from '../../db/servicesUtils.ts';
+import { IsPositiveIntString, IsUTCDateIntString } from '../../db/validators.ts';
 import { IsNotEmpty, IsOptional } from 'class-validator';
-import { ExpressValidations } from '../validation.js';
-import { InvalidLoginTokenError } from '../../db/services/accessToken.service.js';
+import { ExpressValidations } from '../validation.ts';
+import { InvalidLoginTokenError } from '../../db/services/accessToken.service.ts';
 import createHttpError from 'http-errors';
-import { UserNotFoundError } from '../../db/services/user.service.js';
-import { ArgsComparisonError, ConstantComparisonError } from '../../std_errors/argsErrors.js';
-import { GlobalCurrencyToBaseRateCache } from '../../db/caches/currencyToBaseRate.cache.js';
-import { GlobalCurrencyCache } from '../../db/caches/currencyListCache.cache.js';
-import { GlobalCurrencyRateDatumsCache } from '../../db/caches/currencyRateDatumsCache.cache.js';
-import { Database } from '../../db/db.js';
+import { UserNotFoundError } from '../../db/services/user.service.ts';
+import { ArgsComparisonError, ConstantComparisonError } from '../../std_errors/argsErrors.ts';
+import { GlobalCurrencyToBaseRateCache } from '../../db/caches/currencyToBaseRate.cache.ts';
+import { GlobalCurrencyCache } from '../../db/caches/currencyListCache.cache.ts';
+import { GlobalCurrencyRateDatumsCache } from '../../db/caches/currencyRateDatumsCache.cache.ts';
+import { Database } from '../../db/db.ts';
 
 const router = new TypesafeRouter(express.Router());
 

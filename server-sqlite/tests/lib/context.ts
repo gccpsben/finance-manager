@@ -1,5 +1,6 @@
 import chalk from 'chalk';
-import { TestCaseTimeoutError } from './assert.js';
+import { TestCaseTimeoutError } from './assert.ts';
+import process from "node:process";
 
 export type ContextConfig =
 {

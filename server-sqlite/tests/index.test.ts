@@ -1,23 +1,23 @@
 
-import { Database } from '../server_source/db/db.js';
-import { main } from '../server_source/entry.js';
-import { EnvManager } from '../server_source/env.js';
+import { Database } from '../server_source/db/db.ts';
+import { main } from '../server_source/entry.ts';
+import { EnvManager } from '../server_source/env.ts';
 import chalk from 'chalk';
-import { Server } from '../server_source/router/server.js';
-import { Server as HTTPServer } from 'http';
-import { Context } from './lib/context.js';
-import authTests from './suites/auth/index.test.js';
-import containerTests from './suites/container/index.test.js';
-import currencyTests from './suites/currency/index.test.js';
-import txnTypeTests from './suites/txnTag/index.test.js';
-import transactionTests from './suites/transaction/index.test.js';
-import currencyRateSrcs from './suites/currencyRateSource/index.test.js';
-import calculationsTest, { testForCalculationsInternals } from './suites/calculations/index.test.js';
-import { exit } from 'process';
-import { GetCurrencyRateSrcAPI, DeleteCurrencyRateSrcAPI } from '../../api-types/currencyRateSource.js';
-import { GetUserBalanceHistoryAPI, GetUserNetworthHistoryAPI } from '../../api-types/calculations.js';
-import { GetTxnJsonQueryAPI } from '../../api-types/txn.js';
-import { GetContainerTimelineAPI } from '../../api-types/container.js';
+import { Server } from '../server_source/router/server.ts';
+import { Server as HTTPServer } from 'node:http';
+import { Context } from './lib/context.ts';
+import authTests from './suites/auth/index.test.ts';
+import containerTests from './suites/container/index.test.ts';
+import currencyTests from './suites/currency/index.test.ts';
+import txnTypeTests from './suites/txnTag/index.test.ts';
+import transactionTests from './suites/transaction/index.test.ts';
+import currencyRateSrcs from './suites/currencyRateSource/index.test.ts';
+import calculationsTest, { testForCalculationsInternals } from './suites/calculations/index.test.ts';
+import { exit } from 'node:process';
+import { GetCurrencyRateSrcAPI, DeleteCurrencyRateSrcAPI } from '../../api-types/currencyRateSource.d.ts';
+import { GetUserBalanceHistoryAPI, GetUserNetworthHistoryAPI } from '../../api-types/calculations.d.ts';
+import { GetTxnJsonQueryAPI } from '../../api-types/txn.d.ts';
+import { GetContainerTimelineAPI } from '../../api-types/container.d.ts';
 export type HTTPMethod = "GET" | "PATCH" | "POST" | "DELETE";
 
 export type TestUserEntry =

@@ -1,7 +1,7 @@
-import { TESTS_ENDPOINTS, TestUserDict, TestUserEntry } from "../../index.test.js";
-import { HTTPAssert } from '../../lib/assert.js';
+import { TESTS_ENDPOINTS, TestUserDict, TestUserEntry } from "../../index.test.ts";
+import { HTTPAssert } from '../../lib/assert.ts';
 import { randomUUID } from "node:crypto";
-import { PostLoginAPIClass } from "./classes.js";
+import { PostLoginAPIClass } from "./classes.ts";
 
 export namespace AuthHelpers
 {

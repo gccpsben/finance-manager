@@ -1,15 +1,15 @@
-import { Database } from "../db/db.js";
-import { CurrencyRepository } from "../db/repositories/currency.repository.js";
-import { CurrencyRateSourceRepository } from "../db/repositories/currencyRateSource.repository.js";
-import { CurrencyNotFoundError, CurrencyService } from "../db/services/currency.service.js";
-import { CurrencyRateSourceService, ExecuteCurrencyRateSourceError } from "../db/services/currencyRateSource.service.js";
-import { UserNotFoundError } from "../db/services/user.service.js";
-import { ExtendedLog } from "../debug/extendedLog.js";
-import { CronService } from "./cronService.js";
-import { QUERY_IGNORE } from "../symbols.js";
-import { GlobalCurrencyCache } from "../db/caches/currencyListCache.cache.js";
-import { GlobalCurrencyToBaseRateCache } from "../db/caches/currencyToBaseRate.cache.js";
-import { GlobalCurrencyRateDatumsCache } from "../db/caches/currencyRateDatumsCache.cache.js";
+import { Database } from "../db/db.ts";
+import { CurrencyRepository } from "../db/repositories/currency.repository.ts";
+import { CurrencyRateSourceRepository } from "../db/repositories/currencyRateSource.repository.ts";
+import { CurrencyNotFoundError, CurrencyService } from "../db/services/currency.service.ts";
+import { CurrencyRateSourceService, ExecuteCurrencyRateSourceError } from "../db/services/currencyRateSource.service.ts";
+import { UserNotFoundError } from "../db/services/user.service.ts";
+import { ExtendedLog } from "../debug/extendedLog.ts";
+import { CronService } from "./cronService.ts";
+import { QUERY_IGNORE } from "../symbols.ts";
+import { GlobalCurrencyCache } from "../db/caches/currencyListCache.cache.ts";
+import { GlobalCurrencyToBaseRateCache } from "../db/caches/currencyToBaseRate.cache.ts";
+import { GlobalCurrencyRateDatumsCache } from "../db/caches/currencyRateDatumsCache.cache.ts";
 
 export class CurrencyRatesCRON implements CronService
 {

@@ -1,22 +1,22 @@
 import { DataSource, DeleteResult, QueryRunner, Repository } from "typeorm";
-import { nameofT, Transaction } from "../entities/transaction.entity.js";
-import { Database } from "../db.js";
-import { panic, unwrap } from "../../std_errors/monadError.js";
-import { MeteredRepository } from "../meteredRepository.js";
-import { CurrencyCache } from "../caches/currencyListCache.cache.js";
-import { UserNotFoundError, UserService } from "../services/user.service.js";
-import { JSONQueryError, TransactionJSONQueryCurrency, TransactionJSONQueryItem, TransactionService } from "../services/transaction.service.js";
-import { QUERY_IGNORE } from "../../symbols.js";
-import { TxnTag } from "../entities/txnTag.entity.js";
-import { TxnTagNotFoundError } from "../services/txnTag.service.js";
-import { CurrencyRateDatumsCache } from "../caches/currencyRateDatumsCache.cache.js";
-import { CurrencyToBaseRateCache } from "../caches/currencyToBaseRate.cache.js";
-import { TxnQueryASTCalculator } from "../../calculations/txnAST.js";
+import { nameofT, Transaction } from "../entities/transaction.entity.ts";
+import { Database } from "../db.ts";
+import { panic, unwrap } from "../../std_errors/monadError.ts";
+import { MeteredRepository } from "../meteredRepository.ts";
+import { CurrencyCache } from "../caches/currencyListCache.cache.ts";
+import { UserNotFoundError, UserService } from "../services/user.service.ts";
+import { JSONQueryError, TransactionJSONQueryCurrency, TransactionJSONQueryItem, TransactionService } from "../services/transaction.service.ts";
+import { QUERY_IGNORE } from "../../symbols.ts";
+import { TxnTag } from "../entities/txnTag.entity.ts";
+import { TxnTagNotFoundError } from "../services/txnTag.service.ts";
+import { CurrencyRateDatumsCache } from "../caches/currencyRateDatumsCache.cache.ts";
+import { CurrencyToBaseRateCache } from "../caches/currencyToBaseRate.cache.ts";
+import { TxnQueryASTCalculator } from "../../calculations/txnAST.ts";
 import jsonata from "jsonata";
-import { ServiceUtils } from "../servicesUtils.js";
-import { Fragment, FragmentRaw, nameofF } from "../entities/fragment.entity.js";
-import { File } from '../entities/file.entity.js';
-import { FileNotFoundError } from "../services/files.service.js";
+import { ServiceUtils } from "../servicesUtils.ts";
+import { Fragment, FragmentRaw, nameofF } from "../entities/fragment.entity.ts";
+import { File } from '../entities/file.entity.ts';
+import { FileNotFoundError } from "../services/files.service.ts";
 
 export class TransactionRepository extends MeteredRepository
 {

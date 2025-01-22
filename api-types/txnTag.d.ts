@@ -1,4 +1,4 @@
-import { PaginationAPIResponse } from "./lib";
+import { PaginationAPIResponse } from "./lib.d.ts";
 
 export type TxnTagsDTO = { id: string; name: string; owner: string; };
 

@@ -1,4 +1,4 @@
-import { PaginationAPIResponse } from "./lib"
+import { PaginationAPIResponse } from "./lib.d.ts"
 export namespace PostTxnAPI
 {
     export type FragmentDTO =

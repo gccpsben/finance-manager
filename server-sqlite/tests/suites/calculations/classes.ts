@@ -1,5 +1,5 @@
-import { GetExpensesAndIncomesAPI, GetUserBalanceHistoryAPI, GetUserNetworthHistoryAPI } from "../../../../api-types/calculations.js";
-import { isDecimalJSString, IsDecimalJSString, IsEpochKeyedMap, IsPassing } from "../../../server_source/db/validators.js";
+import { GetExpensesAndIncomesAPI, GetUserBalanceHistoryAPI, GetUserNetworthHistoryAPI } from "../../../../api-types/calculations.d.ts";
+import { isDecimalJSString, IsDecimalJSString, IsEpochKeyedMap, IsPassing } from "../../../server_source/db/validators.ts";
 
 export namespace GetUserBalanceHistoryAPIClass
 {

@@ -1,4 +1,4 @@
-import { MonadError } from "./monadError.js";
+import { MonadError } from "./monadError.ts";
 
 export class FetchError extends MonadError<typeof FetchError.ERROR_SYMBOL>
 {

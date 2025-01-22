@@ -1,14 +1,14 @@
 import express from 'express';
-import { ExtendedLog } from '../debug/extendedLog.js';
-import { getMainRouter } from './mainRouter.js';
+import { ExtendedLog } from '../debug/extendedLog.ts';
+import { getMainRouter } from './mainRouter.ts';
 import morgan from 'morgan';
 import { PassThrough } from 'node:stream';
 import { ValidationError } from 'class-validator';
 import { randomUUID } from 'node:crypto';
 import createHttpError from 'http-errors';
 import { QueryFailedError } from 'typeorm';
-import { UserNameTakenError } from '../db/services/user.service.js';
-import { EnvManager, RESTfulLogType } from '../env.js';
+import { UserNameTakenError } from '../db/services/user.service.ts';
+import { EnvManager, RESTfulLogType } from '../env.ts';
 import { readFileSync } from 'node:fs';
 import { createServer as createHttpServer, Server as HTTPServer } from 'node:http';
 import { createServer as createHttpsServer, Server as HTTPSServer } from 'node:https';
@@ -59,7 +59,7 @@ export class Server
             return res.status(code).json(returns);
         };
 
-        return (err: Error, req: express.Request, res: express.Response, next: Function) =>
+        return (err: Error, _req: express.Request, res: express.Response, _next: Function) =>
         {
             if (err instanceof ValidationError)
             {

@@ -1,7 +1,7 @@
 import { IsString, IsBoolean, IsOptional, IsNumber, IsArray, ValidateNested } from "class-validator";
-import { IsDecimalJSString } from "../../../server_source/db/validators.js";
-import { CurrencyDTO, PostCurrencyAPI, GetCurrencyAPI, GetCurrencyRateHistoryAPI } from "../../../../api-types/currencies.js";
-import { PostCurrencyRateAPI } from "../../../../api-types/currencyRateDatum.js";
+import { IsDecimalJSString } from "../../../server_source/db/validators.ts";
+import { CurrencyDTO, PostCurrencyAPI, GetCurrencyAPI, GetCurrencyRateHistoryAPI } from "../../../../api-types/currencies.d.ts";
+import { PostCurrencyRateAPI } from "../../../../api-types/currencyRateDatum.d.ts";
 import { Type } from "class-transformer";
 
 export class CurrencyDTOClass implements CurrencyDTO

@@ -1,6 +1,7 @@
 import * as fs from 'node:fs';
-import { MonadError, panic } from '../std_errors/monadError.js';
+import { MonadError, panic } from '../std_errors/monadError.ts';
 import path from 'node:path';
+import { Buffer } from "node:buffer";
 
 export class AppendBytesCommitFileIOError<T> extends MonadError<typeof AppendBytesCommitFileIOError.ERROR_SYMBOL>
 {

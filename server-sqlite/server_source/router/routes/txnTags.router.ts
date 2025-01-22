@@ -1,13 +1,13 @@
 import express from 'express';
-import { AccessTokenService, InvalidLoginTokenError } from '../../db/services/accessToken.service.js';
+import { AccessTokenService, InvalidLoginTokenError } from '../../db/services/accessToken.service.ts';
 import { IsNotEmpty, IsOptional, IsString } from 'class-validator';
-import { ExpressValidations } from '../validation.js';
-import { TxnTagService, TxnTagExistsError } from '../../db/services/txnTag.service.js';
-import { TypesafeRouter } from '../typescriptRouter.js';
+import { ExpressValidations } from '../validation.ts';
+import { TxnTagService, TxnTagExistsError } from '../../db/services/txnTag.service.ts';
+import { TypesafeRouter } from '../typescriptRouter.ts';
 import type { GetTxnTagsAPI, PostTxnTagsAPI } from '../../../../api-types/txnTag.d.ts';
-import { OptionalPaginationAPIQueryRequest, PaginationAPIResponseClass } from '../pagination.js';
+import { OptionalPaginationAPIQueryRequest, PaginationAPIResponseClass } from '../pagination.ts';
 import createHttpError from 'http-errors';
-import { UserNotFoundError } from '../../db/services/user.service.js';
+import { UserNotFoundError } from '../../db/services/user.service.ts';
 
 const router = new TypesafeRouter(express.Router());
 

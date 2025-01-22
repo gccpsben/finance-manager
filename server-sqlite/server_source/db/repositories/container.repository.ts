@@ -1,9 +1,9 @@
 import { DataSource, Repository } from "typeorm";
-import { Container } from "../entities/container.entity.js";
-import { panic } from "../../std_errors/monadError.js";
-import { QUERY_IGNORE } from "../../symbols.js";
-import { ServiceUtils } from "../servicesUtils.js";
-import { MeteredRepository } from "../meteredRepository.js";
+import { Container } from "../entities/container.entity.ts";
+import { panic } from "../../std_errors/monadError.ts";
+import { QUERY_IGNORE } from "../../symbols.ts";
+import { ServiceUtils } from "../servicesUtils.ts";
+import { MeteredRepository } from "../meteredRepository.ts";
 
 export class ContainerRepository extends MeteredRepository
 {

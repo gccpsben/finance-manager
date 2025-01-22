@@ -1,4 +1,4 @@
-import { MonadError } from "./monadError.js";
+import { MonadError } from "./monadError.ts";
 
 export class DirNotFoundError extends MonadError<typeof DirNotFoundError.ERROR_SYMBOL>
 {

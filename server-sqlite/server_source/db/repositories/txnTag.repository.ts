@@ -1,7 +1,7 @@
 import { Repository } from "typeorm";
-import { TxnTag } from "../entities/txnTag.entity.js";
-import { Database } from "../db.js";
-import { panic } from "../../std_errors/monadError.js";
+import { TxnTag } from "../entities/txnTag.entity.ts";
+import { Database } from "../db.ts";
+import { panic } from "../../std_errors/monadError.ts";
 
 class TransactionTypeRepositoryExtension
 {

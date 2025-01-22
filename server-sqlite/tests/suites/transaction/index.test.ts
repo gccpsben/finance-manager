@@ -1,16 +1,16 @@
-import { resetDatabase, serverURL, TESTS_ENDPOINTS } from "../../index.test.js";
-import { AssertFetchReturns, assertStrictEqual, HTTPAssert } from "../../lib/assert.js";
-import { Context } from "../../lib/context.js";
-import { BodyGenerator } from "../../lib/bodyGenerator.js";
+import { resetDatabase, serverURL, TESTS_ENDPOINTS } from "../../index.test.ts";
+import { AssertFetchReturns, assertStrictEqual, HTTPAssert } from "../../lib/assert.ts";
+import { Context } from "../../lib/context.ts";
+import { BodyGenerator } from "../../lib/bodyGenerator.ts";
 import { simpleFaker } from "@faker-js/faker";
-import { GetTxnAPI } from "../../../../api-types/txn.js";
-import { PostCurrencyAPIClass } from "../currency/classes.js";
-import { AuthHelpers } from "../auth/helpers.js";
-import { PostContainerAPIClass } from "../container/classes.js";
-import { PostTxnAPIClass } from "./classes.js";
-import { TransactionHelpers } from "./helpers.js";
-import { TxnTagHelpers } from "../txnTag/helpers.js";
-import { executeInRandomOrder, fillArray } from "../../lib/utils.js";
+import { GetTxnAPI } from "../../../../api-types/txn.d.ts";
+import { PostCurrencyAPIClass } from "../currency/classes.ts";
+import { AuthHelpers } from "../auth/helpers.ts";
+import { PostContainerAPIClass } from "../container/classes.ts";
+import { PostTxnAPIClass } from "./classes.ts";
+import { TransactionHelpers } from "./helpers.ts";
+import { TxnTagHelpers } from "../txnTag/helpers.ts";
+import { executeInRandomOrder, fillArray } from "../../lib/utils.ts";
 
 const createPostContainerBody = (name: string) => ({name: name});
 const createBaseCurrencyPostBody = (name: string, ticker: string) => ({ name: name, ticker: ticker });

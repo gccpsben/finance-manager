@@ -1,17 +1,17 @@
 import express from 'express';
-import { EnvManager } from '../env.js';
-import devOnlyRouter from './routes/dev.router.js';
-import userRouter from './routes/users.router.js';
-import authRouter from './routes/auth.router.js';
-import currenciesRouter from './routes/currencies.router.js';
-import containerRouter from './routes/container.router.js';
-import txnTagsRouter from './routes/txnTags.router.js';
-import transactionsRouter from './routes/transaction.router.js';
-import calculationsRouter from './routes/calculations.router.js';
-import currencyRateDatumRouter from './routes/currencyRateDatum.router.js';
-import currencyRateDatumSrcsRouter from './routes/currencyRateSource.router.js';
-import filesRouter from './routes/files.router.js';
-import { ExtendedLog } from '../debug/extendedLog.js';
+import { EnvManager } from '../env.ts';
+import devOnlyRouter from './routes/dev.router.ts';
+import userRouter from './routes/users.router.ts';
+import authRouter from './routes/auth.router.ts';
+import currenciesRouter from './routes/currencies.router.ts';
+import containerRouter from './routes/container.router.ts';
+import txnTagsRouter from './routes/txnTags.router.ts';
+import transactionsRouter from './routes/transaction.router.ts';
+import calculationsRouter from './routes/calculations.router.ts';
+import currencyRateDatumRouter from './routes/currencyRateDatum.router.ts';
+import currencyRateDatumSrcsRouter from './routes/currencyRateSource.router.ts';
+import filesRouter from './routes/files.router.ts';
+import { ExtendedLog } from '../debug/extendedLog.ts';
 
 export function getMainRouter()
 {

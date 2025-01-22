@@ -1,13 +1,13 @@
-import { Context } from "../../lib/context.js";
-import { resetDatabase, serverURL, TESTS_ENDPOINTS } from "../../index.test.js";
-import { BodyGenerator } from "../../lib/bodyGenerator.js";
-import { assertBodyConfirmToModel, assertStrictEqual, HTTPAssert } from "../../lib/assert.js";
+import { Context } from "../../lib/context.ts";
+import { resetDatabase, serverURL, TESTS_ENDPOINTS } from "../../index.test.ts";
+import { BodyGenerator } from "../../lib/bodyGenerator.ts";
+import { assertBodyConfirmToModel, assertStrictEqual, HTTPAssert } from "../../lib/assert.ts";
 import { Decimal } from "decimal.js";
 import { randomUUID } from "node:crypto";
-import { AuthHelpers } from "../auth/helpers.js";
-import { postBaseCurrency, postCurrency } from "../currency/index.test.js";
-import { PostCurrencyAPIClass } from "../currency/classes.js";
-import { CurrencyRateSourceHelpers } from "./helpers.js";
+import { AuthHelpers } from "../auth/helpers.ts";
+import { postBaseCurrency, postCurrency } from "../currency/index.test.ts";
+import { PostCurrencyAPIClass } from "../currency/classes.ts";
+import { CurrencyRateSourceHelpers } from "./helpers.ts";
 
 export default async function(this: Context)
 {

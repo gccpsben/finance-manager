@@ -1,7 +1,7 @@
-import { PostCurrencyRateSrcAPI } from "../../../../api-types/currencyRateSource.js";
-import { TESTS_ENDPOINTS } from "../../index.test.js";
-import { HTTPAssert } from "../../lib/assert.js";
-import { DeleteCurrencyRateSrcAPIClass, GetCurrencyRateSrcAPIClass, PostCurrencyRateSourceAPIClass } from "./classes.js";
+import { PostCurrencyRateSrcAPI } from "../../../../api-types/currencyRateSource.d.ts";
+import { TESTS_ENDPOINTS } from "../../index.test.ts";
+import { HTTPAssert } from "../../lib/assert.ts";
+import { DeleteCurrencyRateSrcAPIClass, GetCurrencyRateSrcAPIClass, PostCurrencyRateSourceAPIClass } from "./classes.ts";
 
 export namespace CurrencyRateSourceHelpers
 {

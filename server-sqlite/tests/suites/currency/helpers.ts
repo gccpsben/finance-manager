@@ -1,9 +1,9 @@
-import { Generator } from "../../shortcuts/generator.js";
-import { HTTPAssert } from "../../lib/assert.js";
+import { Generator } from "../../shortcuts/generator.ts";
+import { HTTPAssert } from "../../lib/assert.ts";
 import { Decimal } from "decimal.js";
-import { PostCurrencyAPI } from "../../../../api-types/currencies.js";
-import { PostCurrencyAPIClass } from "./classes.js";
-import { TESTS_ENDPOINTS } from "../../index.test.js";
+import { PostCurrencyAPI } from "../../../../api-types/currencies.d.ts";
+import { PostCurrencyAPIClass } from "./classes.ts";
+import { TESTS_ENDPOINTS } from "../../index.test.ts";
 
 export namespace CurrencyHelpers
 {

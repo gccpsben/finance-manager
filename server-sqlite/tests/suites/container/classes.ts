@@ -1,8 +1,8 @@
-import { BalancesHydratedContainerDTO, ContainerDTO, GetContainerAPI, GetContainerTimelineAPI, PostContainerAPI, ValueHydratedContainerDTO } from "../../../../api-types/container.js";
+import { BalancesHydratedContainerDTO, ContainerDTO, GetContainerAPI, GetContainerTimelineAPI, PostContainerAPI, ValueHydratedContainerDTO } from "../../../../api-types/container.d.ts";
 import { IsArray, IsDefined, isInstance, IsNotEmpty, IsNumber, IsObject, IsString, validate, ValidateNested } from "class-validator";
-import { IsDecimalJSString, IsEpochKeyedMap, IsPassing, IsStringToDecimalJSStringDict, IsStringToStringDict, IsUTCDateInt } from "../../../server_source/db/validators.js";
+import { IsDecimalJSString, IsEpochKeyedMap, IsPassing, IsStringToDecimalJSStringDict, IsStringToStringDict, IsUTCDateInt } from "../../../server_source/db/validators.ts";
 import { Type } from "class-transformer";
-import { validateBodyAgainstModel } from "../../lib/validation.js";
+import { validateBodyAgainstModel } from "../../lib/validation.ts";
 
 export class ContainerDTOClass implements ContainerDTO
 {

@@ -1,6 +1,7 @@
 import chalk from "chalk";
 import { get, StackFrame } from "stack-trace";
-import type { NoUnion } from "../index.d.js";
+import type { NoUnion } from "../index.d.ts";
+import process from "node:process";
 
 export class MonadError<T extends Symbol> extends Error
 {

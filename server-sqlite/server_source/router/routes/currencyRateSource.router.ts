@@ -1,13 +1,13 @@
-import { TypesafeRouter } from "../typescriptRouter.js";
+import { TypesafeRouter } from "../typescriptRouter.ts";
 import express from 'express';
 import type { GetCurrencyRateSrcAPI, PostCurrencyRateSrcAPI, PatchCurrencyRateSrcAPI, GetCurrencyRateSrcBySrcIdAPI, DeleteCurrencyRateSrcAPI } from "../../../../api-types/currencyRateSource.d.ts";
 import { IsString } from "class-validator";
-import { AccessTokenService, InvalidLoginTokenError } from "../../db/services/accessToken.service.js";
+import { AccessTokenService, InvalidLoginTokenError } from "../../db/services/accessToken.service.ts";
 import createHttpError from "http-errors";
-import { ExpressValidations } from "../validation.js";
-import { CurrencyRateSourceService, CurrencySrcNotFoundError, PatchCurrencySrcValidationError } from "../../db/services/currencyRateSource.service.js";
-import { CurrencyNotFoundError } from "../../db/services/currency.service.js";
-import { GlobalCurrencyCache } from "../../db/caches/currencyListCache.cache.js";
+import { ExpressValidations } from "../validation.ts";
+import { CurrencyRateSourceService, CurrencySrcNotFoundError, PatchCurrencySrcValidationError } from "../../db/services/currencyRateSource.service.ts";
+import { CurrencyNotFoundError } from "../../db/services/currency.service.ts";
+import { GlobalCurrencyCache } from "../../db/caches/currencyListCache.cache.ts";
 
 const router = new TypesafeRouter(express.Router());
 

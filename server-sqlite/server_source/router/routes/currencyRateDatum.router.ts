@@ -1,19 +1,19 @@
 import express from 'express';
-import { AccessTokenService, InvalidLoginTokenError } from '../../db/services/accessToken.service.js';
+import { AccessTokenService, InvalidLoginTokenError } from '../../db/services/accessToken.service.ts';
 import { IsArray, IsString, ValidateNested } from 'class-validator';
-import { ExpressValidations } from '../validation.js';
-import { IsDecimalJSString, IsUTCDateInt } from '../../db/validators.js';
+import { ExpressValidations } from '../validation.ts';
+import { IsDecimalJSString, IsUTCDateInt } from '../../db/validators.ts';
 import type { PostCurrencyRateAPI } from "../../../../api-types/currencyRateDatum.d.ts";
-import { TypesafeRouter } from '../typescriptRouter.js';
-import { CurrencyRateDatumService } from '../../db/services/currencyRateDatum.service.js';
+import { TypesafeRouter } from '../typescriptRouter.ts';
+import { CurrencyRateDatumService } from '../../db/services/currencyRateDatum.service.ts';
 import createHttpError from 'http-errors';
-import { UserNotFoundError } from '../../db/services/user.service.js';
-import { CurrencyNotFoundError } from '../../db/services/currency.service.js';
+import { UserNotFoundError } from '../../db/services/user.service.ts';
+import { CurrencyNotFoundError } from '../../db/services/currency.service.ts';
 import { Type } from 'class-transformer';
-import { Database } from '../../db/db.js';
-import { GlobalCurrencyToBaseRateCache } from '../../db/caches/currencyToBaseRate.cache.js';
-import { GlobalCurrencyCache } from '../../db/caches/currencyListCache.cache.js';
-import { GlobalCurrencyRateDatumsCache } from '../../db/caches/currencyRateDatumsCache.cache.js';
+import { Database } from '../../db/db.ts';
+import { GlobalCurrencyToBaseRateCache } from '../../db/caches/currencyToBaseRate.cache.ts';
+import { GlobalCurrencyCache } from '../../db/caches/currencyListCache.cache.ts';
+import { GlobalCurrencyRateDatumsCache } from '../../db/caches/currencyRateDatumsCache.cache.ts';
 
 const router = new TypesafeRouter(express.Router());
 

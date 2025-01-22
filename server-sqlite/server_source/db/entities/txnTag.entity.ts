@@ -1,10 +1,10 @@
 import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, Relation } from "typeorm";
 
 import { IsNotEmpty, IsString, MaxLength } from "class-validator";
-import { EntityClass } from "../dbEntityBase.js";
-import { EnsureNotPlainForeignKey } from "../validators.js";
-import { User } from "./user.entity.js";
-import { nameof } from "../servicesUtils.js";
+import { EntityClass } from "../dbEntityBase.ts";
+import { EnsureNotPlainForeignKey } from "../validators.ts";
+import { User } from "./user.entity.ts";
+import { nameof } from "../servicesUtils.ts";
 
 @Entity()
 export class TxnTag extends EntityClass
@@ -21,7 +21,7 @@ export class TxnTag extends EntityClass
     @Column( { nullable: false, type: "varchar" })
     ownerId!: string;
 
-    @ManyToOne(type => User, user => user.tags)
+    @ManyToOne(_type => User, user => user.tags)
     @EnsureNotPlainForeignKey()
     owner!: Relation<User> | null;
 }

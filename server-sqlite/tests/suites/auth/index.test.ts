@@ -1,8 +1,8 @@
-import { BodyGenerator } from "../../lib/bodyGenerator.js";
-import { serverURL, TESTS_ENDPOINTS } from "../../index.test.js";
-import { HTTPAssert } from '../../lib/assert.js';
-import { Context } from "../../lib/context.js";
-import { PostUserAPIClass } from "./classes.js";
+import { BodyGenerator } from "../../lib/bodyGenerator.ts";
+import { serverURL, TESTS_ENDPOINTS } from "../../index.test.ts";
+import { HTTPAssert } from '../../lib/assert.ts';
+import { Context } from "../../lib/context.ts";
+import { PostUserAPIClass } from "./classes.ts";
 
 export default async function(this: Context)
 {

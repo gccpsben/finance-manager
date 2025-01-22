@@ -1,14 +1,14 @@
 import { DataSource, QueryRunner, Repository } from "typeorm";
-import { CurrencyRateDatum, nameofCRD } from "../entities/currencyRateDatum.entity.js";
-import { Database } from "../db.js";
-import { CurrencyRateDatumsCache } from "../caches/currencyRateDatumsCache.cache.js";
-import { panic } from "../../std_errors/monadError.js";
-import { CurrencyToBaseRateCache } from "../caches/currencyToBaseRate.cache.js";
-import { CurrencyNotFoundError } from "../services/currency.service.js";
-import { UserNotFoundError } from "../services/user.service.js";
-import { QUERY_IGNORE } from "../../symbols.js";
-import { CurrencyCache } from "../caches/currencyListCache.cache.js";
-import { MeteredRepository } from "../meteredRepository.js";
+import { CurrencyRateDatum, nameofCRD } from "../entities/currencyRateDatum.entity.ts";
+import { Database } from "../db.ts";
+import { CurrencyRateDatumsCache } from "../caches/currencyRateDatumsCache.cache.ts";
+import { panic } from "../../std_errors/monadError.ts";
+import { CurrencyToBaseRateCache } from "../caches/currencyToBaseRate.cache.ts";
+import { CurrencyNotFoundError } from "../services/currency.service.ts";
+import { UserNotFoundError } from "../services/user.service.ts";
+import { QUERY_IGNORE } from "../../symbols.ts";
+import { CurrencyCache } from "../caches/currencyListCache.cache.ts";
+import { MeteredRepository } from "../meteredRepository.ts";
 
 export class CurrencyRateDatumRepository extends MeteredRepository
 {

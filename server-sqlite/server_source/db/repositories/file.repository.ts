@@ -1,8 +1,8 @@
 import { DataSource, Repository } from "typeorm";
-import { MeteredRepository } from "../meteredRepository.js";
-import { File } from "../entities/file.entity.js";
+import { MeteredRepository } from "../meteredRepository.ts";
+import { File } from "../entities/file.entity.ts";
 import { QueryRunner } from "typeorm/browser";
-import { panic } from "../../std_errors/monadError.js";
+import { panic } from "../../std_errors/monadError.ts";
 
 export class FileRepository extends MeteredRepository
 {

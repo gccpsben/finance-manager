@@ -1,8 +1,8 @@
-import { HTTPAssert } from "../../lib/assert.js";
-import { Generator } from "../../shortcuts/generator.js";
-import { PostContainerAPI } from "../../../../api-types/container.js";
-import { GetContainerAPIClass, GetContainerTimelineAPIClass, PostContainerAPIClass } from "./classes.js";
-import { TESTS_ENDPOINTS } from "../../index.test.js";
+import { HTTPAssert } from "../../lib/assert.ts";
+import { Generator } from "../../shortcuts/generator.ts";
+import { PostContainerAPI } from "../../../../api-types/container.d.ts";
+import { GetContainerAPIClass, GetContainerTimelineAPIClass, PostContainerAPIClass } from "./classes.ts";
+import { TESTS_ENDPOINTS } from "../../index.test.ts";
 
 export namespace ContainerHelpers
 {

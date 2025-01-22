@@ -1,6 +1,6 @@
 import { ClassConstructor, plainToInstance } from "class-transformer";
 import { ValidationOptions, validate } from "class-validator";
-import { UnitTestValidationError } from "./assert.js";
+import { UnitTestValidationError } from "./assert.ts";
 
 export async function validateBodyAgainstModel<T extends object>
 (

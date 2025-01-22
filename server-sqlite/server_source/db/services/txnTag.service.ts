@@ -1,9 +1,9 @@
-import { TransactionTypeRepository as TxnTagRepository } from "../repositories/txnTag.repository.js";
-import { UserRepository } from "../repositories/user.repository.js";
-import { nameofTT } from "../entities/txnTag.entity.js";
-import { ServiceUtils } from "../servicesUtils.js";
-import { MonadError } from "../../std_errors/monadError.js";
-import { UserNotFoundError } from "./user.service.js";
+import { TransactionTypeRepository as TxnTagRepository } from "../repositories/txnTag.repository.ts";
+import { UserRepository } from "../repositories/user.repository.ts";
+import { nameofTT } from "../entities/txnTag.entity.ts";
+import { ServiceUtils } from "../servicesUtils.ts";
+import { MonadError } from "../../std_errors/monadError.ts";
+import { UserNotFoundError } from "./user.service.ts";
 
 export class TxnTagNotFoundError extends MonadError<typeof TxnTagNotFoundError.ERROR_SYMBOL>
 {

@@ -1,14 +1,14 @@
 import { DataSource, Repository } from "typeorm";
-import { AccessToken } from "../entities/accessToken.entity.js";
-import { panic } from "../../std_errors/monadError.js";
+import { AccessToken } from "../entities/accessToken.entity.ts";
+import { panic } from "../../std_errors/monadError.ts";
 import { randomUUID } from "node:crypto";
-import { UserNotFoundError } from "../services/user.service.js";
-import { UserRepository } from "./user.repository.js";
-import { EnvManager } from "../../env.js";
-import { QUERY_IGNORE } from "../../symbols.js";
-import { MeteredRepository } from "../meteredRepository.js";
-import { AccessTokenEntry, GlobalAccessTokenCache } from "../caches/accessTokens.cache.js";
-import { sha256 } from "../../crypto.js";
+import { UserNotFoundError } from "../services/user.service.ts";
+import { UserRepository } from "./user.repository.ts";
+import { EnvManager } from "../../env.ts";
+import { QUERY_IGNORE } from "../../symbols.ts";
+import { MeteredRepository } from "../meteredRepository.ts";
+import { AccessTokenEntry, GlobalAccessTokenCache } from "../caches/accessTokens.cache.ts";
+import { sha256 } from "../../crypto.ts";
 
 function hashToken(token: string) { return sha256(token); }
 Object.freeze(hashToken);

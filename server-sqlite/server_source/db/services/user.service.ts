@@ -1,8 +1,8 @@
 import argon2 from "argon2";
-import { UserRepository } from "../repositories/user.repository.js";
-import { nameofU, User } from "../entities/user.entity.js";
-import { MonadError } from "../../std_errors/monadError.js";
-import { Database } from "../db.js";
+import { UserRepository } from "../repositories/user.repository.ts";
+import { nameofU, User } from "../entities/user.entity.ts";
+import { MonadError } from "../../std_errors/monadError.ts";
+import { Database } from "../db.ts";
 
 export class UserNotFoundError extends MonadError<typeof UserNotFoundError.ERROR_SYMBOL>
 {

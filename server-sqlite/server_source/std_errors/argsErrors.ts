@@ -1,4 +1,4 @@
-import { MonadError } from "./monadError.js";
+import { MonadError } from "./monadError.ts";
 
 export type ComparisonType = "LARGER_THAN" |
     "LARGER_THAN_OR_EQUAL" |

@@ -1,7 +1,7 @@
-import { AssertFetchReturns, HTTPAssert } from "../../lib/assert.js";
-import { GetTxnAPI, GetTxnJsonQueryAPI, PutTxnAPI } from "../../../../api-types/txn.js";
-import { GetTxnAPIClass, GetTxnJSONQueryAPIClass, PostTxnAPIClass } from "./classes.js";
-import { TESTS_ENDPOINTS } from "../../index.test.js";
+import { AssertFetchReturns, HTTPAssert } from "../../lib/assert.ts";
+import { GetTxnAPI, GetTxnJsonQueryAPI, PutTxnAPI } from "../../../../api-types/txn.d.ts";
+import { GetTxnAPIClass, GetTxnJSONQueryAPIClass, PostTxnAPIClass } from "./classes.ts";
+import { TESTS_ENDPOINTS } from "../../index.test.ts";
 
 export namespace TransactionHelpers
 {

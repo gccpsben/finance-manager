@@ -1,7 +1,7 @@
 import { Repository } from "typeorm";
-import { User } from "../entities/user.entity.js";
-import { Database } from "../db.js";
-import { panic } from "../../std_errors/monadError.js";
+import { User } from "../entities/user.entity.ts";
+import { Database } from "../db.ts";
+import { panic } from "../../std_errors/monadError.ts";
 
 class UserRepositoryExtension
 {

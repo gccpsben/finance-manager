@@ -1,9 +1,9 @@
-import { BodyGenerator } from "../../lib/bodyGenerator.js";
-import { resetDatabase, serverURL, TESTS_ENDPOINTS } from "../../index.test.js";
-import { assertJSONEqual, assertStrictEqual, HTTPAssert } from "../../lib/assert.js";
-import { Context } from "../../lib/context.js";
-import { AuthHelpers } from "../auth/helpers.js";
-import { GetTxnTagsAPIClass, ResponsePostTxnTagsDTOBody } from "./classes.js";
+import { BodyGenerator } from "../../lib/bodyGenerator.ts";
+import { resetDatabase, serverURL, TESTS_ENDPOINTS } from "../../index.test.ts";
+import { assertJSONEqual, assertStrictEqual, HTTPAssert } from "../../lib/assert.ts";
+import { Context } from "../../lib/context.ts";
+import { AuthHelpers } from "../auth/helpers.ts";
+import { GetTxnTagsAPIClass, ResponsePostTxnTagsDTOBody } from "./classes.ts";
 
 
 const createPostTxnTypeBody = (name: string) => ({ "name": name });

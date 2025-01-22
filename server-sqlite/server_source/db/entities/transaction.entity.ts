@@ -1,13 +1,13 @@
 import { Entity, PrimaryGeneratedColumn, Column, BeforeInsert, BeforeUpdate, ManyToOne, JoinColumn, Index, Relation, ManyToMany, JoinTable, OneToMany } from "typeorm";
 
 import { IsBoolean, IsNotEmpty, IsOptional, IsString, MaxLength } from "class-validator";
-import { EntityClass } from "../dbEntityBase.js";
-import { EnsureNotPlainForeignKey, IsUTCDateInt } from "../validators.js";
-import { User } from "./user.entity.js";
-import { TxnTag } from "./txnTag.entity.js";
-import { Fragment } from "./fragment.entity.js";
-import { nameof } from "../servicesUtils.js";
-import { File } from './file.entity.js';
+import { EntityClass } from "../dbEntityBase.ts";
+import { EnsureNotPlainForeignKey, IsUTCDateInt } from "../validators.ts";
+import { User } from "./user.entity.ts";
+import { TxnTag } from "./txnTag.entity.ts";
+import { Fragment } from "./fragment.entity.ts";
+import { nameof } from "../servicesUtils.ts";
+import { File } from './file.entity.ts';
 
 @Entity()
 /**
@@ -36,7 +36,7 @@ export class Transaction extends EntityClass
     @Column( { nullable: false, type: "varchar" })
     ownerId!: string;
 
-    @ManyToOne(type => User, user => user.transactions, { nullable: false })
+    @ManyToOne(_type => User, user => user.transactions, { nullable: false })
     @JoinColumn({ name: "ownerId" })
     @EnsureNotPlainForeignKey()
     owner!: Relation<User> | null;
@@ -45,7 +45,7 @@ export class Transaction extends EntityClass
     @IsUTCDateInt()
     creationDate!: number;
 
-    @ManyToMany((type) => TxnTag, { cascade: true })
+    @ManyToMany((_type) => TxnTag, { cascade: true })
     @JoinTable()
     @EnsureNotPlainForeignKey()
     tags!: TxnTag[] | string[] | null;

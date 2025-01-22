@@ -1,7 +1,7 @@
 import * as Express from 'express';
-import { MonadError } from "../../std_errors/monadError.js";
-import { Database } from "../db.js";
-import { QUERY_IGNORE } from "../../symbols.js";
+import { MonadError } from "../../std_errors/monadError.ts";
+import { Database } from "../db.ts";
+import { QUERY_IGNORE } from "../../symbols.ts";
 
 export class InvalidLoginTokenError extends MonadError<typeof InvalidLoginTokenError.ERROR_SYMBOL>
 {

@@ -1,6 +1,6 @@
-import { Database } from "../db.js";
-import { panic } from "../../std_errors/monadError.js";
-import { Fragment } from "../entities/fragment.entity.js";
+import { Database } from "../db.ts";
+import { panic } from "../../std_errors/monadError.ts";
+import { Fragment } from "../entities/fragment.entity.ts";
 
 export class FragmentRepository
 {

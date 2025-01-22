@@ -1,5 +1,5 @@
 import { IsArray, IsNumber, IsString, ValidateNested } from "class-validator";
-import { GetTxnTagsAPI, TxnTagsDTO } from "../../../../api-types/txnTag.js";
+import { GetTxnTagsAPI, TxnTagsDTO } from "../../../../api-types/txnTag.d.ts";
 import { Type } from "class-transformer";
 
 export class TransactionTagsDTOClass implements TxnTagsDTO

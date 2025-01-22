@@ -1,14 +1,14 @@
 import { Repository } from "typeorm";
-import { Currency } from "../entities/currency.entity.js";
-import { CURRENCY_RATE_SOURCE_ENTITY_TABLE_NAME, CurrencyRateSource } from "../entities/currencyRateSource.entity.js";
-import { panic } from "../../std_errors/monadError.js";
+import { Currency } from "../entities/currency.entity.ts";
+import { CURRENCY_RATE_SOURCE_ENTITY_TABLE_NAME, CurrencyRateSource } from "../entities/currencyRateSource.entity.ts";
+import { panic } from "../../std_errors/monadError.ts";
 import { DataSource } from "typeorm/browser";
-import { PATCH_IGNORE, QUERY_IGNORE } from "../../symbols.js";
-import { nameof, ServiceUtils } from "../servicesUtils.js";
-import { UserRepository } from "./user.repository.js";
-import { UserNotFoundError } from "../services/user.service.js";
-import { CurrencyCache } from "../caches/currencyListCache.cache.js";
-import { MeteredRepository } from "../meteredRepository.js";
+import { PATCH_IGNORE, QUERY_IGNORE } from "../../symbols.ts";
+import { nameof, ServiceUtils } from "../servicesUtils.ts";
+import { UserRepository } from "./user.repository.ts";
+import { UserNotFoundError } from "../services/user.service.ts";
+import { CurrencyCache } from "../caches/currencyListCache.cache.ts";
+import { MeteredRepository } from "../meteredRepository.ts";
 
 export class CurrencyRepository extends MeteredRepository
 {

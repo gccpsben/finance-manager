@@ -1,20 +1,20 @@
 import { Decimal } from "decimal.js";
-import { TransactionService } from "./transaction.service.js";
-import { DecimalAdditionMapReducer, ServiceUtils } from "../servicesUtils.js";
-import { LinearInterpolator } from "../../calculations/linearInterpolator.js";
-import { CurrencyCalculator, CurrencyService } from "./currency.service.js";
-import { CurrencyCache } from "../caches/currencyListCache.cache.js";
-import { UserNotFoundError, UserService } from "./user.service.js";
-import { panic, unwrap } from "../../std_errors/monadError.js";
-import { ArgsComparisonError, ConstantComparisonError } from "../../std_errors/argsErrors.js";
+import { TransactionService } from "./transaction.service.ts";
+import { DecimalAdditionMapReducer, ServiceUtils } from "../servicesUtils.ts";
+import { LinearInterpolator } from "../../calculations/linearInterpolator.ts";
+import { CurrencyCalculator, CurrencyService } from "./currency.service.ts";
+import { CurrencyCache } from "../caches/currencyListCache.cache.ts";
+import { UserNotFoundError, UserService } from "./user.service.ts";
+import { panic, unwrap } from "../../std_errors/monadError.ts";
+import { ArgsComparisonError, ConstantComparisonError } from "../../std_errors/argsErrors.ts";
 import { isInt } from "class-validator";
-import { CurrencyToBaseRateCache } from "../caches/currencyToBaseRate.cache.js";
-import { Database } from "../db.js";
-import { QUERY_IGNORE } from "../../symbols.js";
-import { CurrencyRateDatumsCache } from "../caches/currencyRateDatumsCache.cache.js";
-import { FragmentRaw } from "../entities/fragment.entity.js";
-import { ContainerNotFoundError } from "./container.service.js";
-import { LinearInterpolatorVirtual } from "../../calculations/linearInterpolatorVirtual.js";
+import { CurrencyToBaseRateCache } from "../caches/currencyToBaseRate.cache.ts";
+import { Database } from "../db.ts";
+import { QUERY_IGNORE } from "../../symbols.ts";
+import { CurrencyRateDatumsCache } from "../caches/currencyRateDatumsCache.cache.ts";
+import { FragmentRaw } from "../entities/fragment.entity.ts";
+import { ContainerNotFoundError } from "./container.service.ts";
+import { LinearInterpolatorVirtual } from "../../calculations/linearInterpolatorVirtual.ts";
 
 /** An object that represents a query of a time range. */
 export type TimeRangeQuery =

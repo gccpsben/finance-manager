@@ -1,7 +1,7 @@
 import { IsString } from "class-validator";
-import { PostUserAPI } from "../../../../api-types/user.js";
-import { PostLoginAPI } from "../../../../api-types/auth.js";
-import { IsUTCDateInt } from "../../../server_source/db/validators.js";
+import { PostUserAPI } from "../../../../api-types/user.d.ts";
+import { PostLoginAPI } from "../../../../api-types/auth.d.ts";
+import { IsUTCDateInt } from "../../../server_source/db/validators.ts";
 
 export namespace PostUserAPIClass
 {

@@ -3,7 +3,7 @@ import chalk from 'chalk';
 import * as fse from 'fs-extra/esm';
 import path from 'node:path';
 import { createStream, RotatingFileStream } from 'rotating-file-stream';
-import { EnvManager } from '../env.js';
+import { EnvManager } from '../env.ts';
 
 // let pastLines:any = [];
 

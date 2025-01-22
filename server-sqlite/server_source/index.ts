@@ -1,3 +1,3 @@
-import { main } from "./entry.js";
+import { main } from "./entry.ts";
 
 main(['path', undefined]);

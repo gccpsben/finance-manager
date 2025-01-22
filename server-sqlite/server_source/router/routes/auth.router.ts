@@ -1,17 +1,17 @@
 import { IsNotEmpty, IsString } from 'class-validator';
-import { UserNotFoundError, UserService } from '../../db/services/user.service.js';
+import { UserNotFoundError, UserService } from '../../db/services/user.service.ts';
 import express from 'express';
-import { ExpressValidations } from '../validation.js';
+import { ExpressValidations } from '../validation.ts';
 import createHttpError from 'http-errors';
 import type { PostLoginAPI } from '../../../../api-types/auth.d.ts';
-import { TypesafeRouter } from '../typescriptRouter.js';
-import { Database } from '../../db/db.js';
+import { TypesafeRouter } from '../typescriptRouter.ts';
+import { Database } from '../../db/db.ts';
 
 const router = new TypesafeRouter(express.Router());
 
 router.post<PostLoginAPI.ResponseDTO>("/api/v1/auth/login",
 {
-    handler: async (req:express.Request, res:express.Response) =>
+    handler: async (req:express.Request, _res:express.Response) =>
     {
         class body implements PostLoginAPI.RequestDTO
         {

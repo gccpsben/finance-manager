@@ -1,21 +1,21 @@
-import { LinearInterpolator } from '../../../server_source/calculations/linearInterpolator.js';
-import { resetDatabase, serverURL, TESTS_ENDPOINTS } from "../../index.test.js";
-import { assertJSONEqual, assertStrictEqual } from "../../lib/assert.js";
-import { Context } from "../../lib/context.js";
+import { LinearInterpolator } from '../../../server_source/calculations/linearInterpolator.ts';
+import { resetDatabase, serverURL, TESTS_ENDPOINTS } from "../../index.test.ts";
+import { assertJSONEqual, assertStrictEqual } from "../../lib/assert.ts";
+import { Context } from "../../lib/context.ts";
 import { Decimal } from "decimal.js";
 import { randomUUID } from "node:crypto";
 import { simpleFaker } from "@faker-js/faker";
-import { GetUserBalanceHistoryAPI, GetUserNetworthHistoryAPI } from "../../../../api-types/calculations.js";
-import { shuffleArray } from '../../lib/utils.js';
-import { AuthHelpers } from '../auth/helpers.js';
-import { CalculationsHelpers } from './helpers.js';
-import { ContainerHelpers } from '../container/helpers.js';
-import { TransactionHelpers } from '../transaction/helpers.js';
-import { CurrencyHelpers } from '../currency/helpers.js';
-import { TxnTagHelpers } from '../txnTag/helpers.js';
-import { postCurrencyRateDatum } from '../currency/index.test.js';
-import { LinearStepper } from '../../../server_source/calculations/linearStepper.js';
-import { LinearInterpolatorVirtual } from '../../../server_source/calculations/linearInterpolatorVirtual.js';
+import { GetUserBalanceHistoryAPI, GetUserNetworthHistoryAPI } from "../../../../api-types/calculations.d.ts";
+import { shuffleArray } from '../../lib/utils.ts';
+import { AuthHelpers } from '../auth/helpers.ts';
+import { CalculationsHelpers } from './helpers.ts';
+import { ContainerHelpers } from '../container/helpers.ts';
+import { TransactionHelpers } from '../transaction/helpers.ts';
+import { CurrencyHelpers } from '../currency/helpers.ts';
+import { TxnTagHelpers } from '../txnTag/helpers.ts';
+import { postCurrencyRateDatum } from '../currency/index.test.ts';
+import { LinearStepper } from '../../../server_source/calculations/linearStepper.ts';
+import { LinearInterpolatorVirtual } from '../../../server_source/calculations/linearInterpolatorVirtual.ts';
 
 function choice<T> (list: T[]) { return list[Math.floor((Math.random()*list.length))]; }
 

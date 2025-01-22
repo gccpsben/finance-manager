@@ -1,8 +1,8 @@
-import { HTTPAssert } from "../../lib/assert.js";
-import { Generator } from "../../shortcuts/generator.js";
-import { PostTxnTagsAPI } from "../../../../api-types/txnTag.js";
-import { ResponsePostTxnTagsDTOBody } from "./classes.js";
-import { TESTS_ENDPOINTS } from "../../index.test.js";
+import { HTTPAssert } from "../../lib/assert.ts";
+import { Generator } from "../../shortcuts/generator.ts";
+import { PostTxnTagsAPI } from "../../../../api-types/txnTag.d.ts";
+import { ResponsePostTxnTagsDTOBody } from "./classes.ts";
+import { TESTS_ENDPOINTS } from "../../index.test.ts";
 
 export namespace TxnTagHelpers
 {

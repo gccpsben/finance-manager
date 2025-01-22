@@ -1,10 +1,10 @@
 import { IsNotEmpty, IsString } from 'class-validator';
-import { UserNameTakenError, UserService } from '../../db/services/user.service.js';
+import { UserNameTakenError, UserService } from '../../db/services/user.service.ts';
 import express from 'express';
-import { ExpressValidations } from '../validation.js';
+import { ExpressValidations } from '../validation.ts';
 import createHttpError from 'http-errors';
 import type { DeleteUserAPI, PostUserAPI } from '../../../../api-types/user.d.ts';
-import { TypesafeRouter } from '../typescriptRouter.js';
+import { TypesafeRouter } from '../typescriptRouter.ts';
 
 const router = new TypesafeRouter(express.Router());
 

@@ -1,27 +1,27 @@
 import express from 'express';
-import { AccessTokenService, InvalidLoginTokenError } from '../../db/services/accessToken.service.js';
-import { CurrencyNameTakenError, CurrencyNotFoundError, CurrencyRefCurrencyIdAmountTupleError, CurrencyService, CurrencyTickerTakenError } from '../../db/services/currency.service.js';
+import { AccessTokenService, InvalidLoginTokenError } from '../../db/services/accessToken.service.ts';
+import { CurrencyNameTakenError, CurrencyNotFoundError, CurrencyRefCurrencyIdAmountTupleError, CurrencyService, CurrencyTickerTakenError } from '../../db/services/currency.service.ts';
 import { Decimal } from 'decimal.js';
 import { IsNumberString, IsOptional, IsString } from 'class-validator';
-import { ExpressValidations } from '../validation.js';
-import { IsDecimalJSString, IsIntString } from '../../db/validators.js';
+import { ExpressValidations } from '../validation.ts';
+import { IsDecimalJSString, IsIntString } from '../../db/validators.ts';
 import createHttpError from 'http-errors';
 import type { GetCurrencyAPI, GetCurrencyRateHistoryAPI, PostCurrencyAPI } from "../../../../api-types/currencies.d.ts";
-import { TypesafeRouter } from '../typescriptRouter.js';
-import { OptionalPaginationAPIQueryRequest, PaginationAPIResponseClass } from '../pagination.js';
-import { CurrencyRateDatumService } from '../../db/services/currencyRateDatum.service.js';
-import { unwrap } from '../../std_errors/monadError.js';
-import { UserNotFoundError } from '../../db/services/user.service.js';
-import { Database } from '../../db/db.js';
-import { GlobalCurrencyToBaseRateCache } from '../../db/caches/currencyToBaseRate.cache.js';
-import { GlobalCurrencyCache } from '../../db/caches/currencyListCache.cache.js';
-import { GlobalCurrencyRateDatumsCache } from '../../db/caches/currencyRateDatumsCache.cache.js';
+import { TypesafeRouter } from '../typescriptRouter.ts';
+import { OptionalPaginationAPIQueryRequest, PaginationAPIResponseClass } from '../pagination.ts';
+import { CurrencyRateDatumService } from '../../db/services/currencyRateDatum.service.ts';
+import { unwrap } from '../../std_errors/monadError.ts';
+import { UserNotFoundError } from '../../db/services/user.service.ts';
+import { Database } from '../../db/db.ts';
+import { GlobalCurrencyToBaseRateCache } from '../../db/caches/currencyToBaseRate.cache.ts';
+import { GlobalCurrencyCache } from '../../db/caches/currencyListCache.cache.ts';
+import { GlobalCurrencyRateDatumsCache } from '../../db/caches/currencyRateDatumsCache.cache.ts';
 
 const router = new TypesafeRouter(express.Router());
 
 router.post<PostCurrencyAPI.ResponseDTO>(`/api/v1/currencies`,
 {
-    handler: async (req: express.Request, res: express.Response) =>
+    handler: async (req: express.Request, _res: express.Response) =>
     {
         const now = Date.now();
         const authResult = await AccessTokenService.validateRequestTokenValidated(req, now);
@@ -58,7 +58,7 @@ router.post<PostCurrencyAPI.ResponseDTO>(`/api/v1/currencies`,
 
 router.get<GetCurrencyAPI.ResponseDTO>(`/api/v1/currencies`,
 {
-    handler: async (req: express.Request, res: express.Response) =>
+    handler: async (req: express.Request, _res: express.Response) =>
     {
         const now = Date.now();
         const authResult = await AccessTokenService.validateRequestTokenValidated(req, now);
@@ -132,7 +132,7 @@ router.get<GetCurrencyAPI.ResponseDTO>(`/api/v1/currencies`,
 
 router.get<GetCurrencyRateHistoryAPI.ResponseDTO>(`/api/v1/currencies/history`,
 {
-    handler: async (req: express.Request, res: express.Response) =>
+    handler: async (req: express.Request, _res: express.Response) =>
     {
         const now = Date.now();
         const authResult = await AccessTokenService.validateRequestTokenValidated(req, now);

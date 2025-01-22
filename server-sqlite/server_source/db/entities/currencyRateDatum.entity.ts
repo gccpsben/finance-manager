@@ -1,10 +1,10 @@
 import { Entity, PrimaryGeneratedColumn, Column, JoinColumn, Unique, Check, Index, Relation } from "typeorm";
 
 import { ManyToOne } from "typeorm";
-import { User } from "./user.entity.js";
-import { EntityClass } from "../dbEntityBase.js";
-import { EnsureNotPlainForeignKey, IsDecimalJSString, IsUTCDateInt } from "../validators.js";
-import { Currency } from "./currency.entity.js";
+import { User } from "./user.entity.ts";
+import { EntityClass } from "../dbEntityBase.ts";
+import { EnsureNotPlainForeignKey, IsDecimalJSString, IsUTCDateInt } from "../validators.ts";
+import { Currency } from "./currency.entity.ts";
 
 @Entity()
 @Unique("UniqueRateDateWithinUser", ["date", "owner", "refCurrency"])
@@ -22,7 +22,7 @@ export class CurrencyRateDatum extends EntityClass
     @Index()
     refCurrencyId!: string;
 
-    @ManyToOne(type => Currency, { nullable: false })
+    @ManyToOne(_type => Currency, { nullable: false })
     @JoinColumn()
     @EnsureNotPlainForeignKey()
     refCurrency!: Relation<Currency> | null;
@@ -31,7 +31,7 @@ export class CurrencyRateDatum extends EntityClass
     @Index()
     refAmountCurrencyId!: string;
 
-    @ManyToOne(type => Currency, { nullable: false })
+    @ManyToOne(_type => Currency, { nullable: false })
     @JoinColumn()
     @EnsureNotPlainForeignKey()
     refAmountCurrency!: Relation<Currency> | null;
@@ -40,7 +40,7 @@ export class CurrencyRateDatum extends EntityClass
     @Index()
     ownerId!: string;
 
-    @ManyToOne(type => User, { nullable: false })
+    @ManyToOne(_type => User, { nullable: false })
     @JoinColumn()
     @EnsureNotPlainForeignKey()
     owner!: Relation<User> | null;

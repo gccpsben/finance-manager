@@ -1,17 +1,17 @@
 import { randomUUID } from "node:crypto";
-import { resetDatabase, serverURL, TESTS_ENDPOINTS, TestUserEntry } from "../../index.test.js";
-import { assertBodyConfirmToModel, assertJSONEqual, assertStrictEqual, HTTPAssert } from "../../lib/assert.js";
-import { Context } from "../../lib/context.js";
-import { BodyGenerator } from "../../lib/bodyGenerator.js";
+import { resetDatabase, serverURL, TESTS_ENDPOINTS, TestUserEntry } from "../../index.test.ts";
+import { assertBodyConfirmToModel, assertJSONEqual, assertStrictEqual, HTTPAssert } from "../../lib/assert.ts";
+import { Context } from "../../lib/context.ts";
+import { BodyGenerator } from "../../lib/bodyGenerator.ts";
 import { Decimal } from "decimal.js";
 import { simpleFaker } from "@faker-js/faker";
-import { ContainerHelpers } from "./helpers.js";
-import { AuthHelpers } from "../auth/helpers.js";
-import { CurrencyHelpers } from "../currency/helpers.js";
-import { PostCurrencyRateDatumAPIClass } from "../currency/classes.js";
-import { TransactionHelpers } from "../transaction/helpers.js";
-import { TxnTagHelpers } from "../txnTag/helpers.js";
-import { postCurrencyRateDatum } from "../currency/index.test.js";
+import { ContainerHelpers } from "./helpers.ts";
+import { AuthHelpers } from "../auth/helpers.ts";
+import { CurrencyHelpers } from "../currency/helpers.ts";
+import { PostCurrencyRateDatumAPIClass } from "../currency/classes.ts";
+import { TransactionHelpers } from "../transaction/helpers.ts";
+import { TxnTagHelpers } from "../txnTag/helpers.ts";
+import { postCurrencyRateDatum } from "../currency/index.test.ts";
 
 function choice<T> (list: T[]) { return list[Math.floor((Math.random()*list.length))]; }
 

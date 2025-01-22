@@ -1,10 +1,10 @@
 import { Entity, PrimaryGeneratedColumn, Column, JoinColumn, Relation } from "typeorm";
 
 import { ManyToOne } from "typeorm";
-import { User } from "./user.entity.js";
-import { EntityClass } from "../dbEntityBase.js";
-import { EnsureNotPlainForeignKey } from "../validators.js";
-import { Currency } from "./currency.entity.js";
+import { User } from "./user.entity.ts";
+import { EntityClass } from "../dbEntityBase.ts";
+import { EnsureNotPlainForeignKey } from "../validators.ts";
+import { Currency } from "./currency.entity.ts";
 
 export const CURRENCY_RATE_SOURCE_ENTITY_TABLE_NAME = "currency_rate_source";
 @Entity({ name: CURRENCY_RATE_SOURCE_ENTITY_TABLE_NAME })
@@ -16,7 +16,7 @@ export class CurrencyRateSource extends EntityClass
     @Column( { nullable: false, type: "varchar" })
     refCurrencyId!: string;
 
-    @ManyToOne(type => Currency, { nullable: false })
+    @ManyToOne(_type => Currency, { nullable: false })
     @JoinColumn()
     @EnsureNotPlainForeignKey()
     refCurrency!: Omit<Omit<Relation<Currency>, 'owner'>, 'refCurrency'> | null;
@@ -24,7 +24,7 @@ export class CurrencyRateSource extends EntityClass
     @Column( { nullable: false, type: "varchar" })
     refAmountCurrencyId!: string;
 
-    @ManyToOne(type => Currency, { nullable: false })
+    @ManyToOne(_type => Currency, { nullable: false })
     @JoinColumn()
     @EnsureNotPlainForeignKey()
     refAmountCurrency!: Omit<Omit<Relation<Currency>, 'owner'>, 'refCurrency'> | null;
@@ -32,7 +32,7 @@ export class CurrencyRateSource extends EntityClass
     @Column( { nullable: false, type: "varchar" })
     ownerId!: string;
 
-    @ManyToOne(type => User, user => user.currencies, { nullable: false })
+    @ManyToOne(_type => User, user => user.currencies, { nullable: false })
     @JoinColumn()
     @EnsureNotPlainForeignKey()
     owner!: Relation<User> | null;

@@ -1,13 +1,13 @@
 import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, Relation, JoinColumn, Check } from "typeorm";
 
 import { IsOptional, IsString } from "class-validator";
-import { EntityClass } from "../dbEntityBase.js";
-import { EnsureNotPlainForeignKey, IsDecimalJSString } from "../validators.js";
-import { User } from "./user.entity.js";
-import { Currency } from "./currency.entity.js";
-import { Container } from "./container.entity.js";
-import { Transaction } from "./transaction.entity.js";
-import { nameof } from "../servicesUtils.js";
+import { EntityClass } from "../dbEntityBase.ts";
+import { EnsureNotPlainForeignKey, IsDecimalJSString } from "../validators.ts";
+import { User } from "./user.entity.ts";
+import { Currency } from "./currency.entity.ts";
+import { Container } from "./container.entity.ts";
+import { Transaction } from "./transaction.entity.ts";
+import { nameof } from "../servicesUtils.ts";
 
 @Entity()
 @Check
@@ -58,7 +58,7 @@ export class Fragment extends EntityClass
 
     @JoinColumn({ name: "parentTxnId" })
     @EnsureNotPlainForeignKey()
-    @ManyToOne(type => Transaction, { nullable: false })
+    @ManyToOne(_type => Transaction, { nullable: false })
     parentTxn!: Relation<Transaction>;
 
     // #region From
@@ -73,7 +73,7 @@ export class Fragment extends EntityClass
 
     @JoinColumn({ name: "fromCurrencyId" })
     @EnsureNotPlainForeignKey()
-    @ManyToOne(type => Currency, { nullable: true })
+    @ManyToOne(_type => Currency, { nullable: true })
     fromCurrency!: Relation<Currency> | null;
 
     @Column({nullable: true, type: "varchar"})
@@ -81,7 +81,7 @@ export class Fragment extends EntityClass
 
     @JoinColumn({ name: "fromContainerId" })
     @EnsureNotPlainForeignKey()
-    @ManyToOne(type => Container, { nullable: true })
+    @ManyToOne(_type => Container, { nullable: true })
     fromContainer!: Relation<Container> | null;
     // #endregion
 
@@ -97,7 +97,7 @@ export class Fragment extends EntityClass
 
     @JoinColumn({ name: "toCurrencyId" })
     @EnsureNotPlainForeignKey()
-    @ManyToOne(type => Currency, { nullable: true })
+    @ManyToOne(_type => Currency, { nullable: true })
     toCurrency!: Relation<Currency> | null;
 
     @Column({nullable: true, type: "varchar"})
@@ -105,14 +105,14 @@ export class Fragment extends EntityClass
 
     @JoinColumn({ name: "toContainerId" })
     @EnsureNotPlainForeignKey()
-    @ManyToOne(type => Container, { nullable: true })
+    @ManyToOne(_type => Container, { nullable: true })
     toContainer!: Relation<Container> | null;
     // #endregion
 
     @Column( { nullable: false, type: "varchar" })
     ownerId!: string;
 
-    @ManyToOne(type => User, user => user.tags)
+    @ManyToOne(_type => User, user => user.tags)
     @EnsureNotPlainForeignKey()
     owner!: Relation<User> | null;
 }
