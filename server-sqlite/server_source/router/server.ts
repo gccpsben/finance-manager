@@ -15,6 +15,7 @@ import { createServer as createHttpsServer, Server as HTTPSServer } from 'node:h
 import helmet from "helmet";
 import compression from 'compression';
 import { Buffer } from "node:buffer";
+import { CronRunner } from "../crons/cronService.ts";
 
 export type StartServerConfig =
 {
@@ -25,6 +26,7 @@ export class Server
 {
     private static expressApp: express.Express;
     private static _expressServer: HTTPSServer | HTTPServer;
+    public static CRONRunner: CronRunner | null;
     public static get expressServer() { return Server._expressServer; }
     private static set expressServer(value: HTTPSServer | HTTPServer) { Server._expressServer = value; }
 
@@ -128,7 +130,7 @@ export class Server
         };
     }
 
-    public static startServer(port:number, config: Partial<StartServerConfig> = {})
+    public static async startServer(port:number, config: Partial<StartServerConfig> = {})
     {
         const shouldAttachMorgan = config?.attachMorgan ?? true;
         let sslKeyFile = undefined as undefined | Buffer;
@@ -146,6 +148,13 @@ export class Server
                 ExtendedLog.logRed(`Error loading SSL key or pem: ${e}`);
                 return;
             }
+        }
+
+        // Start CRON services
+        {
+            const cronRunner = new CronRunner();
+            await cronRunner.initAll();
+            await cronRunner.startAll();
         }
 
         return new Promise<void>(resolve =>
@@ -176,5 +185,12 @@ export class Server
                 resolve();
             });
         });
+    }
+
+    public static shutdownServer()
+    {
+        this.expressServer.closeAllConnections();
+        this.expressServer.close();
+        this.CRONRunner?.stopAll();
     }
 }
