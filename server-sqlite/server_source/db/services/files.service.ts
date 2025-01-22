@@ -28,7 +28,7 @@ export class FilesService
         const userFetchResult = await UserService.getUserById(userId);
         if (userFetchResult === null) return new UserNotFoundError(userId);
 
-        let appendBytesResult = await Database.getFileReceiver()!.appendBytes(
+        const appendBytesResult = await Database.getFileReceiver()!.appendBytes(
             userId,
             sessionId,
             buffer

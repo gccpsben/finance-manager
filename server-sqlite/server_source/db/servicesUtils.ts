@@ -79,11 +79,11 @@ export namespace ServiceUtils
         let highest = Number.NEGATIVE_INFINITY;
         let lowestObj: T | undefined = undefined;
         let highestObj: T | undefined = undefined;
-        let arrayLength = array.length;
+        const arrayLength = array.length;
         for (let i = 0; i < arrayLength; i++)
         {
-            let obj = array[i];
-            let objValue = getter(obj);
+            const obj = array[i];
+            const objValue = getter(obj);
 
             if (objValue >= highest)
             {

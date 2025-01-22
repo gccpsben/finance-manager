@@ -214,8 +214,8 @@ export class CurrencyCalculator
                 currencyCache
             ))!;
 
-            let valLeft = new Decimal(d1.amount).mul(D1CurrBaseRate);
-            let valRight = new Decimal(d2.amount).mul(D2CurrBaseRate);
+            const valLeft = new Decimal(d1.amount).mul(D1CurrBaseRate);
+            const valRight = new Decimal(d2.amount).mul(D2CurrBaseRate);
             if (isDateBeforeD1D2 || isDateAfterD1D2 || valLeft === valRight)
             {
                 if (currencyToBaseRateCache) cacheResultIfPossible(valLeft);
@@ -424,7 +424,7 @@ export class CurrencyService
         const currRepo = Database.getCurrencyRepository()!;
         const getRate = async (currencyId: string) =>
         {
-            let currencyRate = await (async () =>
+            const currencyRate = await (async () =>
             {
                 // Try getting the currency rate to base at txn's epoch from cache first.
                 const amountToBaseValueCacheResult = currencyToBaseRateCache?.queryCurrencyToBaseRate(userId, currencyId, date);
@@ -461,14 +461,14 @@ export class CurrencyService
             return currencyRate;
         };
 
-        let currenciesRate:{ [currId: string]: string; } = {};
+        const currenciesRate:{ [currId: string]: string; } = {};
         let output: Decimal = new Decimal("0");
         for (const [currId, amount] of Object.entries(balances))
         {
             if (!currenciesRate[currId])
                 currenciesRate[currId] = await getRate(currId);
 
-            let currencyWorth = new Decimal((await getRate(currId))).mul(amount);
+            const currencyWorth = new Decimal((await getRate(currId))).mul(amount);
             output = output.add(currencyWorth);
         }
 

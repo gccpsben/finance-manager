@@ -65,7 +65,7 @@ export class ContainerService
         containers: { id: string }[] | string[]
     )
     {
-        let relevantTxns = await Database.getTransactionRepository()!.getContainersTransactions(ownerId, containers);
+        const relevantTxns = await Database.getTransactionRepository()!.getContainersTransactions(ownerId, containers);
         const containersBalancesMapping = (() =>
         {
             const output: { [containerId: string]: { [currencyId: string]: Decimal } } = {};

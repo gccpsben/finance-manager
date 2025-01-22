@@ -5,7 +5,7 @@ export class BodyGenerator
     public static enumerateMissingField<T extends object>(completeObj: T, excepts: string[] = [])
     {
         const output: {obj: Partial<T>, fieldMissed: string}[] = [];
-        for (let key of Object.keys(completeObj))
+        for (const key of Object.keys(completeObj))
         {
             if (excepts.includes(key)) continue;
             const item = { ...completeObj };
@@ -63,10 +63,10 @@ export class BodyGenerator
 
         let count = 0;
         let subValueIndex = 0;
-        for (let subValue of [...subValueIDs, ...subValueIDs])
+        for (const subValue of [...subValueIDs, ...subValueIDs])
         {
             let primaryValueIndex = 0;
-            for (let primaryValue of userIDs)
+            for (const primaryValue of userIDs)
             {
                 count++;
                 output.push(

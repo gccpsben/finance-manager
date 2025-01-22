@@ -453,7 +453,7 @@ export default async function(this: Context)
                         await this.test(`Registering Currencies for test`, async function()
                         {
                             // Register currencies
-                            for (let curr of testCase.currencies)
+                            for (const curr of testCase.currencies)
                             {
                                 const currencyResponse = await postCurrency(firstUserToken, curr.name, curr.name, utCurMap[curr.refCurrencyId], curr.amount);
                                 const parsedBody = await assertBodyConfirmToModel(PostCurrencyAPIClass.ResponseDTO, currencyResponse.rawBody);

@@ -24,7 +24,7 @@ export class CurrencyToBaseRateCache extends CacheBase
 
         const key = this.makeEntryKey(userId, currencyId);
         let dict = this.#nodeCache.get<CurrencyToBaseRateCacheEntry>(key);
-        let isEmpty = dict === undefined;
+        const isEmpty = dict === undefined;
         if (!dict) dict = {};
         if (isEmpty)
             this.#nodeCache.set<CurrencyToBaseRateCacheEntry>(key, dict);
@@ -48,7 +48,7 @@ export class CurrencyToBaseRateCache extends CacheBase
     )
     {
         const key = this.makeEntryKey(userId, currencyId);
-        let dict = this.#nodeCache.get<CurrencyToBaseRateCacheEntry>(key);
+        const dict = this.#nodeCache.get<CurrencyToBaseRateCacheEntry>(key);
         if (!dict)
         {
             this.markCacheMiss();

@@ -34,11 +34,11 @@ export class CurrencyRateDatumService
             refCurrencyId: string
         }[] | UserNotFoundError | CurrencyNotFoundError>
     {
-        let userIdToObjMap: { [userID: string]: { id: string; username: string; } } = {};
-        let uniqueUserIds = [...new Set(datums.map(x => x.userId))];
+        const userIdToObjMap: { [userID: string]: { id: string; username: string; } } = {};
+        const uniqueUserIds = [...new Set(datums.map(x => x.userId))];
 
         // Check for user-ids
-        for (let userId of uniqueUserIds)
+        for (const userId of uniqueUserIds)
         {
             const owner = await UserService.getUserById(userId);
             if (owner === null) return new UserNotFoundError(userId);

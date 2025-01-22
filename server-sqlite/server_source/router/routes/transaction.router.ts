@@ -74,7 +74,7 @@ router.post<PostTxnAPI.ResponseDTO>("/api/v1/transactions",
 
             for (const item of parsedBody.transactions)
             {
-                let transactionCreated = await TransactionService.createTransaction(authResult.ownerUserId,
+                const transactionCreated = await TransactionService.createTransaction(authResult.ownerUserId,
                 {
                     creationDate: item.creationDate ? item.creationDate : now,
                     title: item.title,

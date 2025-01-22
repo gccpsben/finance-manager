@@ -697,7 +697,7 @@ export async function testForCalculationsInternals(this: Context)
 
             for (const [ input, output ] of expectedValues)
             {
-                let actualOutput = interpolator.getValue(input);
+                const actualOutput = interpolator.getValue(input);
                 assertStrictEqual(actualOutput ? actualOutput.toString() : undefined, output ? output.toString() : undefined)
             }
 
@@ -728,7 +728,7 @@ export async function testForCalculationsInternals(this: Context)
             ];
             for (const [ input, output ] of expectedValues)
             {
-                let actualOutput = interpolator.getValue(new Decimal(input));
+                const actualOutput = interpolator.getValue(new Decimal(input));
                 assertStrictEqual(actualOutput ? actualOutput.toString() : undefined, output ? new Decimal(output).toString() : undefined)
             }
         }).bind(this)();
@@ -770,7 +770,7 @@ export async function testForCalculationsInternals(this: Context)
 
             for (const [ input, output ] of expectedValues)
             {
-                let actualOutput = await interpolator.getValue(input);
+                const actualOutput = await interpolator.getValue(input);
                 assertStrictEqual(actualOutput ? actualOutput.toString() : undefined, output ? output.toString() : undefined)
             }
 
@@ -801,7 +801,7 @@ export async function testForCalculationsInternals(this: Context)
             ];
             for (const [ input, output ] of expectedValues)
             {
-                let actualOutput = interpolator.getValue(new Decimal(input));
+                const actualOutput = interpolator.getValue(new Decimal(input));
                 assertStrictEqual(actualOutput ? actualOutput.toString() : undefined, output ? new Decimal(output).toString() : undefined)
             }
         }).bind(this)();
@@ -844,7 +844,7 @@ export async function testForCalculationsInternals(this: Context)
         ];
         for (const [ input, output ] of expectedValues)
         {
-            let actualOutput = interpolator.getValue(new Decimal(input), new Decimal(0));
+            const actualOutput = interpolator.getValue(new Decimal(input), new Decimal(0));
 
             if (typeof output === 'number')
                 assertStrictEqual(actualOutput.toString(), new Decimal(output).toString(), `input: ${input}`);

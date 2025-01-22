@@ -434,7 +434,7 @@ export class TransactionRepository extends MeteredRepository
 
     public async getUserEarliestTransaction(userId: string)
     {
-        let query = await this.#repository
+        const query = await this.#repository
         .createQueryBuilder(`txn`)
         .where(`${nameofT('ownerId')} = :ownerId`, { ownerId: userId ?? null })
         .orderBy(`txn.${nameofT('creationDate')}`, "ASC")
@@ -457,7 +457,7 @@ export class TransactionRepository extends MeteredRepository
         const alias = "txn";
         const targetContainerIds = ServiceUtils.normalizeEntitiesToIds(containerIds, 'id');
 
-        let queryResult = await this.#repository
+        const queryResult = await this.#repository
         .createQueryBuilder(alias)
         .where(`${alias}.${nameofT('ownerId')} = :ownerId`, { ownerId: userId ?? null })
         .leftJoinAndSelect(`${alias}.${nameofT('fragments')}`, "frags")

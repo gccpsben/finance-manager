@@ -7,7 +7,7 @@ export namespace AuthHelpers
 {
     export async function registerRandMockUsers(serverURL:string, userCount = 5)
     {
-        let randUsers: TestUserDict = {};
+        const randUsers: TestUserDict = {};
         for (let i = 0; i < userCount; i++)
         {
             const username = randomUUID();
@@ -19,7 +19,7 @@ export namespace AuthHelpers
     /** Register all users defined in `usersCreds`. Token will be set on each object after registering. */
     export async function registerMockUsers(serverURL: string, usersCreds: TestUserDict)
     {
-        for (let [key, value] of Object.entries(usersCreds))
+        for (const [key, value] of Object.entries(usersCreds))
         {
             await HTTPAssert.assertFetch
             (
@@ -51,7 +51,7 @@ export namespace AuthHelpers
 
     export async function registerMockUsersArray(serverURL: string, usersCreds: TestUserEntry[])
     {
-        for (let user of usersCreds)
+        for (const user of usersCreds)
         {
             await HTTPAssert.assertFetch
             (

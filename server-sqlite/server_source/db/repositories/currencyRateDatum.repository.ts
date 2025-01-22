@@ -132,7 +132,7 @@ export class CurrencyRateDatumRepository extends MeteredRepository
             refCurrencyId: string
         }[] | UserNotFoundError | CurrencyNotFoundError>
     {
-        let savedDatums: {
+        const savedDatums: {
             amount: string,
             date: number,
             id: string,
@@ -143,7 +143,7 @@ export class CurrencyRateDatumRepository extends MeteredRepository
 
         const currRepo = Database.getCurrencyRepository()!;
 
-        for (let datum of datums)
+        for (const datum of datums)
         {
             currencyRateDatumsCache?.invalidateRateDatums(datum.userId, datum.currencyId);
             currencyToBaseRateCache?.invalidateCurrencyToBase(datum.userId, datum.currencyId);

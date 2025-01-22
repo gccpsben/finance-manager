@@ -13,13 +13,13 @@ export class ExtendedLog
 
     private static formatDateTime(time: Date)
     {
-        let year = time.getFullYear().toString().padStart(4, '0');
-        let month = (time.getMonth() + 1).toString().padStart(2, '0');
-        let day = time.getDate().toString().padStart(2, '0');
-        let hours = time.getHours().toString().padStart(2, '0');
-        let minutes = time.getMinutes().toString().padStart(2, '0');
-        let seconds = time.getSeconds().toString().padStart(2, '0');
-        let ms = time.getMilliseconds().toString().padStart(4, '0');
+        const year = time.getFullYear().toString().padStart(4, '0');
+        const month = (time.getMonth() + 1).toString().padStart(2, '0');
+        const day = time.getDate().toString().padStart(2, '0');
+        const hours = time.getHours().toString().padStart(2, '0');
+        const minutes = time.getMinutes().toString().padStart(2, '0');
+        const seconds = time.getSeconds().toString().padStart(2, '0');
+        const ms = time.getMilliseconds().toString().padStart(4, '0');
         return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}.${ms}`;
     }
 
@@ -27,8 +27,8 @@ export class ExtendedLog
     {
         const dateTime = time ?? new Date();
         const pad = (num: number) => (num > 9 ? "" : "0") + num;
-        let year = dateTime.getFullYear();
-        let month = pad(dateTime.getMonth() + 1);
+        const year = dateTime.getFullYear();
+        const month = pad(dateTime.getMonth() + 1);
 
         return `${year}-${month}-(${index ?? 0}).log`;
     }

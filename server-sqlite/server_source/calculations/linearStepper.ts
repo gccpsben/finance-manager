@@ -7,7 +7,7 @@ export class LinearStepper<V>
 
     public static fromEntries<V>(entries:{ key: Decimal, value: V }[]): LinearStepper<V>
     {
-        let _entires = entries.sort((a,b) => b.key.sub(a.key).toNumber());
+        const _entires = entries.sort((a,b) => b.key.sub(a.key).toNumber());
         return new LinearStepper<V>(_entires);
     }
 
@@ -33,7 +33,7 @@ export class LinearStepper<V>
         for (let i = 0; i < this.entries.length; i++)
         {
             mid = Math.floor((leftIndex + rightIndex) / 2);
-            let curr = this.entries[mid].key;
+            const curr = this.entries[mid].key;
 
             // Reached min range
             if (Math.abs(leftIndex - rightIndex) <= 1)
@@ -50,7 +50,7 @@ export class LinearStepper<V>
             else if (curr.lessThan(xValue)) rightIndex = mid;
         }
 
-        let lowerBound = this.entries[rightIndex >= this.entries.length ? this.entries.length - 1 : rightIndex];
+        const lowerBound = this.entries[rightIndex >= this.entries.length ? this.entries.length - 1 : rightIndex];
         return lowerBound.value;
     }
 }

@@ -8,11 +8,11 @@ export class LinearInterpolator
 
     public static fromEntries<T>(entries:T[], keyingFunc?: (entry:T) => Decimal, valueFunc?: (entry:T) => Decimal): LinearInterpolator
     {
-        if (keyingFunc === undefined) keyingFunc = (t:any) => { return t.key; };
+        if (keyingFunc === undefined) keyingFunc = (t: any ) => { return t.key; };
         if (valueFunc === undefined) valueFunc = (t:any) => { return t.value; };
 
-        let hydratedEntires = [...entries].map(x => ({ "key": keyingFunc(x), "value": valueFunc(x) }));
-        let _entires = hydratedEntires.sort((a,b) => b.key.sub(a.key).toNumber());
+        const hydratedEntires = [...entries].map(x => ({ "key": keyingFunc(x), "value": valueFunc(x) }));
+        const _entires = hydratedEntires.sort((a,b) => b.key.sub(a.key).toNumber());
 
         return new LinearInterpolator(_entires);
     }
@@ -21,8 +21,8 @@ export class LinearInterpolator
     {
         if (valueLeft == valueRight) return valueLeft;
         if (keyLeft == keyRight) return (valueLeft.add(valueRight)).dividedBy(LinearInterpolator.decimal2); // TODO: See if this is actually allowed?
-        let valueRange = valueRight.sub(valueLeft);
-        let keyRange = keyRight.sub(keyLeft);
+        const valueRange = valueRight.sub(valueLeft);
+        const keyRange = keyRight.sub(keyLeft);
         return valueLeft.add((xValue.sub(keyLeft)).dividedBy(keyRange).mul(valueRange));
     }
 
@@ -43,7 +43,7 @@ export class LinearInterpolator
         for (let i = 0; i < this.entries.length; i++)
         {
             mid = Math.floor((leftIndex + rightIndex) / 2);
-            let curr = this.entries[mid].key;
+            const curr = this.entries[mid].key;
 
             // Reached min range
             if (Math.abs(leftIndex - rightIndex) <= 1)
@@ -58,8 +58,8 @@ export class LinearInterpolator
             else if (curr.lessThan(xValue)) rightIndex = mid;
         }
 
-        let lowerBound = this.entries[rightIndex >= this.entries.length ? this.entries.length - 1 : rightIndex];
-        let upperBound = (this.entries[leftIndex <= 0 ? 0 : leftIndex]);
+        const lowerBound = this.entries[rightIndex >= this.entries.length ? this.entries.length - 1 : rightIndex];
+        const upperBound = (this.entries[leftIndex <= 0 ? 0 : leftIndex]);
 
         return this.inteop(upperBound.value, lowerBound.value, upperBound.key, lowerBound.key, xValue) as Decimal | undefined;
     }

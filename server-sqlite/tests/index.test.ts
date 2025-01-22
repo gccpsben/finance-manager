@@ -151,7 +151,7 @@ await (async () =>
 
     console.log(chalk.green(`\nPassing: ${topContext.successfulCount}`));
     console.log(chalk.red(`Failing: ${topContext.failedCount}\n`));
-    for (let err of topContext.errors)
+    for (const err of topContext.errors)
     {
         console.log(chalk.red(`Error in ${err.name}:`));
         console.log(chalk.gray(err.err.stack) + '\n');

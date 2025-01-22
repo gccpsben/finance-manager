@@ -307,7 +307,7 @@ export class TransactionService
 
         const getRate = async (currencyId: string) =>
         {
-            let currencyRate = await (async () =>
+            const currencyRate = await (async () =>
             {
                 // Try getting the currency rate to base at txn's epoch from cache first.
                 const amountToBaseValueCacheResult = currencyToBaseRateCache?.queryCurrencyToBaseRate(userId, currencyId, transaction.creationDate);

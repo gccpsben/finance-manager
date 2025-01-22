@@ -21,8 +21,8 @@ export class LinearInterpolatorVirtual
     {
         if (valueLeft == valueRight) return valueLeft;
         if (keyLeft.equals(keyRight)) return (valueLeft.add(valueRight)).dividedBy(this.decimal2); // TODO: see is this actually allowed?
-        let valueRange = valueRight.sub(valueLeft);
-        let keyRange = keyRight.sub(keyLeft);
+        const valueRange = valueRight.sub(valueLeft);
+        const keyRange = keyRight.sub(keyLeft);
         // return valueLeft + ((xValue - keyLeft) / keyRange) * valueRange;
         return valueLeft.add((xValue.sub(keyLeft)).dividedBy(keyRange).mul(valueRange));
     }
@@ -44,7 +44,7 @@ export class LinearInterpolatorVirtual
         for (let i = 0; i < this.keys.length; i++)
         {
             mid = Math.floor((leftIndex + rightIndex) / 2);
-            let curr = this.keys[mid];
+            const curr = this.keys[mid];
 
             // Reached min range
             if (Math.abs(leftIndex - rightIndex) <= 1)
@@ -59,11 +59,11 @@ export class LinearInterpolatorVirtual
             else if (curr.lessThan(xValue)) rightIndex = mid;
         }
 
-        let lowerBoundKey = this.keys[rightIndex >= this.keys.length ? this.keys.length - 1 : rightIndex];
-        let lowerBoundValue = await this.valueFunc(lowerBoundKey);
+        const lowerBoundKey = this.keys[rightIndex >= this.keys.length ? this.keys.length - 1 : rightIndex];
+        const lowerBoundValue = await this.valueFunc(lowerBoundKey);
 
-        let upperBoundKey = (this.keys[leftIndex <= 0 ? 0 : leftIndex]);
-        let upperBoundValue = await this.valueFunc(upperBoundKey);
+        const upperBoundKey = (this.keys[leftIndex <= 0 ? 0 : leftIndex]);
+        const upperBoundValue = await this.valueFunc(upperBoundKey);
 
         return this.inteop(upperBoundValue, lowerBoundValue, upperBoundKey, lowerBoundKey, xValue) as Decimal | undefined;
     }

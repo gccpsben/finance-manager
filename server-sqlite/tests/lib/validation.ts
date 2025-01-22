@@ -29,7 +29,7 @@ export async function validateArrayAgainstModel<T extends object>
     const output = { errors: [] as UnitTestValidationError[], transformedObjects: [] as T[] };
     for (const item of array)
     {
-        let result = await validateBodyAgainstModel(modelClass, item, options);
+        const result = await validateBodyAgainstModel(modelClass, item, options);
         if (result.errors.length) output.errors = output.errors.concat(result.errors);
         if (result.transformedObject) output.transformedObjects.push(result.transformedObject);
     }

@@ -229,7 +229,7 @@ export class CalculationsService
             return output;
         })();
 
-        for (let txn of allTxns)
+        for (const txn of allTxns)
         {
             if (!countExcludedTxns && txn.excludedFromIncomesExpenses)
                 continue;

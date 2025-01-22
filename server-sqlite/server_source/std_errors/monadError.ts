@@ -23,7 +23,7 @@ export class MonadError<T extends Symbol> extends Error
     public unwrapErrorChain(): (Error | MonadError<any>)[]
     {
         const output: (Error | MonadError<any>)[] = [];
-        let current: Error | MonadError<any> = this;
+        const current: Error | MonadError<any> = this;
 
         for (let i = 0; i < 999; i++)
         {
@@ -40,7 +40,7 @@ export class MonadError<T extends Symbol> extends Error
         let msg = ``;
         msg += `\n${chalk.red(this)}`;
         const chain: (Error | MonadError<any>)[] = [this, ...this.unwrapErrorChain()];
-        for (let chainItem of chain)
+        for (const chainItem of chain)
         {
             if (chainItem instanceof MonadError) msg += "\n" + chainItem.#stackFrame.join("\n  > ");
             else if (chainItem instanceof Error) msg += "\n" + chalk.red(chainItem);

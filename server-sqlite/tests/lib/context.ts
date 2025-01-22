@@ -91,7 +91,7 @@ export class Context
     public async test(name: string, fn: (this: Context) => Promise<void>, config = undefined as undefined | TestConfig)
     {
         const defaultTimeout = 10000;
-        let self = this;
+        const self = this;
 
         const startDate = new Date().getTime();
         this.level++;
@@ -103,7 +103,7 @@ export class Context
             {
                 (function ()
                 {
-                    let timeoutTimer = config?.timeout === 0 ? undefined : setTimeout(function()
+                    const timeoutTimer = config?.timeout === 0 ? undefined : setTimeout(function()
                     {
                         reject(new TestCaseTimeoutError(config?.timeout ?? defaultTimeout));
                     }, config?.timeout ?? defaultTimeout);
@@ -133,8 +133,8 @@ export class Context
         // Print test case result
         (function ()
         {
-            let colorMethod = chalk[isError ? 'red' : 'green'];
-            let tagContent = (chalk[isError ? "bgRed" : "bgGreen"]).black(isError ? ' FAIL ' : ' PASS ');
+            const colorMethod = chalk[isError ? 'red' : 'green'];
+            const tagContent = (chalk[isError ? "bgRed" : "bgGreen"]).black(isError ? ' FAIL ' : ' PASS ');
             this.log(colorMethod(`${tagContent} ${name} (${endDate - startDate} ms)`), -1)
         }).bind(this)();
     }
