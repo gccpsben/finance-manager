@@ -1,0 +1,1 @@
+export const POST_USER_API_PATH = "/api/v1/users";
