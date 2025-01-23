@@ -5,9 +5,8 @@
 	"private": true,
 	"type": "module",
 	"scripts": {
-		"dev_watch": "deno run --watch --allow-all server_source/index.ts ./.dev.env",
-		"test-no-type": "deno run -A ./tests/index.test.ts",
-
+		"dev-watch": "deno run --watch --allow-all server_source/index.ts ./.dev.env",
+		"test": "deno test --clean --allow-write=./ --allow-ffi --allow-env --allow-read --allow-net ./tests-deno --quiet --trace-leaks --coverage=coverage && deno coverage --include=\"./server_source\" && deno coverage --lcov --output=./coverage/lcov.info --include=\"./server_source\"",
 		"dev_watch_node": "tsc-watch -p \"./tsconfig.json\" --onSuccess \"node server_build/index.js ./.dev.env\"",
 		"dev_once_node": "tsc && node server_build/index.js ./dev.env",
 		"run_prod_node": "node ./server_production/index.js ./.env",
