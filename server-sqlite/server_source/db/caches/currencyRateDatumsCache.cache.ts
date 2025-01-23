@@ -94,6 +94,8 @@ export class CurrencyRateDatumsCache extends CacheBase
             return {...x, difference: Math.abs(x.date - targetDateEpoch)};
         }).filter(x => !!x);
     }
+
+    public reset() { this.#nodeCache.flushAll(); }
 }
 
 export const GlobalCurrencyRateDatumsCache = new CurrencyRateDatumsCache();

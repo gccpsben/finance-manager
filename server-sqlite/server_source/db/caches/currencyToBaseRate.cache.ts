@@ -63,6 +63,8 @@ export class CurrencyToBaseRateCache extends CacheBase
         this.markCacheHit();
         return result;
     }
+
+    public reset() { this.#nodeCache.flushAll(); }
 }
 
 export const GlobalCurrencyToBaseRateCache = new CurrencyToBaseRateCache();

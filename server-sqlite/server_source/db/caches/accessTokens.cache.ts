@@ -77,6 +77,8 @@ export class AccessTokenCache extends CacheBase
         this.markCacheMiss();
         return undefined;
     }
+
+    public reset() { this.#nodeCache.flushAll(); }
 }
 
 export const GlobalAccessTokenCache = new AccessTokenCache();

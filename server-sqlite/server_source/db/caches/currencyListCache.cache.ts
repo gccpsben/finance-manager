@@ -45,6 +45,8 @@ export class CurrencyCache extends CacheBase
         else this.markCacheHit();
         return result as CurrencyCacheEntry;
     }
+
+    public reset() { this.#nodeCache.flushAll(); }
 }
 
 export const GlobalCurrencyCache = new CurrencyCache();

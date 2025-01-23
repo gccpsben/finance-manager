@@ -18,6 +18,10 @@ import { Buffer } from "node:buffer";
 import { CronRunner } from "../crons/cronService.ts";
 import { Database } from "../db/db.ts";
 import { setGlobalEntityValidationLogger } from '../db/dbEntityBase';
+import { GlobalCurrencyCache } from '../db/caches/currencyListCache.cache';
+import { GlobalCurrencyRateDatumsCache } from '../db/caches/currencyRateDatumsCache.cache';
+import { GlobalCurrencyToBaseRateCache } from '../db/caches/currencyToBaseRate.cache';
+import { GlobalAccessTokenCache } from '../db/caches/accessTokens.cache';
 
 export type StartServerConfig =
 {
@@ -226,11 +230,28 @@ export class Server
 
     public shutdownServer()
     {
+        this.clearCache();
         this.CRONRunner?.stopAll();
         this.CRONRunner?.destroyAll();
         Database.getFileReceiver()?.close();
         this.expressServer.closeAllConnections();
         this.expressServer.close();
         this.logger.shutdown();
+    }
+
+    public clearCache()
+    {
+        GlobalCurrencyCache.reset();
+        GlobalCurrencyRateDatumsCache.reset();
+        GlobalCurrencyToBaseRateCache.reset();
+        GlobalAccessTokenCache.reset();
+    }
+
+    public getServerPort()
+    {
+        const addr = this.expressServer.address();
+        if (addr === null) return null;
+        if (typeof addr === 'string') return null;
+        return addr.port;
     }
 }
