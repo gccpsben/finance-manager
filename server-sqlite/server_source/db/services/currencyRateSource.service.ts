@@ -179,6 +179,7 @@ export class CurrencyRateSourceService
         path: string
     }[]>
     {
+        // TODO: Handle currency not found
         const userCurrencyRateSources = await CurrencyRateSourceRepository
         .getInstance()
         .find({ where: { ownerId: ownerId ?? null, refCurrencyId: currencyId ?? null } });

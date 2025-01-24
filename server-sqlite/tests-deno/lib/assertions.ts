@@ -109,3 +109,17 @@ export async function assertFetchJSON<ExpectedBodyType extends object>
         rawBody: rawBody
     };
 }
+
+export function dictWithoutKeys<
+    const T extends string,
+    D extends { [s: string]: unknown; } | ArrayLike<unknown>
+>( dict: D, keysToDelete: T[])
+{
+    const output: { [key: string]: unknown } | ArrayLike<unknown> = { };
+    for (const [key, value] of Object.entries(dict))
+    {
+        if (keysToDelete.includes(key as T)) continue;
+        output[key] = value;
+    }
+    return output as Omit<typeof dict, T>;
+}

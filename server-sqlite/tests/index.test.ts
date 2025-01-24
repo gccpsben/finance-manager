@@ -7,12 +7,12 @@ import { Server } from '../server_source/router/server.ts';
 import { Server as HTTPServer } from 'node:http';
 import { Context } from './lib/context.ts';
 import authTests from './suites/auth/index.test.ts';
-import containerTests from './suites/container/index.test.ts';
-import currencyTests from './suites/currency/index.test.ts';
-import txnTypeTests from './suites/txnTag/index.test.ts';
-import transactionTests from './suites/transaction/index.test.ts';
-import currencyRateSrcs from './suites/currencyRateSource/index.test.ts';
-import calculationsTest, { testForCalculationsInternals } from './suites/calculations/index.test.ts';
+// import containerTests from './suites/container/index.test.ts';
+// import currencyTests from './suites/currency/index.test.ts';
+// import txnTypeTests from './suites/txnTag/index.test.ts';
+// import transactionTests from './suites/transaction/index.test.ts';
+// import currencyRateSrcs from './suites/currencyRateSource/index.test.ts';
+import { testForCalculationsInternals } from './suites/calculations/index.test.ts';
 import { exit } from 'node:process';
 import { GetCurrencyRateSrcAPI, DeleteCurrencyRateSrcAPI } from '../../api-types/currencyRateSource.d.ts';
 import { GetUserBalanceHistoryAPI, GetUserNetworthHistoryAPI } from '../../api-types/calculations.d.ts';
@@ -141,12 +141,12 @@ await (async () =>
     await topContext.describe(`Endpoints`, async function(this: Context)
     {
         await authTests.bind(this)();
-        await containerTests.bind(this)();
-        await currencyTests.bind(this)();
-        await currencyRateSrcs.bind(this)();
-        await txnTypeTests.bind(this)();
-        await transactionTests.bind(this)();
-        await calculationsTest.bind(this)();
+        // await containerTests.bind(this)();
+        // await currencyTests.bind(this)();
+        // await currencyRateSrcs.bind(this)();
+        // await txnTypeTests.bind(this)();
+        // await transactionTests.bind(this)();
+        // await calculationsTest.bind(this)();
     });
 
     console.log(chalk.green(`\nPassing: ${topContext.successfulCount}`));
