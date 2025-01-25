@@ -1,10 +1,11 @@
 // deno-lint-ignore-file no-namespace
 import { randomUUID } from "node:crypto";
-import { assertFetchJSON } from "../../lib/assertions.ts";
-import { assertNotEquals } from "@std/assert/not-equals";
+import { wrapAssertFetchJSONEndpoint } from "../../lib/assertions.ts";
 import { POST_USER_API_PATH } from "./paths.ts";
 import path from "node:path";
-import { loginToUser } from "../auth/helpers.ts";
+import { createLoginToUserFunc } from "../auth/helpers.ts";
+import { PostUserAPIClass } from "./classes.ts";
+import { getTestServerPath } from "../../init.ts";
 
 export type TestUserDict = { [key: string]: TestUserEntry };
 export type TestUserEntry =
@@ -44,16 +45,20 @@ export namespace AuthHelpers
     {
         for (const [key, value] of Object.entries(usersCreds))
         {
-            await assertFetchJSON
-            (
-                path.join(`http://localhost:${port}`, POST_USER_API_PATH),
-                {
-                    assertStatus: 200, method: "POST",
-                    body: { username: value.username, password: value.password },
-                }
-            );
+            await createPostUserFunc()
+            ({
+                token: undefined,
+                asserts: 'default',
+                body: ['EXPECTED', { username: value.username, password: value.password }]
+            });
 
-            usersCreds[key].token = (await loginToUser({ port, username: value.username, password: value.password })).token;
+            const loginResponse = await createLoginToUserFunc()
+            ({
+                token: undefined,
+                body: ['EXPECTED', { username: value.username, password: value.password }],
+                asserts: 'default'
+            });
+            usersCreds[key].token = loginResponse.parsedBody!.token;
         }
 
         return usersCreds;
@@ -65,22 +70,37 @@ export namespace AuthHelpers
         { port: number, usersCreds: TestUserEntry[] }
     )
     {
-        const usernameToTokenMap: { [username: string]: string } = {};
+        const usernameToTokenMap: { [name: string]: string } = {};
         for (const user of usersCreds)
         {
-            await assertFetchJSON
-            (
-                path.join(`http://localhost:${port}`, POST_USER_API_PATH),
-                {
-                    assertStatus: 200, method: "POST",
-                    body: { username: user.username, password: user.password },
-                }
-            );
+            await createPostUserFunc()
+            ({
+                token: undefined,
+                asserts: 'default',
+                body: ['EXPECTED', { username: user.username, password: user.password }]
+            });
 
-            const token = (await loginToUser({ port, username: user.username, password: user.password })).token;
-            assertNotEquals(token, undefined);
-            if (token) usernameToTokenMap[user.username] = token;
+            const loginResponse = await createLoginToUserFunc()
+            ({
+                token: undefined,
+                body: ['EXPECTED', { username: user.username, password: user.password }],
+                asserts: 'default'
+            });
+            usernameToTokenMap[user.username] = loginResponse.parsedBody!.token;
         }
         return usernameToTokenMap;
     }
 }
+
+export const createPostUserFunc = () =>
+{
+    return wrapAssertFetchJSONEndpoint<{ username: string, password: string }, PostUserAPIClass.ResponseDTO>
+    (
+        'POST',
+        path.join(getTestServerPath(), POST_USER_API_PATH),
+        {
+            bodyType: PostUserAPIClass.ResponseDTO,
+            status: 200
+        }
+    )
+};

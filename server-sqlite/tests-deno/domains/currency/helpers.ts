@@ -1,73 +1,66 @@
 import path from "node:path";
-import { assertFetchJSON } from "../../lib/assertions.ts";
-import { assertNotEquals } from "@std/assert/not-equals";
+import { wrapAssertFetchJSONEndpoint } from "../../lib/assertions.ts";
 import { POST_CURRENCY_API_PATH } from './paths.ts';
 import { GetCurrencyAPIClass, PostCurrencyAPIClass } from "./classes.ts";
 import { getTestServerPath } from '../../init.ts';
 import { GET_CURRENCY_API_PATH } from './paths.ts';
 
-export async function postCurrency
-(
-    { token, name, fallbackRateAmount, fallbackRateCurrencyId, ticker }:
-    { token: string, name: string, fallbackRateAmount: string, fallbackRateCurrencyId: string, ticker: string },
-)
+export const createPostCurrencyFunc = () =>
 {
-    const postResponse = await assertFetchJSON
-    (
-        path.join(getTestServerPath(), POST_CURRENCY_API_PATH),
-        {
-            assertStatus: 200, method: "POST",
-            headers: { 'authorization': token },
-            body: { name, fallbackRateAmount, fallbackRateCurrencyId, ticker },
-            expectedBodyType: PostCurrencyAPIClass.ResponseDTO
-        }
-    );
-    assertNotEquals(postResponse.parsedBody, undefined);
-    return { currId: postResponse.parsedBody!.id };
-}
-
-export async function postBaseCurrency
-(
-    { token, name, ticker }:
-    { token: string, name: string, ticker: string },
-)
-{
-    const postResponse = await assertFetchJSON
-    (
-        path.join(getTestServerPath(), POST_CURRENCY_API_PATH),
-        {
-            assertStatus: 200, method: "POST",
-            headers: { 'authorization': token },
-            body: { name, ticker },
-            expectedBodyType: PostCurrencyAPIClass.ResponseDTO
-        }
-    );
-    assertNotEquals(postResponse.parsedBody, undefined);
-    return { currId: postResponse.parsedBody!.id };
-}
-
-export async function getCurrencies
-(
-    { token, name, id, date }:
-    { token: string, name?: string, id?: string, date?: string },
-)
-{
-    const query = new URLSearchParams(
+    return wrapAssertFetchJSONEndpoint<
     {
-        ...(name === undefined ? {} : { name }),
-        ...(id === undefined ? {} : { id }),
-        ...(date === undefined ? {} : { date })
+        fallbackRateAmount: string,
+        fallbackRateCurrencyId: string,
+        ticker: string,
+        name: string
+    }, PostCurrencyAPIClass.ResponseDTO>
+    (
+        'POST',
+        path.join(getTestServerPath(), POST_CURRENCY_API_PATH),
+        {
+            bodyType: PostCurrencyAPIClass.ResponseDTO,
+            status: 200
+        }
+    )
+};
+
+export const createPostBaseCurrencyFunc = () =>
+{
+    return wrapAssertFetchJSONEndpoint<
+    {
+        ticker: string,
+        name: string
+    }, PostCurrencyAPIClass.ResponseDTO>
+    (
+        'POST',
+        path.join(getTestServerPath(), POST_CURRENCY_API_PATH),
+        {
+            bodyType: PostCurrencyAPIClass.ResponseDTO,
+            status: 200
+        }
+    )
+};
+
+export const createGetCurrenciesFunc = (query: {
+    name?: string,
+    id?: string,
+    date?: string
+}) =>
+{
+    const queryStr = new URLSearchParams(
+    {
+        ...(query.name === undefined ? {} : { "name": query.name }),
+        ...(query.id === undefined ? {} : { "id": query.id }),
+        ...(query.date === undefined ? {} : { "date": query.date })
     }).toString();
 
-    const postResponse = await assertFetchJSON
+    return wrapAssertFetchJSONEndpoint<object, GetCurrencyAPIClass.ResponseDTO>
     (
-        path.join(getTestServerPath(), GET_CURRENCY_API_PATH, "?", query.toString()),
+        'GET',
+        path.join(getTestServerPath(), GET_CURRENCY_API_PATH, "?", queryStr),
         {
-            assertStatus: 200, method: "GET",
-            headers: { 'authorization': token },
-            expectedBodyType: GetCurrencyAPIClass.ResponseDTO
+            bodyType: GetCurrencyAPIClass.ResponseDTO,
+            status: 200
         }
-    );
-    assertNotEquals(postResponse.parsedBody, undefined);
-    return { parsedBody: postResponse.parsedBody };
-}
+    )
+};

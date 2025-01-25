@@ -1,24 +1,22 @@
 import path from "node:path";
-import { assertFetchJSON } from "../../lib/assertions.ts";
+import { wrapAssertFetchJSONEndpoint } from "../../lib/assertions.ts";
 import { POST_LOGIN_API_PATH } from "./paths.ts";
 import { PostLoginAPIClass } from "./classes.ts";
-import { assertNotEquals } from "@std/assert/not-equals";
+import { getTestServerPath } from "../../init.ts";
 
-export async function loginToUser
-(
-    { port, username, password } :
-    { port: number, username: string, password: string }
-)
+export const createLoginToUserFunc = () =>
 {
-    const loginResponse = await assertFetchJSON
+    return wrapAssertFetchJSONEndpoint
+    <
+        { username: string, password: string },
+        PostLoginAPIClass.ResponseDTO
+    >
     (
-        path.join(`http://localhost:${port}`, POST_LOGIN_API_PATH),
+        'POST',
+        path.join(getTestServerPath(), POST_LOGIN_API_PATH),
         {
-            assertStatus: 200, method: "POST",
-            body: { username: username, password: password },
-            expectedBodyType: PostLoginAPIClass.ResponseDTO
+            bodyType: PostLoginAPIClass.ResponseDTO,
+            status: 200
         }
-    );
-    assertNotEquals(loginResponse.parsedBody, undefined);
-    return { token: loginResponse.parsedBody!.token };
-}
+    )
+};

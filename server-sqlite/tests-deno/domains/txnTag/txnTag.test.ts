@@ -1,13 +1,10 @@
 /// <reference lib="deno.ns" />
 
-import path from "node:path";
-import { assertFetchJSON } from "../../lib/assertions.ts";
 import { resetDatabase } from "../server/helpers.ts";
-import { ensureTestIsSetup, getTestServerPath, port } from "../../init.ts";
+import { ensureTestIsSetup, port } from "../../init.ts";
 import { AuthHelpers } from "../users/helpers.ts";
-import { POST_TXN_TAGS_API_PATH, GET_TXN_TAGS_API_PATH } from './paths.ts';
-import { GetTxnTagsAPIClass, TransactionTagsDTOClass } from "./classes.ts";
 import { assertEqual } from '../../../tests/lib/assert.ts';
+import { createPostTxnTagFunc, createGetTxnTagsFunc } from "./helpers.ts";
 
 const getValidTagBody = () => { return { name: 'my test tag' } };
 
@@ -40,16 +37,12 @@ Deno.test(
     {
         const testUserToken = await beforeEachSetup(test);
 
-        await assertFetchJSON
-        (
-            path.join(getTestServerPath(), POST_TXN_TAGS_API_PATH),
-            {
-                assertStatus: 400, method: "POST",
-                headers: { 'authorization': testUserToken! },
-                body: {  },
-                expectedBodyType: TransactionTagsDTOClass
-            }
-        );
+        await createPostTxnTagFunc()(
+        {
+            token: testUserToken!,
+            asserts: { status: 400 },
+            body: ['CUSTOM', {}],
+        });
     },
     sanitizeOps: false,
     sanitizeResources: false
@@ -62,38 +55,26 @@ Deno.test(
     {
         const testUserToken = await beforeEachSetup(test);
 
-        await assertFetchJSON
-        (
-            path.join(getTestServerPath(), POST_TXN_TAGS_API_PATH),
-            {
-                assertStatus: 400, method: "POST",
-                headers: { 'authorization': testUserToken! },
-                body: { name: [] },
-                expectedBodyType: TransactionTagsDTOClass
-            }
-        );
+        await createPostTxnTagFunc()(
+        {
+            token: testUserToken!,
+            asserts: { status: 400 },
+            body: ['CUSTOM', { name: [] }],
+        });
 
-        await assertFetchJSON
-        (
-            path.join(getTestServerPath(), POST_TXN_TAGS_API_PATH),
-            {
-                assertStatus: 400, method: "POST",
-                headers: { 'authorization': testUserToken! },
-                body: { name: {} },
-                expectedBodyType: TransactionTagsDTOClass
-            }
-        );
+        await createPostTxnTagFunc()(
+        {
+            token: testUserToken!,
+            asserts: { status: 400 },
+            body: ['CUSTOM', { name: {} }],
+        });
 
-        await assertFetchJSON
-        (
-            path.join(getTestServerPath(), POST_TXN_TAGS_API_PATH),
-            {
-                assertStatus: 400, method: "POST",
-                headers: { 'authorization': testUserToken! },
-                body: { name: 12312 },
-                expectedBodyType: TransactionTagsDTOClass
-            }
-        );
+        await createPostTxnTagFunc()(
+        {
+            token: testUserToken!,
+            asserts: { status: 400 },
+            body: ['CUSTOM', { name: 12312 }],
+        });
     },
     sanitizeOps: false,
     sanitizeResources: false
@@ -106,27 +87,25 @@ Deno.test(
     {
         const testUserToken = await beforeEachSetup(test);
 
-        await assertFetchJSON
-        (
-            path.join(getTestServerPath(), POST_TXN_TAGS_API_PATH),
+        await test.step("Incorrect token", async () =>
+        {
+            await createPostTxnTagFunc()(
             {
-                assertStatus: 401, method: "POST",
-                headers: { 'authorization': testUserToken + '1' },
-                body: getValidTagBody(),
-                expectedBodyType: TransactionTagsDTOClass
-            }
-        );
+                token: testUserToken + '1',
+                asserts: { status: 401 },
+                body: ['EXPECTED', getValidTagBody()],
+            });
+        });
 
-        await assertFetchJSON
-        (
-            path.join(getTestServerPath(), POST_TXN_TAGS_API_PATH),
+        await test.step("Empty token", async () =>
+        {
+            await createPostTxnTagFunc()(
             {
-                assertStatus: 401, method: "POST",
-                headers: { },
-                body: getValidTagBody(),
-                expectedBodyType: TransactionTagsDTOClass
-            }
-        );
+                token: '',
+                asserts: { status: 401 },
+                body: ['EXPECTED', getValidTagBody()],
+            });
+        });
     },
     sanitizeOps: false,
     sanitizeResources: false
@@ -142,30 +121,22 @@ Deno.test(
 
         await test.step("Creating first tag", async () =>
         {
-            await assertFetchJSON
-            (
-                path.join(getTestServerPath(), POST_TXN_TAGS_API_PATH),
-                {
-                    assertStatus: 200, method: "POST",
-                    headers: { 'authorization': testUserToken! },
-                    body: getValidTagBody(),
-                    expectedBodyType: TransactionTagsDTOClass
-                }
-            );
+            await createPostTxnTagFunc()(
+            {
+                token: testUserToken!,
+                asserts: 'default',
+                body: ['EXPECTED', getValidTagBody()],
+            });
         });
 
         await test.step("Creating second tag with same name", async () =>
         {
-            await assertFetchJSON
-            (
-                path.join(getTestServerPath(), POST_TXN_TAGS_API_PATH),
-                {
-                    assertStatus: 400, method: "POST",
-                    headers: { 'authorization': testUserToken! },
-                    body: getValidTagBody(),
-                    expectedBodyType: TransactionTagsDTOClass
-                }
-            );
+            await createPostTxnTagFunc()(
+            {
+                token: testUserToken!,
+                asserts: { status: 400 },
+                body: ['EXPECTED', getValidTagBody()],
+            });
         });
     },
     sanitizeOps: false,
@@ -182,42 +153,30 @@ Deno.test(
 
         await test.step("Creating first tag", async () =>
         {
-            await assertFetchJSON
-            (
-                path.join(getTestServerPath(), POST_TXN_TAGS_API_PATH),
-                {
-                    assertStatus: 200, method: "POST",
-                    headers: { 'authorization': testUserToken! },
-                    body: getValidTagBody(),
-                    expectedBodyType: TransactionTagsDTOClass
-                }
-            );
+            await createPostTxnTagFunc()(
+            {
+                token: testUserToken!,
+                asserts: 'default',
+                body: ['EXPECTED', getValidTagBody()],
+            });
         });
 
         await test.step("Getting the posted tag without tokens", async () =>
         {
-            await assertFetchJSON
-            (
-                path.join(getTestServerPath(), GET_TXN_TAGS_API_PATH),
-                {
-                    assertStatus: 401, method: "GET",
-                    headers: { },
-                    expectedBodyType: GetTxnTagsAPIClass.ResponseDTOClass
-                }
-            );
+            await createGetTxnTagsFunc()(
+            {
+                token: '',
+                asserts: { status: 401 }
+            });
         });
 
         await test.step("Getting the posted tag", async () =>
         {
-            const tagRes = await assertFetchJSON
-            (
-                path.join(getTestServerPath(), GET_TXN_TAGS_API_PATH),
-                {
-                    assertStatus: 200, method: "GET",
-                    headers: { 'authorization': testUserToken! },
-                    expectedBodyType: GetTxnTagsAPIClass.ResponseDTOClass
-                }
-            );
+            const tagRes = await createGetTxnTagsFunc()(
+            {
+                token: testUserToken!,
+                asserts: 'default'
+            });
 
             assertEqual(tagRes.parsedBody!.rangeItems.length, 1);
             assertEqual(tagRes.parsedBody!.rangeItems[0].name, getValidTagBody().name);

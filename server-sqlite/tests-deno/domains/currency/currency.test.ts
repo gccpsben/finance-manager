@@ -1,16 +1,11 @@
 /// <reference lib="deno.ns" />
 
-import path from "node:path";
-import { assertFetchJSON } from "../../lib/assertions.ts";
 import { resetDatabase } from "../server/helpers.ts";
 import { ensureTestIsSetup, port } from "../../init.ts";
 import { AuthHelpers } from "../users/helpers.ts";
-import { POST_CURRENCY_API_PATH } from './paths.ts';
-import { PostCurrencyAPIClass } from "./classes.ts";
-import { getTestServerPath } from '../../init.ts';
-import { GET_CURRENCY_API_PATH } from './paths.ts';
-import { getCurrencies, postBaseCurrency } from "./helpers.ts";
+import { createPostBaseCurrencyFunc, createGetCurrenciesFunc } from "./helpers.ts";
 import { assertEquals } from 'jsr:@std/assert/equals';
+import { createPostCurrencyFunc } from './helpers.ts';
 
 Deno.test(
 {
@@ -20,15 +15,12 @@ Deno.test(
         await ensureTestIsSetup();
         await resetDatabase();
 
-        await assertFetchJSON
-        (
-            path.join(getTestServerPath(), POST_CURRENCY_API_PATH),
-            {
-                assertStatus: 401, method: "POST",
-                body: { name: "BASE_CUR", ticker: "BASE" } satisfies Pick<PostCurrencyAPIClass.RequestDTO, 'ticker' | 'name'>,
-                expectedBodyType: PostCurrencyAPIClass.ResponseDTO
-            }
-        );
+        await createPostCurrencyFunc()
+        ({
+            token: undefined,
+            asserts: { status: 401 },
+            body: ['CUSTOM', { name: "BASE_CUR", ticker: "BASE" }],
+        });
     },
     sanitizeOps: false,
     sanitizeResources: false
@@ -46,72 +38,52 @@ Deno.test(
 
         await test.step("Without ticker", async () =>
         {
-            await assertFetchJSON
-            (
-                path.join(getTestServerPath(), POST_CURRENCY_API_PATH),
-                {
-                    assertStatus: 400, method: "POST",
-                    headers: { "authorization":  firstUser.token! },
-                    body: { name: "BASE_CUR"} satisfies Pick<PostCurrencyAPIClass.RequestDTO, 'name'>,
-                    expectedBodyType: PostCurrencyAPIClass.ResponseDTO
-                }
-            );
+            await createPostCurrencyFunc()
+            ({
+                token: firstUser.token!,
+                asserts: { status: 400 },
+                body: ['CUSTOM', { name: "BASE_CUR" }],
+            });
         });
 
         await test.step("Without name", async () =>
         {
-            await assertFetchJSON
-            (
-                path.join(getTestServerPath(), POST_CURRENCY_API_PATH),
-                {
-                    assertStatus: 400, method: "POST",
-                    headers: { "authorization":  firstUser.token! },
-                    body: { ticker: "BASE_CUR"} satisfies Pick<PostCurrencyAPIClass.RequestDTO, 'ticker'>,
-                    expectedBodyType: PostCurrencyAPIClass.ResponseDTO
-                }
-            );
+            await createPostCurrencyFunc()
+            ({
+                token: firstUser.token!,
+                asserts: { status: 400 },
+                body: ['CUSTOM', { ticker: "BASE_CUR" }],
+            });
         });
 
         await test.step("With fallbackRateAmount but no fallbackRateCurrencyId", async () =>
         {
-            await assertFetchJSON
-            (
-                path.join(getTestServerPath(), POST_CURRENCY_API_PATH),
-                {
-                    assertStatus: 400, method: "POST",
-                    headers: { "authorization":  firstUser.token! },
-                    body: { ticker: "BASE_CUR", name: "Base", fallbackRateAmount: "1" } satisfies Omit<PostCurrencyAPIClass.RequestDTO, 'fallbackRateCurrencyId'>,
-                    expectedBodyType: PostCurrencyAPIClass.ResponseDTO
-                }
-            );
+            await createPostCurrencyFunc()
+            ({
+                token: firstUser.token!,
+                asserts: { status: 400 },
+                body: ['CUSTOM', { ticker: "BASE_CUR", name: "Base", fallbackRateAmount: "1" }],
+            });
         });
 
         await test.step("With fallbackRateCurrencyId but no fallbackRateAmount", async () =>
         {
-            await assertFetchJSON
-            (
-                path.join(getTestServerPath(), POST_CURRENCY_API_PATH),
-                {
-                    assertStatus: 400, method: "POST",
-                    headers: { "authorization":  firstUser.token! },
-                    body: { ticker: "BASE_CUR", name: "Base", fallbackRateCurrencyId: "1" } satisfies Omit<PostCurrencyAPIClass.RequestDTO, 'fallbackRateAmount'>,
-                    expectedBodyType: PostCurrencyAPIClass.ResponseDTO
-                }
-            );
+            await createPostCurrencyFunc()
+            ({
+                token: firstUser.token!,
+                asserts: { status: 400 },
+                body: ['CUSTOM', { ticker: "BASE_CUR", name: "Base", fallbackRateCurrencyId: "1" }],
+            });
         });
 
         await test.step("With fallbackRateCurrencyId and fallbackRateAmount, but invalid currency", async () =>
         {
-            await assertFetchJSON
-            (
-                path.join(getTestServerPath(), POST_CURRENCY_API_PATH),
-                {
-                    assertStatus: 400, method: "POST",
-                    headers: { "authorization":  firstUser.token! },
-                    body: { ticker: "BASE_CUR", name: "Base", fallbackRateCurrencyId: "FJVO", fallbackRateAmount: "1" } satisfies PostCurrencyAPIClass.RequestDTO,
-                    expectedBodyType: PostCurrencyAPIClass.ResponseDTO
-                }
-            );
+            await createPostCurrencyFunc()
+            ({
+                token: firstUser.token!,
+                asserts: { status: 400 },
+                body: ['CUSTOM', { ticker: "BASE_CUR", name: "Base", fallbackRateCurrencyId: "FJVO", fallbackRateAmount: "1" }],
+            });
         });
     },
     sanitizeOps: false,
@@ -132,44 +104,32 @@ Deno.test(
 
         await test.step("Accept first currency", async () =>
         {
-            await assertFetchJSON
-            (
-                path.join(getTestServerPath(), POST_CURRENCY_API_PATH),
-                {
-                    assertStatus: 200, method: "POST",
-                    headers: { "authorization":  firstUser.token! },
-                    body: { name: currName, ticker: currTicker } satisfies Pick<PostCurrencyAPIClass.RequestDTO, 'ticker' | 'name'>,
-                    expectedBodyType: PostCurrencyAPIClass.ResponseDTO
-                }
-            );
+            await createPostBaseCurrencyFunc()
+            ({
+                token: firstUser.token!,
+                asserts: { status: 200 },
+                body: ['EXPECTED', { name: currName, ticker: currTicker }],
+            });
         });
 
         await test.step("Reject repeated name currency", async () =>
         {
-            await assertFetchJSON
-            (
-                path.join(getTestServerPath(), POST_CURRENCY_API_PATH),
-                {
-                    assertStatus: 400, method: "POST",
-                    headers: { "authorization":  firstUser.token! },
-                    body: { name: currName, ticker: currTicker + '-' } satisfies Pick<PostCurrencyAPIClass.RequestDTO, 'ticker' | 'name'>,
-                    expectedBodyType: PostCurrencyAPIClass.ResponseDTO
-                }
-            );
+            await createPostBaseCurrencyFunc()
+            ({
+                token: firstUser.token!,
+                asserts: { status: 400 },
+                body: ['EXPECTED', { name: currName, ticker: currTicker + '-' }],
+            });
         });
 
         await test.step("Reject repeated ticker currency", async () =>
         {
-            await assertFetchJSON
-            (
-                path.join(getTestServerPath(), POST_CURRENCY_API_PATH),
-                {
-                    assertStatus: 400, method: "POST",
-                    headers: { "authorization":  firstUser.token! },
-                    body: { name: currName + "-", ticker: currTicker } satisfies Pick<PostCurrencyAPIClass.RequestDTO, 'ticker' | 'name'>,
-                    expectedBodyType: PostCurrencyAPIClass.ResponseDTO
-                }
-            );
+            await createPostBaseCurrencyFunc()
+            ({
+                token: firstUser.token!,
+                asserts: { status: 400 },
+                body: ['EXPECTED', { name: currName + "-", ticker: currTicker }],
+            });
         });
     },
     sanitizeOps: false,
@@ -191,33 +151,40 @@ Deno.test(
 
         await test.step("Accept base currency", async () =>
         {
-            const res = await postBaseCurrency({ name: testCurrName, ticker: testCurrTicker, token: firstUser.token! });
-            postedCurrId = res.currId;
+            const baseCurrency = await createPostBaseCurrencyFunc()
+            ({
+                token: firstUser.token!,
+                asserts: 'default',
+                body: ['EXPECTED', { name: testCurrName, ticker: testCurrTicker }]
+            });
+
+            postedCurrId = baseCurrency.parsedBody!.id;
         });
 
         await test.step("Query the posted currency without token", async () =>
         {
-            await assertFetchJSON
-            (
-                path.join(getTestServerPath(), GET_CURRENCY_API_PATH),
-                {
-                    assertStatus: 401,
-                    method: "GET",
-                }
-            );
+            await createGetCurrenciesFunc({ })
+            ({
+                token: undefined,
+                asserts: { status: 401 },
+            });
         });
 
         await test.step("Query the posted currency", async (test) =>
         {
             await test.step("Same ID", async () =>
             {
-                const queryResult = await getCurrencies({ token: firstUser.token!, id: postedCurrId! });
+                const queryResult = await createGetCurrenciesFunc({ id: postedCurrId! })
+                ({ token: firstUser.token!, asserts: 'default' });
+
                 assertEquals(queryResult.parsedBody!.rangeItems[0].id, postedCurrId);
             });
 
             await test.step("Same name", async () =>
             {
-                const queryResult = await getCurrencies({ token: firstUser.token!, name: testCurrName });
+                const queryResult = await createGetCurrenciesFunc({ name: testCurrName })
+                ({ token: firstUser.token!, asserts: 'default' });
+
                 assertEquals(queryResult.parsedBody!.rangeItems[0].name, testCurrName);
             });
         });

@@ -1,12 +1,9 @@
 /// <reference lib="deno.ns" />
 
-import path from "node:path";
-import { assertFetchJSON } from "../../lib/assertions.ts";
 import { resetDatabase } from "../server/helpers.ts";
-import { POST_LOGIN_API_PATH } from "./paths.ts";
 import { ensureTestIsSetup, port } from "../../init.ts";
-import { PostLoginAPIClass } from "./classes.ts";
 import { AuthHelpers } from "../users/helpers.ts";
+import { createLoginToUserFunc } from "./helpers.ts";
 
 Deno.test(
 {
@@ -16,15 +13,12 @@ Deno.test(
         await ensureTestIsSetup();
         await resetDatabase();
 
-        await assertFetchJSON
-        (
-            path.join(`http://localhost:${port}`, POST_LOGIN_API_PATH),
-            {
-                assertStatus: 401, method: "POST",
-                body: { username: "non-existent", password: "testing" },
-                expectedBodyType: PostLoginAPIClass.ResponseDTO
-            }
-        );
+        await createLoginToUserFunc()
+        ({
+            token: undefined,
+            body: ['EXPECTED', { username: "non-existent", password: "testing" }],
+            asserts: { status: 401 }
+        });
     },
     sanitizeOps: false,
     sanitizeResources: false
@@ -56,35 +50,45 @@ Deno.test(
             });
         });
 
-        await assertFetchJSON
-        (
-            path.join(`http://localhost:${port}`, POST_LOGIN_API_PATH),
-            {
-                assertStatus: 401, method: "POST",
-                body: { username: user1Username, password: user2Password },
-                expectedBodyType: PostLoginAPIClass.ResponseDTO
-            }
-        );
+        await test.step("Incorrect Password (1)", async () =>
+        {
+            await createLoginToUserFunc()
+            ({
+                token: undefined,
+                body: ['EXPECTED', { username: user1Username, password: user2Password }],
+                asserts: { status: 401 }
+            });
+        });
 
-        await assertFetchJSON
-        (
-            path.join(`http://localhost:${port}`, POST_LOGIN_API_PATH),
-            {
-                assertStatus: 401, method: "POST",
-                body: { username: user2Username, password: user1Password },
-                expectedBodyType: PostLoginAPIClass.ResponseDTO
-            }
-        );
+        await test.step("Incorrect Password (2)", async () =>
+        {
+            await createLoginToUserFunc()
+            ({
+                token: undefined,
+                body: ['EXPECTED', { username: user2Username, password: user1Password }],
+                asserts: { status: 401 }
+            });
+        });
 
-        await assertFetchJSON
-        (
-            path.join(`http://localhost:${port}`, POST_LOGIN_API_PATH),
-            {
-                assertStatus: 400, method: "POST",
-                body: { username: user2Username },
-                expectedBodyType: PostLoginAPIClass.ResponseDTO
-            }
-        );
+        await test.step("Missing Username Props", async () =>
+        {
+            await createLoginToUserFunc()
+            ({
+                token: undefined,
+                body: ['CUSTOM', { password: user1Password }],
+                asserts: { status: 400 }
+            });
+        });
+
+        await test.step("Missing Password Props", async () =>
+        {
+            await createLoginToUserFunc()
+            ({
+                token: undefined,
+                body: ['CUSTOM', { username: user2Username }],
+                asserts: { status: 400 }
+            });
+        });
     },
     sanitizeOps: false,
     sanitizeResources: false
@@ -116,25 +120,19 @@ Deno.test(
             });
         });
 
-        await assertFetchJSON
-        (
-            path.join(`http://localhost:${port}`, POST_LOGIN_API_PATH),
-            {
-                assertStatus: 200, method: "POST",
-                body: { username: user1Username, password: user1Password },
-                expectedBodyType: PostLoginAPIClass.ResponseDTO
-            }
-        );
+        await createLoginToUserFunc()
+        ({
+            token: undefined,
+            body: ['EXPECTED', { username: user1Username, password: user1Password }],
+            asserts: 'default'
+        });
 
-        await assertFetchJSON
-        (
-            path.join(`http://localhost:${port}`, POST_LOGIN_API_PATH),
-            {
-                assertStatus: 200, method: "POST",
-                body: { username: user2Username, password: user2Password },
-                expectedBodyType: PostLoginAPIClass.ResponseDTO
-            }
-        );
+        await createLoginToUserFunc()
+        ({
+            token: undefined,
+            body: ['EXPECTED', { username: user2Username, password: user2Password }],
+            asserts: 'default'
+        });
     },
     sanitizeOps: false,
     sanitizeResources: false

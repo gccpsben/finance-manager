@@ -1,26 +1,31 @@
 import path from "node:path";
-import { assertFetchJSON } from "../../lib/assertions.ts";
-import { assertNotEquals } from "@std/assert/not-equals";
+import { wrapAssertFetchJSONEndpoint } from "../../lib/assertions.ts";
 import { getTestServerPath } from '../../init.ts';
-import { POST_CONTAINER_API_PATH } from './paths.ts';
-import { PostContainerAPIClass } from "./classes.ts";
+import { POST_CONTAINER_API_PATH, GET_CONTAINER_API_PATH } from './paths.ts';
+import { GetContainerAPIClass, PostContainerAPIClass } from "./classes.ts";
 
-export async function postContainer
-(
-    { token, name }:
-    { token: string, name: string },
-)
+export const createPostContainerFunc = () =>
 {
-    const postResponse = await assertFetchJSON
+    return wrapAssertFetchJSONEndpoint<{ name: string }, PostContainerAPIClass.ResponseDTO>
     (
+        'POST',
         path.join(getTestServerPath(), POST_CONTAINER_API_PATH),
         {
-            assertStatus: 200, method: "POST",
-            headers: { 'authorization': token },
-            body: { name } satisfies PostContainerAPIClass.RequestDTO,
-            expectedBodyType: PostContainerAPIClass.ResponseDTO
+            bodyType: PostContainerAPIClass.ResponseDTO,
+            status: 200
         }
-    );
-    assertNotEquals(postResponse.parsedBody, undefined);
-    return { contId: postResponse.parsedBody!.id };
-}
+    )
+};
+
+export const createGetContainersFunc = (query: URLSearchParams | null = null) =>
+{
+    return wrapAssertFetchJSONEndpoint<object, GetContainerAPIClass.ResponseDTO>
+    (
+        'GET',
+        path.join(getTestServerPath(), GET_CONTAINER_API_PATH, query === null ? '' : `?${query.toString()}`),
+        {
+            bodyType: GetContainerAPIClass.ResponseDTO,
+            status: 200
+        }
+    )
+};

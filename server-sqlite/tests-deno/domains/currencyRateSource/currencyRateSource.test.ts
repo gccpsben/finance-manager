@@ -1,15 +1,11 @@
-import path from "node:path";
-import { ensureTestIsSetup, getTestServerPath, port } from "../../init.ts";
-import { assertFetchJSON, dictWithoutKeys } from "../../lib/assertions.ts";
+import { ensureTestIsSetup, port } from "../../init.ts";
+import { dictWithoutKeys } from "../../lib/assertions.ts";
 import { resetDatabase } from "../server/helpers.ts";
 import { AuthHelpers } from "../users/helpers.ts";
-import { GET_CURRENCY_RATE_SRC_API_PATH } from "./paths.ts";
-import { GetCurrencyRateSrcAPIClass, PostCurrencyRateSourceAPIClass } from "./classes.ts";
 import { assertEquals } from 'jsr:@std/assert/equals';
-import { postBaseCurrency, postCurrency } from "../currency/helpers.ts";
-import { POST_CURRENCY_RATE_SRC_API_PATH } from './paths.ts';
+import { createPostBaseCurrencyFunc, createPostCurrencyFunc } from "../currency/helpers.ts";
 import { PostCurrencyRateSrcAPI } from "../../../../api-types/currencyRateSource.d.ts";
-import { getRateSourcesByCurrency, getRateSourceById } from "./helpers.ts";
+import { createGetRateSourceByIdFunc, createGetRateSourcesByCurrencyFunc, createPostCurrencyRateSourceFunc } from "./helpers.ts";
 
 Deno.test(
 {
@@ -21,15 +17,12 @@ Deno.test(
 
         const firstUser = Object.values((await AuthHelpers.registerRandMockUsers({port: port!, userCount: 1})))[0];
 
-        const response = await assertFetchJSON
-        (
-            path.join(getTestServerPath(), GET_CURRENCY_RATE_SRC_API_PATH("an unknown cid")),
-            {
-                assertStatus: 200, method: "GET",
-                headers: { 'authorization': firstUser.token! },
-                expectedBodyType: GetCurrencyRateSrcAPIClass.ResponseDTO
-            }
-        );
+        // TODO: Should be 404
+        const response = await createGetRateSourcesByCurrencyFunc('an unknown cid')
+        ({
+            token: firstUser.token!,
+            asserts: 'default'
+        });
 
         assertEquals(response.parsedBody?.sources.length, 0);
     },
@@ -47,16 +40,14 @@ Deno.test(
 
         const firstUser = Object.values((await AuthHelpers.registerRandMockUsers({port: port!, userCount: 1})))[0];
 
-        const firstCurrency = await postBaseCurrency({ token: firstUser.token!, name: "BASE", ticker: "BASE" });
+        const firstCurrency = await createPostBaseCurrencyFunc()
+        ({ token: firstUser.token!, asserts: 'default', body: ['EXPECTED', { name: "BASE", ticker: "BASE" }] });
 
-        await assertFetchJSON
-        (
-            path.join(getTestServerPath(), GET_CURRENCY_RATE_SRC_API_PATH(firstCurrency.currId)),
-            {
-                assertStatus: 401, method: "GET",
-                headers: { 'authorization': firstUser.token + "_" }
-            }
-        );
+        await createGetRateSourcesByCurrencyFunc(firstCurrency.parsedBody!.id)
+        ({
+            token:firstUser.token + "_",
+            asserts: { status: 401 }
+        });
     },
     sanitizeOps: false,
     sanitizeResources: false
@@ -72,14 +63,11 @@ Deno.test(
 
         const firstUser = Object.values((await AuthHelpers.registerRandMockUsers({port: port!, userCount: 1})))[0];
 
-        await assertFetchJSON
-        (
-            path.join(getTestServerPath(), POST_CURRENCY_RATE_SRC_API_PATH),
-            {
-                assertStatus: 401, method: "POST",
-                headers: { 'authorization': firstUser.token + "_" }
-            }
-        );
+        await createPostCurrencyRateSourceFunc()
+        ({
+            token:firstUser.token + "_",
+            asserts: { status: 401 }
+        });
     },
     sanitizeOps: false,
     sanitizeResources: false
@@ -110,15 +98,12 @@ Deno.test(
 
             await test.step(`Missing ${key}`, async () =>
             {
-                await assertFetchJSON
-                (
-                    path.join(getTestServerPath(), POST_CURRENCY_RATE_SRC_API_PATH),
-                    {
-                        assertStatus: 400, method: "POST",
-                        headers: { 'authorization': firstUser.token! },
-                        body: bodyToPost
-                    }
-                );
+                await createPostCurrencyRateSourceFunc()
+                ({
+                    token:firstUser.token,
+                    asserts: { status: 400 },
+                    body: ['CUSTOM', bodyToPost]
+                });
             });
         }
     },
@@ -135,13 +120,23 @@ Deno.test(
         await resetDatabase();
 
         const firstUser = Object.values((await AuthHelpers.registerRandMockUsers({port: port!, userCount: 1})))[0];
-        const firstCurrency = await postBaseCurrency({ token: firstUser.token!, name: "BASE", ticker: "BASE" });
-        const secondCurrency = await postCurrency({
+
+        const firstCurrency = await createPostBaseCurrencyFunc()
+        ({ token: firstUser.token!, asserts: 'default', body: ['EXPECTED', { name: "BASE", ticker: "BASE" }] });
+
+        const secondCurrency = await createPostCurrencyFunc()
+        ({
             token: firstUser.token!,
-            name: "SEC",
-            ticker: "SEC",
-            fallbackRateAmount: "1",
-            fallbackRateCurrencyId: firstCurrency.currId
+            asserts: 'default',
+            body: [
+                'EXPECTED',
+                {
+                    name: "SEC",
+                    ticker: "SEC",
+                    fallbackRateAmount: "1",
+                    fallbackRateCurrencyId: firstCurrency.parsedBody!.id
+                }
+            ],
         });
 
         const validCurrencyRateSrcBody: PostCurrencyRateSrcAPI.RequestDTO =
@@ -150,21 +145,19 @@ Deno.test(
             path: "/test",
             name: "My New API Source",
             jsonQueryString: "testing",
-            refAmountCurrencyId: firstCurrency.currId,
-            refCurrencyId: secondCurrency.currId
+            refAmountCurrencyId: firstCurrency.parsedBody!.id,
+            refCurrencyId: secondCurrency.parsedBody!.id
         };
 
         let postedSrcId: string;
         await test.step("Posting source", async () =>
         {
-            const response = await assertFetchJSON
+            const response = await createPostCurrencyRateSourceFunc()
             (
-                path.join(getTestServerPath(), POST_CURRENCY_RATE_SRC_API_PATH),
                 {
-                    assertStatus: 200, method: "POST",
-                    headers: { 'authorization': firstUser.token! },
-                    body: validCurrencyRateSrcBody,
-                    expectedBodyType: PostCurrencyRateSourceAPIClass.ResponseDTO
+                    asserts: 'default',
+                    body: ['EXPECTED', validCurrencyRateSrcBody],
+                    token: firstUser.token!
                 }
             );
             postedSrcId = response.parsedBody!.id;
@@ -172,15 +165,17 @@ Deno.test(
 
         await test.step("Getting nonexistence currency", async () =>
         {
-            const response = await getRateSourcesByCurrency({ token: firstUser.token!, currencyId: secondCurrency.currId + "_", assert: false });
+            const response = await createGetRateSourcesByCurrencyFunc(secondCurrency.parsedBody!.id + "_")
+            ({ token: firstUser.token!, asserts: 'default' });
+
             // TODO: Should return 404, not just empty array
             assertEquals(response.parsedBody?.sources, []);
-            assertEquals(response.rawResponse.res.status, 200);
         });
 
         await test.step("Getting source by currId", async () =>
         {
-            const response = await getRateSourcesByCurrency({ token: firstUser.token!, currencyId: secondCurrency.currId, assert: true });
+            const response = await createGetRateSourcesByCurrencyFunc(secondCurrency.parsedBody!.id)
+            ({ token: firstUser.token!, asserts: 'default' });
 
             assertEquals(response.parsedBody?.sources[0].hostname, validCurrencyRateSrcBody.hostname);
             assertEquals(response.parsedBody?.sources[0].jsonQueryString, validCurrencyRateSrcBody.jsonQueryString);
@@ -192,7 +187,8 @@ Deno.test(
 
         await test.step("Getting source by srcId", async () =>
         {
-            const response = await getRateSourceById({ token: firstUser.token!, srcId: postedSrcId });
+            const response = await createGetRateSourceByIdFunc(postedSrcId)
+            ({ token: firstUser.token!, asserts: 'default' });
 
             assertEquals(response.parsedBody?.hostname, validCurrencyRateSrcBody.hostname);
             assertEquals(response.parsedBody?.jsonQueryString, validCurrencyRateSrcBody.jsonQueryString);
