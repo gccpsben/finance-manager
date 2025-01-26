@@ -223,3 +223,8 @@ export function dictWithoutKeys<
     }
     return output as Omit<typeof dict, T>;
 }
+
+export function assertsPrettyJSON(actual: object, expected: object)
+{
+    assertEquals(JSON.stringify(actual, null, 4), JSON.stringify(expected, null, 4));
+}
