@@ -1,9 +1,25 @@
 import path from "node:path";
 import { wrapAssertFetchJSONEndpoint } from "../../lib/assertions.ts";
 import { POST_CURRENCY_API_PATH } from './paths.ts';
-import { GetCurrencyAPIClass, PostCurrencyAPIClass } from "./classes.ts";
+import { GetCurrencyAPIClass, PostCurrencyAPIClass, PostCurrencyRateDatumAPIClass } from "./classes.ts";
 import { getTestServerPath } from '../../init.ts';
 import { GET_CURRENCY_API_PATH } from './paths.ts';
+import { POST_CURRENCY_RATE_DATUM_API_PATH } from './paths.ts';
+
+export const createPostCurrencyRateDatumFunc = () =>
+{
+    return wrapAssertFetchJSONEndpoint<
+        PostCurrencyRateDatumAPIClass.RequestDTO,
+        PostCurrencyRateDatumAPIClass.ResponseDTO>
+    (
+        'POST',
+        path.join(getTestServerPath(), POST_CURRENCY_RATE_DATUM_API_PATH),
+        {
+            bodyType: PostCurrencyRateDatumAPIClass.ResponseDTO,
+            status: 200
+        }
+    );
+};
 
 export const createPostCurrencyFunc = () =>
 {
