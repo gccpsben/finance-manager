@@ -94,7 +94,7 @@ export const setupTxnsConCurrRates = async (
             amount: rate.refAmount,
             date: rate.date,
             refAmountCurrencyId: currenciesMap[rate.refAmountCurrId].currencyId,
-            refCurrencyId: currenciesMap[rate.refAmountCurrId].currencyId
+            refCurrencyId: currenciesMap[rate.refCurrencyId].currencyId
         } as PostCurrencyRateDatumAPIClass.RequestDTO['datums'][0];
 
         await createPostCurrencyRateDatumFunc()
@@ -113,7 +113,8 @@ export const setupTxnsConCurrRates = async (
                 const fragments: PostTxnAPIClass.RequestDTOClass['transactions'][0]['fragments'] = [];
                 for (const fragment of txn.fragments)
                 {
-                    fragments.push({
+                    fragments.push(
+                    {
                         fromAmount: fragment.from?.amount ?? null,
                         fromContainer: fragment.from === undefined ? null : containersMap[fragment.from.containerId].containerId,
                         fromCurrency: fragment.from === undefined ? null : currenciesMap[fragment.from.currencyId].currencyId,

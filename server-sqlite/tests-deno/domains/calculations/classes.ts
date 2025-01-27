@@ -33,13 +33,8 @@ export namespace GetUserNetworthHistoryAPIClass
         {
             if (typeof value !== 'object') return false;
             const val = value as { [epoch: string]: unknown };
-            for (const innerMap of Object.values(val))
-            {
-                if (innerMap === null) return false;
-                if (typeof innerMap !== 'object') return false;
-                if (Object.keys(innerMap).some(k => typeof k !== 'string')) return false;
-                if (Object.values(innerMap).some(v => !isDecimalJSString(v))) return false;
-            }
+            if (Object.keys(val).some(k => typeof k !== 'string')) return false;
+            if (Object.values(val).some(v => !isDecimalJSString(v))) return false;
             return true;
         })
         map!: { [epoch: string]: string; };
