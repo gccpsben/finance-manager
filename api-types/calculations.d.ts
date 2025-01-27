@@ -1,5 +1,7 @@
 export namespace GetExpensesAndIncomesAPI
 {
+    export type Path<Params extends string> = `/api/v1/calculations/expensesAndIncomes${Params}`;
+
     export type RequestQueryDTO =
     {
         currentMonthStartEpoch: string;

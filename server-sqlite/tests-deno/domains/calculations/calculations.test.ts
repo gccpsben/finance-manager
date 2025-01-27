@@ -5,67 +5,12 @@ import { ensureTestIsSetup, port } from "../../init.ts";
 import { AuthHelpers } from "../users/helpers.ts";
 import { createPostContainerFunc } from "../container/helpers.ts";
 import { Decimal } from "decimal.js";
-import { createPostTransactionFunc } from '../transaction/helpers.ts';
-import { PostTxnAPIClass } from "../transaction/classes.ts";
-import { randomUUID } from 'node:crypto';
-import { createPostBaseCurrencyFunc } from "../currency/helpers.ts";
 import { createGetExpensesAndIncomesFunc } from './helpers.ts';
 import { assertEquals } from "@std/assert/equals";
-import { createPostCurrencyFunc, createPostCurrencyRateDatumFunc } from '../currency/helpers.ts';
-import { PostCurrencyRateAPI } from "../../../../api-types/currencyRateDatum.d.ts";
 import { reverseMap } from '../../../server_source/db/servicesUtils.ts';
 import { createGetBalanceHistoryFunc } from './helpers.ts';
 import { assertsPrettyJSON } from '../../lib/assertions.ts';
-
-const createBaseCurrWithAsserts = async (token: string, name: string, ticker: string) =>
-{
-    return (await createPostBaseCurrencyFunc()
-    ({ token: token, asserts: 'default', body: [ 'EXPECTED', { name, ticker} ] })).parsedBody?.id!;
-};
-
-const createCurrAndRatesWithAsserts = async (
-    { token, name, ticker, fallbackRate, fallbackRateCurrId, rates = [] } :
-    {
-        token: string,
-        name: string,
-        ticker: string,
-        fallbackRate: string,
-        fallbackRateCurrId: string,
-        rates: { date: number, amount: string, refCurrencyId: string }[]
-    }
-) =>
-{
-    const postCurrencyBody =
-    {
-        name,
-        ticker,
-        fallbackRateAmount: fallbackRate,
-        fallbackRateCurrencyId: fallbackRateCurrId
-    };
-
-    // Post Currency
-    const currId = (await createPostCurrencyFunc()
-    ({ token, asserts: 'default', body: [ 'EXPECTED', postCurrencyBody ] })).parsedBody?.id!;
-
-    // Post Rate Datums
-    for (const rate of rates)
-    {
-        const datumsBody: PostCurrencyRateAPI.RequestItemDTO[] =
-        [
-            {
-                amount: rate.amount,
-                date: rate.date,
-                refAmountCurrencyId: rate.refCurrencyId,
-                refCurrencyId: currId
-            }
-        ];
-
-        await createPostCurrencyRateDatumFunc()
-        ( { token, asserts: 'default', body: [ 'EXPECTED', { datums: datumsBody } ] } );
-    }
-
-    return { currencyId: currId }
-};
+import { setupTxnsConCurrRates } from "../helpers.ts";
 
 const transformOffsetDate = (days: number, testDate: number) => Math.round(testDate - days * 8.64e+7);
 
@@ -113,112 +58,103 @@ Deno.test(
     name: "Calculations - Expenses and Incomes Correctness",
     async fn(test)
     {
-        type TestCaseFragment = { toAmount: Decimal|undefined, fromAmount: Decimal|undefined };
-        type TestCase =
-        {
-            txnAgeDays: number,
-            fragments: TestCaseFragment[],
-            excludedFromExpensesIncomes: boolean
-        };
-
         Decimal.set({ precision: 32 });
         const testDate = Date.now();
         await ensureTestIsSetup();
         await resetDatabase();
-        const { containerIds, usrToken  } = await beforeEachSetup({ test, containerCounts: 4 });
-        const baseCurrencyId = await createBaseCurrWithAsserts(usrToken, "Base", "BASE");
+        const { usrToken } = await beforeEachSetup({ test, containerCounts: 0 });
+        await setupTxnsConCurrRates(
+        {
+            currencies: [ { _id: "Curr1", isBase: true, name: "Base", ticker: "Base" } ],
+            containers: [ { _id: "Con1", name: "test" } ],
+            rates: [],
+            token: usrToken,
+            transactions:
+            [
+                {
+                    date: transformOffsetDate(90, testDate),
+                    fragments: [ { to: { amount: "100.0001", containerId: "Con1", currencyId: "Curr1" } } ]
+                },
+                {
+                    date: transformOffsetDate(25, testDate),
+                    fragments: (() =>
+                    {
+                        const fragment =
+                        {
+                            to: { amount: "0.0001", containerId: "Con1", currencyId: "Curr1" },
+                            from: { amount: "0.0001", containerId: "Con1", currencyId: "Curr1" }
+                        };
+                        return [ fragment, fragment, fragment, fragment ]
+                    })()
+                },
+                {
+                    date: transformOffsetDate(20, testDate),
+                    fragments:
+                    [
+                        {
+                            from: { amount: "20", containerId: "Con1", currencyId: "Curr1" },
+                            to: { amount: "50", containerId: "Con1", currencyId: "Curr1" },
+                        }
+                    ]
+                },
+                {
+                    date: transformOffsetDate(18, testDate),
+                    fragments: [ { from: { amount: "0.0001", containerId: "Con1", currencyId: "Curr1" } } ],
+                    excludedFromExpensesIncomes: true
+                },
+                {
+                    date: transformOffsetDate(6.9, testDate),
+                    fragments:
+                    [
+                        { from: { amount: "0", containerId: "Con1", currencyId: "Curr1" }, },
+                        { to: { amount: "12710", containerId: "Con1", currencyId: "Curr1" }, }
+                    ]
+                },
+                {
+                    date: transformOffsetDate(6.7, testDate),
+                    fragments: [ { from: { amount: "1820", containerId: "Con1", currencyId: "Curr1" }, } ],
+                },
+                {
+                    date: transformOffsetDate(1.5, testDate),
+                    fragments:
+                    [
+                        {
+                            to: { amount: "78777", containerId: "Con1", currencyId: "Curr1" },
+                        },
+                        {
+                            from: { amount: "78777", containerId: "Con1", currencyId: "Curr1" },
+                            to: { amount: "0", containerId: "Con1", currencyId: "Curr1" },
+                        },
+                        {
+                            from: { amount: "0", containerId: "Con1", currencyId: "Curr1" },
+                            to: { amount: "78777", containerId: "Con1", currencyId: "Curr1" },
+                        }
+                    ],
+                },
+                {
+                    date: transformOffsetDate(0.3, testDate),
+                    fragments: [ { from: { amount: "1912.30", containerId: "Con1", currencyId: "Curr1" } } ],
+                },
+                {
+                    date: transformOffsetDate(0.1, testDate),
+                    fragments:
+                    [
+                        {
+                            from: { amount: "192", containerId: "Con1", currencyId: "Curr1" },
+                            to: { amount: "72727", containerId: "Con1", currencyId: "Curr1" }
+                        }
+                    ],
+                    excludedFromExpensesIncomes: true
+                },
+                {
+                    date: transformOffsetDate(0, testDate),
+                    fragments: [ { from: { amount: "09037", containerId: "Con1", currencyId: "Curr1" } } ]
+                }
+            ]
+        });
 
         const currentMonthStartEpoch = transformOffsetDate(30, testDate);
         const currentWeekStartEpoch = transformOffsetDate(7, testDate);
-        const txnsToPost: TestCase[] =
-        [
-            {
-                txnAgeDays: 90,
-                fragments:
-                [
-                    { fromAmount: undefined              , toAmount: new Decimal(`100.0001`)  }
-                ],
-                excludedFromExpensesIncomes: false
-            },
-            {
-                txnAgeDays: 25,
-                fragments:
-                [
-                    { fromAmount: new Decimal(`0.0001`)  , toAmount: new Decimal(`0.0001`)   },
-                    { fromAmount: new Decimal(`0.0001`)  , toAmount: new Decimal(`0.0001`)   },
-                    { fromAmount: new Decimal(`0.0001`)  , toAmount: new Decimal(`0.0001`)   },
-                    { fromAmount: new Decimal(`0.0001`)  , toAmount: new Decimal(`0.0001`)   }
-                ],
-                excludedFromExpensesIncomes: false
-            },
-            {
-                txnAgeDays: 20,
-                fragments:
-                [
-                    { fromAmount: new Decimal(`20`)      , toAmount: new Decimal(`50`)   },
-                ],
-                excludedFromExpensesIncomes: false
-            },
-            {
-                txnAgeDays: 18,
-                fragments:
-                [
-                    { fromAmount: new Decimal(`0.0001`)  , toAmount: undefined   }
-                ],
-                excludedFromExpensesIncomes: true
-            },
-            {
-                txnAgeDays: 6.9,
-                fragments:
-                [
-                    { fromAmount: new Decimal(`0`)       , toAmount: undefined   },
-                    { fromAmount: undefined              , toAmount: new Decimal(`12710`)   }
-                ],
-                excludedFromExpensesIncomes: false
-            },
-            {
-                txnAgeDays: 6.7,
-                fragments:
-                [
-                    { fromAmount: new Decimal(`1820`)    , toAmount: undefined   }
-                ],
-                excludedFromExpensesIncomes: false
-            },
-            {
-                txnAgeDays: 1.5,
-                fragments:
-                [
-                    { fromAmount: undefined              , toAmount: new Decimal(`78777`)   },
-                    { fromAmount: new Decimal(`78777`)   , toAmount: new Decimal(`0`)   },
-                    { fromAmount: new Decimal(`0`)       , toAmount: new Decimal(`78777`)   },
-                ],
-                excludedFromExpensesIncomes: false
-            },
-            {
-                txnAgeDays: 0.3,
-                fragments:
-                [
-                    { fromAmount: new Decimal(`1912.30`) , toAmount: undefined   }
-                ],
-                excludedFromExpensesIncomes: false
-            },
-            {
-                txnAgeDays: 0.1,
-                fragments:
-                [
-                    { fromAmount: new Decimal(`192`)     , toAmount: new Decimal(`72727`)   }
-                ],
-                excludedFromExpensesIncomes: true
-            },
-            {
-                txnAgeDays: 0,
-                fragments:
-                [
-                    { fromAmount: new Decimal(`09037`)   , toAmount: undefined   }
-                ],
-                excludedFromExpensesIncomes: false
-            },
-        ];
         const expectedResult =
         {
             expenses30d: `12769.3`,
@@ -230,42 +166,6 @@ Deno.test(
             expensesCurrentWeek: `12769.3`,
             incomesCurrentWeek: `91487`
         };
-
-        await test.step("Setup Transactions", async () =>
-        {
-            for (const txn of txnsToPost)
-            {
-                const txnBodyToPost: PostTxnAPIClass.RequestItemDTOClass =
-                {
-                    excludedFromIncomesExpenses: txn.excludedFromExpensesIncomes,
-                    fileIds: [], fragments: [], tagIds: [],
-                    description: randomUUID(), title: randomUUID(),
-                    creationDate: transformOffsetDate(txn.txnAgeDays, testDate),
-                };
-
-                // Populate fragments to POST body
-                for (const fragment of txn.fragments)
-                {
-                    const decimalToStr = (arg: Decimal | null | undefined) => arg?.toString() ?? null;
-                    txnBodyToPost.fragments.push(
-                    {
-                        fromAmount: decimalToStr(fragment.fromAmount),
-                        fromContainer: fragment.fromAmount === undefined ? null : containerIds[0],
-                        fromCurrency: fragment.fromAmount === undefined ? null : baseCurrencyId,
-                        toAmount: decimalToStr(fragment.toAmount),
-                        toContainer: fragment.toAmount === undefined ? null : containerIds[0],
-                        toCurrency: fragment.toAmount === undefined ? null : baseCurrencyId,
-                    });
-                }
-
-                await createPostTransactionFunc()
-                ({
-                    token: usrToken,
-                    asserts: 'default',
-                    body: [ 'EXPECTED', { transactions: [ txnBodyToPost ] } ]
-                });
-            }
-        });
 
         await test.step(`Reject requests without valid token`, async () =>
         {
@@ -281,7 +181,7 @@ Deno.test(
             const res = await createGetExpensesAndIncomesFunc({ currentMonthStartEpoch, currentWeekStartEpoch })
             ( { token: usrToken, asserts: undefined } );
 
-            assertEquals(JSON.stringify(expectedResult, null, 4), JSON.stringify(res.rawBodyJSON, null, 4));
+            assertsPrettyJSON(expectedResult, res.rawBodyJSON);
         });
     },
     sanitizeOps: false,
@@ -294,158 +194,93 @@ Deno.test(
     name: "Calculations - Balance History Correctness",
     async fn(test)
     {
-        type TestCaseFragment =
-        {
-            toAmount: string|undefined,
-            fromAmount: string|undefined,
-            currencyId: string,
-            containerId: string
-        };
-        type TestCase =
-        {
-            txnAgeDays: number,
-            fragments: TestCaseFragment[],
-            excludedFromExpensesIncomes: boolean
-        };
-
         await ensureTestIsSetup();
         await resetDatabase();
         Decimal.set({ precision: 32 });
         const testDate = Date.now();
-        const { containerIds, usrToken  } = await beforeEachSetup({ test, containerCounts: 4 });
-        const baseCurrencyId = await createBaseCurrWithAsserts(usrToken, "Base", "BASE");
-        const secondCurrency = await createCurrAndRatesWithAsserts(
+
+        const { usrToken } = await beforeEachSetup({ test, containerCounts: 0 });
+        const setupDetails = await setupTxnsConCurrRates(
         {
-            fallbackRate: "1",
-            fallbackRateCurrId: baseCurrencyId,
-            name: "SEC",
-            ticker: "SEC",
+            containers:
+            [
+                { _id: "CONTAINER_1", name: "container 1" },
+                { _id: "CONTAINER_2", name: "container 2" },
+                { _id: "CONTAINER_3", name: "container 3" }
+            ],
+            currencies:
+            [
+                { _id: "CURRENCY_1", isBase: true, name: "base", ticker: "BASE" },
+                { _id: "CURRENCY_2", isBase: false, fallbackRateAmount: "1", fallbackRateCurrId: "CURRENCY_1", name: "SEC", ticker: "SEC" },
+                { _id: "CURRENCY_3", isBase: false, fallbackRateAmount: "1", fallbackRateCurrId: "CURRENCY_2", name: "THI", ticker: "THI" }
+            ],
             rates: [],
-            token: usrToken
-        });
-        const thirdCurrency = await createCurrAndRatesWithAsserts(
-        {
-            fallbackRate: "1",
-            fallbackRateCurrId: secondCurrency.currencyId,
-            name: "THI",
-            ticker: "THI",
-            rates: [],
-            token: usrToken
-        });
-
-        const txnsToPost: TestCase[] =
-        [
-            {
-                txnAgeDays: 90,
-                fragments:
-                [
-                    { fromAmount: undefined  , toAmount: `100.0001`, currencyId: baseCurrencyId, containerId: containerIds[0] },
-                ],
-                excludedFromExpensesIncomes: false
-            },
-            {
-                txnAgeDays: 50,
-                fragments:
-                [
-                    { fromAmount: `0.0001`   , toAmount: `0.0001`  , currencyId: baseCurrencyId, containerId: containerIds[1] },
-                    { fromAmount: `0.0001`   , toAmount: `0.0001`  , currencyId: baseCurrencyId, containerId: containerIds[1] },
-                    { fromAmount: `0.0001`   , toAmount: `0.0001`  , currencyId: baseCurrencyId, containerId: containerIds[1] },
-                ],
-                excludedFromExpensesIncomes: false
-            },
-            {
-                txnAgeDays: 18,
-                fragments:
-                [
-                    { fromAmount: `0.0001`   , toAmount: undefined , currencyId: thirdCurrency.currencyId, containerId: containerIds[2] },
-                ],
-                excludedFromExpensesIncomes: false
-            },
-            {
-                txnAgeDays: 6.9,
-                fragments:
-                [
-                    { fromAmount: `0`        , toAmount: undefined , currencyId: thirdCurrency.currencyId, containerId: containerIds[1] },
-                    { fromAmount: undefined  , toAmount: `12710`   , currencyId: thirdCurrency.currencyId, containerId: containerIds[0] },
-                ],
-                excludedFromExpensesIncomes: false
-            },
-            {
-                txnAgeDays: 6.7,
-                fragments:
-                [
-                    { fromAmount: `1820`     , toAmount: undefined , currencyId: baseCurrencyId, containerId: containerIds[0] },
-                ],
-                excludedFromExpensesIncomes: false
-            },
-            {
-                txnAgeDays: 1.5,
-                fragments:
-                [
-                    { fromAmount: undefined  , toAmount: `78777`   , currencyId: secondCurrency.currencyId, containerId: containerIds[1] },
-                ],
-                excludedFromExpensesIncomes: false
-            },
-            {
-                txnAgeDays: 0.3,
-                fragments:
-                [
-                    { fromAmount: `1912.30`  , toAmount: undefined, currencyId: baseCurrencyId, containerId: containerIds[2] },
-                ],
-                excludedFromExpensesIncomes: false
-            },
-            {
-                txnAgeDays: 0.1,
-                fragments:
-                [
-                    { fromAmount: `192`      , toAmount: `72727`  , currencyId: secondCurrency.currencyId, containerId: containerIds[0] },
-                ],
-                excludedFromExpensesIncomes: false
-            },
-            {
-                txnAgeDays: 0,
-                fragments:
-                [
-                    { fromAmount: `09037`    , toAmount: undefined, currencyId: thirdCurrency.currencyId, containerId: containerIds[1] }
-                ],
-                excludedFromExpensesIncomes: false
-            },
-        ];
-
-        await test.step("Setup Transactions", async () =>
-        {
-            for (const txn of txnsToPost)
-            {
-                const txnBodyToPost: PostTxnAPIClass.RequestItemDTOClass =
+            token: usrToken,
+            transactions:
+            [
                 {
-                    excludedFromIncomesExpenses: txn.excludedFromExpensesIncomes,
-                    fileIds: [], fragments: [], tagIds: [],
-                    description: randomUUID(), title: randomUUID(),
-                    creationDate: transformOffsetDate(txn.txnAgeDays, testDate),
-                };
-
-                // Populate fragments to POST body
-                for (const fragment of txn.fragments)
+                    date: transformOffsetDate(90, testDate),
+                    fragments: [ { to: { amount: "100.0001", currencyId: `CURRENCY_1`, containerId: `CONTAINER_1` } } ]
+                },
                 {
-                    txnBodyToPost.fragments.push(
-                    {
-                        fromAmount: fragment.fromAmount ?? null,
-                        fromContainer: fragment.fromAmount === undefined ? null : fragment.containerId,
-                        fromCurrency: fragment.fromAmount === undefined ? null : fragment.currencyId,
-                        toAmount: fragment.toAmount ?? null,
-                        toContainer: fragment.toAmount === undefined ? null : fragment.containerId,
-                        toCurrency: fragment.toAmount === undefined ? null : fragment.currencyId,
-                    });
+                    date: transformOffsetDate(50, testDate),
+                    fragments:
+                    [
+                        {
+                            from: { amount: "0.0001", currencyId: `CURRENCY_1`, containerId: `CONTAINER_2` },
+                            to: { amount: "0.0001", currencyId: `CURRENCY_1`, containerId: `CONTAINER_2` }
+                        },
+                        {
+                            from: { amount: "0.0001", currencyId: `CURRENCY_1`, containerId: `CONTAINER_2` },
+                            to: { amount: "0.0001", currencyId: `CURRENCY_1`, containerId: `CONTAINER_2` }
+                        },
+                        {
+                            from: { amount: "0.0001", currencyId: `CURRENCY_1`, containerId: `CONTAINER_2` },
+                            to: { amount: "0.0001", currencyId: `CURRENCY_1`, containerId: `CONTAINER_2` }
+                        }
+                    ]
+                },
+                {
+                    date: transformOffsetDate(18, testDate),
+                    fragments: [ { from: { amount: "0.0001", currencyId: `CURRENCY_3`, containerId: `CONTAINER_3` } } ]
+                },
+                {
+                    date: transformOffsetDate(6.9, testDate),
+                    fragments:
+                    [
+                        { from: { amount: "0", currencyId: `CURRENCY_3`, containerId: `CONTAINER_2` } },
+                        { to: { amount: "12710", currencyId: `CURRENCY_3`, containerId: `CONTAINER_1` } }
+                    ]
+                },
+                {
+                    date: transformOffsetDate(6.7, testDate),
+                    fragments: [ { from: { amount: "1820", currencyId: `CURRENCY_1`, containerId: `CONTAINER_1` } } ]
+                },
+                {
+                    date: transformOffsetDate(1.5, testDate),
+                    fragments: [ { to: { amount: "78777", currencyId: `CURRENCY_2`, containerId: `CONTAINER_2` }, } ]
+                },
+                {
+                    date: transformOffsetDate(0.3, testDate),
+                    fragments: [ { from: { amount: "1912.30", currencyId: `CURRENCY_1`, containerId: `CONTAINER_3` } } ]
+                },
+                {
+                    date: transformOffsetDate(0.1, testDate),
+                    fragments:
+                    [
+                        {
+                            from: { amount: "192", currencyId: `CURRENCY_2`, containerId: `CONTAINER_1` },
+                            to: { amount: "72727", currencyId: `CURRENCY_2`, containerId: `CONTAINER_1` },
+                        }
+                    ]
+                },
+                {
+                    date: transformOffsetDate(0, testDate),
+                    fragments: [ { from: { amount: "09037", currencyId: `CURRENCY_3`, containerId: `CONTAINER_2` }, } ]
                 }
-
-                await createPostTransactionFunc()
-                ({
-                    token: usrToken,
-                    asserts: 'default',
-                    body: [ 'EXPECTED', { transactions: [ txnBodyToPost ] } ]
-                });
-            }
-        });
+            ]
+        })
+        const [baseCurrencyId, secondCurrencyId, thirdCurrencyId] = Object.values(setupDetails.currenciesMap).map(x => x.currencyId);
 
         await test.step(`Test for Correctness`, async () =>
         {
@@ -465,24 +300,24 @@ Deno.test(
                 6:
                 {
                     [baseCurrencyId]: "100.0001",
-                    [thirdCurrency.currencyId]: "-0.0001"
+                    [thirdCurrencyId]: "-0.0001"
                 },
                 7:
                 {
                     [baseCurrencyId]: "-1719.9999",
-                    [thirdCurrency.currencyId]: "12709.9999"
+                    [thirdCurrencyId]: "12709.9999"
                 },
                 8:
                 {
                     [baseCurrencyId]: "-3632.2999",
-                    [thirdCurrency.currencyId]: "3672.9999",
-                    [secondCurrency.currencyId]: "151312",
+                    [thirdCurrencyId]: "3672.9999",
+                    [secondCurrencyId]: "151312",
                 },
                 9:
                 {
                     [baseCurrencyId]: "-3632.2999",
-                    [thirdCurrency.currencyId]: "3672.9999",
-                    [secondCurrency.currencyId]: "151312",
+                    [thirdCurrencyId]: "3672.9999",
+                    [secondCurrencyId]: "151312",
                 }
             };
 
