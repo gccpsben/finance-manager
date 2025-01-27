@@ -5,6 +5,7 @@ import { ExpressValidations } from '../validation.ts';
 import createHttpError from 'http-errors';
 import type { DeleteUserAPI, PostUserAPI } from '../../../../api-types/user.d.ts';
 import { TypesafeRouter } from '../typescriptRouter.ts';
+import { GlobalUserCache } from '../../db/caches/user.cache.ts';
 
 const router = new TypesafeRouter(express.Router());
 
@@ -36,7 +37,7 @@ router.delete<DeleteUserAPI.ResponseDTO>("/api/v1/users",
         }
 
         const parsedBody = await ExpressValidations.validateBodyAgainstModel<body>(body, req.body);
-        const deletionResult = await UserService.tryDeleteUser(parsedBody.userId);
+        const deletionResult = await UserService.tryDeleteUser(parsedBody.userId, GlobalUserCache);
 
         if (!deletionResult.userFound) throw createHttpError(404, "Unable to find the user provided.");
         else return {};

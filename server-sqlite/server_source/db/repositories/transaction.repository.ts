@@ -17,6 +17,7 @@ import { File } from '../entities/file.entity.ts';
 import { FileNotFoundError } from "../services/files.service.ts";
 import * as txnQueryASTCalculator from "../../calculations/txnQueryASTCalculator.ts";
 import { normalizeEntitiesToIds, paginateQuery } from "../servicesUtils.ts";
+import { UserCache } from '../caches/user.cache';
 
 export class TransactionRepository extends MeteredRepository
 {
@@ -62,11 +63,12 @@ export class TransactionRepository extends MeteredRepository
             excludedFromIncomesExpenses: boolean,
             files: string[]
         },
-        queryRunner: QueryRunner
+        queryRunner: QueryRunner,
+        userCache: UserCache | null
     )
     {
         // Ensure user exists
-        const userFetchResult = await UserService.getUserById(userId);
+        const userFetchResult = await UserService.getUserById(userId, userCache);
         if (userFetchResult === null) return new UserNotFoundError(userId);
 
         // Delete old fragments
@@ -116,7 +118,8 @@ export class TransactionRepository extends MeteredRepository
         currencyRateDatumsCache: CurrencyRateDatumsCache | null,
         baseRateCache: CurrencyToBaseRateCache | null,
         currencyListCache: CurrencyCache | null,
-        startIndex: number | null, endIndex: number | null
+        userCache: UserCache | null,
+        startIndex: number | null, endIndex: number | null,
     )
     {
         if (txnQueryASTCalculator.areFunctionBindingsInAST(query))
@@ -201,7 +204,14 @@ export class TransactionRepository extends MeteredRepository
                 if (tokensPresence.delta)
                 {
                     objToBeMatched.changeInValue = unwrap(
-                        await TransactionService.getTxnIncreaseInValue(userId, objToBeMatched, currencyRateDatumsCache, baseRateCache, currencyListCache)
+                        await TransactionService.getTxnIncreaseInValue(
+                            userId,
+                            objToBeMatched,
+                            currencyRateDatumsCache,
+                            baseRateCache,
+                            currencyListCache,
+                            userCache
+                        )
                     ).increaseInValue.toNumber();
                 }
 
@@ -257,7 +267,7 @@ export class TransactionRepository extends MeteredRepository
             return {
                 ...txn,
                 changeInValue: unwrap(
-                    await TransactionService.getTxnIncreaseInValue(userId, txn, currencyRateDatumsCache, baseRateCache, currencyListCache)
+                    await TransactionService.getTxnIncreaseInValue(userId, txn, currencyRateDatumsCache, baseRateCache, currencyListCache, userCache)
                 ).increaseInValue.toNumber()
             }
         }));

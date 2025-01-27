@@ -20,6 +20,7 @@ import { CalculationsService } from '../../db/services/calculations.service.ts';
 import { LinearStepper } from '../../calculations/linearStepper.ts';
 import { CurrencyService } from '../../db/services/currency.service.ts';
 import { mapObjectValues } from "../../db/servicesUtils.ts";
+import { GlobalUserCache } from "../../db/caches/user.cache.ts";
 
 const router = new TypesafeRouter(express.Router());
 
@@ -69,7 +70,8 @@ router.get<GetContainerAPI.ResponseDTO>(`/api/v1/containers`,
             userQuery.currencyRateDate,
             GlobalCurrencyRateDatumsCache,
             GlobalCurrencyToBaseRateCache,
-            GlobalCurrencyCache
+            GlobalCurrencyCache,
+            GlobalUserCache
         ));
 
         return {
@@ -136,7 +138,8 @@ router.get<GetContainerTimelineAPI.ResponseDTO>(`/api/v1/containers/timeline`,
             [parsedQuery.containerId],
             GlobalCurrencyRateDatumsCache,
             GlobalCurrencyToBaseRateCache,
-            GlobalCurrencyCache
+            GlobalCurrencyCache,
+            GlobalUserCache
         ));
 
         if (timeline instanceof ContainerNotFoundError) throw createHttpError(404, timeline.message);
@@ -175,7 +178,8 @@ router.get<GetContainerTimelineAPI.ResponseDTO>(`/api/v1/containers/timeline`,
                 balanceAtDivisionEpoch,
                 GlobalCurrencyRateDatumsCache,
                 GlobalCurrencyToBaseRateCache,
-                GlobalCurrencyCache
+                GlobalCurrencyCache,
+                GlobalUserCache
             )
 
             output.timeline[currentDivisionEpoch.toString()] = {

@@ -19,6 +19,7 @@ import { CurrencyNotFoundError } from '../../db/services/currency.service.ts';
 import { GlobalCurrencyCache } from '../../db/caches/currencyListCache.cache.ts';
 import { GlobalCurrencyRateDatumsCache } from '../../db/caches/currencyRateDatumsCache.cache.ts';
 import { FileNotFoundError } from '../../db/services/files.service.ts';
+import { GlobalUserCache } from '../../db/caches/user.cache.ts';
 
 const router = new TypesafeRouter(Express.Router());
 
@@ -90,7 +91,7 @@ router.post<PostTxnAPI.ResponseDTO>("/api/v1/transactions",
                     })),
                     files: item.fileIds,
                     excludedFromIncomesExpenses: item.excludedFromIncomesExpenses
-                }, transactionalContext.queryRunner, GlobalCurrencyCache);
+                }, transactionalContext.queryRunner, GlobalCurrencyCache, GlobalUserCache);
 
                 if (transactionCreated instanceof UserNotFoundError) throw createHttpError(401);
                 if (transactionCreated instanceof TxnTagNotFoundError)  throw createHttpError(400, transactionCreated.message);
@@ -177,7 +178,7 @@ router.put<PutTxnAPI.ResponseDTO>("/api/v1/transactions",
                 })),
                 excludedFromIncomesExpenses: parsedBody.excludedFromIncomesExpenses,
                 files: parsedBody.fileIds
-            }, transactionalContext.queryRunner, GlobalCurrencyCache);
+            }, transactionalContext.queryRunner, GlobalCurrencyCache, GlobalUserCache);
 
             if (updatedTxn instanceof UserNotFoundError) throw createHttpError(401);
             if (updatedTxn instanceof TxnNotFoundError) throw createHttpError(404);
@@ -228,6 +229,7 @@ router.get<GetTxnAPI.ResponseDTO>(`/api/v1/transactions/json-query`,
             GlobalCurrencyRateDatumsCache,
             GlobalCurrencyToBaseRateCache,
             GlobalCurrencyCache,
+            GlobalUserCache,
             userQuery.startIndex,
             userQuery.endIndex,
         );
@@ -245,7 +247,8 @@ router.get<GetTxnAPI.ResponseDTO>(`/api/v1/transactions/json-query`,
                         item,
                         GlobalCurrencyRateDatumsCache,
                         GlobalCurrencyToBaseRateCache,
-                        GlobalCurrencyCache
+                        GlobalCurrencyCache,
+                        GlobalUserCache
                     )
                 ).increaseInValue;
                 results.push(
@@ -346,7 +349,8 @@ router.get<GetTxnAPI.ResponseDTO>(`/api/v1/transactions`,
                         item,
                         GlobalCurrencyRateDatumsCache,
                         GlobalCurrencyToBaseRateCache,
-                        GlobalCurrencyCache
+                        GlobalCurrencyCache,
+                        GlobalUserCache
                     )
                 ).increaseInValue;
                 result.push(

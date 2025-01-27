@@ -3,6 +3,7 @@ import { UserNotFoundError, UserService } from "./user.service.ts";
 import { MonadError, panic } from "../../std_errors/monadError.ts";
 import { AppendBytesCommitFileIOError, AppendBytesOutOfBoundError, AppendBytesSessionNotFoundError, AppendBytesUserMismatchError, AppendBytesWriteBufferIOError } from "../../io/fileReceiver.ts";
 import { Buffer } from "node:buffer";
+import { UserCache } from '../caches/user.cache.ts';
 
 export class FileNotFoundError extends MonadError<typeof FileNotFoundError.ERROR_SYMBOL>
 {
@@ -22,10 +23,10 @@ export class FileNotFoundError extends MonadError<typeof FileNotFoundError.ERROR
 export class FilesService
 {
 
-    public static async appendBytes(userId: string, sessionId: string, buffer: Buffer)
+    public static async appendBytes(userId: string, sessionId: string, buffer: Buffer, userCache: UserCache | null)
     {
         // Ensure user exists
-        const userFetchResult = await UserService.getUserById(userId);
+        const userFetchResult = await UserService.getUserById(userId, userCache);
         if (userFetchResult === null) return new UserNotFoundError(userId);
 
         const appendBytesResult = await Database.getFileReceiver()!.appendBytes(

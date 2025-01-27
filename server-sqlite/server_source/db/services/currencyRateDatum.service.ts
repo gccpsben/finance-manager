@@ -8,6 +8,7 @@ import { Database } from "../db.ts";
 import { CurrencyCache } from "../caches/currencyListCache.cache.ts";
 import { CurrencyRateDatumsCache } from "../caches/currencyRateDatumsCache.cache.ts";
 import { minAndMax } from "../servicesUtils.ts";
+import { UserCache } from '../caches/user.cache.ts';
 
 export class CurrencyRateDatumService
 {
@@ -24,7 +25,8 @@ export class CurrencyRateDatumService
         queryRunner: QueryRunner,
         currencyRateDatumsCache: CurrencyRateDatumsCache | null,
         currencyToBaseRateCache: CurrencyToBaseRateCache | null,
-        currencyCache: CurrencyCache | null
+        currencyCache: CurrencyCache | null,
+        userCache: UserCache | null
     ): Promise<{
             amount: string,
             date: number,
@@ -40,7 +42,7 @@ export class CurrencyRateDatumService
         // Check for user-ids
         for (const userId of uniqueUserIds)
         {
-            const owner = await UserService.getUserById(userId);
+            const owner = await UserService.getUserById(userId, userCache);
             if (owner === null) return new UserNotFoundError(userId);
             userIdToObjMap[userId] = owner;
         }
@@ -64,11 +66,12 @@ export class CurrencyRateDatumService
         currencyRateDatumsCache: CurrencyRateDatumsCache | null,
         currencyToBaseRateCache: CurrencyToBaseRateCache | null,
         currencyCache: CurrencyCache | null,
+        userCache: UserCache | null,
         division: number = 10
     )
     {
         // Ensure user exists
-        const userFetchResult = await UserService.getUserById(ownerId);
+        const userFetchResult = await UserService.getUserById(ownerId, userCache);
         if (userFetchResult === null) return new UserNotFoundError(ownerId);
 
         const datumsWithinRange = await Database.getCurrencyRateDatumRepository()!
@@ -90,7 +93,8 @@ export class CurrencyRateDatumService
                 currencyId,
                 currencyRateDatumsCache,
                 currencyToBaseRateCache,
-                currencyCache
+                currencyCache,
+                userCache
             )
         );
 

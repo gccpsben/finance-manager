@@ -11,6 +11,7 @@ import { UserNotFoundError } from "../../db/services/user.service.ts";
 import { AppendBytesCommitFileIOError, AppendBytesOutOfBoundError, AppendBytesSessionNotFoundError, AppendBytesUserMismatchError, AppendBytesWriteBufferIOError } from "../../io/fileReceiver.ts";
 import path from "node:path";
 import { Buffer } from "node:buffer";
+import { GlobalUserCache } from "../../db/caches/user.cache.ts";
 
 const router = new TypesafeRouter(express.Router());
 
@@ -99,7 +100,8 @@ router.postBinary<FilesAppendChunkAPI.ResponseDTO>(`/api/v1/files/append`,
         const appendBytesResult = await FilesService.appendBytes(
             authResult.ownerUserId,
             parsedQuery.sessionId,
-            (req.body === null || req.body === undefined) ? Buffer.from('') : Buffer.from(req.body)
+            (req.body === null || req.body === undefined) ? Buffer.from('') : Buffer.from(req.body),
+            GlobalUserCache
         );
 
         console.log(JSON.stringify(appendBytesResult));

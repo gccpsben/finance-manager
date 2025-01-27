@@ -12,6 +12,7 @@ import { CurrencyRateDatumsCache } from '../caches/currencyRateDatumsCache.cache
 import { FragmentRaw, nameofF } from "../entities/fragment.entity.ts";
 import { QueryRunner } from "typeorm";
 import { DecimalAdditionMapReducer } from "../servicesUtils.ts";
+import { UserCache } from '../caches/user.cache.ts';
 
 export class FragmentMissingContainerOrCurrency extends MonadError<typeof FragmentMissingContainerOrCurrency.ERROR_SYMBOL>
 {
@@ -127,7 +128,8 @@ export class TransactionService
             txnTagIds: string[],
             files: string[]
         },
-        currencyListCache: CurrencyCache | null
+        currencyListCache: CurrencyCache | null,
+        userCache: UserCache | null
     ): Promise<
         {
             title: string,
@@ -152,7 +154,7 @@ export class TransactionService
         if (!obj.fragments?.length) return new TxnNoFragmentsError();
 
         // Ensure user exists
-        const userFetchResult = await UserService.getUserById(userId);
+        const userFetchResult = await UserService.getUserById(userId, userCache);
         if (userFetchResult === null) return new UserNotFoundError(userId);
 
         const currRepo = Database.getCurrencyRepository()!;
@@ -296,12 +298,12 @@ export class TransactionService
         },
         currencyRateDatumsCache: CurrencyRateDatumsCache | null,
         currencyToBaseRateCache: CurrencyToBaseRateCache | null,
-        currencyListCache: CurrencyCache | null
-
+        currencyListCache: CurrencyCache | null,
+        userCache: UserCache | null
     ): Promise<{ increaseInValue: Decimal } | UserNotFoundError>
     {
         // Ensure user exists
-        const userFetchResult = await UserService.getUserById(userId);
+        const userFetchResult = await UserService.getUserById(userId, userCache);
         if (userFetchResult === null) return new UserNotFoundError(userId);
         const currRepo = Database.getCurrencyRepository()!;
 
@@ -331,7 +333,8 @@ export class TransactionService
                         transaction.creationDate,
                         currencyRateDatumsCache,
                         currencyToBaseRateCache,
-                        currencyListCache
+                        currencyListCache,
+                        userCache
                     )
                 )[0].rateToBase;
 
@@ -385,7 +388,7 @@ export class TransactionService
         },
         queryRunner: QueryRunner,
         currencyListCache: CurrencyCache | null,
-
+        userCache: UserCache | null
     )
     {
         const newTxn = await TransactionService.validateTransaction(userId, {
@@ -395,7 +398,7 @@ export class TransactionService
             title: obj.title,
             txnTagIds: obj.txnTagIds,
             files: obj.files
-        }, currencyListCache);
+        }, currencyListCache, userCache);
 
         if (newTxn instanceof UserNotFoundError) return newTxn;
         if (newTxn instanceof TxnTagNotFoundError) return newTxn;
@@ -435,7 +438,8 @@ export class TransactionService
             files: string[]
         },
         queryRunner: QueryRunner,
-        currencyListCache: CurrencyCache | null
+        currencyListCache: CurrencyCache | null,
+        userCache: UserCache | null
     )
     {
         const newTxn = await TransactionService.validateTransaction(userId, {
@@ -445,7 +449,7 @@ export class TransactionService
             title: obj.title,
             txnTagIds: obj.txnTagIds,
             files: obj.files
-        }, currencyListCache);
+        }, currencyListCache, userCache);
 
         if (newTxn instanceof UserNotFoundError) return newTxn;
         if (newTxn instanceof TxnTagNotFoundError) return newTxn;
@@ -463,7 +467,7 @@ export class TransactionService
             title: newTxn.title,
             excludedFromIncomesExpenses: obj.excludedFromIncomesExpenses,
             files: newTxn.fileIds
-        }, queryRunner);
+        }, queryRunner, userCache);
         return savedTxn;
     }
 

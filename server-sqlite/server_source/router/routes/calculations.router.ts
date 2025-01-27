@@ -15,6 +15,7 @@ import { GlobalCurrencyToBaseRateCache } from '../../db/caches/currencyToBaseRat
 import { GlobalCurrencyCache } from '../../db/caches/currencyListCache.cache.ts';
 import { GlobalCurrencyRateDatumsCache } from '../../db/caches/currencyRateDatumsCache.cache.ts';
 import { Database } from '../../db/db.ts';
+import { GlobalUserCache } from '../../db/caches/user.cache';
 
 const router = new TypesafeRouter(express.Router());
 
@@ -50,7 +51,8 @@ router.get<GetExpensesAndIncomesAPI.ResponseDTO>("/api/v1/calculations/expensesA
             now,
             GlobalCurrencyRateDatumsCache,
             GlobalCurrencyToBaseRateCache,
-            GlobalCurrencyCache
+            GlobalCurrencyCache,
+            GlobalUserCache
         );
         return {
             expenses30d: calResults[_30dKey].expenses.toString(),
@@ -105,7 +107,8 @@ router.get<GetUserNetworthHistoryAPI.ResponseDTO>(`/api/v1/calculations/networth
             input.division,
             GlobalCurrencyRateDatumsCache,
             GlobalCurrencyToBaseRateCache,
-            GlobalCurrencyCache
+            GlobalCurrencyCache,
+            GlobalUserCache
         );
 
         if (resultMap instanceof UserNotFoundError) throw createHttpError(401);

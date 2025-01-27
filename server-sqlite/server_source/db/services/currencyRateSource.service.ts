@@ -13,6 +13,7 @@ import { QUERY_IGNORE } from "../../symbols.ts";
 import { CurrencyCache } from "../caches/currencyListCache.cache.ts";
 import { CurrencyToBaseRateCache } from "../caches/currencyToBaseRate.cache.ts";
 import { CurrencyRateDatumsCache } from "../caches/currencyRateDatumsCache.cache.ts";
+import { UserCache } from '../caches/user.cache';
 
 export class InvalidNumberError extends MonadError<typeof InvalidNumberError.ERROR_SYMBOL>
 {
@@ -303,7 +304,8 @@ export class CurrencyRateSourceService
         queryRunner: QueryRunner,
         currencyRateDatumsCache: CurrencyRateDatumsCache | null,
         currencyToBaseRateCache: CurrencyToBaseRateCache | null,
-        currencyCache: CurrencyCache | null
+        currencyCache: CurrencyCache | null,
+        userCache: UserCache | null
     ): Promise<{
         amount: string,
         date: number,
@@ -361,7 +363,8 @@ export class CurrencyRateSourceService
                 queryRunner,
                 currencyRateDatumsCache,
                 currencyToBaseRateCache,
-                currencyCache
+                currencyCache,
+                userCache
             );
             if (rateDatums instanceof CurrencyNotFoundError) return createError(new CurrencyNotFoundError(refCurrencyId, ownerId));
 

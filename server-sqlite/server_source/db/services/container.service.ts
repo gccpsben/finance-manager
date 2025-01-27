@@ -9,6 +9,7 @@ import { Database } from "../db.ts";
 import { QUERY_IGNORE } from "../../symbols.ts";
 import { CurrencyRateDatumsCache } from '../caches/currencyRateDatumsCache.cache.ts';
 import { reverseMap } from "../servicesUtils.ts";
+import { UserCache } from '../caches/user.cache.ts';
 
 export class ContainerNotFoundError extends MonadError<typeof ContainerNotFoundError.ERROR_SYMBOL>
 {
@@ -102,7 +103,8 @@ export class ContainerService
         currencyRateDateToUse: number | undefined = undefined,
         currencyRateDatumsCache: CurrencyRateDatumsCache | null,
         currencyToBaseRateCache: CurrencyToBaseRateCache | null,
-        currencyCache: CurrencyCache | null
+        currencyCache: CurrencyCache | null,
+        userCache: UserCache | null
     )
     {
         const currRepo = Database.getCurrencyRepository()!;
@@ -111,7 +113,7 @@ export class ContainerService
         const containerBalances = await ContainerService.getContainersBalance(ownerId, containers);
 
         // Ensure user exists
-        const userFetchResult = await UserService.getUserById(ownerId);
+        const userFetchResult = await UserService.getUserById(ownerId, userCache);
         if (userFetchResult === null) return new UserNotFoundError(ownerId);
 
         // The list of currency ids that are present in `containerBalances`
@@ -158,7 +160,8 @@ export class ContainerService
                     innerRateEpoch,
                     currencyRateDatumsCache,
                     currencyToBaseRateCache,
-                    currencyCache
+                    currencyCache,
+                    userCache
                 ));
             }
             return output;

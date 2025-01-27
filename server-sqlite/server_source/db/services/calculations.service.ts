@@ -14,6 +14,7 @@ import { FragmentRaw } from "../entities/fragment.entity.ts";
 import { ContainerNotFoundError } from "./container.service.ts";
 import { LinearInterpolatorVirtual } from "../../calculations/linearInterpolatorVirtual.ts";
 import { DecimalAdditionMapReducer, reverseMap } from "../servicesUtils.ts";
+import { UserCache } from '../caches/user.cache';
 
 /** An object that represents a query of a time range. */
 export type TimeRangeQuery =
@@ -145,7 +146,8 @@ export class CalculationsService
         containerIds: string[],
         currencyRateDatumsCache: CurrencyRateDatumsCache | null,
         currencyToBaseRateCache: CurrencyToBaseRateCache | null,
-        currencyCache: CurrencyCache | null
+        currencyCache: CurrencyCache | null,
+        userCache: UserCache | null
     ): Promise<{ [containerId: string]: ContainerNetworthTimelineEntry[] } | ContainerNotFoundError>
     {
         const balanceHistories = await this.getContainersBalanceHistory(
@@ -174,7 +176,8 @@ export class CalculationsService
                         historyEntry.containerBalance,
                         currencyRateDatumsCache,
                         currencyToBaseRateCache,
-                        currencyCache
+                        currencyCache,
+                        userCache
                     )).totalWorth.toString()
                 });
             }
@@ -194,6 +197,7 @@ export class CalculationsService
         currencyRateDatumsCache: CurrencyRateDatumsCache | null,
         currencyToBaseRateCache: CurrencyToBaseRateCache | null,
         currencyCache: CurrencyCache | null,
+        userCache: UserCache | null,
         config: { countExcludedTxns: boolean } | null = null
     )
     {
@@ -241,7 +245,8 @@ export class CalculationsService
                     txn,
                     currencyRateDatumsCache,
                     currencyToBaseRateCache,
-                    currencyCache
+                    currencyCache,
+                    userCache
                 ));
 
             const isValueDecreased = increaseInValue.lessThanOrEqualTo(new Decimal('0'));
@@ -346,7 +351,8 @@ export class CalculationsService
         division: number,
         currencyRateDatumsCache: CurrencyRateDatumsCache | null,
         cache: CurrencyToBaseRateCache | null,
-        currencyCache: CurrencyCache | null
+        currencyCache: CurrencyCache | null,
+        userCache: UserCache | null
     ): Promise<{[epoch: string]:string} | UserNotFoundError | ArgsComparisonError<number> | ConstantComparisonError<number>>
     {
         type cInterpolatorMap = { [currencyId: string]: LinearInterpolatorVirtual };
@@ -354,7 +360,7 @@ export class CalculationsService
         const currRepo = Database.getCurrencyRepository()!;
 
         // Ensure user exists
-        const userFetchResult = await UserService.getUserById(userId);
+        const userFetchResult = await UserService.getUserById(userId, userCache);
         if (userFetchResult === null) return new UserNotFoundError(userId);
 
         const balanceHistory = await CalculationsService.getUserBalanceHistory(userId, startDate, endDate, division);
@@ -370,6 +376,7 @@ export class CalculationsService
                 currencyRateDatumsCache,
                 cache,
                 currencyCache,
+                userCache,
                 startDate,
                 endDate,
             ));
@@ -415,6 +422,7 @@ export class CalculationsService
                         currencyRateDatumsCache,
                         cache,
                         currencyCache,
+                        userCache
                     ));
                 }
                 const currencyValue = currencyRateToBase.mul(balanceHistory.historyMap[epoch][currencyID]);

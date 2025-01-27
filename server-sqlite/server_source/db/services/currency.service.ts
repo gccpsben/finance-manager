@@ -12,6 +12,7 @@ import { Database } from "../db.ts";
 import { QUERY_IGNORE } from "../../symbols.ts";
 import { LinearInterpolatorVirtual } from "../../calculations/linearInterpolatorVirtual.ts";
 import { reverseMap } from "../servicesUtils.ts";
+import { UserCache } from '../caches/user.cache.ts';
 
 export class CurrencyRefCurrencyIdAmountTupleError extends MonadError<typeof CurrencyRefCurrencyIdAmountTupleError.ERROR_SYMBOL>
 {
@@ -93,15 +94,16 @@ export class CurrencyCalculator
         },
         currencyRateDatumsCache: CurrencyRateDatumsCache | null,
         currencyToBaseRateCache: CurrencyToBaseRateCache | null,
-        currencyListCache: CurrencyCache | null
+        currencyListCache: CurrencyCache | null,
+        userCache: UserCache | null
     )
     {
         // Ensure user exists
-        const userFetchResult = await UserService.getUserById(ownerId);
+        const userFetchResult = await UserService.getUserById(ownerId, userCache);
         if (userFetchResult === null) return new UserNotFoundError(ownerId);
 
-        const fromRate = unwrap(await this.currencyToBaseRate(ownerId, from, undefined, currencyRateDatumsCache, currencyToBaseRateCache, currencyListCache));
-        const toRate = unwrap(await this.currencyToBaseRate(ownerId, to, undefined, currencyRateDatumsCache, currencyToBaseRateCache, currencyListCache));
+        const fromRate = unwrap(await this.currencyToBaseRate(ownerId, from, undefined, currencyRateDatumsCache, currencyToBaseRateCache, currencyListCache, userCache));
+        const toRate = unwrap(await this.currencyToBaseRate(ownerId, to, undefined, currencyRateDatumsCache, currencyToBaseRateCache, currencyListCache, userCache));
         return fromRate.dividedBy(toRate);
     }
 
@@ -122,7 +124,8 @@ export class CurrencyCalculator
         date: number = Date.now(),
         currencyRateDatumsCache: CurrencyRateDatumsCache | null,
         currencyToBaseRateCache: CurrencyToBaseRateCache | null,
-        currencyCache: CurrencyCache | null
+        currencyCache: CurrencyCache | null,
+        userCache: UserCache | null
     ): Promise<Decimal | UserNotFoundError>
     {
         if (from.isBase) return new Decimal(`1`);
@@ -134,7 +137,7 @@ export class CurrencyCalculator
             return cacheResult;
 
         // Ensure user exists
-        const userFetchResult = await UserService.getUserById(ownerId);
+        const userFetchResult = await UserService.getUserById(ownerId, userCache);
         if (userFetchResult === null) return new UserNotFoundError(ownerId);
 
         const cacheResultIfPossible = (result: Decimal) => {
@@ -169,7 +172,8 @@ export class CurrencyCalculator
                 date,
                 currencyRateDatumsCache,
                 currencyToBaseRateCache,
-                currencyCache
+                currencyCache,
+                userCache
             )!;
             return currencyBaseAmount.mul(unwrap(currencyBaseAmountUnitToBaseRate));
         }
@@ -184,7 +188,8 @@ export class CurrencyCalculator
                 d1.date,
                 currencyRateDatumsCache,
                 currencyToBaseRateCache,
-                currencyCache
+                currencyCache,
+                userCache
             )!);
             return unwrap(datumAmount.mul(datumUnitToBaseRate));
         }
@@ -202,7 +207,8 @@ export class CurrencyCalculator
                 d1.date,
                 currencyRateDatumsCache,
                 currencyToBaseRateCache,
-                currencyCache
+                currencyCache,
+                userCache
             )!);
             const D2CurrBaseRate = unwrap(await CurrencyCalculator.currencyToBaseRate
             (
@@ -211,7 +217,8 @@ export class CurrencyCalculator
                 d2.date,
                 currencyRateDatumsCache,
                 currencyToBaseRateCache,
-                currencyCache
+                currencyCache,
+                userCache
             ))!;
 
             const valLeft = new Decimal(d1.amount).mul(D1CurrBaseRate);
@@ -246,6 +253,7 @@ export class CurrencyCalculator
         currencyRateDatumsCache: CurrencyRateDatumsCache | null,
         currencyToBaseRateCache: CurrencyToBaseRateCache | null,
         currencyCache: CurrencyCache | null,
+        userCache: UserCache | null,
         startDate?: number | undefined,
         endDate?: number | undefined,
     ): Promise<LinearInterpolatorVirtual | UserNotFoundError>
@@ -253,7 +261,7 @@ export class CurrencyCalculator
         const currRepo = Database.getCurrencyRepository()!;
 
         // Ensure user exists
-        const userFetchResult = await UserService.getUserById(userId);
+        const userFetchResult = await UserService.getUserById(userId, userCache);
         if (userFetchResult === null) return new UserNotFoundError(userId);
 
         const currencyRateDatums = await Database.getCurrencyRateDatumRepository()!.getCurrencyDatums(
@@ -290,7 +298,8 @@ export class CurrencyCalculator
                     datum.date,
                     currencyRateDatumsCache,
                     currencyToBaseRateCache,
-                    currencyCache
+                    currencyCache,
+                    userCache
                 ));
 
                 return new Decimal(datum.amount).mul(currencyRateAtDate);
@@ -379,7 +388,8 @@ export class CurrencyService
         date: number | undefined = undefined,
         currencyRateDatumsCache: CurrencyRateDatumsCache | null,
         currencyToBaseRateCache: CurrencyToBaseRateCache | null,
-        currencyCache: CurrencyCache | null
+        currencyCache: CurrencyCache | null,
+        userCache: UserCache | null
     )
     {
         type outputType =
@@ -404,7 +414,8 @@ export class CurrencyService
                     date ?? 0,
                     currencyRateDatumsCache,
                     currencyToBaseRateCache,
-                    currencyCache
+                    currencyCache,
+                    userCache
                 )).toString()
             });
         }
@@ -418,7 +429,8 @@ export class CurrencyService
         balances: { [currId: string]: Decimal },
         currencyRateDatumsCache: CurrencyRateDatumsCache | null,
         currencyToBaseRateCache: CurrencyToBaseRateCache | null,
-        currencyListCache: CurrencyCache | null
+        currencyListCache: CurrencyCache | null,
+        userCache: UserCache | null
     )
     {
         const currRepo = Database.getCurrencyRepository()!;
@@ -448,7 +460,8 @@ export class CurrencyService
                         date,
                         currencyRateDatumsCache,
                         currencyToBaseRateCache,
-                        currencyListCache
+                        currencyListCache,
+                        userCache
                     )
                 )[0].rateToBase;
 

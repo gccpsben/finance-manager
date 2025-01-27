@@ -9,6 +9,7 @@ import { QUERY_IGNORE } from "../symbols.ts";
 import { GlobalCurrencyCache } from "../db/caches/currencyListCache.cache.ts";
 import { GlobalCurrencyToBaseRateCache } from "../db/caches/currencyToBaseRate.cache.ts";
 import { GlobalCurrencyRateDatumsCache } from "../db/caches/currencyRateDatumsCache.cache.ts";
+import { GlobalUserCache } from '../db/caches/user.cache';
 
 export class CurrencyRatesCRON implements CronService
 {
@@ -73,7 +74,8 @@ export class CurrencyRatesCRON implements CronService
                         transactionContext.queryRunner,
                         GlobalCurrencyRateDatumsCache,
                         GlobalCurrencyToBaseRateCache,
-                        GlobalCurrencyCache
+                        GlobalCurrencyCache,
+                        GlobalUserCache
                     );
 
                     if (fetchResult instanceof ExecuteCurrencyRateSourceError)

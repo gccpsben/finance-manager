@@ -16,6 +16,7 @@ import { Database } from '../../db/db.ts';
 import { GlobalCurrencyToBaseRateCache } from '../../db/caches/currencyToBaseRate.cache.ts';
 import { GlobalCurrencyCache } from '../../db/caches/currencyListCache.cache.ts';
 import { GlobalCurrencyRateDatumsCache } from '../../db/caches/currencyRateDatumsCache.cache.ts';
+import { GlobalUserCache } from "../../db/caches/user.cache.ts";
 
 const router = new TypesafeRouter(express.Router());
 
@@ -109,7 +110,8 @@ router.get<GetCurrencyAPI.ResponseDTO>(`/api/v1/currencies`,
                     userQuery.requestedRateDate,
                     GlobalCurrencyRateDatumsCache,
                     GlobalCurrencyToBaseRateCache,
-                    GlobalCurrencyCache
+                    GlobalCurrencyCache,
+                    GlobalUserCache
                 );
                 return rateHydratedCurrencies.map(c =>
                 {
@@ -156,6 +158,7 @@ router.get<GetCurrencyRateHistoryAPI.ResponseDTO>(`/api/v1/currencies/history`,
             GlobalCurrencyRateDatumsCache,
             GlobalCurrencyToBaseRateCache,
             GlobalCurrencyCache,
+            GlobalUserCache,
             parsedQuery.division ? parseInt(parsedQuery.division) : 128,
         ));
 
