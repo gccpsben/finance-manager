@@ -3,8 +3,8 @@
 import { resetDatabase } from "../server/helpers.ts";
 import { ensureTestIsSetup, port } from "../../init.ts";
 import { AuthHelpers } from "../users/helpers.ts";
-import { assertEqual } from '../../../tests/lib/assert.ts';
 import { createPostTxnTagFunc, createGetTxnTagsFunc } from "./helpers.ts";
+import { assertEquals } from 'jsr:@std/assert/equals';
 
 const getValidTagBody = () => { return { name: 'my test tag' } };
 
@@ -178,8 +178,8 @@ Deno.test(
                 asserts: 'default'
             });
 
-            assertEqual(tagRes.parsedBody!.rangeItems.length, 1);
-            assertEqual(tagRes.parsedBody!.rangeItems[0].name, getValidTagBody().name);
+            assertEquals(tagRes.parsedBody!.rangeItems.length, 1);
+            assertEquals(tagRes.parsedBody!.rangeItems[0].name, getValidTagBody().name);
         });
     },
     sanitizeOps: false,

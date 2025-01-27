@@ -12,6 +12,7 @@ import { assertEquals } from 'jsr:@std/assert/equals';
 import { GetTxnJSONQueryAPIClass } from "./classes.ts";
 import { createPostCurrencyFunc } from '../currency/helpers.ts';
 import { executeInRandomOrder, fillArray, sortDictionaryKeys } from "../../lib/collections.ts";
+import { shuffleArray } from '../../lib/collections.ts';
 
 const beforeEachSetup = async (test: Deno.TestContext) =>
 {
@@ -492,7 +493,7 @@ Deno.test(
             });
 
             {
-                const burstsCount = 50;
+                const burstsCount = 150;
                 const invalidPostTxnReqs = fillArray(burstsCount, () =>
                 {
                     return async () => await createPostTransactionFunc()
@@ -576,6 +577,7 @@ Deno.test(
                     ...validGetTxnJSON_1_Reqs,
                     ...validGetTxnJSON_2_Reqs
                 ];
+                shuffleArray(allReqs);
 
                 await test.step(`Burst Tests (Total ${allReqs.length} requests)`, async () =>
                 {

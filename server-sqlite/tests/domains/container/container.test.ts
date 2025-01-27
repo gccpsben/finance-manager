@@ -6,8 +6,8 @@ import { AuthHelpers } from "../users/helpers.ts";
 import { assertEquals } from 'jsr:@std/assert/equals';
 import { createPostContainerFunc, createGetContainersFunc } from "./helpers.ts";
 import { setupTxnsConCurrRates } from "../helpers.ts";
-import { createGetContainerTimelineFunc } from './helpers';
-import { assertsPrettyJSON } from '../../lib/assertions';
+import { createGetContainerTimelineFunc } from './helpers.ts';
+import { assertsPrettyJSON } from '../../lib/assertions.ts';
 
 Deno.test(
 {

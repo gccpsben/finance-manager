@@ -3,7 +3,7 @@ import { wrapAssertFetchJSONEndpoint } from "../../lib/assertions.ts";
 import { getTestServerPath } from '../../init.ts';
 import { POST_CONTAINER_API_PATH, GET_CONTAINER_API_PATH } from './paths.ts';
 import { GetContainerAPIClass, GetContainerTimelineAPIClass, PostContainerAPIClass } from "./classes.ts";
-import { GET_CONTAINER_TIMELINE_API_PATH } from './paths';
+import { GET_CONTAINER_TIMELINE_API_PATH } from './paths.ts';
 
 export const createPostContainerFunc = () =>
 {
