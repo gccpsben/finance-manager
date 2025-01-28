@@ -20,7 +20,7 @@ export function useGetCurrencyRateSources
         if (!targetCurrId) return;
         const targetUrl = `/api/v1/${targetCurrId}/currencyRateSources` satisfies GetCurrencyRateSrcAPI.Path<string>;
         networkRequest.setQueryObj(`${targetUrl}`);
-        if (!autoUpdateOnChange) networkRequest.updateData();
+        if (autoUpdateOnChange) networkRequest.updateData();
     }, { immediate: true });
 
     return {

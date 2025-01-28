@@ -1,6 +1,5 @@
 <template>
-    <cell :available-options="['All', '30d', '7d']"
-          v-model:selected-option="selectedOption">
+    <div>
         <template v-if="datumResponse.isLoading.value || datumResponse.error.value">
             <NetworkCircularIndicator :error="datumResponse.error.value"
                                       :is-loading="datumResponse.isLoading.value"
@@ -14,13 +13,11 @@
         <template v-else>
             <WrappedLineChart :is-x-axis-epoch="true" :datums="parsedDatums" />
         </template>
-        <template #title>Rates History</template>
-    </cell>
+    </div>
 </template>
 
 <script lang="ts" setup>
 import WrappedLineChart from '@/modules/core/components/data-display/WrappedLineChart.vue';
-import cell from '@/modules/core/components/data-display/Cell.vue';
 import { useNetworkRequest } from '@/modules/core/composables/useNetworkRequest';
 import type { GetCurrencyRateHistoryAPI } from '@/../../api-types/currencies';
 import { API_CURRENCY_RATE_HISTORY_PATH } from '@/apiPaths';
@@ -76,9 +73,3 @@ const parsedDatums = computed(() =>
 });
 
 </script>
-
-<style lang="less" scoped>
-@import "@/modules/core/stylesheets/globalStyle.less";
-
-
-</style>
