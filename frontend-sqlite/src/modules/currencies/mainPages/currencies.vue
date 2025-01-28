@@ -27,7 +27,7 @@
                             </CustomTableRow>
                         </template>
                         <template #bodyOuter>
-                            <div style="overflow-y: scroll;">
+                            <div style="overflow-y: auto;">
                                 <CustomTableRow v-for="item in mainPagination.lastCallResult.value?.rangeItems" class="bodyRows"
                                             @click="viewCurrency(item.id)">
                                     <CustomTableCell grid-area="name">

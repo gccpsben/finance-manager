@@ -142,7 +142,7 @@ async function handleSaveBtn()
     #containerTopDivInner
     {
         padding: @desktopPagePadding;
-        overflow: scroll;
+        overflow: auto;
     }
 }
 

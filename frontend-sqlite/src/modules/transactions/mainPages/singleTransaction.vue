@@ -325,7 +325,7 @@ fieldset
     #txnTopDivInner
     {
         padding: @desktopPagePadding;
-        overflow: scroll;
+        overflow: auto;
     }
 
     .pageTitle

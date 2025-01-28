@@ -74,7 +74,7 @@ const toggleSelection = (value: string) =>
                      :should-highlight="false" :field-name="fieldName">
         <template #content>
             <div style="text-align: start; transform: translateY(9px); margin-bottom: 9px;">
-                <AbsEnclosure style="overflow: scroll; padding: 14px;">
+                <AbsEnclosure style="overflow: auto; padding: 14px;">
                     <CustomChip :background="item.color"
                             :foreground="'white'"
                             v-for="item in optionValuePairs"

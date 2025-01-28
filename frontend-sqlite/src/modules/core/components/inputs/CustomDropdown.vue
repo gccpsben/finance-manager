@@ -71,7 +71,7 @@
     .fullWidth;
     clip-path: inset(0 0 100% 0);
     transition: all 0.3s ease;
-    overflow-y: scroll;
+    overflow-y: auto;
     max-height:200px;
     box-shadow: 0 0 @dropdownShadowRange black;
     border: 1px solid @border;

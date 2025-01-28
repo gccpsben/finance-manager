@@ -172,7 +172,7 @@ function minMaxOrUndefined(mode: 'MIN' | 'MAX' ,datums: Readonly<{ x: number; y:
     .fullSize;
     font-family: @font;
     color: @foreground;
-    overflow: scroll;
+    overflow: auto;
     overflow-x: hidden;
 
     .rateSrcsTable { font-size: 14px; }

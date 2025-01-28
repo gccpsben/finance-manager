@@ -43,9 +43,9 @@
                 <template v-else-if="dialogState.state === 'PreviouslyUploaded'">
                     <div class="previouslyUploadedArea">
                         <OverlapArea class="fullSize">
-                            <div style="overflow-y: scroll; position: relative" >
+                            <div style="overflow-y: auto; position: relative" >
                                 <AbsEnclosure class="fullWidth">
-                                    <div class="existingFilesList" style="overflow-y: scroll; height: 100%;">
+                                    <div class="existingFilesList" style="overflow-y: auto; height: 100%;">
                                         <div v-for="file of serverFiles.lastSuccessfulData.value?.files" class="fileBoxes">
                                             <AttachmentBox :file-id="file.id" :selected="selectedExistingFiles.has(file.id)"
                                                         @click="selectedExistingFiles.toggle(file.id)"/>
@@ -71,7 +71,7 @@
                             <div>Uploaded files will be stored on the server, and can be attached to transactions / other objects.</div>
                             <div class="rel">
                                 <AbsEnclosure>
-                                    <div class="fullSize" style="overflow-y: scroll;">
+                                    <div class="fullSize" style="overflow-y: auto;">
                                         <template v-for="file in fileUploads">
                                             <template v-if="file.state.type === 'FINISHED_UPLOAD'">
                                                 <FileUploadProgressBox :name="file.file.name" :value="1" :state="'OKAY'"/>

@@ -5,7 +5,7 @@
                     :should-highlight="false" :field-name="'Attachments / Files'">
             <template #content>
                 <AbsEnclosure v-if="props.fileIds.length > 0">
-                    <div style="overflow-y: scroll; padding: 14px; padding-top: 0px; transform: translateY(15px); height: calc(100% - 15px);" class="fullSize">
+                    <div style="overflow-y: auto; padding: 14px; padding-top: 0px; transform: translateY(15px); height: calc(100% - 15px);" class="fullSize">
                         <div id="boxesContainer">
                             <template v-for="file in props.fileIds">
                                 <AttachmentBox :file-id="file" :deletable="false" removable

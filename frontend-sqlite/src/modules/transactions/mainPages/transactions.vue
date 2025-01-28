@@ -241,7 +241,7 @@ onMounted(async () => await mainStoreUpdateAll());
             #searchArea
             {
                 .tight;
-                overflow: scroll;
+                overflow: auto;
                 border-top: 1px solid @border;
                 border-bottom: 1px solid @border;
                 padding: 15px;
