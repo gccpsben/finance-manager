@@ -4,6 +4,25 @@ import { GetTxnAPIClass, GetTxnJSONQueryAPIClass, PostTxnAPIClass, PutTxnAPIClas
 import { getTestServerPath } from "../../init.ts";
 import { GET_TXN_JSON_API_PATH, POST_TXN_API_PATH } from "./paths.ts";
 import { GET_TXN_API_PATH, PUT_TXN_API_PATH } from './paths.ts';
+import { DeleteTxnAPI } from "../../../../api-types/txn.d.ts";
+import { DELETE_TXN_API_PATH } from './paths.ts';
+
+export const createDelTransactionFunc = ({ id }: DeleteTxnAPI.RequestQueryDTO) =>
+{
+    return wrapAssertFetchJSONEndpoint<
+        never,
+        object
+    >
+    (
+        'DELETE',
+        path.join(getTestServerPath(), DELETE_TXN_API_PATH, `?${new URLSearchParams({ id })}`),
+        {
+            bodyType: undefined,
+            status: 200
+        }
+    )
+};
+
 
 export const createPutTransactionFunc = ({ targetTxnId }: PutTxnAPIClass.RequestQueryDTOClass ) =>
 {

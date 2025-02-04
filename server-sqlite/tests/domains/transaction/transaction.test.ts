@@ -13,6 +13,7 @@ import { GetTxnJSONQueryAPIClass } from "./classes.ts";
 import { createPostCurrencyFunc } from '../currency/helpers.ts';
 import { executeInRandomOrder, fillArray, sortDictionaryKeys } from "../../lib/collections.ts";
 import { shuffleArray } from '../../lib/collections.ts';
+import { createDelTransactionFunc } from './helpers.ts';
 
 const beforeEachSetup = async (test: Deno.TestContext) =>
 {
@@ -647,6 +648,27 @@ Deno.test(
             assertEquals(updatedTxn.fileIds, newTxnBody.fileIds);
             assertEquals(updatedTxn.creationDate, newTxnBody.creationDate);
         });
+
+        await test.step(`Delete txns`, async test =>
+        {
+            let txnCountBeforeDeletion:number;
+            await test.step("Record txn count before deletion", async () =>
+            {
+                const res = await createGetTransactionsFunc({})
+                ({ token: usrToken, asserts: 'default' });
+                txnCountBeforeDeletion = res.parsedBody?.totalItems!;
+            });
+
+            await createDelTransactionFunc({ id: validTxnId1 })
+            ({ token: usrToken, asserts: 'default' });
+
+            await test.step("Retrieve after deletion", async () =>
+            {
+                const res = await createGetTransactionsFunc({})
+                ({ token: usrToken, asserts: 'default' });
+                assertEquals(res.parsedBody?.totalItems!, txnCountBeforeDeletion - 1);
+            });
+        })
     },
     sanitizeOps: false,
     sanitizeResources: false
