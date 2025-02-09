@@ -23,6 +23,7 @@
 *.ignore
 /server-sqlite/coverage
 /server-rust
+/dist-sqlite
 
 # used for unit test
 !server/test.env
