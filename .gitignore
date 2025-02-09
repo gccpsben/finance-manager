@@ -22,6 +22,7 @@
 !.template.env
 *.ignore
 /server-sqlite/coverage
+/server-rust
 
 # used for unit test
 !server/test.env
