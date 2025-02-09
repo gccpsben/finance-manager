@@ -1,7 +1,7 @@
 import type { GetCurrencyRateHistoryAPI } from '@/../../../api-types/currencies';
 import { type MaybeRefOrGetter, readonly, toValue, watch } from "vue";
-import { useNetworkRequest } from "../../core/composables/useNetworkRequest.ts";
-import { API_CURRENCY_RATE_HISTORY_PATH } from '../../../apiPaths.ts';
+import { useNetworkRequest } from "@/modules/core/composables/useNetworkRequest";
+import { API_CURRENCY_RATE_HISTORY_PATH } from '../../../apiPaths';
 
 export function useCurrencyRatesHistory
 (

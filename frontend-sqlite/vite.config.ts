@@ -31,5 +31,5 @@ export default defineConfig(
             "/*": { target: 'https://localhost:8081' }
 		}
 	},
-    build: { outDir: "../dist" }
+    build: { outDir: "../dist-sqlite" }
 })

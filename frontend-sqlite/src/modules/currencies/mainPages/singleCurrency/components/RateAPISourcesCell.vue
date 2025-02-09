@@ -100,7 +100,7 @@
 
 <script lang="ts" setup>
 import OverlapArea from '@/modules/core/components/layout/OverlapArea.vue';
-import CustomTable from '@/modules/core/components/tables/CustomTable.vue';
+import CustomTable from '@/modules/core/components/tables/customTable.vue';
 import CustomTableRow from '@/modules/core/components/tables/CustomTableRow.vue';
 import CustomTableCell from '@/modules/core/components/tables/CustomTableCell.vue';
 import Cell from '@/modules/core/components/data-display/Cell.vue';

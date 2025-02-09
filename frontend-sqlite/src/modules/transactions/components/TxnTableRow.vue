@@ -14,7 +14,7 @@
              <OverlapArea class="fullSize">
                  <div class="txnTableRowInner">
                      <div class="bodyRowNameGrid">
-                         <TxnTooltip :txn="{ ...txn, tagIds: [...txn.tagIds] }"
+                         <TxnTooltip :txn="{ ...txn, tagIds: [...txn.tagIds], fileIds: [] }"
                                      :open-delay="props.txnTooltipOpenDelay"
                                      :close-delay="props.txnTooltipCloseDelay">
                              <div class="fullSize rel" style="display: flex; align-items: end;">

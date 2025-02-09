@@ -15,6 +15,8 @@ export const ROUTER_NAME_DASHBOARD = `dashboard`;
 export const ROUTER_NAME_ALL_CURRENCIES = `currencies`;
 export const ROUTER_NAME_SINGLE_CURRENCY = `singleCurrency`;
 
+const singleTxnPage = import(`@/modules/transactions/mainPages/SingleTransaction.vue`);
+
 const router = createRouter(
 {
 	history: createWebHistory(import.meta.env.BASE_URL),
@@ -63,12 +65,12 @@ const router = createRouter(
                         {
                             path: "new",
                             name: ROUTER_NAME_CREATE_NEW_TXN,
-                            component: () => import(`@/modules/transactions/mainPages/SingleTransaction.vue`),
+                            component: () => singleTxnPage,
                         },
                         {
                             path: ":id",
                             name: ROUTER_NAME_SINGLE_TXN,
-                            component: () => import(`@/modules/transactions/mainPages/SingleTransaction.vue`),
+                            component: () => singleTxnPage,
                         },
                     ]
                 },

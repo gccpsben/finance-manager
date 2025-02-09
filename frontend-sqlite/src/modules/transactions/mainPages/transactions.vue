@@ -81,7 +81,7 @@ import { isNullOrUndefined } from "@/modules/core/utils/equals";
 import { buildSearchParams } from "@/modules/core/utils/urlParams";
 import router, { ROUTER_NAME_CREATE_NEW_TXN, ROUTER_NAME_SINGLE_TXN } from "@/router";
 import { computed, onMounted, ref } from 'vue';
-import { type GetTxnAPI, type GetTxnJsonQueryAPI } from '../../../../../api-types/txn';
+import type { GetTxnAPI, GetTxnJsonQueryAPI } from '../../../../../api-types/txn.d.ts';
 import NumberPagination from '@/modules/core/components/data-display/NumberPagination.vue';
 import OverlapArea from '@/modules/core/components/layout/OverlapArea.vue';
 import NetworkCircularIndicator from '@/modules/core/components/data-display/NetworkCircularIndicator.vue';

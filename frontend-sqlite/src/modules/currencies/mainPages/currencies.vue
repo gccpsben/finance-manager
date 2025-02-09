@@ -69,7 +69,7 @@
 </template>
 
 <script setup lang="ts">
-import CustomTable from '@/modules/core/components/tables/CustomTable.vue';
+import CustomTable from '@/modules/core/components/tables/customTable.vue';
 import CustomTableCell from '@/modules/core/components/tables/CustomTableCell.vue';
 import CustomTableRow from '@/modules/core/components/tables/CustomTableRow.vue';
 import { watch } from 'vue';
