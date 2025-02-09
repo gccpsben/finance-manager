@@ -73,6 +73,8 @@
                                     v-model:text="editCurrencyRateSourceHook.currentData.value.hostname" />
                             <TextField style="height: 40px;" field-name="Path"
                                     v-model:text="editCurrencyRateSourceHook.currentData.value.path" />
+                            <TextField style="height: 40px;" field-name="Json Query String"
+                                    v-model:text="editCurrencyRateSourceHook.currentData.value.jsonQueryString" />
                             <custom-dropdown :options="selectableCurrenciesOptions"
                                 class="fullSize" field-name="Ref Amount Currency"
                                 v-model:selected-option="editCurrencyRateSourceHook.currentData.value.refAmountCurrencyId" />
