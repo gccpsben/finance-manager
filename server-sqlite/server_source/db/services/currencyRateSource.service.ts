@@ -13,7 +13,7 @@ import { QUERY_IGNORE } from "../../symbols.ts";
 import { CurrencyCache } from "../caches/currencyListCache.cache.ts";
 import { CurrencyToBaseRateCache } from "../caches/currencyToBaseRate.cache.ts";
 import { CurrencyRateDatumsCache } from "../caches/currencyRateDatumsCache.cache.ts";
-import { UserCache } from '../caches/user.cache';
+import { UserCache } from '../caches/user.cache.ts';
 
 export class InvalidNumberError extends MonadError<typeof InvalidNumberError.ERROR_SYMBOL>
 {

@@ -1,6 +1,6 @@
 import { registerDecorator, ValidationOptions, ValidationArguments, isInt, isPositive, isNumber, isNumberString, isString } from 'class-validator';
 import { Decimal } from 'decimal.js';
-import { UnknownEnvTypeError } from '../env';
+import { UnknownEnvTypeError } from '../env.ts';
 
 export function EnsureNotPlainForeignKey(_validationOptions?: ValidationOptions)
 {

@@ -14,7 +14,7 @@ import { FragmentRaw } from "../entities/fragment.entity.ts";
 import { ContainerNotFoundError } from "./container.service.ts";
 import { LinearInterpolatorVirtual } from "../../calculations/linearInterpolatorVirtual.ts";
 import { DecimalAdditionMapReducer, reverseMap } from "../servicesUtils.ts";
-import { UserCache } from '../caches/user.cache';
+import { UserCache } from '../caches/user.cache.ts';
 
 /** An object that represents a query of a time range. */
 export type TimeRangeQuery =

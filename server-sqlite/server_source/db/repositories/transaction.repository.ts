@@ -17,7 +17,7 @@ import { File } from '../entities/file.entity.ts';
 import { FileNotFoundError } from "../services/files.service.ts";
 import * as txnQueryASTCalculator from "../../calculations/txnQueryASTCalculator.ts";
 import { normalizeEntitiesToIds, paginateQuery } from "../servicesUtils.ts";
-import { UserCache } from '../caches/user.cache';
+import { UserCache } from '../caches/user.cache.ts';
 
 export class TransactionRepository extends MeteredRepository
 {

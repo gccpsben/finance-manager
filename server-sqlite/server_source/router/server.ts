@@ -17,11 +17,11 @@ import compression from 'compression';
 import { Buffer } from "node:buffer";
 import { CronRunner } from "../crons/cronService.ts";
 import { Database } from "../db/db.ts";
-import { setGlobalEntityValidationLogger } from '../db/dbEntityBase';
-import { GlobalCurrencyCache } from '../db/caches/currencyListCache.cache';
-import { GlobalCurrencyRateDatumsCache } from '../db/caches/currencyRateDatumsCache.cache';
-import { GlobalCurrencyToBaseRateCache } from '../db/caches/currencyToBaseRate.cache';
-import { GlobalAccessTokenCache } from '../db/caches/accessTokens.cache';
+import { setGlobalEntityValidationLogger } from '../db/dbEntityBase.ts';
+import { GlobalCurrencyCache } from '../db/caches/currencyListCache.cache.ts';
+import { GlobalCurrencyRateDatumsCache } from '../db/caches/currencyRateDatumsCache.cache.ts';
+import { GlobalCurrencyToBaseRateCache } from '../db/caches/currencyToBaseRate.cache.ts';
+import { GlobalAccessTokenCache } from '../db/caches/accessTokens.cache.ts';
 
 export type StartServerConfig =
 {

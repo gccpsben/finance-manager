@@ -184,7 +184,7 @@ export class Database
             database: EnvManager.dataLocation[0] === 'in-memory' ? ":memory:" : `${EnvManager.dataLocation[1]}/db.db`,
             synchronize: true,
             logging: ['warn'],
-            maxQueryExecutionTime: 100,
+            maxQueryExecutionTime: 1,
         });
 
         return Database.AppDataSource;

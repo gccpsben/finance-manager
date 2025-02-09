@@ -15,7 +15,7 @@ import { GlobalCurrencyToBaseRateCache } from '../../db/caches/currencyToBaseRat
 import { GlobalCurrencyCache } from '../../db/caches/currencyListCache.cache.ts';
 import { GlobalCurrencyRateDatumsCache } from '../../db/caches/currencyRateDatumsCache.cache.ts';
 import { Database } from '../../db/db.ts';
-import { GlobalUserCache } from '../../db/caches/user.cache';
+import { GlobalUserCache } from '../../db/caches/user.cache.ts';
 
 const router = new TypesafeRouter(express.Router());
 
