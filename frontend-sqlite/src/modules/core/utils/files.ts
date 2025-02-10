@@ -7,6 +7,15 @@ export function extractFileExtension(fileName: string): string | undefined
     return (result ?? [])[1]?.toString();
 }
 
+export function decodeContentDispositionHeader(axiosResponse: AxiosResponse): string | null
+{
+    // Extract content-disposition header from Axios response headers
+    const disHeader = axiosResponse.headers['content-disposition'] ?? '';
+    const fileNameURLEncoded = (disHeader.match(/(?<=")(?:\\.|[^"\\])*(?=")/) ?? [])[0] ?? null;
+    const fileNameDecoded = fileNameURLEncoded ? decodeURI(fileNameURLEncoded) : null;
+    return fileNameDecoded;
+}
+
 export function downloadFileFromAxiosResponse(axiosResponse: AxiosResponse)
 {
     // Function to fetch the file and open it in a new window
@@ -14,10 +23,7 @@ export function downloadFileFromAxiosResponse(axiosResponse: AxiosResponse)
     {
         try
         {
-            // Extract content-disposition header from Axios response headers
-            const disHeader = axiosResponse.headers['content-disposition'] ?? '';
-            const fileNameURLEncoded = (disHeader.match(/(?<=")(?:\\.|[^"\\])*(?=")/) ?? [])[0] ?? null;
-            const fileNameDecoded = fileNameURLEncoded ? decodeURI(fileNameURLEncoded) : null;
+            const fileNameDecoded = decodeContentDispositionHeader(axiosResponse);
 
             // Create a Blob from the Axios response data
             const blob = new Blob([axiosResponse.data], { type: axiosResponse.headers['content-type'] });
