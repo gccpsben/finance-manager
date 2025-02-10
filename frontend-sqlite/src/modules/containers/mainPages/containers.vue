@@ -56,6 +56,7 @@
 </template>
 
 <script lang="ts" setup>
+import CustomTable from '@/modules/core/components/tables/customTable.vue';
 import CustomTableCell from '@/modules/core/components/tables/CustomTableCell.vue';
 import CustomTableRow from '@/modules/core/components/tables/CustomTableRow.vue';
 import NumberPagination from '@/modules/core/components/data-display/NumberPagination.vue';
