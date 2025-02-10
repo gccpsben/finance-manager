@@ -22,7 +22,12 @@
 !.template.env
 *.ignore
 /server-sqlite/coverage
-/server-rust
+/server-rust/migration/target
+/server-rust/server/target
+/server-rust/server/bindings
+/server-rust/server/dev
+/server-rust/**/*.db
+/server-rust/**/lcov.info
 /dist-sqlite
 /data_prod
 /server-sqlite-prod
