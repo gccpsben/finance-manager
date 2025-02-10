@@ -24,6 +24,8 @@
 /server-sqlite/coverage
 /server-rust
 /dist-sqlite
+/data_prod
+/server-sqlite-prod
 
 # used for unit test
 !server/test.env
