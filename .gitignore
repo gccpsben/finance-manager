@@ -1,10 +1,3 @@
-/frontend/node_modules
-/frontend/dist
-/server/node_modules
-/server/ssl
-/server/*.log
-/server/server_build/*
-/server/server_production
 /server-sqlite/node_modules
 /server-sqlite/ssl
 /server-sqlite/*.log
@@ -16,7 +9,6 @@
 /server-sqlite/server_ut-build
 /server-sqlite/data/*
 /dist
-/dist/*
 .vscode
 *.env
 !.template.env
@@ -31,8 +23,5 @@
 /dist-sqlite
 /data_prod
 /server-sqlite-prod
-
-# used for unit test
-!server/test.env
 
 *.code-workspace
