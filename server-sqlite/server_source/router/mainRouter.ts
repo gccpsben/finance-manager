@@ -39,8 +39,8 @@ export function getMainRouter(
         router.use(express.static(EnvManager.distFolderLocation));
         router.get("/manifest.webmanifest", (_, res) => { res.sendFile(`manifest.webmanifest`, { root: EnvManager.distFolderLocation }); });
         router.get("/manifest.json", (_, res) => { res.sendFile(`manifest.webmanifest`, { root: EnvManager.distFolderLocation }); });
-        router.get("/assets/*", (req, res) => { res.sendFile(req.path, { root: EnvManager.distFolderLocation }); });
-        router.get("/*", (_, res) => { res.sendFile("index.html", { root: EnvManager.distFolderLocation }); });
+        router.get("/assets/*splat", (req, res) => { res.sendFile(req.path, { root: EnvManager.distFolderLocation }); });
+        router.get("/*splat", (_, res) => { res.sendFile("index.html", { root: EnvManager.distFolderLocation }); });
     }
     else
         logger.logYellow(`distFolderLocation is not set. Static dist folder's router will not be mounted.`);

@@ -198,6 +198,8 @@ export class Server
             expressApp.use(helmet());
             expressApp.use(express.json({type: 'application/json'}));
             expressApp.use(express.raw({ limit: "50mb" })); // allow for larger file chunk upload
+
+            // @ts-expect-error Types definition not updated yet
             expressApp.use(compression());
 
             if (shouldAttachMorgan)
@@ -209,6 +211,8 @@ export class Server
                 ));
 
             expressApp.use("/", getMainRouter(logger));
+
+            // @ts-expect-error Types definition not updated yet
             expressApp.use(getDefaultErrorHandlerMiddleware(
                 (msg, toFile, toConsole) => logger.logRed(msg, toFile, toConsole)
             ));
