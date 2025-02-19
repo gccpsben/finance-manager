@@ -62,7 +62,6 @@
 		"sqlite3": "^5.1.7",
 		"stack-trace": "^1.0.0-pre2",
 		"ts-node": "^10.9.2",
-		"typeorm": "^0.3.20",
-		"typescript": "^5.7.2"
+		"typeorm": "^0.3.20"
 	}
 }

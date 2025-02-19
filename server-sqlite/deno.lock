@@ -15,6 +15,7 @@
     "npm:@faker-js/faker@^9.4.0": "9.4.0",
     "npm:@types/compression@^1.7.5": "1.7.5",
     "npm:@types/express@5": "5.0.0",
+    "npm:@types/express@5.0.0": "5.0.0",
     "npm:@types/express@^4.17.21": "4.17.21",
     "npm:@types/fs-extra@^11.0.4": "11.0.4",
     "npm:@types/http-errors@^2.0.4": "2.0.4",
@@ -22,6 +23,7 @@
     "npm:@types/jmespath@~0.15.2": "0.15.2",
     "npm:@types/json-query@^2.2.6": "2.2.6",
     "npm:@types/morgan@^1.9.9": "1.9.9",
+    "npm:@types/node@*": "22.5.4",
     "npm:@types/node@^22.13.1": "22.13.1",
     "npm:@types/stack-trace@^0.0.33": "0.0.33",
     "npm:@vitest/coverage-v8@^3.0.5": "3.0.5_vitest@3.0.5__@types+node@22.13.1__vite@6.1.0___@types+node@22.13.1_@types+node@22.13.1",
@@ -31,10 +33,13 @@
     "npm:class-transformer@~0.5.1": "0.5.1",
     "npm:class-validator@~0.14.1": "0.14.1",
     "npm:compression@^1.8.0": "1.8.0",
+    "npm:decimal.js@*": "10.5.0",
     "npm:decimal.js@^10.5.0": "10.5.0",
     "npm:dotenv-expand@^12.0.1": "12.0.1",
     "npm:dotenv@^16.4.7": "16.4.7",
     "npm:esm@^3.2.25": "3.2.25",
+    "npm:express@5.0.0": "5.0.0",
+    "npm:express@5.0.1": "5.0.1",
     "npm:express@^5.0.1": "5.0.1",
     "npm:fs-extra@^11.2.0": "11.3.0",
     "npm:fs-monkey@^1.0.6": "1.0.6",
@@ -46,12 +51,12 @@
     "npm:memfs@^4.15.3": "4.17.0_tslib@2.8.1",
     "npm:morgan@^1.10.0": "1.10.0",
     "npm:node-cache@^5.1.2": "5.1.2",
+    "npm:node-gyp-build@4.8.4": "4.8.4",
     "npm:rotating-file-stream@^3.2.6": "3.2.6",
     "npm:sqlite3@^5.1.7": "5.1.7",
     "npm:stack-trace@^1.0.0-pre2": "1.0.0-pre2",
     "npm:ts-node@^10.9.2": "10.9.2_@types+node@22.5.4_typescript@5.7.3",
-    "npm:typeorm@~0.3.20": "0.3.20_sqlite3@5.1.7_ts-node@10.9.2__@types+node@22.5.4__typescript@5.7.3_typescript@5.7.3",
-    "npm:typescript@^5.7.2": "5.7.3"
+    "npm:typeorm@~0.3.20": "0.3.20_sqlite3@5.1.7_ts-node@10.9.2__@types+node@22.5.4__typescript@5.7.3_@types+node@22.5.4"
   },
   "jsr": {
     "@std/assert@1.0.10": {
@@ -874,6 +879,9 @@
     "cookie-signature@1.2.2": {
       "integrity": "sha512-D76uU73ulSXrD1UXF4KE2TMxVVwhsnCgfAyTg9k8P6KGZjlXKrOLe4dJQKI3Bxi5wjesZoFXJWElNWBjPZMbhg=="
     },
+    "cookie@0.6.0": {
+      "integrity": "sha512-U71cyTamuh1CRNCfpGY6to28lxvNwPG4Guz/EVjgf3Jmzv0vlDp1atT9eS5dDjMYHucpHbWns6Lwf3BKz6svdw=="
+    },
     "cookie@0.7.1": {
       "integrity": "sha512-6DnInpx7SJ2AK3+CTUE/ZM0vWTUboZCegxhC2xiIydHR9jNuTAASBrfEpHhiGOZw/nX51bHt6YQl8jsGo4y/0w=="
     },
@@ -1062,6 +1070,43 @@
         "jest-util"
       ]
     },
+    "express@5.0.0": {
+      "integrity": "sha512-V4UkHQc+B7ldh1YC84HCXHwf60M4BOMvp9rkvTUWCK5apqDC1Esnbid4wm6nFyVuDy8XMfETsJw5lsIGBWyo0A==",
+      "dependencies": [
+        "accepts",
+        "body-parser",
+        "content-disposition",
+        "content-type",
+        "cookie@0.6.0",
+        "cookie-signature",
+        "debug@4.3.6",
+        "depd",
+        "encodeurl@2.0.0",
+        "escape-html",
+        "etag",
+        "finalhandler",
+        "fresh@2.0.0",
+        "http-errors",
+        "merge-descriptors",
+        "methods",
+        "mime-types@3.0.0",
+        "on-finished@2.4.1",
+        "once",
+        "parseurl",
+        "proxy-addr",
+        "qs@6.13.0",
+        "range-parser",
+        "router",
+        "safe-buffer@5.2.1",
+        "send",
+        "serve-static",
+        "setprototypeof",
+        "statuses",
+        "type-is",
+        "utils-merge",
+        "vary"
+      ]
+    },
     "express@5.0.1": {
       "integrity": "sha512-ORF7g6qGnD+YtUG9yx4DFoqCShNMmUKiXuT5oWMHiOvt/4WFbHC6yCwQMTSBMno7AqntNCAzzcnnjowRkTL9eQ==",
       "dependencies": [
@@ -1069,7 +1114,7 @@
         "body-parser",
         "content-disposition",
         "content-type",
-        "cookie",
+        "cookie@0.7.1",
         "cookie-signature",
         "debug@4.3.6",
         "depd",
@@ -2066,7 +2111,7 @@
         "mime-types@3.0.0"
       ]
     },
-    "typeorm@0.3.20_sqlite3@5.1.7_ts-node@10.9.2__@types+node@22.5.4__typescript@5.7.3_typescript@5.7.3": {
+    "typeorm@0.3.20_sqlite3@5.1.7_ts-node@10.9.2__@types+node@22.5.4__typescript@5.7.3_@types+node@22.5.4": {
       "integrity": "sha512-sJ0T08dV5eoZroaq9uPKBoNcGslHBR4E4y+EBHs//SiGbblGe7IeduP/IH4ddCcj0qp3PHwDwGnuvqEAnKlq/Q==",
       "dependencies": [
         "@sqltools/formatter",
@@ -2282,8 +2327,7 @@
         "npm:sqlite3@^5.1.7",
         "npm:stack-trace@^1.0.0-pre2",
         "npm:ts-node@^10.9.2",
-        "npm:typeorm@~0.3.20",
-        "npm:typescript@^5.7.2"
+        "npm:typeorm@~0.3.20"
       ]
     }
   }
