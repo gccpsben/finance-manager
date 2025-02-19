@@ -60,7 +60,7 @@ const router = createRouter(
                         {
                             path: '',
                             name: ROUTER_NAME_ALL_TRANSACTIONS,
-                            component: () => import('@/modules/transactions/mainPages/transactions.vue'),
+                            component: () => import('@/modules/transactions/mainPages/Transactions.vue'),
                         },
                         {
                             path: "new",

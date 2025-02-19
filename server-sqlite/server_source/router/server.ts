@@ -1,4 +1,5 @@
-import express from 'express';
+// @ts-types="npm:@types/express@5.0.0"
+import express from "npm:express@5.0.1";
 import { ExtendedLogger } from '../debug/extendedLog.ts';
 import { getMainRouter } from './mainRouter.ts';
 import morgan from 'morgan';
@@ -37,9 +38,9 @@ export function getDefaultMorganLoggerMiddleware(
     // Create an empty stream for morgan, we will handle the logging ourself
     const xs = new PassThrough({objectMode: true});
 
+    // @ts-ignore Type not installed
     return morgan((tokens, req, res) =>
     {
-        // @ts-ignore
         const ip = (req.headers['x-forwarded-for'] || req.connection.remoteAddress || '').split(',')[0].trim();
         const msg =
         [
@@ -63,7 +64,7 @@ export function getDefaultErrorHandlerMiddleware(onLog: (msg: string, toFile: bo
         return res.status(code).json(returns);
     };
 
-    return (err: Error, _req: express.Request, res: express.Response, _next: CallableFunction) =>
+    return (err: any, _req: express.Request, res: express.Response, _next: CallableFunction) =>
     {
         if (err instanceof ValidationError)
         {
@@ -199,7 +200,6 @@ export class Server
             expressApp.use(express.json({type: 'application/json'}));
             expressApp.use(express.raw({ limit: "50mb" })); // allow for larger file chunk upload
 
-            // @ts-expect-error Types definition not updated yet
             expressApp.use(compression());
 
             if (shouldAttachMorgan)
@@ -212,7 +212,7 @@ export class Server
 
             expressApp.use("/", getMainRouter(logger));
 
-            // @ts-expect-error Types definition not updated yet
+            // @ts-expect-error ExpressJS types not updated yet
             expressApp.use(getDefaultErrorHandlerMiddleware(
                 (msg, toFile, toConsole) => logger.logRed(msg, toFile, toConsole)
             ));

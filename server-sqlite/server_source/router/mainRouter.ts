@@ -1,4 +1,5 @@
-import express from 'express';
+// @ts-types="npm:@types/express@5.0.0"
+import express from "npm:express@5.0.1";
 import { EnvManager } from '../env.ts';
 import devOnlyRouter from './routes/dev.router.ts';
 import userRouter from './routes/users.router.ts';
