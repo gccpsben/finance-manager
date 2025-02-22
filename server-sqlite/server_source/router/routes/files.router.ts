@@ -1,7 +1,7 @@
 import { TypesafeRouter } from "../typescriptRouter.ts";
 import express from 'express';
 import type { GetServerFilesByIdAPI, FilesAppendChunkAPI, FilesInitSessionAPI, GetOngoingFileSessionsAPI, GetServerFilesAPI } from '../../../../api-types/files.d.ts';
-import { IsInt, IsNotEmpty, IsString } from "class-validator";
+import { IsInt, IsNotEmpty, IsString, IsUUID } from "class-validator";
 import { ExpressValidations } from "../validation.ts";
 import { AccessTokenService, InvalidLoginTokenError } from "../../db/services/accessToken.service.ts";
 import createHttpError from "http-errors";
@@ -12,6 +12,7 @@ import { AppendBytesCommitFileIOError, AppendBytesOutOfBoundError, AppendBytesSe
 import path from "node:path";
 import { Buffer } from "node:buffer";
 import { GlobalUserCache } from "../../db/caches/user.cache.ts";
+import { UUID } from "node:crypto";
 
 const router = new TypesafeRouter(express.Router());
 
@@ -94,7 +95,7 @@ router.postBinary<FilesAppendChunkAPI.ResponseDTO>(`/api/v1/files/append`,
         const authResult = await AccessTokenService.validateRequestTokenValidated(req, now);
         if (authResult instanceof InvalidLoginTokenError) throw createHttpError(401);
 
-        class query implements FilesAppendChunkAPI.QueryDTO { @IsString() sessionId!: string }
+        class query implements FilesAppendChunkAPI.QueryDTO { @IsString() @IsUUID() sessionId!: UUID }
         const parsedQuery = await ExpressValidations.validateBodyAgainstModel<query>(query, req.query);
 
         const appendBytesResult = await FilesService.appendBytes(

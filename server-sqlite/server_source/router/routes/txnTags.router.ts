@@ -1,6 +1,6 @@
 import express from 'express';
 import { AccessTokenService, InvalidLoginTokenError } from '../../db/services/accessToken.service.ts';
-import { IsNotEmpty, IsOptional, IsString } from 'class-validator';
+import { IsNotEmpty, IsOptional, IsString, IsUUID } from 'class-validator';
 import { ExpressValidations } from '../validation.ts';
 import { TxnTagService, TxnTagExistsError } from '../../db/services/txnTag.service.ts';
 import { TypesafeRouter } from '../typescriptRouter.ts';
@@ -8,6 +8,7 @@ import type { GetTxnTagsAPI, PostTxnTagsAPI } from '../../../../api-types/txnTag
 import { OptionalPaginationAPIQueryRequest, PaginationAPIResponseClass } from '../pagination.ts';
 import createHttpError from 'http-errors';
 import { UserNotFoundError } from '../../db/services/user.service.ts';
+import { UUID } from "node:crypto";
 
 const router = new TypesafeRouter(express.Router());
 
@@ -21,7 +22,7 @@ router.get<GetTxnTagsAPI.ResponseDTO>(`/api/v1/transactionTags`,
 
         class query extends OptionalPaginationAPIQueryRequest
         {
-            @IsOptional() @IsString() id!: string;
+            @IsOptional() @IsUUID(4) @IsString() id!: UUID;
             @IsOptional() @IsString() name!: string;
         }
 

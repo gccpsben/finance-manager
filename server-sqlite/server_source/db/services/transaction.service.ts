@@ -9,10 +9,11 @@ import { QUERY_IGNORE } from "../../symbols.ts";
 import { Database } from "../db.ts";
 import { CurrencyCache } from "../caches/currencyListCache.cache.ts";
 import { CurrencyRateDatumsCache } from '../caches/currencyRateDatumsCache.cache.ts';
-import { FragmentRaw, nameofF } from "../entities/fragment.entity.ts";
+import { FragmentRaw, keyNameOfFragment } from "../entities/fragment.entity.ts";
 import { QueryRunner } from "typeorm";
 import { DecimalAdditionMapReducer } from "../servicesUtils.ts";
 import { UserCache } from '../caches/user.cache.ts';
+import { UUID } from "node:crypto";
 
 export class FragmentMissingContainerOrCurrency extends MonadError<typeof FragmentMissingContainerOrCurrency.ERROR_SYMBOL>
 {
@@ -23,7 +24,7 @@ export class FragmentMissingContainerOrCurrency extends MonadError<typeof Fragme
         super
         (
             FragmentMissingContainerOrCurrency.ERROR_SYMBOL,
-            `If "${nameofF('fromAmount')}" is given, ${nameofF('fromContainerId')} and ${nameofF('fromCurrencyId')} must also be defined, same for to variant.`
+            `If "${keyNameOfFragment('fromAmount')}" is given, ${keyNameOfFragment('fromContainerId')} and ${keyNameOfFragment('fromCurrencyId')} must also be defined, same for to variant.`
         );
         this.name = this.constructor.name;
     }
@@ -46,7 +47,7 @@ export class FragmentMissingFromToAmountError extends MonadError<typeof Fragment
 
     constructor()
     {
-        super(FragmentMissingFromToAmountError.ERROR_SYMBOL, `"${nameofF('fromAmount')}" and ${nameofF('toAmount')} cannot be both undefined.`);
+        super(FragmentMissingFromToAmountError.ERROR_SYMBOL, `"${keyNameOfFragment('fromAmount')}" and ${keyNameOfFragment('toAmount')} cannot be both undefined.`);
         this.name = this.constructor.name;
     }
 }
@@ -118,15 +119,15 @@ export class TransactionService
      */
     public static async validateTransaction
     (
-        userId: string,
+        userId: UUID,
         obj:
         {
             title: string,
             creationDate: number,
             description: string,
             fragments: Omit<FragmentRaw, 'id'>[],
-            txnTagIds: string[],
-            files: string[]
+            txnTagIds: UUID[],
+            files: UUID[]
         },
         currencyListCache: CurrencyCache | null,
         userCache: UserCache | null
@@ -136,8 +137,8 @@ export class TransactionService
             creationDate: number,
             description: string,
             fragments: FragmentRaw[],
-            txnTagIds: string[],
-            fileIds: string[]
+            txnTagIds: UUID[],
+            fileIds: UUID[]
         } |
         UserNotFoundError |
         TxnTagNotFoundError |
@@ -207,7 +208,7 @@ export class TransactionService
             tnxTagObjs.push(txnTag);
         }
 
-        const fileObjs: string[] = [];
+        const fileObjs: UUID[] = [];
         for (const fileId of obj.files)
         {
             // TODO: Use repo + get single file instead
@@ -283,16 +284,16 @@ export class TransactionService
      */
     public static async getTxnIncreaseInValue
     (
-        userId: string,
+        userId: UUID,
         transaction:
         {
             fragments: {
                 fromAmount: string | null;
-                fromContainerId: string | null;
-                fromCurrencyId: string | null;
+                fromContainerId: UUID | null;
+                fromCurrencyId: UUID | null;
                 toAmount: string | null;
-                toContainerId: string | null;
-                toCurrencyId: string | null;
+                toContainerId: UUID | null;
+                toCurrencyId: UUID | null;
             }[],
             creationDate: number
         },
@@ -307,7 +308,7 @@ export class TransactionService
         if (userFetchResult === null) return new UserNotFoundError(userId);
         const currRepo = Database.getCurrencyRepository()!;
 
-        const getRate = async (currencyId: string) =>
+        const getRate = async (currencyId: UUID) =>
         {
             const currencyRate = await (async () =>
             {
@@ -375,16 +376,16 @@ export class TransactionService
 
     public static async createTransaction
     (
-        userId: string,
+        userId: UUID,
         obj:
         {
             title: string,
             creationDate: number,
             description: string,
             fragments: Omit<FragmentRaw, 'id'>[],
-            txnTagIds: string[],
+            txnTagIds: UUID[],
             excludedFromIncomesExpenses: boolean,
-            files: string[]
+            files: UUID[]
         },
         queryRunner: QueryRunner,
         currencyListCache: CurrencyCache | null,
@@ -425,17 +426,17 @@ export class TransactionService
 
     public static async updateTransaction
     (
-        userId: string,
-        targetTxnId: string,
+        userId: UUID,
+        targetTxnId: UUID,
         obj:
         {
             title: string,
             creationDate: number,
             description: string,
             fragments: Omit<FragmentRaw, 'id'>[],
-            txnTagIds: string[],
+            txnTagIds: UUID[],
             excludedFromIncomesExpenses: boolean,
-            files: string[]
+            files: UUID[]
         },
         queryRunner: QueryRunner,
         currencyListCache: CurrencyCache | null,

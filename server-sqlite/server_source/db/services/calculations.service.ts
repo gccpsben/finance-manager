@@ -15,6 +15,7 @@ import { ContainerNotFoundError } from "./container.service.ts";
 import { LinearInterpolatorVirtual } from "../../calculations/linearInterpolatorVirtual.ts";
 import { DecimalAdditionMapReducer, reverseMap } from "../servicesUtils.ts";
 import { UserCache } from '../caches/user.cache.ts';
+import { UUID } from "node:crypto";
 
 /** An object that represents a query of a time range. */
 export type TimeRangeQuery =
@@ -64,8 +65,8 @@ export class CalculationsService
      */
     public static async getContainersBalanceHistory
     (
-        userId: string,
-        containerIds: string[],
+        userId: UUID,
+        containerIds: UUID[],
         skipContainerCheck = false
     ): Promise<{ [contId: string]: ContainerBalanceTimelineEntry[] } | ContainerNotFoundError>
     {
@@ -142,8 +143,8 @@ export class CalculationsService
      */
     public static async getContainersWorthHistory
     (
-        userId: string,
-        containerIds: string[],
+        userId: UUID,
+        containerIds: UUID[],
         currencyRateDatumsCache: CurrencyRateDatumsCache | null,
         currencyToBaseRateCache: CurrencyToBaseRateCache | null,
         currencyCache: CurrencyCache | null,
@@ -191,7 +192,7 @@ export class CalculationsService
      */
     public static async getExpensesAndIncomesOfTimeRanges
     (
-        userId: string,
+        userId: UUID,
         queryLines: { [queryName: string]: TimeRangeQuery },
         nowEpoch: number,
         currencyRateDatumsCache: CurrencyRateDatumsCache | null,
@@ -279,7 +280,7 @@ export class CalculationsService
      * The resulting map will have exactly ``division`` count of entires.
      * The first entry will be the startDate, and the last entry will be the endDate.
      */
-    public static async getUserBalanceHistory(userId: string, startDate: number, endDate: number, division: number):
+    public static async getUserBalanceHistory(userId: UUID, startDate: number, endDate: number, division: number):
         Promise<UserBalanceHistoryResults | ArgsComparisonError<number> | ConstantComparisonError<number>>
     {
         if (startDate >= endDate)
@@ -345,7 +346,7 @@ export class CalculationsService
 
     public static async getUserNetworthHistory
     (
-        userId: string,
+        userId: UUID,
         startDate: number,
         endDate: number,
         division: number,
@@ -367,7 +368,7 @@ export class CalculationsService
         if (balanceHistory instanceof ArgsComparisonError) return balanceHistory;
         if (balanceHistory instanceof ConstantComparisonError) return balanceHistory;
         const currenciesInterpolators: cInterpolatorMap = {};
-        const getInterpolatorForCurrency = async (cId: string) =>
+        const getInterpolatorForCurrency = async (cId: UUID) =>
         {
             const interpolator = unwrap(await CurrencyCalculator.getCurrencyToBaseRateInterpolator
             (
@@ -392,7 +393,7 @@ export class CalculationsService
             {
                 const currencyObject = await currRepo.findCurrencyByIdNameTickerOne(
                     userId,
-                    currencyID,
+                    currencyID as UUID,
                     QUERY_IGNORE,
                     QUERY_IGNORE,
                     currencyCache
@@ -406,7 +407,7 @@ export class CalculationsService
 
                     // If not available, load the entire interpolator and use the interpolator output.
                     if (!currenciesInterpolators[currencyID])
-                        currenciesInterpolators[currencyID] = await getInterpolatorForCurrency(currencyID);
+                        currenciesInterpolators[currencyID] = await getInterpolatorForCurrency(currencyID as UUID);
                     return await currenciesInterpolators[currencyID].getValue(new Decimal(epoch));
                 })();
 

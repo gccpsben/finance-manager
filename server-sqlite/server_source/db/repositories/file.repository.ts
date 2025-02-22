@@ -3,6 +3,7 @@ import { MeteredRepository } from "../meteredRepository.ts";
 import { File } from "../entities/file.entity.ts";
 import { QueryRunner } from "typeorm/browser";
 import { panic } from "../../std_errors/monadError.ts";
+import { UUID } from "node:crypto";
 
 export class FileRepository extends MeteredRepository
 {
@@ -16,7 +17,7 @@ export class FileRepository extends MeteredRepository
         this.#repository = this.#dataSource.getRepository(File);
     }
 
-    public async getUserFiles(userId: string)
+    public async getUserFiles(userId: UUID)
     {
         const results = await this.#repository.find({
             where: {
@@ -31,7 +32,7 @@ export class FileRepository extends MeteredRepository
     }
 
     public async saveNewFile(
-        userId: string,
+        userId: UUID,
         fileNameReadable: string,
         queryRunner: QueryRunner
     )

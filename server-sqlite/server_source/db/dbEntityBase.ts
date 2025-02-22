@@ -1,5 +1,5 @@
 import { validate } from "class-validator";
-import { BeforeInsert, BeforeUpdate } from "typeorm";
+import { BeforeInsert, BeforeUpdate, ValueTransformer } from "typeorm";
 import { InternalValidationError } from "../router/validation.ts";
 import { ExtendedLogger } from "../debug/extendedLog.ts";
 import { randomUUID } from "node:crypto";
@@ -31,3 +31,12 @@ export class EntityClass
         }
     }
 }
+
+export const BigIntNumberTransformer =
+{
+    from(databaseType: unknown | null) {
+        return (databaseType === undefined || databaseType === null) ? null : parseInt(`${databaseType}`); },
+    to(entityType: unknown | null)  {
+        return (entityType === undefined || entityType === null) ? null : entityType
+    }
+} satisfies ValueTransformer;

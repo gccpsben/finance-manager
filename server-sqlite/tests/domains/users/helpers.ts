@@ -70,25 +70,33 @@ export namespace AuthHelpers
         { port: number, usersCreds: TestUserEntry[] }
     )
     {
-        const usernameToTokenMap: { [name: string]: string } = {};
-        for (const user of usersCreds)
+        try
         {
-            await createPostUserFunc()
-            ({
-                token: undefined,
-                asserts: 'default',
-                body: ['EXPECTED', { username: user.username, password: user.password }]
-            });
+            const usernameToTokenMap: { [name: string]: string } = {};
+            for (const user of usersCreds)
+            {
+                await createPostUserFunc()
+                ({
+                    token: undefined,
+                    asserts: 'default',
+                    body: ['EXPECTED', { username: user.username, password: user.password }]
+                });
 
-            const loginResponse = await createLoginToUserFunc()
-            ({
-                token: undefined,
-                body: ['EXPECTED', { username: user.username, password: user.password }],
-                asserts: 'default'
-            });
-            usernameToTokenMap[user.username] = loginResponse.parsedBody!.token;
+                const loginResponse = await createLoginToUserFunc()
+                ({
+                    token: undefined,
+                    body: ['EXPECTED', { username: user.username, password: user.password }],
+                    asserts: 'default'
+                });
+                usernameToTokenMap[user.username] = loginResponse.parsedBody!.token;
+            }
+            return usernameToTokenMap;
         }
-        return usernameToTokenMap;
+        catch(e: unknown)
+        {
+            console.log(`Error during registerMockUsersArray(), port: ${port}, usersCreds: ${JSON.stringify(usersCreds)}`);
+            throw e;
+        }
     }
 }
 
@@ -101,6 +109,6 @@ export const createPostUserFunc = () =>
         {
             bodyType: PostUserAPIClass.ResponseDTO,
             status: 200
-        }
+        },
     )
 };

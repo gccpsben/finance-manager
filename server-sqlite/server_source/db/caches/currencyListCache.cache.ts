@@ -1,10 +1,11 @@
 import NodeCache from "node-cache";
 import { CacheBase } from "../cacheBase.ts";
+import { UUID } from "node:crypto";
 
 export type CurrencyCacheEntry = {
-    id: string,
-    ownerId: string,
-    fallbackRateCurrencyId: string | undefined,
+    id: UUID,
+    ownerId: UUID,
+    fallbackRateCurrencyId: UUID | undefined,
     fallbackRateAmount: string | undefined,
     isBase: boolean,
     ticker: string

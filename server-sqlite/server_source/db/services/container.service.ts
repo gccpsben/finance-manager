@@ -10,6 +10,7 @@ import { QUERY_IGNORE } from "../../symbols.ts";
 import { CurrencyRateDatumsCache } from '../caches/currencyRateDatumsCache.cache.ts';
 import { reverseMap } from "../servicesUtils.ts";
 import { UserCache } from '../caches/user.cache.ts';
+import { UUID } from "node:crypto";
 
 export class ContainerNotFoundError extends MonadError<typeof ContainerNotFoundError.ERROR_SYMBOL>
 {
@@ -42,8 +43,8 @@ export class ContainerExistsError extends MonadError<typeof ContainerExistsError
 
 export class ContainerService
 {
-    public static async createContainer(ownerId: string, name: string, creationDate: number = Date.now())
-    : Promise<{id: string, name: string, creationDate: number} | UserNotFoundError | ContainerExistsError>
+    public static async createContainer(ownerId: UUID, name: string, creationDate: number = Date.now())
+    : Promise<{id: UUID, name: string, creationDate: number} | UserNotFoundError | ContainerExistsError>
     {
         const contRepo = Database.getContainerRepository()!;
 
@@ -62,15 +63,15 @@ export class ContainerService
 
     public static async getContainersBalance
     (
-        ownerId: string,
-        containers: { id: string }[] | string[]
+        ownerId: UUID,
+        containers: { id: UUID }[] | UUID[]
     )
     {
         const relevantTxns = await Database.getTransactionRepository()!.getContainersTransactions(ownerId, containers);
         const containersBalancesMapping = (() =>
         {
-            const output: { [containerId: string]: { [currencyId: string]: Decimal } } = {};
-            const append = (containerId: string, currencyId:string, amount: string, isNegative = false) =>
+            const output: { [containerId: UUID]: { [currencyId: UUID]: Decimal } } = {};
+            const append = (containerId: UUID, currencyId:UUID, amount: string, isNegative = false) =>
             {
                 const deltaAmount = isNegative ? new Decimal(amount).neg() : new Decimal(amount);
                 if (output[containerId] === undefined) output[containerId] = {};
@@ -98,8 +99,8 @@ export class ContainerService
 
     public static async valueHydrateContainers
     (
-        ownerId: string,
-        containers: { id: string }[] | string[],
+        ownerId: UUID,
+        containers: { id: UUID }[] | UUID[],
         currencyRateDateToUse: number | undefined = undefined,
         currencyRateDatumsCache: CurrencyRateDatumsCache | null,
         currencyToBaseRateCache: CurrencyToBaseRateCache | null,
@@ -119,9 +120,9 @@ export class ContainerService
         // The list of currency ids that are present in `containerBalances`
         const relevantCurrencyIds = Array.from((() =>
         {
-            const currencyIds: string[] = [];
+            const currencyIds: UUID[] = [];
             for (const [_, balances] of Object.entries(containerBalances))
-                currencyIds.push(...Object.keys(balances));
+                currencyIds.push(...Object.keys(balances) as UUID[]);
             return new Set([...currencyIds]);
         })());
 

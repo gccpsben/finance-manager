@@ -1,9 +1,10 @@
 import argon2 from "argon2";
 import { UserRepository } from "../repositories/user.repository.ts";
-import { nameofU } from "../entities/user.entity.ts";
+import { keyNameOfUser } from "../entities/user.entity.ts";
 import { MonadError } from "../../std_errors/monadError.ts";
 import { Database } from "../db.ts";
 import { UserCache } from '../caches/user.cache.ts';
+import { UUID } from "node:crypto";
 
 export class UserNotFoundError extends MonadError<typeof UserNotFoundError.ERROR_SYMBOL>
 {
@@ -34,7 +35,7 @@ export class UserNameTakenError extends MonadError<typeof UserNotFoundError.ERRO
 export class UserService
 {
     public static async getUserById(
-        userId: string,
+        userId: UUID,
         cache: UserCache | null
     )
     {
@@ -53,14 +54,14 @@ export class UserService
         const result = await UserRepository
         .getInstance()
         .createQueryBuilder('user')
-        .where(`user.${nameofU('id')} = :id`, { id: userId })
+        .where(`"user".${keyNameOfUser('id')} = :id`, { id: userId })
         .getOne() ?? null;
 
         if (result !== null && !!cache)
             cache.cacheUser({ id: result.id, name: result.username });
 
         return result === null ? null : {
-            id: result.id,
+            id: result.id as UUID,
             username: result.username
         };
     }
@@ -73,12 +74,12 @@ export class UserService
     }
 
     public static async tryDeleteUser(
-        userId: string,
+        userId: UUID,
         cache: UserCache | null
     ): Promise<{successful: boolean, userFound: boolean}>
     {
         cache?.invalidateUser(userId);
-        const targetUser = await UserRepository.getInstance().findOne({where: { id: userId }});
+        const targetUser = await UserRepository.getInstance().findOne({ where: { id: userId } });
         if (targetUser === null) return { successful: false, userFound: false };
         await Database.getAccessTokenRepository()!.deleteTokensOfUser(targetUser.id); // delete access tokens
         await UserRepository.getInstance().delete({ id: userId });

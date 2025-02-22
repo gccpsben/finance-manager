@@ -1,13 +1,14 @@
 import NodeCache from "node-cache";
 import { CacheBase } from "../cacheBase.ts";
+import { UUID } from "node:crypto";
 
 export type CurrencyRateDatumsCacheEntry =
 {
-    id: string,
+    id: UUID,
     amount: string,
-    refCurrencyId: string,
-    refAmountCurrencyId: string,
-    ownerId: string,
+    refCurrencyId: UUID,
+    refAmountCurrencyId: UUID,
+    ownerId: UUID,
     date: number
 };
 
@@ -15,15 +16,15 @@ export class CurrencyRateDatumsCache extends CacheBase
 {
     #nodeCache = new NodeCache( { stdTTL: 50, checkperiod: 5, useClones: false } );
 
-    public makeEntryKey(userId: string, currencyId: string)
+    public makeEntryKey(userId: UUID, currencyId: UUID)
     {
         return `${userId}-${currencyId}`;
     }
 
     public cacheRateDatums
     (
-        userId: string,
-        currencyId: string,
+        userId: UUID,
+        currencyId: UUID,
         datums: CurrencyRateDatumsCacheEntry[]
     )
     {
@@ -32,8 +33,8 @@ export class CurrencyRateDatumsCache extends CacheBase
 
     public invalidateRateDatums
     (
-        userId: string,
-        currencyId: string
+        userId: UUID,
+        currencyId: UUID
     )
     {
         this.#nodeCache.del(this.makeEntryKey(userId, currencyId));
@@ -41,8 +42,8 @@ export class CurrencyRateDatumsCache extends CacheBase
 
     public queryRateDatums
     (
-        userId: string,
-        currencyId: string
+        userId: UUID,
+        currencyId: UUID
     ): CurrencyRateDatumsCacheEntry[] | undefined
     {
         const result = this.#nodeCache.get(this.makeEntryKey(userId, currencyId));
@@ -53,8 +54,8 @@ export class CurrencyRateDatumsCache extends CacheBase
 
     public findTwoNearestDatum
     (
-        userId: string,
-        currencyId: string,
+        userId: UUID,
+        currencyId: UUID,
         date: Date | number
     )
     {

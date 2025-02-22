@@ -2,7 +2,7 @@ import express from 'express';
 import { AccessTokenService, InvalidLoginTokenError } from '../../db/services/accessToken.service.ts';
 import { CurrencyNameTakenError, CurrencyNotFoundError, CurrencyRefCurrencyIdAmountTupleError, CurrencyService, CurrencyTickerTakenError } from '../../db/services/currency.service.ts';
 import { Decimal } from 'decimal.js';
-import { IsNumberString, IsOptional, IsString } from 'class-validator';
+import { IsNumberString, IsOptional, IsString, IsUUID } from 'class-validator';
 import { ExpressValidations } from '../validation.ts';
 import { IsDecimalJSString, IsIntString } from '../../db/validators.ts';
 import createHttpError from 'http-errors';
@@ -17,6 +17,7 @@ import { GlobalCurrencyToBaseRateCache } from '../../db/caches/currencyToBaseRat
 import { GlobalCurrencyCache } from '../../db/caches/currencyListCache.cache.ts';
 import { GlobalCurrencyRateDatumsCache } from '../../db/caches/currencyRateDatumsCache.cache.ts';
 import { GlobalUserCache } from "../../db/caches/user.cache.ts";
+import { UUID } from "node:crypto";
 
 const router = new TypesafeRouter(express.Router());
 
@@ -32,7 +33,7 @@ router.post<PostCurrencyAPI.ResponseDTO>(`/api/v1/currencies`,
         {
             @IsString() name!: string;
             @IsOptional() @IsString() @IsDecimalJSString() fallbackRateAmount!: string | null;
-            @IsOptional() @IsString() fallbackRateCurrencyId!: string | null;
+            @IsOptional() @IsUUID(4) @IsString() fallbackRateCurrencyId!: UUID | null;
             @IsString() ticker!: string;
         }
 
@@ -68,7 +69,7 @@ router.get<GetCurrencyAPI.ResponseDTO>(`/api/v1/currencies`,
         class query extends OptionalPaginationAPIQueryRequest
         {
             @IsOptional() @IsString() name!: string;
-            @IsOptional() @IsString() id!: string;
+            @IsOptional() @IsUUID(4) @IsString() id!: UUID;
             /** Which date should the rate of this currency be calculated against */
             @IsOptional() @IsNumberString() date!: string;
         }
@@ -142,7 +143,7 @@ router.get<GetCurrencyRateHistoryAPI.ResponseDTO>(`/api/v1/currencies/history`,
 
         class query implements GetCurrencyRateHistoryAPI.RequestQueryDTO
         {
-            @IsString() id!: string;
+            @IsString() @IsUUID(4) id!: UUID;
             @IsOptional() @IsIntString() division!: string;
             @IsOptional() @IsIntString() startDate?: string;
             @IsOptional() @IsIntString() endDate?: string;

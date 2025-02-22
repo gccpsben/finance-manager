@@ -8,24 +8,25 @@ import { Currency } from "./currency.entity.ts";
 import { Container } from "./container.entity.ts";
 import { Transaction } from "./transaction.entity.ts";
 import { nameof } from "../servicesUtils.ts";
+import { UUID } from "node:crypto";
 
 @Entity()
 @Check
 (
     "[fromAmount, fromCurrencyId, fromContainerId] must either be all defined, or not defined",
     /*sql*/`
-    CASE WHEN fromAmount IS NOT NULL
-        THEN (fromCurrencyId IS NOT NULL) AND (fromContainerId IS NOT NULL)
-        ELSE (fromCurrencyId IS NULL) AND (fromContainerId IS NULL)
+    CASE WHEN "fromAmount" IS NOT NULL
+        THEN ("fromCurrencyId" IS NOT NULL) AND ("fromContainerId" IS NOT NULL)
+        ELSE ("fromCurrencyId" IS NULL) AND ("fromContainerId" IS NULL)
     END`
 )
 @Check
 (
     "[toAmount, toCurrencyId, toContainerId] must either be all defined, or not defined",
     /*sql*/`
-    CASE WHEN toAmount IS NOT NULL
-        THEN toCurrencyId IS NOT NULL AND toContainerId IS NOT NULL
-        ELSE toCurrencyId IS NULL AND toContainerId IS NULL
+    CASE WHEN "toAmount" IS NOT NULL
+        THEN "toCurrencyId" IS NOT NULL AND "toContainerId" IS NOT NULL
+        ELSE "toCurrencyId" IS NULL AND "toContainerId" IS NULL
     END`
 )
 @Check
@@ -34,8 +35,8 @@ import { nameof } from "../servicesUtils.ts";
     // db is saved too many times. Have to use CASE to tame the TypeORM sync
     "[fromAmount] must be defined if [toAmount] is not defined.",
     /*sql*/`
-    CASE WHEN toAmount IS NULL
-        THEN fromAmount IS NOT NULL
+    CASE WHEN "toAmount" IS NULL
+        THEN "fromAmount" IS NOT NULL
     END`
 )
 @Check
@@ -44,17 +45,17 @@ import { nameof } from "../servicesUtils.ts";
     // db is saved too many times. Have to use CASE to tame the TypeORM sync
     "[toAmount] must be defined if [fromAmount] is not defined.",
     /*sql*/`
-    CASE WHEN fromAmount IS NULL
-        THEN toAmount IS NOT NULL
+    CASE WHEN "fromAmount" IS NULL
+        THEN "toAmount" IS NOT NULL
     END`
 )
 export class Fragment extends EntityClass
 {
-    @PrimaryGeneratedColumn("uuid")
-    id!: string;
+    @PrimaryGeneratedColumn('uuid')
+    id!: UUID;
 
-    @Column({nullable: false, type: "varchar"})
-    parentTxnId!: string;
+    @Column({nullable: false, type: "varchar", name: 'parentTxnId'})
+    parentTxnId!: UUID;
 
     @JoinColumn({ name: "parentTxnId" })
     @EnsureNotPlainForeignKey()
@@ -62,22 +63,22 @@ export class Fragment extends EntityClass
     parentTxn!: Relation<Transaction>;
 
     // #region From
-    @Column( { nullable: true, type: "varchar" } )
+    @Column( { nullable: true, type: "varchar", name: 'fromAmount' } )
     @IsOptional()
     @IsString()
     @IsDecimalJSString()
     fromAmount!: string | null;
 
-    @Column({nullable: true, type: "varchar"})
-    fromCurrencyId!: string | null;
+    @Column({nullable: true, type: "varchar", name: 'fromCurrencyId'})
+    fromCurrencyId!: UUID | null;
 
     @JoinColumn({ name: "fromCurrencyId" })
     @EnsureNotPlainForeignKey()
     @ManyToOne(_type => Currency, { nullable: true })
     fromCurrency!: Relation<Currency> | null;
 
-    @Column({nullable: true, type: "varchar"})
-    fromContainerId!: string | null;
+    @Column({nullable: true, type: "varchar", name: 'fromContainerId'})
+    fromContainerId!: UUID | null;
 
     @JoinColumn({ name: "fromContainerId" })
     @EnsureNotPlainForeignKey()
@@ -86,22 +87,22 @@ export class Fragment extends EntityClass
     // #endregion
 
     // #region To
-    @Column( { nullable: true, type: "varchar" } )
+    @Column( { nullable: true, type: "varchar", name: 'toAmount' } )
     @IsOptional()
     @IsString()
     @IsDecimalJSString()
     toAmount!: string | null;
 
-    @Column({nullable: true, type: "varchar"})
-    toCurrencyId!: string | null;
+    @Column({nullable: true, type: "varchar", name: 'toCurrencyId'})
+    toCurrencyId!: UUID | null;
 
     @JoinColumn({ name: "toCurrencyId" })
     @EnsureNotPlainForeignKey()
     @ManyToOne(_type => Currency, { nullable: true })
     toCurrency!: Relation<Currency> | null;
 
-    @Column({nullable: true, type: "varchar"})
-    toContainerId!: string | null;
+    @Column({nullable: true, type: "varchar", name: 'toContainerId'})
+    toContainerId!: UUID | null;
 
     @JoinColumn({ name: "toContainerId" })
     @EnsureNotPlainForeignKey()
@@ -109,8 +110,8 @@ export class Fragment extends EntityClass
     toContainer!: Relation<Container> | null;
     // #endregion
 
-    @Column( { nullable: false, type: "varchar" })
-    ownerId!: string;
+    @Column( { nullable: false, type: "varchar", name: 'ownerId' })
+    ownerId!: UUID;
 
     @ManyToOne(_type => User, user => user.tags)
     @EnsureNotPlainForeignKey()
@@ -120,11 +121,11 @@ export class Fragment extends EntityClass
 export type FragmentRaw =
 {
     fromAmount: string | null,
-    fromContainerId: string | null,
-    fromCurrencyId: string | null,
+    fromContainerId: UUID | null,
+    fromCurrencyId: UUID | null,
     toAmount: string | null,
-    toContainerId: string | null,
-    toCurrencyId: string | null,
+    toContainerId: UUID | null,
+    toCurrencyId: UUID | null,
 };
 
-export const nameofF = (x: keyof Fragment) => nameof<Fragment>(x);
+export const keyNameOfFragment = (x: keyof Fragment) => `${nameof<Fragment>(x)}`;

@@ -1,6 +1,7 @@
 import { ClassConstructor, plainToInstance } from "class-transformer";
 import { validate, ValidationError, ValidationOptions } from "class-validator";
 import { assertEquals } from "@std/assert/equals";
+import { randomUUID } from "node:crypto";
 
 export type HTTPMethod = "GET" | "OPTIONS" | "POST" | "PUT" | "PATCH" | "DELETE" | "HEAD";
 export type ValidationSuccessResult<T extends object> = { isSuccess: true, parsedObj: T };
@@ -103,12 +104,15 @@ export async function assertFetchJSONNew<ExpectedBodyType extends object>
             if (req.headers.mode === 'POST_MERGE') return { ...jsonHeaders, ...req.headers.value }
             return { ...req.headers.value, ...jsonHeaders }
         })(),
+        body: JSON.stringify(req.body),
         ...req.init
     };
 
-    if (req.body) init.body = JSON.stringify(req.body);
+    const reqId = randomUUID();
+    console.log(`[${reqId}] Fetching URL:"${req.url}" with Init:"${JSON.stringify(init)}"`);
     const response = await fetch(req.url, init);
     const rawBodyJSON = await response.json();
+    console.log(`[${reqId}] Got Raw Body: ${JSON.stringify(rawBodyJSON)}`);
 
     if (asserts?.status)
         assertEquals(response.status, asserts.status, `Expected response to have status ${asserts.status}`);

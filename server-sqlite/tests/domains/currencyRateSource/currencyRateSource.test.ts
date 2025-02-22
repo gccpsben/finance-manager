@@ -6,6 +6,7 @@ import { assertEquals } from 'jsr:@std/assert/equals';
 import { createPostBaseCurrencyFunc, createPostCurrencyFunc } from "../currency/helpers.ts";
 import { PostCurrencyRateSrcAPI } from "../../../../api-types/currencyRateSource.d.ts";
 import { createGetRateSourceByIdFunc, createGetRateSourcesByCurrencyFunc, createPostCurrencyRateSourceFunc } from "./helpers.ts";
+import { randomUUID } from 'node:crypto';
 
 Deno.test(
 {
@@ -17,14 +18,11 @@ Deno.test(
 
         const firstUser = Object.values((await AuthHelpers.registerRandMockUsers({port: port!, userCount: 1})))[0];
 
-        // TODO: Should be 404
-        const response = await createGetRateSourcesByCurrencyFunc('an unknown cid')
+        await createGetRateSourcesByCurrencyFunc('an unknown cid')
         ({
             token: firstUser.token!,
-            asserts: 'default'
+            asserts: { status: 400 }
         });
-
-        assertEquals(response.parsedBody?.sources.length, 0);
     },
     sanitizeOps: false,
     sanitizeResources: false
@@ -163,12 +161,17 @@ Deno.test(
             postedSrcId = response.parsedBody!.id;
         });
 
-        await test.step("Getting nonexistence currency", async () =>
+        await test.step("Getting nonexistence currency (invalid uuid)", async () =>
         {
-            const response = await createGetRateSourcesByCurrencyFunc(secondCurrency.parsedBody!.id + "_")
+            await createGetRateSourcesByCurrencyFunc(secondCurrency.parsedBody!.id + "_")
+            ({ token: firstUser.token!, asserts: { status: 400 } });
+        });
+
+        await test.step("Getting nonexistence currency (valid uuid)", async () =>
+        {
+            const response = await createGetRateSourcesByCurrencyFunc(randomUUID())
             ({ token: firstUser.token!, asserts: 'default' });
 
-            // TODO: Should return 404, not just empty array
             assertEquals(response.parsedBody?.sources, []);
         });
 

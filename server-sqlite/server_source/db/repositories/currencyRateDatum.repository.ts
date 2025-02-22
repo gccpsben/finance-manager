@@ -1,5 +1,5 @@
 import { DataSource, QueryRunner, Repository } from "typeorm";
-import { CurrencyRateDatum, nameofCRD } from "../entities/currencyRateDatum.entity.ts";
+import { CurrencyRateDatum, keyNameOfCurrencyRateDatum } from "../entities/currencyRateDatum.entity.ts";
 import { Database } from "../db.ts";
 import { CurrencyRateDatumsCache } from "../caches/currencyRateDatumsCache.cache.ts";
 import { panic } from "../../std_errors/monadError.ts";
@@ -9,6 +9,7 @@ import { UserNotFoundError } from "../services/user.service.ts";
 import { QUERY_IGNORE } from "../../symbols.ts";
 import { CurrencyCache } from "../caches/currencyListCache.cache.ts";
 import { MeteredRepository } from "../meteredRepository.ts";
+import { UUID } from "node:crypto";
 
 export class CurrencyRateDatumRepository extends MeteredRepository
 {
@@ -22,8 +23,8 @@ export class CurrencyRateDatumRepository extends MeteredRepository
      */
     public async findNearestTwoDatum
     (
-        userId: string,
-        currencyId: string, date: number,
+        userId: UUID,
+        currencyId: UUID, date: number,
         cache: CurrencyRateDatumsCache | null
     )
     {
@@ -31,24 +32,26 @@ export class CurrencyRateDatumRepository extends MeteredRepository
         if (cachedTwoDatums !== undefined) return cachedTwoDatums;
 
         let query = this.#repository.createQueryBuilder(`datum`);
-        query = query.where(`ownerId = :ownerId`, { ownerId: userId ?? null });
-        query = query.andWhere(`refCurrencyId = :refCurrencyId`, { refCurrencyId: currencyId ?? null });
+        query = query.where(`${keyNameOfCurrencyRateDatum('ownerId')} = :ownerId`, { ownerId: userId ?? null });
+        query = query.andWhere(`${keyNameOfCurrencyRateDatum('refCurrencyId')} = :refCurrencyId`, { refCurrencyId: currencyId ?? null });
         query = query.setParameter("_target_date_", date);
-        query = query.select(`abs(datum.date - :_target_date_)`, `difference`);
+        query = query.select(`abs(datum.${keyNameOfCurrencyRateDatum('date')} - :_target_date_)`, `difference`);
         query = query.orderBy("difference", 'ASC');
         query = query.addSelect("*");
 
         this.incrementRead();
-        const results = await query.getRawMany() as
+        const results = (await query.getRawMany()).map(item =>
         {
-            difference: number,
-            id: string,
-            amount: string,
-            refCurrencyId: string,
-            refAmountCurrencyId: string,
-            ownerId: string,
-            date: number
-        }[];
+            const date = parseInt(item.date as string);
+            return {
+                amount: item.amount as string,
+                date: date,
+                id: item.id as UUID,
+                ownerId: item.ownerId as UUID,
+                refAmountCurrencyId: item.refAmountCurrencyId as UUID,
+                refCurrencyId: item.refCurrencyId as UUID
+            }
+        });
 
         cache?.cacheRateDatums(userId, currencyId, results);
         return results.slice(0,2);
@@ -56,8 +59,8 @@ export class CurrencyRateDatumRepository extends MeteredRepository
 
     public async getCurrencyDatums
     (
-        userId:string,
-        currencyId: string,
+        userId:UUID,
+        currencyId: UUID,
         startDate: number | undefined = undefined,
         endDate: number | undefined = undefined,
         currencyDateDatumsCache: CurrencyRateDatumsCache | null
@@ -77,11 +80,11 @@ export class CurrencyRateDatumRepository extends MeteredRepository
 
         let query = this.#repository
         .createQueryBuilder(`datum`)
-        .where(`${nameofCRD('ownerId')} = :ownerId`, { ownerId: userId ?? null });
-        query = query.andWhere(`${nameofCRD('refCurrencyId')} = :refCurrencyId`, { refCurrencyId: currencyId ?? null });
+        .where(`${keyNameOfCurrencyRateDatum('ownerId')} = :ownerId`, { ownerId: userId ?? null });
+        query = query.andWhere(`${keyNameOfCurrencyRateDatum('refCurrencyId')} = :refCurrencyId`, { refCurrencyId: currencyId ?? null });
         query = query.addSelect("*");
-        if (startDate) query = query.andWhere(`${nameofCRD('date')} >= :startDate`, { startDate: startDate });
-        if (endDate) query = query.andWhere(`${nameofCRD('date')} <= :endDate`, { endDate: endDate });
+        if (startDate) query = query.andWhere(`${keyNameOfCurrencyRateDatum('date')} >= :startDate`, { startDate: startDate });
+        if (endDate) query = query.andWhere(`${keyNameOfCurrencyRateDatum('date')} <= :endDate`, { endDate: endDate });
 
         this.incrementRead();
         const results = await query.getMany();
@@ -113,11 +116,11 @@ export class CurrencyRateDatumRepository extends MeteredRepository
     (
         datums:
         {
-            userId: string,
+            userId: UUID,
             amount: string,
             date: number,
-            currencyId: string,
-            amountCurrencyId: string
+            currencyId: UUID,
+            amountCurrencyId: UUID
         }[],
         queryRunner: QueryRunner,
         currencyRateDatumsCache: CurrencyRateDatumsCache | null,
@@ -126,23 +129,15 @@ export class CurrencyRateDatumRepository extends MeteredRepository
     ): Promise<{
             amount: string,
             date: number,
-            id: string,
-            ownerId: string,
-            refAmountCurrencyId: string,
-            refCurrencyId: string
+            id: UUID,
+            ownerId: UUID,
+            refAmountCurrencyId: UUID,
+            refCurrencyId: UUID
         }[] | UserNotFoundError | CurrencyNotFoundError>
     {
-        const savedDatums: {
-            amount: string,
-            date: number,
-            id: string,
-            ownerId: string,
-            refAmountCurrencyId: string,
-            refCurrencyId: string
-        }[] = [];
-
         const currRepo = Database.getCurrencyRepository()!;
 
+        const datumsToBeSaved: CurrencyRateDatum[] = [];
         for (const datum of datums)
         {
             currencyRateDatumsCache?.invalidateRateDatums(datum.userId, datum.currencyId);
@@ -162,22 +157,26 @@ export class CurrencyRateDatumRepository extends MeteredRepository
 
             newRate.refCurrencyId = refCurrency.id;
             newRate.refAmountCurrencyId = refAmountCurrency.id;
-
-            this.incrementWrite();
-            const newlySavedDatum = await this.#repository.save(newRate);
-            if (!newlySavedDatum.id) throw panic(`Newly saved currency rate datum contains falsy IDs.`);
-
-            savedDatums.push({
-                amount: newlySavedDatum.amount,
-                date: newlySavedDatum.date,
-                id: newlySavedDatum.id,
-                ownerId: newlySavedDatum.ownerId,
-                refAmountCurrencyId: newlySavedDatum.refAmountCurrencyId,
-                refCurrencyId: newlySavedDatum.refCurrencyId
-            });
+            datumsToBeSaved.push(newRate);
         }
 
-        return savedDatums;
+        this.incrementWrite();
+        const newlySavedDatums = await this.#repository.save(datumsToBeSaved);
+        for (const datum of newlySavedDatums)
+        {
+            if (!datum.id)
+                throw panic(`Newly saved currency rate datum contains falsy IDs.`);
+        }
+
+        return newlySavedDatums.map(datum => (
+        {
+            amount: datum.amount,
+            date: datum.date,
+            id: datum.id!,
+            ownerId: datum.ownerId,
+            refAmountCurrencyId: datum.refAmountCurrencyId,
+            refCurrencyId: datum.refCurrencyId
+        }));
     }
 
     public constructor (datasource: DataSource)

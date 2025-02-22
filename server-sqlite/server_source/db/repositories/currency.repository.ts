@@ -1,14 +1,19 @@
 import { Repository } from "typeorm";
-import { Currency } from "../entities/currency.entity.ts";
-import { CURRENCY_RATE_SOURCE_ENTITY_TABLE_NAME, CurrencyRateSource } from "../entities/currencyRateSource.entity.ts";
+import { Currency, keyNameOfCurrency } from "../entities/currency.entity.ts";
+import { CURRENCY_RATE_SOURCE_ENTITY_TABLE_NAME, CurrencyRateSource, keyNameOfCurrencyRateSource } from "../entities/currencyRateSource.entity.ts";
 import { panic } from "../../std_errors/monadError.ts";
 import { DataSource } from "typeorm/browser";
 import { PATCH_IGNORE, QUERY_IGNORE } from "../../symbols.ts";
-import { nameof, paginateQuery } from "../servicesUtils.ts";
+import { nameof, nameofNoQuote, paginateQuery } from "../servicesUtils.ts";
 import { UserRepository } from "./user.repository.ts";
 import { UserNotFoundError } from "../services/user.service.ts";
 import { CurrencyCache } from "../caches/currencyListCache.cache.ts";
 import { MeteredRepository } from "../meteredRepository.ts";
+import { UUID } from "node:crypto";
+
+// Because of how stupid TypeORM is, double quoted column names don't work well with leftJoinAndSelect.
+// We may hardcode the column names in string, but we also want key-name type checking in Typescript.
+const JOIN_CURR_WITH_REF_CURR_ID_RELATION_NAME = nameofNoQuote<CurrencyRateSource>('refCurrencyId');
 
 export class CurrencyRepository extends MeteredRepository
 {
@@ -37,8 +42,8 @@ export class CurrencyRepository extends MeteredRepository
      */
     public async findCurrencyByIdNameTickerOne
     (
-        ownerId: string,
-        currencyId: string | typeof QUERY_IGNORE,
+        ownerId: UUID,
+        currencyId: UUID | typeof QUERY_IGNORE,
         currencyName: string | typeof QUERY_IGNORE,
         currencyTicker: string | typeof QUERY_IGNORE,
         cache: CurrencyCache | null
@@ -60,7 +65,7 @@ export class CurrencyRepository extends MeteredRepository
         if (cache && currencyId !== QUERY_IGNORE)
         {
             const cacheResult = cache.queryCurrency(ownerId, currencyId);
-            if (!!cacheResult) return makeOutput(cacheResult);
+            if (cacheResult) return makeOutput(cacheResult);
         }
 
         const whereQuery = (() =>
@@ -96,11 +101,11 @@ export class CurrencyRepository extends MeteredRepository
     (
         currencyObj:
         {
-            id: string,
+            id: UUID,
             name: string | typeof PATCH_IGNORE,
             fallbackRateAmount: string | null | typeof PATCH_IGNORE,
-            fallbackRateCurrencyId?: string | null | typeof PATCH_IGNORE,
-            ownerId: string | typeof PATCH_IGNORE,
+            fallbackRateCurrencyId?: UUID | null | typeof PATCH_IGNORE,
+            ownerId: UUID | typeof PATCH_IGNORE,
             isBase: boolean | typeof PATCH_IGNORE,
             ticker: string | typeof PATCH_IGNORE,
             lastRateCronUpdateTime: number | null | typeof PATCH_IGNORE
@@ -156,8 +161,8 @@ export class CurrencyRepository extends MeteredRepository
         {
             name: string,
             fallbackRateAmount?: string | null,
-            fallbackRateCurrencyId?: string | null,
-            ownerId: string,
+            fallbackRateCurrencyId?: UUID | null,
+            ownerId: UUID,
             isBase: boolean,
             ticker: string,
             lastRateCronUpdateTime?: number | null
@@ -210,8 +215,6 @@ export class CurrencyRepository extends MeteredRepository
         type currTableAlias = "currencies_table";
         const currTableAlias = "currencies_table" satisfies currTableAlias;
         const srcTableAlias = "src_table";
-        const keyOfRateSrc = (x: keyof CurrencyRateSource) => x;
-        const keyOfCurr = (x: keyof Currency) => x;
 
         this.incrementRead();
 
@@ -221,27 +224,27 @@ export class CurrencyRepository extends MeteredRepository
         (
             CURRENCY_RATE_SOURCE_ENTITY_TABLE_NAME,
             srcTableAlias,
-            `${srcTableAlias}.${keyOfRateSrc('refCurrencyId')} = ${currTableAlias}.${keyOfCurr('id')}`
+            `${srcTableAlias}.${JOIN_CURR_WITH_REF_CURR_ID_RELATION_NAME} = ${currTableAlias}.${keyNameOfCurrency('id')}`
         )
-        .where(`${srcTableAlias}.${keyOfRateSrc('id')} IS NOT NULL`)
+        .where(`${srcTableAlias}.${keyNameOfCurrencyRateSource('id')} IS NOT NULL`)
         .addSelect(`${srcTableAlias}.id`)
         .getRawMany();
 
         const output = rawItems.map(item => (
         {
             currency: {
-                id: item[`${currTableAlias}_${keyOfCurr('id')}`] as string,
-                name: item[`${currTableAlias}_${keyOfCurr('name')}`] as string,
-                ownerId: item[`${currTableAlias}_${keyOfCurr('ownerId')}`] as string,
-                ticker: item[`${currTableAlias}_${keyOfCurr('ticker')}`] as string,
-                lastRateCronUpdateTime: item[`${currTableAlias}_${keyOfCurr('lastRateCronUpdateTime')}`] as number | null,
+                id: item[`${currTableAlias}_${keyNameOfCurrency('id')}`] as UUID,
+                name: item[`${currTableAlias}_${keyNameOfCurrency('name')}`] as string,
+                ownerId: item[`${currTableAlias}_${keyNameOfCurrency('ownerId')}`] as UUID,
+                ticker: item[`${currTableAlias}_${keyNameOfCurrency('ticker')}`] as string,
+                lastRateCronUpdateTime: item[`${currTableAlias}_${keyNameOfCurrency('lastRateCronUpdateTime')}`] as number | null,
             },
             rateSource: {
-                id: item[`${srcTableAlias}_${keyOfRateSrc('id')}`] as string,
-                hostname: item[`${srcTableAlias}_${keyOfRateSrc('hostname')}`] as string,
-                jsonQueryString: item[`${srcTableAlias}_${keyOfRateSrc('jsonQueryString')}`] as string,
-                lastExecuteTime: item[`${srcTableAlias}_${keyOfRateSrc('lastExecuteTime')}`] as number | null,
-                name: item[`${srcTableAlias}_${keyOfRateSrc('name')}`] as string,
+                id: item[`${srcTableAlias}_${keyNameOfCurrencyRateSource('id')}`] as UUID,
+                hostname: item[`${srcTableAlias}_${keyNameOfCurrencyRateSource('hostname')}`] as string,
+                jsonQueryString: item[`${srcTableAlias}_${keyNameOfCurrencyRateSource('jsonQueryString')}`] as string,
+                lastExecuteTime: item[`${srcTableAlias}_${keyNameOfCurrencyRateSource('lastExecuteTime')}`] as number | null,
+                name: item[`${srcTableAlias}_${keyNameOfCurrencyRateSource('name')}`] as string,
             }
         }));
 
@@ -250,7 +253,7 @@ export class CurrencyRepository extends MeteredRepository
             type outputItemType = typeof output[0];
             const groupedOutput:
             {
-                [currId: string]:
+                [currId: UUID]:
                 {
                     currency: outputItemType['currency'],
                     rateSources: outputItemType['rateSource'][]
@@ -270,17 +273,17 @@ export class CurrencyRepository extends MeteredRepository
 
     public async getCurrencies
     (
-        ownerId: string,
+        ownerId: UUID,
         query:
         {
             startIndex?: number | undefined,
             endIndex?: number | undefined,
             name?: string | undefined,
-            id?: string | undefined
+            id?: UUID | undefined
         }
     )
     {
-        const user = await UserRepository.getInstance().findOne({where: { id: ownerId ?? null }});
+        const user = await UserRepository.getInstance().findOne({ where: { id: ownerId ?? null } });
         if (!user) return new UserNotFoundError(ownerId);
 
         let dbQuery = this.#repository

@@ -1,4 +1,4 @@
-import { IsNotEmpty, IsString } from 'class-validator';
+import { IsNotEmpty, IsString, IsUUID } from 'class-validator';
 import { UserNameTakenError, UserService } from '../../db/services/user.service.ts';
 import express from 'express';
 import { ExpressValidations } from '../validation.ts';
@@ -6,6 +6,7 @@ import createHttpError from 'http-errors';
 import type { DeleteUserAPI, PostUserAPI } from '../../../../api-types/user.d.ts';
 import { TypesafeRouter } from '../typescriptRouter.ts';
 import { GlobalUserCache } from '../../db/caches/user.cache.ts';
+import { UUID } from "node:crypto";
 
 const router = new TypesafeRouter(express.Router());
 
@@ -33,7 +34,7 @@ router.delete<DeleteUserAPI.ResponseDTO>("/api/v1/users",
     {
         class body implements DeleteUserAPI.RequestDTO
         {
-            @IsNotEmpty() @IsString() userId!: string;
+            @IsNotEmpty() @IsUUID(4) @IsString() userId!: UUID;
         }
 
         const parsedBody = await ExpressValidations.validateBodyAgainstModel<body>(body, req.body);

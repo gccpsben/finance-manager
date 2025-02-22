@@ -14,6 +14,7 @@ import { CurrencyCache } from "../caches/currencyListCache.cache.ts";
 import { CurrencyToBaseRateCache } from "../caches/currencyToBaseRate.cache.ts";
 import { CurrencyRateDatumsCache } from "../caches/currencyRateDatumsCache.cache.ts";
 import { UserCache } from '../caches/user.cache.ts';
+import { UUID } from "node:crypto";
 
 export class InvalidNumberError extends MonadError<typeof InvalidNumberError.ERROR_SYMBOL>
 {
@@ -88,13 +89,13 @@ export class CurrencyRateSourceService
 {
     public static async createCurrencyRateSource
     (
-        ownerId: string,
+        ownerId: UUID,
         hostname: string,
         name: string,
         jsonQueryString: string,
         path: string,
-        refAmountCurrencyId: string,
-        refCurrencyId: string,
+        refAmountCurrencyId: UUID,
+        refCurrencyId: UUID,
         currencyCache: CurrencyCache | null
     )
     {
@@ -106,6 +107,7 @@ export class CurrencyRateSourceService
         newCurrencyRateSource.path = path;
         newCurrencyRateSource.refAmountCurrencyId = refAmountCurrencyId;
         newCurrencyRateSource.refCurrencyId = refCurrencyId;
+        newCurrencyRateSource.lastExecuteTime = null;
 
         const validationResult = await CurrencyRateSourceService.validateCurrencyRateSource(newCurrencyRateSource, currencyCache);
 
@@ -132,7 +134,7 @@ export class CurrencyRateSourceService
     }
 
     public static async validateCurrencyRateSource(
-        src: { ownerId: string, refCurrencyId: string, refAmountCurrencyId: string },
+        src: { ownerId: UUID, refCurrencyId: UUID, refAmountCurrencyId: UUID },
         currencyCache: CurrencyCache | null
     ): Promise<
         "RefCurrencyNotFound" | "RefAmountCurrencyNotFound" |
@@ -153,10 +155,7 @@ export class CurrencyRateSourceService
         return null;
     }
 
-    public static async getUserCurrencyRatesSources
-    (
-        ownerId: string
-    )
+    public static async getUserCurrencyRatesSources(ownerId: UUID)
     {
         const userCurrencyRateSources = await CurrencyRateSourceRepository
         .getInstance()
@@ -166,17 +165,17 @@ export class CurrencyRateSourceService
 
     public static async getUserCurrencyRatesSourcesOfCurrency
     (
-        ownerId: string,
-        currencyId: string
+        ownerId: UUID,
+        currencyId: UUID
     ): Promise<{
         hostname: string,
         id: string,
         jsonQueryString: string,
         lastExecuteTime: number | null,
         name: string,
-        ownerId: string,
-        refAmountCurrencyId: string,
-        refCurrencyId: string,
+        ownerId: UUID,
+        refAmountCurrencyId: UUID,
+        refCurrencyId: UUID,
         path: string
     }[]>
     {
@@ -203,18 +202,18 @@ export class CurrencyRateSourceService
 
     public static async getCurrencyRatesSourceById
     (
-        ownerId: string,
-        srcId: string
+        ownerId: UUID,
+        srcId: UUID
     ): Promise<{
         hostname: string,
-        id: string,
+        id: UUID,
         jsonQueryString: string,
         lastExecuteTime: number | null,
         name: string,
-        ownerId: string,
+        ownerId: UUID,
         path: string,
-        refAmountCurrencyId: string,
-        refCurrencyId: string
+        refAmountCurrencyId: UUID,
+        refCurrencyId: UUID
     } | null>
     {
         const userCurrencyRateSource = await CurrencyRateSourceRepository
@@ -241,14 +240,14 @@ export class CurrencyRateSourceService
 
     public static async patchUserCurrencyRateSource
     (
-        ownerId:string,
-        patchArgs: { id: string } & Partial<
+        ownerId:UUID,
+        patchArgs: { id: UUID } & Partial<
         {
             hostname: string,
             jsonQueryString: string,
             name: string,
             path: string,
-            refAmountCurrencyId: string
+            refAmountCurrencyId: UUID
         }>,
         currencyCache: CurrencyCache | null
     )
@@ -289,15 +288,15 @@ export class CurrencyRateSourceService
      */
     public static async executeCurrencyRateSource
     (
-        ownerId: string,
+        ownerId: UUID,
         currencySource:
         {
-            refCurrencyId: string,
-            ownerId: string | undefined,
+            refCurrencyId: UUID,
+            ownerId: UUID | undefined,
             hostname: string,
             path: string,
             jsonQueryString: string,
-            refAmountCurrencyId: string,
+            refAmountCurrencyId: UUID,
             lastExecuteTime: number | null
         },
         nowEpoch: number,
@@ -309,10 +308,10 @@ export class CurrencyRateSourceService
     ): Promise<{
         amount: string,
         date: number,
-        id: string,
-        ownerId: string,
-        refAmountCurrencyId: string,
-        refCurrencyId: string
+        id: UUID,
+        ownerId: UUID,
+        refAmountCurrencyId: UUID,
+        refCurrencyId: UUID
     }[] |
         ExecuteCurrencyRateSourceError<
             Error |
@@ -382,7 +381,7 @@ export class CurrencyRateSourceService
         }
     }
 
-    public static async deleteCurrencyRateSource(ownerId: string, srcId: string):
+    public static async deleteCurrencyRateSource(ownerId: UUID, srcId: UUID):
         Promise<null | CurrencySrcNotFoundError>
     {
         const whereClause = { ownerId: ownerId ?? null, id: srcId ?? null };

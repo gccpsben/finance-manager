@@ -9,6 +9,7 @@ import { CurrencyCache } from "../caches/currencyListCache.cache.ts";
 import { CurrencyRateDatumsCache } from "../caches/currencyRateDatumsCache.cache.ts";
 import { minAndMax } from "../servicesUtils.ts";
 import { UserCache } from '../caches/user.cache.ts';
+import { UUID } from "node:crypto";
 
 export class CurrencyRateDatumService
 {
@@ -16,11 +17,11 @@ export class CurrencyRateDatumService
     (
         datums:
         {
-            userId: string,
+            userId: UUID,
             amount: string,
             date: number,
-            currencyId: string,
-            amountCurrencyId: string
+            currencyId: UUID,
+            amountCurrencyId: UUID
         }[],
         queryRunner: QueryRunner,
         currencyRateDatumsCache: CurrencyRateDatumsCache | null,
@@ -30,13 +31,13 @@ export class CurrencyRateDatumService
     ): Promise<{
             amount: string,
             date: number,
-            id: string,
-            ownerId: string,
-            refAmountCurrencyId: string,
-            refCurrencyId: string
+            id: UUID,
+            ownerId: UUID,
+            refAmountCurrencyId: UUID,
+            refCurrencyId: UUID
         }[] | UserNotFoundError | CurrencyNotFoundError>
     {
-        const userIdToObjMap: { [userID: string]: { id: string; username: string; } } = {};
+        const userIdToObjMap: { [userID: UUID]: { id: UUID; username: string; } } = {};
         const uniqueUserIds = [...new Set(datums.map(x => x.userId))];
 
         // Check for user-ids
@@ -59,8 +60,8 @@ export class CurrencyRateDatumService
 
     public static async getCurrencyRateHistory
     (
-        ownerId: string,
-        currencyId: string,
+        ownerId: UUID,
+        currencyId: UUID,
         startDate: number | undefined = undefined,
         endDate: number | undefined = undefined,
         currencyRateDatumsCache: CurrencyRateDatumsCache | null,

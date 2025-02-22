@@ -1,7 +1,9 @@
 import { Decimal } from "decimal.js";
 import { ObjectLiteral, SelectQueryBuilder } from "typeorm";
 
-export const nameof = <T>(name: Extract<keyof T, string>): string => name;
+export const nameof = <T>(name: Extract<keyof T, string>): string => `"${name}"`;
+export const nameofNoQuote = <T>(name: Extract<keyof T, string>): string => `${name}`;
+
 export function paginateQuery<T extends ObjectLiteral>
 (
     dbQuery: SelectQueryBuilder<T>,
@@ -15,8 +17,8 @@ export function paginateQuery<T extends ObjectLiteral>
     if (query?.startIndex !== undefined && query?.endIndex !== undefined)
     {
         dbQuery = dbQuery
-        .limit(query.endIndex - query.startIndex)
-        .offset(query.startIndex);
+        .limit(Math.max(0, query.endIndex - query.startIndex)) // TODO: Some kind of warning here if < 0 ?
+        .offset(Math.max(0, query.startIndex));
     }
     else if (query?.startIndex !== undefined && query?.endIndex === undefined)
     {

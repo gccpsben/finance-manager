@@ -1,7 +1,6 @@
 import { Decimal } from "decimal.js";
 import { CurrencyRepository } from "../repositories/currency.repository.ts";
 import { UserRepository } from "../repositories/user.repository.ts";
-import { nameofC } from "../entities/currency.entity.ts";
 import { LinearInterpolator } from "../../calculations/linearInterpolator.ts";
 import { CurrencyRateDatumsCache } from '../caches/currencyRateDatumsCache.cache.ts';
 import { CurrencyCache } from "../caches/currencyListCache.cache.ts";
@@ -13,6 +12,8 @@ import { QUERY_IGNORE } from "../../symbols.ts";
 import { LinearInterpolatorVirtual } from "../../calculations/linearInterpolatorVirtual.ts";
 import { reverseMap } from "../servicesUtils.ts";
 import { UserCache } from '../caches/user.cache.ts';
+import { keyNameOfCurrency } from "../entities/currency.entity.ts";
+import { UUID } from "node:crypto";
 
 export class CurrencyRefCurrencyIdAmountTupleError extends MonadError<typeof CurrencyRefCurrencyIdAmountTupleError.ERROR_SYMBOL>
 {
@@ -23,7 +24,7 @@ export class CurrencyRefCurrencyIdAmountTupleError extends MonadError<typeof Cur
 
     constructor(currencyId: string | undefined, userId: string, amount: string | undefined)
     {
-        super(CurrencyRefCurrencyIdAmountTupleError.ERROR_SYMBOL, `If ${nameofC('fallbackRateCurrency')} is given, ${nameofC('fallbackRateAmount')} must also be specified.`);
+        super(CurrencyRefCurrencyIdAmountTupleError.ERROR_SYMBOL, `If ${keyNameOfCurrency('fallbackRateCurrency')} is given, ${keyNameOfCurrency('fallbackRateAmount')} must also be specified.`);
         this.name = this.constructor.name;
         this.currencyId = currencyId;
         this.userId = userId;
@@ -79,18 +80,18 @@ export class CurrencyCalculator
 {
     public static async currencyToCurrencyRate
     (
-        ownerId:string,
+        ownerId:UUID,
         from: {
-            id: string;
+            id: UUID;
             isBase: boolean;
             fallbackRateAmount?: string | null | undefined;
-            fallbackRateCurrencyId?: string | null | undefined;
+            fallbackRateCurrencyId?: UUID | null | undefined;
         },
         to: {
-            id: string;
+            id: UUID;
             isBase: boolean;
             fallbackRateAmount?: string | null | undefined;
-            fallbackRateCurrencyId?: string | null | undefined;
+            fallbackRateCurrencyId?: UUID | null | undefined;
         },
         currencyRateDatumsCache: CurrencyRateDatumsCache | null,
         currencyToBaseRateCache: CurrencyToBaseRateCache | null,
@@ -113,13 +114,13 @@ export class CurrencyCalculator
     */
     public static async currencyToBaseRate
     (
-        ownerId: string,
+        ownerId: UUID,
         from:
         {
-            id:string,
+            id:UUID,
             isBase: boolean,
             fallbackRateAmount?: string | null | undefined,
-            fallbackRateCurrencyId?: string | null | undefined,
+            fallbackRateCurrencyId?: UUID | null | undefined,
         },
         date: number = Date.now(),
         currencyRateDatumsCache: CurrencyRateDatumsCache | null,
@@ -145,7 +146,7 @@ export class CurrencyCalculator
                 currencyToBaseRateCache.cacheCurrencyToBase(ownerId, from.id, date, result);
         };
 
-        const getCurrById = async (id: string) =>
+        const getCurrById = async (id: UUID) =>
         {
             const cacheResult = currencyCache?.queryCurrency(ownerId, id);
             if (cacheResult) return cacheResult as typeof fetchedResult;
@@ -248,8 +249,8 @@ export class CurrencyCalculator
 
     public static async getCurrencyToBaseRateInterpolator
     (
-        userId:string,
-        currencyId: string,
+        userId:UUID,
+        currencyId: UUID,
         currencyRateDatumsCache: CurrencyRateDatumsCache | null,
         currencyToBaseRateCache: CurrencyToBaseRateCache | null,
         currencyCache: CurrencyCache | null,
@@ -314,10 +315,10 @@ export class CurrencyService
 {
     public static async createCurrency
     (
-        userId: string,
+        userId: UUID,
         name: string,
         amount: Decimal | undefined,
-        refCurrencyId: string | undefined,
+        refCurrencyId: UUID | undefined,
         ticker: string,
         currencyCache: CurrencyCache | null
     ): Promise<
@@ -377,13 +378,13 @@ export class CurrencyService
 
     public static async rateHydrateCurrency
     (
-        userId:string,
+        userId:UUID,
         currencies:
         {
-            id: string;
+            id: UUID;
             isBase: boolean;
             fallbackRateAmount?: string | null | undefined;
-            fallbackRateCurrencyId?: string | null | undefined;
+            fallbackRateCurrencyId?: UUID | null | undefined;
         }[],
         date: number | undefined = undefined,
         currencyRateDatumsCache: CurrencyRateDatumsCache | null,
@@ -395,10 +396,10 @@ export class CurrencyService
         type outputType =
         {
             currency: {
-                id: string;
+                id: UUID;
                 isBase: boolean;
                 fallbackRateAmount?: string | null | undefined;
-                fallbackRateCurrencyId?: string | null | undefined;
+                fallbackRateCurrencyId?: UUID | null | undefined;
             }, rateToBase: string
         };
 
@@ -424,9 +425,9 @@ export class CurrencyService
 
     public static async getWorthOfBalances
     (
-        userId:string,
+        userId:UUID,
         date: number,
-        balances: { [currId: string]: Decimal },
+        balances: { [currId: UUID]: Decimal },
         currencyRateDatumsCache: CurrencyRateDatumsCache | null,
         currencyToBaseRateCache: CurrencyToBaseRateCache | null,
         currencyListCache: CurrencyCache | null,
@@ -434,7 +435,7 @@ export class CurrencyService
     )
     {
         const currRepo = Database.getCurrencyRepository()!;
-        const getRate = async (currencyId: string) =>
+        const getRate = async (currencyId: UUID) =>
         {
             const currencyRate = await (async () =>
             {
@@ -474,14 +475,14 @@ export class CurrencyService
             return currencyRate;
         };
 
-        const currenciesRate:{ [currId: string]: string; } = {};
+        const currenciesRate:{ [currId: UUID]: string; } = {};
         let output: Decimal = new Decimal("0");
         for (const [currId, amount] of Object.entries(balances))
         {
-            if (!currenciesRate[currId])
-                currenciesRate[currId] = await getRate(currId);
+            if (!currenciesRate[currId as UUID])
+                currenciesRate[currId as UUID] = await getRate(currId as UUID);
 
-            const currencyWorth = new Decimal((await getRate(currId))).mul(amount);
+            const currencyWorth = new Decimal((await getRate(currId as UUID))).mul(amount);
             output = output.add(currencyWorth);
         }
 

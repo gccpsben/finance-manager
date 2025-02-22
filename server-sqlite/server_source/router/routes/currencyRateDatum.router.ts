@@ -1,6 +1,6 @@
 import express from 'express';
 import { AccessTokenService, InvalidLoginTokenError } from '../../db/services/accessToken.service.ts';
-import { IsArray, IsString, ValidateNested } from 'class-validator';
+import { IsArray, IsString, ValidateNested, IsUUID } from 'class-validator';
 import { ExpressValidations } from '../validation.ts';
 import { IsDecimalJSString, IsUTCDateInt } from '../../db/validators.ts';
 import type { PostCurrencyRateAPI } from "../../../../api-types/currencyRateDatum.d.ts";
@@ -15,6 +15,7 @@ import { GlobalCurrencyToBaseRateCache } from '../../db/caches/currencyToBaseRat
 import { GlobalCurrencyCache } from '../../db/caches/currencyListCache.cache.ts';
 import { GlobalCurrencyRateDatumsCache } from '../../db/caches/currencyRateDatumsCache.cache.ts';
 import { GlobalUserCache } from "../../db/caches/user.cache.ts";
+import { UUID } from "node:crypto";
 
 const router = new TypesafeRouter(express.Router());
 
@@ -25,8 +26,8 @@ router.post<PostCurrencyRateAPI.ResponseDTO>(`/api/v1/currencyRateDatums`,
         class bodyItem implements PostCurrencyRateAPI.RequestItemDTO
         {
             @IsDecimalJSString() amount!: string;
-            @IsString() refCurrencyId!: string;
-            @IsString() refAmountCurrencyId!: string;
+            @IsString() @IsUUID(4) refCurrencyId!: UUID;
+            @IsString() @IsUUID(4) refAmountCurrencyId!: UUID;
             @IsUTCDateInt() date!: number;
         }
 

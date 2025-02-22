@@ -1,10 +1,11 @@
 import NodeCache from "node-cache";
 import { CacheBase } from "../cacheBase.ts";
+import { UUID } from "node:crypto";
 
 export type UserEntry =
 {
     name: string;
-    id: string;
+    id: UUID;
 };
 
 export class UserCache extends CacheBase

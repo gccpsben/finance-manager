@@ -4,6 +4,7 @@ import { MonadError, panic } from "../../std_errors/monadError.ts";
 import { AppendBytesCommitFileIOError, AppendBytesOutOfBoundError, AppendBytesSessionNotFoundError, AppendBytesUserMismatchError, AppendBytesWriteBufferIOError } from "../../io/fileReceiver.ts";
 import { Buffer } from "node:buffer";
 import { UserCache } from '../caches/user.cache.ts';
+import { UUID } from "node:crypto";
 
 export class FileNotFoundError extends MonadError<typeof FileNotFoundError.ERROR_SYMBOL>
 {
@@ -23,7 +24,7 @@ export class FileNotFoundError extends MonadError<typeof FileNotFoundError.ERROR
 export class FilesService
 {
 
-    public static async appendBytes(userId: string, sessionId: string, buffer: Buffer, userCache: UserCache | null)
+    public static async appendBytes(userId: UUID, sessionId: UUID, buffer: Buffer, userCache: UserCache | null)
     {
         // Ensure user exists
         const userFetchResult = await UserService.getUserById(userId, userCache);
@@ -53,7 +54,11 @@ export class FilesService
 
                 // Add entry to SQL
                 // TODO: Wrap in service layer
-                const newFileRow = await Database.getFileRepository()!.saveNewFile(userId, session.fileNameReadable, transactionalContext.queryRunner);
+                const newFileRow = await Database.getFileRepository()!.saveNewFile(
+                    userId,
+                    session.fileNameReadable,
+                    transactionalContext.queryRunner
+                );
 
                 // Move file from tmp to files storage
                 const moveResult = await Database.getFileReceiver()!.commitFile(sessionId, newFileRow.id);

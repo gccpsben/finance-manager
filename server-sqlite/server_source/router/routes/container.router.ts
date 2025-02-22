@@ -1,6 +1,6 @@
 import express from 'express';
 import { AccessTokenService, InvalidLoginTokenError } from '../../db/services/accessToken.service.ts';
-import { IsNotEmpty, IsOptional, IsString } from 'class-validator';
+import { IsNotEmpty, IsOptional, IsString, IsUUID } from 'class-validator';
 import { ExpressValidations } from '../validation.ts';
 import { ContainerExistsError, ContainerNotFoundError, ContainerService } from '../../db/services/container.service.ts';
 import { TypesafeRouter } from '../typescriptRouter.ts';
@@ -21,6 +21,7 @@ import { LinearStepper } from '../../calculations/linearStepper.ts';
 import { CurrencyService } from '../../db/services/currency.service.ts';
 import { mapObjectValues } from "../../db/servicesUtils.ts";
 import { GlobalUserCache } from "../../db/caches/user.cache.ts";
+import { UUID } from 'node:crypto';
 
 const router = new TypesafeRouter(express.Router());
 
@@ -34,7 +35,7 @@ router.get<GetContainerAPI.ResponseDTO>(`/api/v1/containers`,
 
         class query extends OptionalPaginationAPIQueryRequest
         {
-            @IsOptional() @IsString() id: string | undefined;
+            @IsOptional() @IsUUID(4) @IsString() id: UUID | undefined;
             @IsOptional() @IsString() name: string | undefined;
 
             /** If this is set, the value of each container will use the rate of each currency's rate at the given date. This defaults to now. */
@@ -125,7 +126,7 @@ router.get<GetContainerTimelineAPI.ResponseDTO>(`/api/v1/containers/timeline`,
 
         class query implements GetContainerTimelineAPI.RequestQueryDTO
         {
-            @IsNotEmpty() @IsString() containerId!: string;
+            @IsNotEmpty() @IsUUID(4) @IsString() containerId!: UUID;
             @IsOptional() @IsIntString() division?: string | undefined;
             @IsOptional() @IsIntString() endDate?: string | undefined;
             @IsOptional() @IsIntString() startDate?: string | undefined;

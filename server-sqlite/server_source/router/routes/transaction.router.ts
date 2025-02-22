@@ -1,4 +1,4 @@
-import { IsArray, IsBoolean, IsNotEmpty, IsOptional, IsString, ValidateNested } from 'class-validator';
+import { IsArray, IsBoolean, IsNotEmpty, IsOptional, IsString, IsUUID, ValidateNested } from 'class-validator';
 import Express from 'express';
 import type { PutTxnAPI, GetTxnAPI, PostTxnAPI, DeleteTxnAPI, GetTxnJsonQueryAPI } from '../../../../api-types/txn.d.ts';
 import { AccessTokenService, InvalidLoginTokenError } from '../../db/services/accessToken.service.ts';
@@ -20,6 +20,7 @@ import { GlobalCurrencyCache } from '../../db/caches/currencyListCache.cache.ts'
 import { GlobalCurrencyRateDatumsCache } from '../../db/caches/currencyRateDatumsCache.cache.ts';
 import { FileNotFoundError } from '../../db/services/files.service.ts';
 import { GlobalUserCache } from '../../db/caches/user.cache.ts';
+import { UUID } from "node:crypto";
 
 const router = new TypesafeRouter(Express.Router());
 
@@ -33,11 +34,11 @@ router.post<PostTxnAPI.ResponseDTO>("/api/v1/transactions",
             class fragmentItem implements PostTxnAPI.FragmentDTO
             {
                 @IsOptional() @IsDecimalJSString() fromAmount!: string | null;
-                @IsOptional() @IsString() fromCurrency!: string | null;
-                @IsOptional() @IsString() fromContainer!: string | null;
+                @IsOptional() @IsUUID(4) @IsString() fromCurrency!: UUID | null;
+                @IsOptional() @IsUUID(4) @IsString() fromContainer!: UUID | null;
                 @IsOptional() @IsDecimalJSString() toAmount!: string | null;
-                @IsOptional() @IsString() toCurrency!: string | null;
-                @IsOptional() @IsString() toContainer!: string | null;
+                @IsOptional() @IsUUID(4) @IsString() toCurrency!: UUID | null;
+                @IsOptional() @IsUUID(4) @IsString() toContainer!: UUID | null;
             }
 
             class bodyItem implements PostTxnAPI.RequestItemDTO
@@ -45,8 +46,8 @@ router.post<PostTxnAPI.ResponseDTO>("/api/v1/transactions",
                 @IsString() @IsNotEmpty() title!: string;
                 @IsOptional() @IsUTCDateInt() creationDate?: number | undefined;
                 @IsOptional() @IsString() description?: string | undefined;
-                @IsArray() @IsNotEmpty() tagIds!: string[];
-                @IsArray() @IsNotEmpty() fileIds!: string[];
+                @IsArray() @IsUUID(4, { each: true }) @IsNotEmpty() tagIds!: UUID[];
+                @IsArray() @IsUUID(4, { each: true }) @IsNotEmpty() fileIds!: UUID[];
                 @IsNotEmpty() @IsBoolean() excludedFromIncomesExpenses!: boolean;
 
                 @IsArray()
@@ -71,7 +72,7 @@ router.post<PostTxnAPI.ResponseDTO>("/api/v1/transactions",
             transactionalContext = await Database.createTransactionalContext();
 
             const parsedBody = await ExpressValidations.validateBodyAgainstModel<body>(body, req.body);
-            const idsCreated: string[] = [];
+            const idsCreated: UUID[] = [];
 
             for (const item of parsedBody.transactions)
             {
@@ -83,11 +84,11 @@ router.post<PostTxnAPI.ResponseDTO>("/api/v1/transactions",
                     txnTagIds: item.tagIds,
                     fragments: item.fragments.map(f => ({
                         fromAmount: f.fromAmount,
-                        fromContainerId: f.fromContainer,
-                        fromCurrencyId: f.fromCurrency,
+                        fromContainerId: f.fromContainer as UUID,
+                        fromCurrencyId: f.fromCurrency as UUID,
                         toAmount: f.toAmount,
-                        toContainerId: f.toContainer,
-                        toCurrencyId: f.toCurrency,
+                        toContainerId: f.toContainer as UUID,
+                        toCurrencyId: f.toCurrency as UUID,
                     })),
                     files: item.fileIds,
                     excludedFromIncomesExpenses: item.excludedFromIncomesExpenses
@@ -127,11 +128,11 @@ router.put<PutTxnAPI.ResponseDTO>("/api/v1/transactions",
             class fragmentItem implements PostTxnAPI.FragmentDTO
             {
                 @IsOptional() @IsDecimalJSString() fromAmount!: string | null;
-                @IsOptional() @IsString() fromCurrency!: string | null;
-                @IsOptional() @IsString() fromContainer!: string | null;
+                @IsOptional() @IsUUID(4) @IsString() fromCurrency!: UUID | null;
+                @IsOptional() @IsUUID(4) @IsString() fromContainer!: UUID | null;
                 @IsOptional() @IsDecimalJSString() toAmount!: string | null;
-                @IsOptional() @IsString() toCurrency!: string | null;
-                @IsOptional() @IsString() toContainer!: string | null;
+                @IsOptional() @IsUUID(4) @IsString() toCurrency!: UUID | null;
+                @IsOptional() @IsUUID(4) @IsString() toContainer!: UUID | null;
             }
 
             class body implements PutTxnAPI.RequestBodyDTO
@@ -144,14 +145,14 @@ router.put<PutTxnAPI.ResponseDTO>("/api/v1/transactions",
                 @IsString() @IsNotEmpty() title!: string;
                 @IsOptional() @IsUTCDateInt() creationDate?: number | undefined;
                 @IsOptional() @IsString() description?: string | undefined;
-                @IsArray() @IsNotEmpty() tagIds!: string[];
-                @IsArray() @IsNotEmpty() fileIds!: string[];
+                @IsArray() @IsUUID(4, { each: true }) @IsNotEmpty() tagIds!: UUID[];
+                @IsArray() @IsUUID(4, { each: true }) @IsNotEmpty() fileIds!: UUID[];
                 @IsNotEmpty() @IsBoolean() excludedFromIncomesExpenses!: boolean;
             }
 
             class query implements PutTxnAPI.RequestQueryDTO
             {
-                @IsString() @IsNotEmpty() targetTxnId!: string;
+                @IsString() @IsUUID(4) @IsNotEmpty() targetTxnId!: UUID;
             }
 
             const now = Date.now();
@@ -170,11 +171,11 @@ router.put<PutTxnAPI.ResponseDTO>("/api/v1/transactions",
                 txnTagIds: parsedBody.tagIds,
                 fragments: parsedBody.fragments.map(f => ({
                     fromAmount: f.fromAmount,
-                    fromContainerId: f.fromContainer,
-                    fromCurrencyId: f.fromCurrency,
+                    fromContainerId: f.fromContainer as UUID,
+                    fromCurrencyId: f.fromCurrency as UUID,
                     toAmount: f.toAmount,
-                    toContainerId: f.toContainer,
-                    toCurrencyId: f.toCurrency
+                    toContainerId: f.toContainer as UUID,
+                    toCurrencyId: f.toCurrency as UUID
                 })),
                 excludedFromIncomesExpenses: parsedBody.excludedFromIncomesExpenses,
                 files: parsedBody.fileIds
@@ -304,7 +305,7 @@ router.get<GetTxnAPI.ResponseDTO>(`/api/v1/transactions`,
         class query extends OptionalPaginationAPIQueryRequest
         {
             @IsOptional() @IsString() title!: string;
-            @IsOptional() @IsString() id!: string;
+            @IsOptional() @IsUUID(4) @IsString() id!: UUID;
             @IsOptional() @IsIntString() startDate?: string | undefined;
             @IsOptional() @IsIntString() endDate?: string | undefined;
         }
@@ -412,7 +413,7 @@ router.delete<DeleteTxnAPI.ResponseDTO>(`/api/v1/transactions`,
         {
             class query implements DeleteTxnAPI.RequestQueryDTO
             {
-                @IsNotEmpty() @IsString() id!: string;
+                @IsNotEmpty() @IsUUID() @IsString() id!: UUID;
             }
 
             const now = Date.now();

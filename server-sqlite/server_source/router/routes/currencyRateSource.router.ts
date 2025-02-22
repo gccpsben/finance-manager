@@ -1,13 +1,15 @@
 import { TypesafeRouter } from "../typescriptRouter.ts";
 import express from 'express';
 import type { GetCurrencyRateSrcAPI, PostCurrencyRateSrcAPI, PatchCurrencyRateSrcAPI, GetCurrencyRateSrcBySrcIdAPI, DeleteCurrencyRateSrcAPI } from "../../../../api-types/currencyRateSource.d.ts";
-import { IsString } from "class-validator";
+import { IsString, IsUUID } from "class-validator";
 import { AccessTokenService, InvalidLoginTokenError } from "../../db/services/accessToken.service.ts";
 import createHttpError from "http-errors";
 import { ExpressValidations } from "../validation.ts";
 import { CurrencyRateSourceService, CurrencySrcNotFoundError, PatchCurrencySrcValidationError } from "../../db/services/currencyRateSource.service.ts";
 import { CurrencyNotFoundError } from "../../db/services/currency.service.ts";
 import { GlobalCurrencyCache } from "../../db/caches/currencyListCache.cache.ts";
+import { UUID } from "node:crypto";
+import { isUUID } from 'npm:class-validator@~0.14.1';
 
 const router = new TypesafeRouter(express.Router());
 
@@ -19,7 +21,9 @@ router.get<GetCurrencyRateSrcBySrcIdAPI.ResponseDTO>(`/api/v1/currencyRateSource
         const authResult = await AccessTokenService.validateRequestTokenValidated(req, now);
         if (authResult instanceof InvalidLoginTokenError) throw createHttpError(401);
 
-        const rateSrc = await CurrencyRateSourceService.getCurrencyRatesSourceById(authResult.ownerUserId, req.params['id']);
+        const requestedId = req.params["id"];
+        if (!isUUID(requestedId)) throw createHttpError(400);
+        const rateSrc = await CurrencyRateSourceService.getCurrencyRatesSourceById(authResult.ownerUserId, requestedId);
         if (rateSrc === null) throw createHttpError(404);
 
         return {
@@ -43,7 +47,9 @@ router.get<GetCurrencyRateSrcAPI.ResponseDTO>(`/api/v1/:id/currencyRateSources` 
         const authResult = await AccessTokenService.validateRequestTokenValidated(req, now);
         if (authResult instanceof InvalidLoginTokenError) throw createHttpError(401);
 
-        const rateSources = await CurrencyRateSourceService.getUserCurrencyRatesSourcesOfCurrency(authResult.ownerUserId, req.params['id']);
+        const requestedId = req.params["id"];
+        if (!isUUID(requestedId)) throw createHttpError(400);
+        const rateSources = await CurrencyRateSourceService.getUserCurrencyRatesSourcesOfCurrency(authResult.ownerUserId, requestedId);
 
         return {
             sources: rateSources.map(s => (
@@ -67,8 +73,8 @@ router.patch<PatchCurrencyRateSrcAPI.ResponseDTO>(`/api/v1/currencyRateSources`,
     {
         class body implements PatchCurrencyRateSrcAPI.RequestDTO
         {
-            @IsString() id!: string;
-            @IsString() refAmountCurrencyId!: string;
+            @IsString() @IsUUID(4) id!: UUID;
+            @IsString() @IsUUID(4) refAmountCurrencyId!: UUID;
             @IsString() hostname!: string;
             @IsString() path!: string;
             @IsString() jsonQueryString!: string;
@@ -117,6 +123,7 @@ router.delete<DeleteCurrencyRateSrcAPI.ResponseDTO>(`/api/v1/currencyRateSources
         const authResult = await AccessTokenService.validateRequestTokenValidated(req, now);
         if (authResult instanceof InvalidLoginTokenError) throw createHttpError(401);
         const requestedId = req.params['id'];
+        if (!isUUID(requestedId)) throw createHttpError(400);
         const deleteResult = await CurrencyRateSourceService.deleteCurrencyRateSource(authResult.ownerUserId, requestedId);
         if (deleteResult instanceof CurrencySrcNotFoundError) throw createHttpError(404, deleteResult.message);
         return { id: requestedId };
@@ -129,8 +136,8 @@ router.post<PostCurrencyRateSrcAPI.ResponseDTO>(`/api/v1/currencyRateSources`,
     {
         class body implements PostCurrencyRateSrcAPI.RequestDTO
         {
-            @IsString() refCurrencyId!: string;
-            @IsString() refAmountCurrencyId!: string;
+            @IsString() @IsUUID() refCurrencyId!: UUID;
+            @IsString() refAmountCurrencyId!: UUID;
             @IsString() hostname!: string;
             @IsString() path!: string;
             @IsString() jsonQueryString!: string;

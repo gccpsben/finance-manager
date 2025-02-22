@@ -10,20 +10,22 @@ import { EnsureNotPlainForeignKey } from "../validators.ts";
 import { Transaction } from "./transaction.entity.ts";
 import { TxnTag } from "./txnTag.entity.ts";
 import { CurrencyRateSource } from "./currencyRateSource.entity.ts";
+import { nameof } from "../servicesUtils.ts";
+import { UUID } from "node:crypto";
 
 @Entity()
 export class User extends EntityClass
 {
-    @PrimaryGeneratedColumn("uuid")
-    id!: string;
+    @PrimaryGeneratedColumn('uuid')
+    id!: UUID;
 
-    @Column({ unique: true, nullable: false, type: "varchar" })
+    @Column({ unique: true, nullable: false, type: "varchar", name: 'username' })
     @IsString()
     @IsNotEmpty()
     @MaxLength(256)
     username!: string;
 
-    @Column({nullable: false, select: false, type: "varchar"})
+    @Column({nullable: false, select: false, type: "varchar", name: 'passwordHash'})
     @IsString()
     @IsNotEmpty()
     @MaxLength(256)
@@ -54,4 +56,4 @@ export class User extends EntityClass
     tags!: TxnTag[] | null;
 }
 
-export const nameofU = (x: keyof User) => x;
+export const keyNameOfUser = (x: keyof User) => `${nameof<User>(x)}`;

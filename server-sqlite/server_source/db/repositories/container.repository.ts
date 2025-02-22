@@ -4,6 +4,7 @@ import { panic } from "../../std_errors/monadError.ts";
 import { QUERY_IGNORE } from "../../symbols.ts";
 import { MeteredRepository } from "../meteredRepository.ts";
 import { paginateQuery } from "../servicesUtils.ts";
+import { UUID } from "node:crypto";
 
 export class ContainerRepository extends MeteredRepository
 {
@@ -18,19 +19,19 @@ export class ContainerRepository extends MeteredRepository
     }
 
     public getWhereQuery(
-        ownerId: string,
-        containerId: string | typeof QUERY_IGNORE,
+        ownerId: UUID,
+        containerId: UUID | typeof QUERY_IGNORE,
         containerName: string | typeof QUERY_IGNORE
     ) {
-        const output: {[key: string]: any} = { ownerId: ownerId };
+        const output: {[key: string]: unknown} = { ownerId: ownerId };
         if (containerId !== QUERY_IGNORE) output['id'] = containerId;
         if (containerName !== QUERY_IGNORE) output['name'] = containerName;
         return output;
     }
 
     public async getContainer(
-        ownerId: string,
-        containerId: string | typeof QUERY_IGNORE,
+        ownerId: UUID,
+        containerId: UUID | typeof QUERY_IGNORE,
         containerName: string | typeof QUERY_IGNORE
     )
     {
@@ -55,8 +56,8 @@ export class ContainerRepository extends MeteredRepository
     }
 
     public async getManyContainers(
-        ownerId: string,
-        containerId: string | typeof QUERY_IGNORE,
+        ownerId: UUID,
+        containerId: UUID | typeof QUERY_IGNORE,
         containerName: string | typeof QUERY_IGNORE,
         startIndex?: number | undefined, endIndex?: number | undefined,
     )
@@ -88,8 +89,12 @@ export class ContainerRepository extends MeteredRepository
      * This will NOT check for constrains / validations beforehand.
      * Any error reported by the database engine will be thrown as exception.
      */
-    public async saveNewContainer(ownerId: string, name: string, creationDate: number = Date.now())
-        : Promise<{id: string, name: string, creationDate: number}>
+    public async saveNewContainer(
+        ownerId: UUID,
+        name: string,
+        creationDate: number = Date.now()
+    )
+        : Promise<{id: UUID, name: string, creationDate: number}>
     {
         const newContainer = this.#repository.create();
         newContainer.creationDate = creationDate;

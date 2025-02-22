@@ -1,7 +1,8 @@
 import * as Express from 'express';
-import { MonadError } from "../../std_errors/monadError.ts";
+import { MonadError, panic } from "../../std_errors/monadError.ts";
 import { Database } from "../db.ts";
 import { QUERY_IGNORE } from "../../symbols.ts";
+import { UUID } from "node:crypto";
 
 export class InvalidLoginTokenError extends MonadError<typeof InvalidLoginTokenError.ERROR_SYMBOL>
 {
@@ -52,7 +53,7 @@ export class AccessTokenService
         {
             isTokenValid: boolean;
             tokenFound: boolean;
-            ownerUserId: string;
+            ownerUserId: UUID;
         }
     >
     {
@@ -65,10 +66,13 @@ export class AccessTokenService
         if (!validationResult.isTokenValid || !validationResult.ownerUserId || !validationResult.tokenFound)
             return createErr();
 
+        if (!validationResult.ownerUserId)
+            panic(`validateRequestTokenValidated: user id is not uuid`);
+
         return {
             isTokenValid: true,
             tokenFound: true,
-            ownerUserId: validationResult.ownerUserId!
+            ownerUserId: validationResult.ownerUserId! as UUID
         };
     }
 }

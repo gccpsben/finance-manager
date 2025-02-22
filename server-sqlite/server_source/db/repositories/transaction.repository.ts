@@ -1,5 +1,5 @@
 import { DataSource, DeleteResult, QueryRunner, Repository } from "typeorm";
-import { nameofT, Transaction } from "../entities/transaction.entity.ts";
+import { keyNameOfTransaction, Transaction } from "../entities/transaction.entity.ts";
 import { Database } from "../db.ts";
 import { panic, unwrap } from "../../std_errors/monadError.ts";
 import { MeteredRepository } from "../meteredRepository.ts";
@@ -12,12 +12,20 @@ import { TxnTagNotFoundError } from "../services/txnTag.service.ts";
 import { CurrencyRateDatumsCache } from "../caches/currencyRateDatumsCache.cache.ts";
 import { CurrencyToBaseRateCache } from "../caches/currencyToBaseRate.cache.ts";
 import jsonata from "jsonata";
-import { Fragment, FragmentRaw, nameofF } from "../entities/fragment.entity.ts";
+import { Fragment, FragmentRaw, keyNameOfFragment } from "../entities/fragment.entity.ts";
 import { File } from '../entities/file.entity.ts';
 import { FileNotFoundError } from "../services/files.service.ts";
 import * as txnQueryASTCalculator from "../../calculations/txnQueryASTCalculator.ts";
-import { normalizeEntitiesToIds, paginateQuery } from "../servicesUtils.ts";
+import { nameofNoQuote, normalizeEntitiesToIds, paginateQuery } from "../servicesUtils.ts";
 import { UserCache } from '../caches/user.cache.ts';
+import { UUID } from "node:crypto";
+import { isUUID } from "npm:class-validator@~0.14.1";
+
+// Because of how stupid TypeORM is, double quoted column names don't work well with leftJoinAndSelect.
+// We may hardcode the column names in string, but we also want key-name type checking in Typescript.
+const JOIN_TXN_WITH_TXN_TAGS_RELATION_NAME = nameofNoQuote<Transaction>('tags');
+const JOIN_TXN_WITH_FRAGMENTS_RELATION_NAME = nameofNoQuote<Transaction>('fragments');
+const JOIN_TXN_WITH_FILES_RELATION_NAME = nameofNoQuote<Transaction>('files');
 
 export class TransactionRepository extends MeteredRepository
 {
@@ -26,7 +34,7 @@ export class TransactionRepository extends MeteredRepository
 
     public async deleteTransactions
     (
-        txnIds: string[],
+        txnIds: UUID[],
         queryRunner: QueryRunner
     ): Promise<DeleteResult>
     {
@@ -51,17 +59,17 @@ export class TransactionRepository extends MeteredRepository
      */
     public async updateTransaction
     (
-        userId: string,
-        targetTxnId: string,
+        userId: UUID,
+        targetTxnId: UUID,
         obj:
         {
             title: string,
             creationDate: number,
             description: string,
             fragments: FragmentRaw[],
-            tagIds: string[],
+            tagIds: UUID[],
             excludedFromIncomesExpenses: boolean,
-            files: string[]
+            files: UUID[]
         },
         queryRunner: QueryRunner,
         userCache: UserCache | null
@@ -70,9 +78,11 @@ export class TransactionRepository extends MeteredRepository
         // Ensure user exists
         const userFetchResult = await UserService.getUserById(userId, userCache);
         if (userFetchResult === null) return new UserNotFoundError(userId);
+        console.log("ALSDHLASHDLKASHDLJKHAD 1");
 
         // Delete old fragments
         await queryRunner.manager.getRepository(Fragment).delete({ parentTxnId: targetTxnId });
+        console.log("ALSDHLASHDLKASHDLJKHAD 2");
 
         // Re-save new fragments
         const savedFragments = await this.saveFragmentsOfTxn(userId,
@@ -80,6 +90,7 @@ export class TransactionRepository extends MeteredRepository
             ...obj,
             parentTxnId: targetTxnId
         }, queryRunner);
+        console.log("ALSDHLASHDLKASHDLJKHAD 3");
 
         // TODO: use batch process
         // Get all txn tags
@@ -90,18 +101,20 @@ export class TransactionRepository extends MeteredRepository
             if (tag === null) return new TxnTagNotFoundError({ id: tagId }, userId);
             tags.push(tag);
         }
+        console.log("ALSDHLASHDLKASHDLJKHAD 4");
 
         // TODO: use batch process
         // Get all attachments / files
         const files: File[] = [];
         for (const fileId of obj.files)
         {
-            const file = await queryRunner.manager.getRepository(File).findOne({where: { ownerId: userId, id: fileId }});
+            const file = await queryRunner.manager.getRepository(File).findOne({ where: { ownerId: userId, id: fileId }});
             if (file === null) return new FileNotFoundError(userId, fileId);
             files.push(file);
         }
+        console.log("ALSDHLASHDLKASHDLJKHAD 5");
 
-        return await queryRunner.manager.getRepository(Transaction).save(
+        const result = await queryRunner.manager.getRepository(Transaction).save(
         {
             id: targetTxnId,
             ...obj,
@@ -109,11 +122,14 @@ export class TransactionRepository extends MeteredRepository
             fragments: savedFragments,
             files: files
         });
+        console.log("ALSDHLASHDLKASHDLJKHAD 6");
+
+        return result;
     }
 
     public async getTransactionsJSONQuery
     (
-        userId: string,
+        userId: UUID,
         query: string,
         currencyRateDatumsCache: CurrencyRateDatumsCache | null,
         baseRateCache: CurrencyToBaseRateCache | null,
@@ -126,7 +142,7 @@ export class TransactionRepository extends MeteredRepository
             return new JSONQueryError(userId, `Function bindings are currently prohibited.`, query);
 
         const [now, alias, currRepo] = [Date.now(), 'txn', Database.getCurrencyRepository()!];
-        const findCurrById = async (cId: string): Promise<TransactionJSONQueryCurrency | null> =>
+        const findCurrById = async (cId: UUID): Promise<TransactionJSONQueryCurrency | null> =>
         {
             const queryResult = await currRepo.findCurrencyByIdNameTickerOne(userId, cId, QUERY_IGNORE, QUERY_IGNORE, currencyListCache);
             return queryResult ? {
@@ -158,16 +174,16 @@ export class TransactionRepository extends MeteredRepository
         };
 
         let sqlQuery = this.#repository.createQueryBuilder(alias);
-        sqlQuery = sqlQuery.where(`${alias}.${nameofT('ownerId')} = :ownerId`, { ownerId: userId });
-        sqlQuery = sqlQuery.leftJoinAndSelect(`${alias}.${nameofT('tags')}`, "txn_tag");
-        sqlQuery = sqlQuery.leftJoinAndSelect(`${alias}.${nameofT('fragments')}`, "frags");
-        sqlQuery = sqlQuery.leftJoinAndSelect(`${alias}.${nameofT('files')}`, "files");
+        sqlQuery = sqlQuery.where(`${alias}.${keyNameOfTransaction('ownerId')} = :ownerId`, { ownerId: userId });
+        sqlQuery = sqlQuery.leftJoinAndSelect(`${alias}.${JOIN_TXN_WITH_TXN_TAGS_RELATION_NAME}`, "txn_tag");
+        sqlQuery = sqlQuery.leftJoinAndSelect(`${alias}.${JOIN_TXN_WITH_FRAGMENTS_RELATION_NAME}`, "frags");
+        sqlQuery = sqlQuery.leftJoinAndSelect(`${alias}.${JOIN_TXN_WITH_FILES_RELATION_NAME}`, "files");
 
-        const sqlResults = await sqlQuery.orderBy(nameofT('creationDate'), 'ASC').getManyAndCount();
+        const sqlResults = await sqlQuery.orderBy(keyNameOfTransaction('creationDate'), 'ASC').getManyAndCount();
 
         // Check if id are all defined.
-        if (sqlResults[0].some(x => !x.id))
-            throw panic(`Some of the transactions queried from database has falsy primary keys.`);
+        if (sqlResults[0].some(x => !x.id || !isUUID(x.id)))
+            throw panic(`Some of the transactions queried from database has falsy primary keys or non UUIDs.`);
 
         const matchedResults: TransactionJSONQueryItem[] = [];
         for (const txn of sqlResults[0].reverse())
@@ -191,11 +207,11 @@ export class TransactionRepository extends MeteredRepository
                         toCurrencyId: x.toCurrencyId,
                         toCurrency: x.toCurrencyId ? await findCurrById(x.toCurrencyId) : null,
                     }))),
-                    tagIds: ((txn.tags ?? []) as { id: string }[]).map(x => x.id) ?? [],
+                    tagIds: ((txn.tags ?? []) as { id: UUID }[]).map(x => x.id) ?? [],
                     tagNames: ((txn.tags ?? []) as { name: string }[]).map(x => x.name) ?? [],
                     changeInValue: null as null | number, // Null for ignoring
                     excludedFromIncomesExpenses: txn.excludedFromIncomesExpenses,
-                    fileIds: ((txn.files ?? []) as { id: string }[]).map(x => x.id) ?? [],
+                    fileIds: ((txn.files ?? []) as { id: UUID }[]).map(x => x.id) ?? [],
                 };
 
                 const containersCurrencies = TransactionService.getFragmentsContainersCurrenciesIds(objToBeMatched.fragments);
@@ -283,16 +299,16 @@ export class TransactionRepository extends MeteredRepository
      */
     public async createTransaction
     (
-        userId: string,
+        userId: UUID,
         obj:
         {
             title: string,
             creationDate: number,
             description: string,
             fragments: FragmentRaw[],
-            txnTagIds: string[],
+            txnTagIds: UUID[],
             excludedFromIncomesExpenses: boolean,
-            files: string[]
+            files: UUID[]
         },
         queryRunner: QueryRunner,
     )
@@ -351,11 +367,11 @@ export class TransactionRepository extends MeteredRepository
     }
 
     public async saveFragmentsOfTxn(
-        userId: string,
+        userId: UUID,
         obj:
         {
             fragments: FragmentRaw[],
-            parentTxnId: string
+            parentTxnId: UUID
         },
         queryRunner: QueryRunner,
     )
@@ -382,40 +398,40 @@ export class TransactionRepository extends MeteredRepository
 
     public async getTransactions
     (
-        userId: string,
+        userId: UUID,
         query:
         {
             startIndex?: number | undefined, endIndex?: number | undefined,
             startDate?: number | undefined, endDate?: number | undefined,
-            title?: string, id?: string, description?: string
+            title?: string, id?: UUID, description?: string
         } | undefined = undefined
     )
     {
         const alias = "txn";
 
         let sqlQuery = this.#repository.createQueryBuilder(alias);
-        sqlQuery = sqlQuery.leftJoinAndSelect(`${alias}.${nameofT('tags')}`, "txn_tag");
-        sqlQuery = sqlQuery.leftJoinAndSelect(`${alias}.${nameofT('fragments')}`, "frags");
-        sqlQuery = sqlQuery.leftJoinAndSelect(`${alias}.${nameofT('files')}`, "files");
-        sqlQuery = sqlQuery.orderBy(`${alias}.${nameofT('creationDate')}`, "DESC");
-        sqlQuery = sqlQuery.where(`${alias}.${nameofT('ownerId')} = :ownerId`, { ownerId: userId });
+        sqlQuery = sqlQuery.leftJoinAndSelect(`${alias}.${JOIN_TXN_WITH_TXN_TAGS_RELATION_NAME}`, "txn_tag");
+        sqlQuery = sqlQuery.leftJoinAndSelect(`${alias}.${JOIN_TXN_WITH_FRAGMENTS_RELATION_NAME}`, "frags");
+        sqlQuery = sqlQuery.leftJoinAndSelect(`${alias}.${JOIN_TXN_WITH_FILES_RELATION_NAME}`, "files");
+        sqlQuery = sqlQuery.orderBy(`${alias}.${keyNameOfTransaction('creationDate')}`, "DESC");
+        sqlQuery = sqlQuery.where(`${alias}.${keyNameOfTransaction('ownerId')} = :ownerId`, { ownerId: userId });
 
         if (query?.id !== undefined)
-            sqlQuery = sqlQuery.andWhere(`${alias}.${nameofT('id')} == :target_id`, {target_id: `${query.id}`});
+            sqlQuery = sqlQuery.andWhere(`"${alias}".${keyNameOfTransaction('id')} = :target_id`, {target_id: `${query.id}`});
 
         if (query?.title !== undefined)
-            sqlQuery = sqlQuery.andWhere(`${alias}.${nameofT('title')} LIKE :title`, { title: `%${query.title}%` });
+            sqlQuery = sqlQuery.andWhere(`"${alias}".${keyNameOfTransaction('title')} LIKE :title`, { title: `%${query.title}%` });
 
         if (query?.description !== undefined)
-            sqlQuery = sqlQuery.andWhere(`${alias}.${nameofT('description')} LIKE :description`, { description: `%${query.description}%` });
+            sqlQuery = sqlQuery.andWhere(`"${alias}".${keyNameOfTransaction('description')} LIKE :description`, { description: `%${query.description}%` });
 
         if (query?.startDate)
-            sqlQuery = sqlQuery.andWhere(`${nameofT('creationDate')} >= :startDate`, { startDate: query.startDate });
+            sqlQuery = sqlQuery.andWhere(`${keyNameOfTransaction('creationDate')} >= :startDate`, { startDate: query.startDate });
 
         if (query?.endDate)
-            sqlQuery = sqlQuery.andWhere(`${nameofT('creationDate')} <= :endDate`, { endDate: query.endDate });
+            sqlQuery = sqlQuery.andWhere(`${keyNameOfTransaction('creationDate')} <= :endDate`, { endDate: query.endDate });
 
-        sqlQuery.orderBy(nameofT('creationDate'), 'DESC');
+        sqlQuery.orderBy(keyNameOfTransaction('creationDate'), 'DESC');
         sqlQuery = paginateQuery(sqlQuery, query ?? {});
 
         const queryResult = await sqlQuery.getManyAndCount();
@@ -448,12 +464,12 @@ export class TransactionRepository extends MeteredRepository
         };
     }
 
-    public async getUserEarliestTransaction(userId: string)
+    public async getUserEarliestTransaction(userId: UUID)
     {
         const query = await this.#repository
         .createQueryBuilder(`txn`)
-        .where(`${nameofT('ownerId')} = :ownerId`, { ownerId: userId ?? null })
-        .orderBy(`txn.${nameofT('creationDate')}`, "ASC")
+        .where(`${keyNameOfTransaction('ownerId')} = :ownerId`, { ownerId: userId ?? null })
+        .orderBy(`txn.${keyNameOfTransaction('creationDate')}`, "ASC")
         .limit(1)
         .getOne();
 
@@ -468,22 +484,22 @@ export class TransactionRepository extends MeteredRepository
         };
     }
 
-    public async getContainersTransactions(userId: string, containerIds: string[] | { id: string }[])
+    public async getContainersTransactions(userId: UUID, containerIds: string[] | { id: string }[])
     {
         const alias = "txn";
         const targetContainerIds = normalizeEntitiesToIds(containerIds, 'id');
 
         const queryResult = await this.#repository
         .createQueryBuilder(alias)
-        .where(`${alias}.${nameofT('ownerId')} = :ownerId`, { ownerId: userId ?? null })
-        .leftJoinAndSelect(`${alias}.${nameofT('fragments')}`, "frags")
-        .leftJoinAndSelect(`${alias}.${nameofT('files')}`, "files")
+        .where(`${alias}.${keyNameOfTransaction('ownerId')} = :ownerId`, { ownerId: userId ?? null })
+        .leftJoinAndSelect(`${alias}.${JOIN_TXN_WITH_FRAGMENTS_RELATION_NAME}`, "frags")
+        .leftJoinAndSelect(`${alias}.${JOIN_TXN_WITH_FILES_RELATION_NAME}`, "files")
         .andWhere
         (
             /*sql*/`
-                frags.${nameofF('fromContainerId')} IN (:...targetContainerIds)
+                frags.${keyNameOfFragment('fromContainerId')} IN (:...targetContainerIds)
                     OR
-                frags.${nameofF('toContainerId')} IN (:...targetContainerIds)`,
+                frags.${keyNameOfFragment('toContainerId')} IN (:...targetContainerIds)`,
             { targetContainerIds: targetContainerIds }
         ).getMany();
 

@@ -1,7 +1,7 @@
-import { DataSource, Repository } from "typeorm";
+import { DataSource, Repository } from 'typeorm';
 import { AccessToken } from "../entities/accessToken.entity.ts";
 import { panic } from "../../std_errors/monadError.ts";
-import { randomUUID } from "node:crypto";
+import { randomUUID, UUID } from "node:crypto";
 import { UserNotFoundError } from "../services/user.service.ts";
 import { UserRepository } from "./user.repository.ts";
 import { EnvManager } from "../../env.ts";
@@ -9,6 +9,7 @@ import { QUERY_IGNORE } from "../../symbols.ts";
 import { MeteredRepository } from "../meteredRepository.ts";
 import { AccessTokenEntry, GlobalAccessTokenCache } from "../caches/accessTokens.cache.ts";
 import { sha256 } from "../../crypto.ts";
+import { isUUID } from "npm:class-validator@~0.14.1";
 
 function hashToken(token: string) { return sha256(token); }
 Object.freeze(hashToken);
@@ -20,6 +21,11 @@ function stringExhaustiveCheck(userId: unknown): asserts userId is string
 }
 Object.freeze(stringExhaustiveCheck);
 
+function isUUIDTypeAsserts(input: unknown): input is UUID
+{
+    return isUUID(input);
+}
+
 export class AccessTokenRepository extends MeteredRepository
 {
     #dataSource: DataSource;
@@ -27,12 +33,10 @@ export class AccessTokenRepository extends MeteredRepository
 
     public async getAccessTokens
     (
-        userId: string | typeof QUERY_IGNORE,
+        userId: UUID | typeof QUERY_IGNORE,
         tokenRaw: string | typeof QUERY_IGNORE,
     )
     {
-        // const tokenHashed = hashToken(tokenRaw);
-
         if (userId === QUERY_IGNORE && tokenRaw === QUERY_IGNORE) throw panic(`Having both userId and token ignored is forbidden.`);
         if (userId !== QUERY_IGNORE) stringExhaustiveCheck(userId);
         if (tokenRaw !== QUERY_IGNORE) stringExhaustiveCheck(tokenRaw);
@@ -121,11 +125,15 @@ export class AccessTokenRepository extends MeteredRepository
     public async deleteTokensOfUser(userId: unknown)
     {
         stringExhaustiveCheck(userId);
-        GlobalAccessTokenCache.invalidateUserTokens(userId);
-        this.incrementWrite();
-        const result = await this.#repository
-        .delete({ owner: { id: userId } });
-        return result;
+        if (isUUIDTypeAsserts(userId))
+        {
+            GlobalAccessTokenCache.invalidateUserTokens(userId);
+            this.incrementWrite();
+            const result = await this.#repository
+            .delete({ owner: { id: userId } });
+            return result.affected;
+        }
+        return 0;
     }
 
     public async deleteToken(token: string)
@@ -155,38 +163,44 @@ export class AccessTokenRepository extends MeteredRepository
     }>
     {
         stringExhaustiveCheck(userId);
-        if (!EnvManager.tokenExpiryMs) throw panic(`AccessTokenService.generateTokenForUser: EnvManager.tokenExpiryMs is not defined.`);
 
-        const targetUser = await UserRepository.getInstance().findOne({where: {id: userId}});
-        if (!targetUser) return new UserNotFoundError(userId);
+        if (isUUIDTypeAsserts(userId))
+        {
+            if (!EnvManager.tokenExpiryMs) throw panic(`AccessTokenService.generateTokenForUser: EnvManager.tokenExpiryMs is not defined.`);
 
-        // TODO: Consider adding salt to prevent rainbow-table attacks.
-        // TODO: Using sha256 for now for performance reason.
-        const newToken = this.#repository.create();
-        const tokenRaw = randomUUID();
-        newToken.tokenHashed = hashToken(tokenRaw); // randomUUID should be cryptographically secure
-        newToken.owner = targetUser;
-        newToken.creationDate = nowEpoch;
-        newToken.expiryDate = newToken.creationDate + EnvManager.tokenExpiryMs;
+            const targetUser = await UserRepository.getInstance().findOne({where: {id: userId}});
+            if (!targetUser) return new UserNotFoundError(userId);
 
-        this.incrementWrite();
-        const newlySavedToken = await this.#repository.save(newToken);
-        if (!newlySavedToken.tokenHashed) throw panic(`Newly saved token contains falsy token column.`);
+            // TODO: Consider adding salt to prevent rainbow-table attacks.
+            // TODO: Using sha256 for now for performance reason.
+            const newToken = this.#repository.create();
+            const tokenRaw = randomUUID();
+            newToken.tokenHashed = hashToken(tokenRaw); // randomUUID should be cryptographically secure
+            newToken.owner = targetUser;
+            newToken.creationDate = nowEpoch;
+            newToken.expiryDate = newToken.creationDate + EnvManager.tokenExpiryMs;
 
-        GlobalAccessTokenCache.cacheToken({
-            creationDate: newToken.creationDate,
-            expiryDate: newToken.expiryDate,
-            ownerId: newToken.ownerId,
-            tokenHashed: newToken.tokenHashed
-        });
+            this.incrementWrite();
+            const newlySavedToken = await this.#repository.save(newToken);
+            if (!newlySavedToken.tokenHashed) throw panic(`Newly saved token contains falsy token column.`);
 
-        return {
-            creationDate: newToken.creationDate,
-            expiryDate: newToken.expiryDate,
-            ownerId: newToken.ownerId,
-            tokenHashed: newToken.tokenHashed,
-            tokenRaw: tokenRaw
-        };
+            GlobalAccessTokenCache.cacheToken({
+                creationDate: newToken.creationDate,
+                expiryDate: newToken.expiryDate,
+                ownerId: newToken.ownerId,
+                tokenHashed: newToken.tokenHashed
+            });
+
+            return {
+                creationDate: newToken.creationDate,
+                expiryDate: newToken.expiryDate,
+                ownerId: newToken.ownerId,
+                tokenHashed: newToken.tokenHashed,
+                tokenRaw: tokenRaw
+            };
+        }
+
+        return new UserNotFoundError(`${userId}`);
     }
 
     public constructor (datasource: DataSource)

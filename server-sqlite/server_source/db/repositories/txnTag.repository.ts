@@ -2,10 +2,11 @@ import { Repository } from "typeorm";
 import { TxnTag } from "../entities/txnTag.entity.ts";
 import { Database } from "../db.ts";
 import { panic } from "../../std_errors/monadError.ts";
+import { UUID } from "node:crypto";
 
 class TransactionTypeRepositoryExtension
 {
-    isTransactionTypeByIdExists = async function(this: Repository<TxnTag>, TransactionTypeId: string, userId: string): Promise<boolean>
+    isTransactionTypeByIdExists = async function(this: Repository<TxnTag>, TransactionTypeId: UUID, userId: UUID): Promise<boolean>
     {
         const txnTag = await this.findOne({where: { id: TransactionTypeId, owner: { id: userId } }});
         return !!txnTag;
