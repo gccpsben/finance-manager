@@ -45,30 +45,37 @@ router.post<PostCurrencyRateAPI.ResponseDTO>(`/api/v1/currencyRateDatums`,
         const parsedBody = await ExpressValidations.validateBodyAgainstModel<body>(body, req.body);
         const transactionContext = await Database.createTransactionalContext();
 
-        const newRateDatums = await CurrencyRateDatumService.createCurrencyRateDatum
-        (
-            parsedBody.datums.map(datum =>
-            {
-                return {
-                    userId: authResult.ownerUserId,
-                    amount: datum.amount,
-                    date: datum.date,
-                    currencyId: datum.refCurrencyId,
-                    amountCurrencyId: datum.refAmountCurrencyId,
-                }
-            }),
-            transactionContext.queryRunner,
-            GlobalCurrencyRateDatumsCache,
-            GlobalCurrencyToBaseRateCache,
-            GlobalCurrencyCache,
-            GlobalUserCache
-        );
+        try
+        {
+            const newRateDatums = await CurrencyRateDatumService.createCurrencyRateDatum
+            (
+                parsedBody.datums.map(datum =>
+                {
+                    return {
+                        userId: authResult.ownerUserId,
+                        amount: datum.amount,
+                        date: datum.date,
+                        currencyId: datum.refCurrencyId,
+                        amountCurrencyId: datum.refAmountCurrencyId,
+                    }
+                }),
+                transactionContext.queryRunner,
+                GlobalCurrencyRateDatumsCache,
+                GlobalCurrencyToBaseRateCache,
+                GlobalCurrencyCache,
+                GlobalUserCache
+            );
 
-        if (newRateDatums instanceof UserNotFoundError) throw createHttpError(401);
-        if (newRateDatums instanceof CurrencyNotFoundError) throw createHttpError(400, newRateDatums.message);
-
-        await transactionContext.endSuccess();
-        return { ids: newRateDatums.map(x => x.id) };
+            if (newRateDatums instanceof UserNotFoundError) throw createHttpError(401);
+            if (newRateDatums instanceof CurrencyNotFoundError) throw createHttpError(400, newRateDatums.message);
+            await transactionContext.endSuccess();
+            return { ids: newRateDatums.map(x => x.id) };
+        }
+        catch (e: unknown)
+        {
+            await transactionContext.endFailure();
+            throw e;
+        }
     }
 });
 

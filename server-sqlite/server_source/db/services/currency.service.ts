@@ -14,6 +14,7 @@ import { reverseMap } from "../servicesUtils.ts";
 import { UserCache } from '../caches/user.cache.ts';
 import { keyNameOfCurrency } from "../entities/currency.entity.ts";
 import { UUID } from "node:crypto";
+import { QueryRunner } from 'typeorm';
 
 export class CurrencyRefCurrencyIdAmountTupleError extends MonadError<typeof CurrencyRefCurrencyIdAmountTupleError.ERROR_SYMBOL>
 {
@@ -320,7 +321,8 @@ export class CurrencyService
         amount: Decimal | undefined,
         refCurrencyId: UUID | undefined,
         ticker: string,
-        currencyCache: CurrencyCache | null
+        queryRunner: QueryRunner,
+        currencyCache: CurrencyCache | null,
     ): Promise<
         ReturnType<CurrencyRepository['saveNewCurrency']> |
         CurrencyNotFoundError |
@@ -370,6 +372,7 @@ export class CurrencyService
                 fallbackRateCurrencyId: refCurrencyId,
                 lastRateCronUpdateTime: undefined
             },
+            queryRunner,
             currencyCache
         );
 

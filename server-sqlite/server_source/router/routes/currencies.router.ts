@@ -37,24 +37,37 @@ router.post<PostCurrencyAPI.ResponseDTO>(`/api/v1/currencies`,
             @IsString() ticker!: string;
         }
 
-        const parsedBody = await ExpressValidations.validateBodyAgainstModel<body>(body, req.body);
-        const newCurrency = await CurrencyService.createCurrency
-        (
-            authResult.ownerUserId,
-            parsedBody.name,
-            parsedBody.fallbackRateAmount ? new Decimal(parsedBody.fallbackRateAmount) : undefined,
-            parsedBody.fallbackRateCurrencyId ?? undefined,
-            parsedBody.ticker,
-            GlobalCurrencyCache
-        );
+        let transactionContext: Awaited<ReturnType<typeof Database.createTransactionalContext>> | null = null;
 
-        if (newCurrency instanceof CurrencyNameTakenError) throw createHttpError(400, newCurrency.message);
-        if (newCurrency instanceof CurrencyNotFoundError) throw createHttpError(400, newCurrency.message);
-        if (newCurrency instanceof CurrencyTickerTakenError) throw createHttpError(400, newCurrency.message);
-        if (newCurrency instanceof CurrencyRefCurrencyIdAmountTupleError) throw createHttpError(400, newCurrency.message);
-        if (newCurrency instanceof UserNotFoundError) throw createHttpError(401);
+        try
+        {
+            transactionContext = await Database.createTransactionalContext();
+            const parsedBody = await ExpressValidations.validateBodyAgainstModel<body>(body, req.body);
+            const newCurrency = await CurrencyService.createCurrency
+            (
+                authResult.ownerUserId,
+                parsedBody.name,
+                parsedBody.fallbackRateAmount ? new Decimal(parsedBody.fallbackRateAmount) : undefined,
+                parsedBody.fallbackRateCurrencyId ?? undefined,
+                parsedBody.ticker,
+                transactionContext.queryRunner,
+                GlobalCurrencyCache
+            );
 
-        return { id: newCurrency.id }
+            if (newCurrency instanceof CurrencyNameTakenError) throw createHttpError(400, newCurrency.message);
+            if (newCurrency instanceof CurrencyNotFoundError) throw createHttpError(400, newCurrency.message);
+            if (newCurrency instanceof CurrencyTickerTakenError) throw createHttpError(400, newCurrency.message);
+            if (newCurrency instanceof CurrencyRefCurrencyIdAmountTupleError) throw createHttpError(400, newCurrency.message);
+            if (newCurrency instanceof UserNotFoundError) throw createHttpError(401);
+
+            await transactionContext.endSuccess();
+            return { id: newCurrency.id }
+        }
+        catch(e: unknown)
+        {
+            await transactionContext?.endFailure();
+            throw e;
+        }
     }
 });
 

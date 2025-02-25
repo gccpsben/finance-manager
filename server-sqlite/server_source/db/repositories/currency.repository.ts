@@ -1,4 +1,4 @@
-import { Repository } from "typeorm";
+import { Repository, QueryRunner } from 'typeorm';
 import { Currency, keyNameOfCurrency } from "../entities/currency.entity.ts";
 import { CURRENCY_RATE_SOURCE_ENTITY_TABLE_NAME, CurrencyRateSource, keyNameOfCurrencyRateSource } from "../entities/currencyRateSource.entity.ts";
 import { panic } from "../../std_errors/monadError.ts";
@@ -167,14 +167,16 @@ export class CurrencyRepository extends MeteredRepository
             ticker: string,
             lastRateCronUpdateTime?: number | null
         },
+        queryRunner: QueryRunner,
         cache: CurrencyCache | null
     )
     {
-        const newCurrency = this.#repository.create(currencyObj);
+        const repo = queryRunner.manager.getRepository(Currency)
+        const newCurrency = repo.create(currencyObj);
 
         this.incrementWrite();
         // All relations are undefined, since we are only saving the foreign keys.
-        const savedNewCurrency: Currency = await this.#repository.save(
+        const savedNewCurrency: Currency = await repo.save(
         {
             fallbackRateAmount: newCurrency.fallbackRateAmount ?? undefined,
             fallbackRateCurrency: undefined,
