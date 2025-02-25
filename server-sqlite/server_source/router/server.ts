@@ -9,7 +9,7 @@ import { randomUUID } from 'node:crypto';
 import createHttpError from 'http-errors';
 import { QueryFailedError } from 'typeorm';
 import { UserNameTakenError } from '../db/services/user.service.ts';
-import { EnvManager, RESTfulLogType } from '../env.ts';
+import { EnvManager, isSSLDefined, RESTfulLogType } from '../env.ts';
 import { readFileSync } from 'node:fs';
 import { createServer as createHttpServer, Server as HTTPServer } from 'node:http';
 import { createServer as createHttpsServer, Server as HTTPSServer } from 'node:https';
@@ -23,6 +23,7 @@ import { GlobalCurrencyCache } from '../db/caches/currencyListCache.cache.ts';
 import { GlobalCurrencyRateDatumsCache } from '../db/caches/currencyRateDatumsCache.cache.ts';
 import { GlobalCurrencyToBaseRateCache } from '../db/caches/currencyToBaseRate.cache.ts';
 import { GlobalAccessTokenCache } from '../db/caches/accessTokens.cache.ts';
+import { EnvSettings } from '../env.ts';
 
 export type StartServerConfig =
 {
@@ -156,7 +157,8 @@ export class Server
     public static async startServer(
         port:number,
         config: Partial<StartServerConfig> = {},
-        logger: ExtendedLogger
+        logger: ExtendedLogger,
+        env: EnvSettings
     ): Promise<Server | null>
     {
         setGlobalEntityValidationLogger(logger);
@@ -165,12 +167,12 @@ export class Server
         let sslKeyFile = undefined as undefined | Buffer;
         let sslPemFile = undefined as undefined | Buffer;
         {
-            if (EnvManager.isSSLDefined())
+            if (isSSLDefined(env))
             {
                 try
                 {
-                    sslKeyFile = readFileSync(EnvManager.sslKeyFullPath!);
-                    sslPemFile = readFileSync(EnvManager.sslPemFullPath!);
+                    sslKeyFile = readFileSync(env.sslKeyFullPath!);
+                    sslPemFile = readFileSync(env.sslPemFullPath!);
                 }
                 catch(e)
                 {
@@ -182,7 +184,7 @@ export class Server
 
         const cronRunner = new CronRunner(logger);
         const expressApp = express();
-        const expressServer = EnvManager.isSSLDefined() ?
+        const expressServer = isSSLDefined(env) ?
                                 createHttpsServer({ key: sslKeyFile, cert: sslPemFile }, expressApp) :
                                 createHttpServer(expressApp);
 
@@ -205,12 +207,12 @@ export class Server
             if (shouldAttachMorgan)
                 expressApp.use(getDefaultMorganLoggerMiddleware
                 (
-                    EnvManager.restfulLogMode === RESTfulLogType.TO_BOTH || EnvManager.restfulLogMode === RESTfulLogType.TO_FILE_ONLY,
-                    EnvManager.restfulLogMode === RESTfulLogType.TO_BOTH || EnvManager.restfulLogMode === RESTfulLogType.TO_CONSOLE_ONLY,
+                    env.restfulLogMode === "TO_BOTH" || env.restfulLogMode === "TO_FILE_ONLY",
+                    env.restfulLogMode === "TO_BOTH" || env.restfulLogMode === "TO_CONSOLE_ONLY",
                     (msg, toFile, toConsole) => logger.logGray(msg, toFile, toConsole)
                 ));
 
-            expressApp.use("/", getMainRouter(logger));
+            expressApp.use("/", getMainRouter(logger, env));
 
             // @ts-expect-error ExpressJS types not updated yet
             expressApp.use(getDefaultErrorHandlerMiddleware(
@@ -219,7 +221,7 @@ export class Server
 
             expressServer.listen(port, () =>
             {
-                logger.logGreen(`${EnvManager.isSSLDefined() ? 'HTTPS' : 'HTTP'} server running at port ${port}`);
+                logger.logGreen(`${isSSLDefined(env) ? 'HTTPS' : 'HTTP'} server running at port ${port}`);
                 resolve();
             });
         });

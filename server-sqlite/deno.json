@@ -12,7 +12,8 @@
     "noImplicitAny": true,
     "noImplicitOverride": true,
     "noImplicitThis": true,
-    "lib": ["ES6", "dom"]
+    "lib": ["ES6", "dom"],
+    "strict": true
   },
   "unstable": [
     "sloppy-imports"

@@ -5,7 +5,7 @@ import { IsInt, IsNotEmpty, IsString, IsUUID } from "class-validator";
 import { ExpressValidations } from "../validation.ts";
 import { AccessTokenService, InvalidLoginTokenError } from "../../db/services/accessToken.service.ts";
 import createHttpError from "http-errors";
-import { Database } from "../../db/db.ts";
+import { Database, getFilesStoragePath } from "../../db/db.ts";
 import { FilesService } from "../../db/services/files.service.ts";
 import { UserNotFoundError } from "../../db/services/user.service.ts";
 import { AppendBytesCommitFileIOError, AppendBytesOutOfBoundError, AppendBytesSessionNotFoundError, AppendBytesUserMismatchError, AppendBytesWriteBufferIOError } from "../../io/fileReceiver.ts";
@@ -13,6 +13,8 @@ import path from "node:path";
 import { Buffer } from "node:buffer";
 import { GlobalUserCache } from "../../db/caches/user.cache.ts";
 import { UUID } from "node:crypto";
+import { EnvManager } from "../../env.ts";
+import { match, P } from 'ts-pattern';
 
 const router = new TypesafeRouter(express.Router());
 
@@ -125,6 +127,11 @@ router.custom<object>(`/api/v1/files/view`,
 {
     handler: async (req, res) =>
     {
+        const env = match(EnvManager.getEnvSettings())
+            .with(["unloaded", P._], () => { throw createHttpError(503) })
+            .with(["loaded", P.select()], env => env)
+            .exhaustive();
+
         const now = Date.now();
         const authResult = await AccessTokenService.validateRequestTokenValidated(req, now);
         if (authResult instanceof InvalidLoginTokenError) throw createHttpError(401);
@@ -134,11 +141,11 @@ router.custom<object>(`/api/v1/files/view`,
 
         const dbFiles = await Database.getFileRepository()!.getUserFiles(authResult.ownerUserId);
         const dbFile = dbFiles.find(d => d.id === parsedQuery.id);
-        if (!dbFile || !Database.getFilesStoragePath()) throw createHttpError(404);
+        if (!dbFile || !getFilesStoragePath(env)) throw createHttpError(404);
 
         console.log(dbFile.fileNameReadable);
         res.setHeader("Content-Disposition", `attachment; filename="${encodeURI(dbFile.fileNameReadable)}"`);
-        res.sendFile(path.join(Database.getFilesStoragePath()!, dbFile.id));
+        res.sendFile(path.join(getFilesStoragePath(env)!, dbFile.id));
         return {};
     }
 });

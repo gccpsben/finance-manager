@@ -10,6 +10,7 @@ import { MeteredRepository } from "../meteredRepository.ts";
 import { AccessTokenEntry, GlobalAccessTokenCache } from "../caches/accessTokens.cache.ts";
 import { sha256 } from "../../crypto.ts";
 import { isUUID } from "npm:class-validator@~0.14.1";
+import { match, P } from 'ts-pattern';
 
 function hashToken(token: string) { return sha256(token); }
 Object.freeze(hashToken);
@@ -166,7 +167,12 @@ export class AccessTokenRepository extends MeteredRepository
 
         if (isUUIDTypeAsserts(userId))
         {
-            if (!EnvManager.tokenExpiryMs) throw panic(`AccessTokenService.generateTokenForUser: EnvManager.tokenExpiryMs is not defined.`);
+            const tokenExpiryMs = match(EnvManager.getEnvSettings())
+                .with(["unloaded", P._], () => { throw panic(`AccessTokenService.generateTokenForUser: tokenExpiryMs is not defined.`) })
+                .with(["loaded", { tokenExpiryMs: P.select() }], tokenExpiryMs => tokenExpiryMs)
+                .exhaustive();
+
+            if (!tokenExpiryMs) throw panic(`AccessTokenService.generateTokenForUser: EnvManager.tokenExpiryMs is not defined.`);
 
             const targetUser = await UserRepository.getInstance().findOne({where: {id: userId}});
             if (!targetUser) return new UserNotFoundError(userId);
@@ -178,7 +184,7 @@ export class AccessTokenRepository extends MeteredRepository
             newToken.tokenHashed = hashToken(tokenRaw); // randomUUID should be cryptographically secure
             newToken.owner = targetUser;
             newToken.creationDate = nowEpoch;
-            newToken.expiryDate = newToken.creationDate + EnvManager.tokenExpiryMs;
+            newToken.expiryDate = newToken.creationDate + tokenExpiryMs;
 
             this.incrementWrite();
             const newlySavedToken = await this.#repository.save(newToken);

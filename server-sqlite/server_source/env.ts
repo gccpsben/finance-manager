@@ -9,7 +9,8 @@ import { DirNotFoundError } from './std_errors/fsErrors.ts';
 import { Variant } from './index.d.ts';
 import process from "node:process";
 export type EnvType = "Development" | "UnitTest" | "Production";
-export enum RESTfulLogType { "DISABLED","TO_FILE_ONLY","TO_CONSOLE_ONLY","TO_BOTH" };
+export type RESTfulLogType = "DISABLED" | "TO_FILE_ONLY" | "TO_CONSOLE_ONLY" | "TO_BOTH";
+export const RESTfulLogTypes: RESTfulLogType[] = ["DISABLED", "TO_BOTH", "TO_CONSOLE_ONLY", "TO_FILE_ONLY"];
 
 export class ReadEnvError<T extends Error> extends MonadError<typeof ReadEnvError.ERROR_SYMBOL> implements NestableError
 {
@@ -96,7 +97,7 @@ export class InvalidRESTfulLogTypeInEnvError extends MonadError<typeof InvalidRE
 
     constructor(logTypeReceived: string)
     {
-        super(InvalidRESTfulLogTypeInEnvError.ERROR_SYMBOL, `RESTful Log type must be one of ${Object.keys(RESTfulLogType)}, received: ${logTypeReceived}`);
+        super(InvalidRESTfulLogTypeInEnvError.ERROR_SYMBOL, `RESTful Log type must be one of ${Object.values(RESTfulLogTypes)}, received: ${logTypeReceived}`);
         this.name = this.constructor.name;
         this.logTypeReceived = logTypeReceived;
     }
@@ -115,31 +116,50 @@ export class DataLocationNotFoundError extends MonadError<typeof DataLocationNot
     }
 }
 
+export type PostgresDbEnvConfig =
+{
+    username: string,
+    password: string,
+    host: string,
+    database: string
+};
+
+export type EnvSettings =
+{
+    dataLocation: Variant<"unloaded", undefined>
+                    | Variant<"path", string>
+                    | Variant<"in-memory", undefined>;
+    serverPort: number;
+    distFolderLocation: string;
+    logsFolderPath: string;
+    sslPemFullPath: string | null;
+    sslKeyFullPath: string | null;
+    tokenExpiryMs: number | null;
+    restfulLogMode: RESTfulLogType;
+    envType: EnvType;
+};
+
+export function isSSLDefined(env: EnvSettings)
+{
+    return env.sslPemFullPath !== null &&
+        env.sslKeyFullPath !== null;
+}
+
 export class EnvManager
 {
-    public static currentEnvFilePath = ['unloaded', undefined] as Variant<'unloaded', undefined> |
-                                                                  Variant<'path', string | undefined> |
-                                                                  Variant<'rawContent', string>;
-    public static dataLocation = ["unloaded", undefined] as Variant<"unloaded", undefined> |
-                                                            Variant<"path", string> |
-                                                            Variant<"in-memory", undefined>;
+    public static envSource:
+        Variant<"fromFilePath", string> |
+        Variant<"fromLiteral", string>;
 
-    public static serverPort = undefined as undefined | number;
-    public static distFolderLocation = undefined as undefined | string;
-
-    public static logsFolderPath = undefined as undefined | string;
-    public static sslPemFullPath = undefined as undefined | string;
-    public static sslKeyFullPath = undefined as undefined | string;
-    public static tokenExpiryMs = undefined as undefined | number;
-    public static restfulLogMode: RESTfulLogType;
-    public static envType:EnvType = "Production";
+    private static envSettings:
+        Variant<"unloaded", null> |
+        Variant<"loaded", EnvSettings>;
 
     public static readEnv
     (
         env:
-            Variant<'path', string|undefined> |
+            Variant<'path', string | undefined> |
             Variant<'rawContent', string>
-
     ): undefined | ReadEnvError<DirNotFoundError | Error>
     {
         try
@@ -148,15 +168,15 @@ export class EnvManager
             if (envMode === 'path') // Read env from path
             {
                 const envPath = path.resolve(env[1] || process.argv[2] || ".env");
-                EnvManager.currentEnvFilePath = ['path', envPath];
+                EnvManager.envSource = ['fromFilePath', envPath];
                 if (!fs.existsSync(envPath))
                     return new ReadEnvError(new DirNotFoundError(envPath));
                 dotenvExpand.expand(dotenv.config({ path: envPath }));
             }
-            else // envMode === 'rawContent'
+            else // envMode === 'fromLiteral'
             {
                 const envContent = env[1];
-                EnvManager.currentEnvFilePath = ['rawContent', envContent];
+                EnvManager.envSource = ['fromLiteral', envContent];
                 dotenvExpand.expand({ parsed: dotenv.parse(envContent) });
             }
         }
@@ -173,6 +193,8 @@ export class EnvManager
         DirNotFoundError
     >
     {
+        const data: Partial<EnvSettings> = {};
+
         {
             if (!process.env.NODE_ENV)
                 return new ParseEnvError(new MissingPropInEnvError(`NODE_ENV`));
@@ -182,7 +204,7 @@ export class EnvManager
             if (loadedEnvType instanceof UnknownEnvTypeError)
                 return new ParseEnvError(loadedEnvType);
 
-            this.envType = loadedEnvType;
+            data.envType = loadedEnvType;
         }
 
         dataLocation:
@@ -190,13 +212,13 @@ export class EnvManager
             const dataLocation = process.env.DATA_LOCATION;
             if (dataLocation === ':memory:')
             {
-                EnvManager.dataLocation = ['in-memory', undefined];
+                data.dataLocation = ['in-memory', undefined];
                 break dataLocation;
             }
 
             if (dataLocation === undefined || !fsExtra.pathExistsSync(dataLocation))
                 return new ParseEnvError(new DataLocationNotFoundError(dataLocation ?? '<undefined>'));
-            else EnvManager.dataLocation = ['path', dataLocation];
+            else data.dataLocation = ['path', dataLocation];
         }
 
         {
@@ -206,7 +228,7 @@ export class EnvManager
             if (!isNumberString(process.env.SERVER_PORT) || !isInt(parseFloat(process.env.SERVER_PORT)))
                 return new ParseEnvError(new InvalidServerPortInEnvError(process.env.SERVER_PORT));
 
-            EnvManager.serverPort = parseInt(process.env.SERVER_PORT);
+            data.serverPort = parseInt(process.env.SERVER_PORT);
         }
 
         {
@@ -223,7 +245,7 @@ export class EnvManager
             if (!stat.isDirectory())
                 return new ParseEnvError(new DirNotFoundError(parsedPath));
 
-            EnvManager.logsFolderPath = parsedPath;
+            data.logsFolderPath = parsedPath;
         }
 
         {
@@ -240,7 +262,7 @@ export class EnvManager
             if (!stat.isDirectory())
                 return new ParseEnvError(new DirNotFoundError(parsedPath));
 
-            EnvManager.distFolderLocation = parsedPath;
+            data.distFolderLocation = parsedPath;
         }
 
         {
@@ -251,7 +273,7 @@ export class EnvManager
             if (!isNumberString(process.env[keyName]) || !isInt(parseFloat(process.env[keyName])))
                 return new ParseEnvError(new InvalidTokenExpireMsInEnvError(process.env[keyName]))
 
-            EnvManager.tokenExpiryMs = parseInt(process.env[keyName]);
+            data.tokenExpiryMs = parseInt(process.env[keyName]);
         }
 
         ssl: {
@@ -264,8 +286,8 @@ export class EnvManager
             if (!process.env[sslKeyPathKeyName]) return new ParseEnvError(new MissingPropInEnvError(sslKeyPathKeyName));
             if (!process.env[sslPemPathKeyName]) return new ParseEnvError(new MissingPropInEnvError(sslPemPathKeyName));
 
-            EnvManager.sslKeyFullPath = path.resolve(path.join(process.cwd(), process.env[sslKeyPathKeyName]));
-            EnvManager.sslPemFullPath = path.resolve(path.join(process.cwd(), process.env[sslPemPathKeyName]));
+            data.sslKeyFullPath = path.resolve(path.join(process.cwd(), process.env[sslKeyPathKeyName]));
+            data.sslPemFullPath = path.resolve(path.join(process.cwd(), process.env[sslPemPathKeyName]));
         }
 
         restLog: {
@@ -274,20 +296,30 @@ export class EnvManager
 
             if (!keyValue)
             {
-                EnvManager.restfulLogMode = RESTfulLogType.TO_BOTH;
+                data.restfulLogMode = "TO_BOTH";
                 break restLog;
             }
 
-            if (!(keyValue in RESTfulLogType))
+            if (!(RESTfulLogTypes as string[]).includes(keyValue))
                 return new ParseEnvError(new InvalidRESTfulLogTypeInEnvError(keyValue));
             else
-                EnvManager.restfulLogMode = RESTfulLogType[keyValue as keyof typeof RESTfulLogType];
+                data.restfulLogMode = keyValue as RESTfulLogType;
         }
+
+        EnvManager.envSettings = ['loaded', {
+            dataLocation: data.dataLocation,
+            distFolderLocation: data.distFolderLocation,
+            envType: data.envType,
+            logsFolderPath: data.logsFolderPath,
+            restfulLogMode: data.restfulLogMode,
+            serverPort: data.serverPort,
+            sslKeyFullPath: data.sslKeyFullPath ?? null,
+            sslPemFullPath: data.sslPemFullPath ?? null,
+            tokenExpiryMs: data.tokenExpiryMs
+        }];
 
         return null;
     }
-
-    public static isSSLDefined() { return this.sslKeyFullPath && this.sslPemFullPath }
 
     public static getEnvType(): EnvType | UnknownEnvTypeError
     {
@@ -300,5 +332,9 @@ export class EnvManager
         if (envTypeRaw == "prod") return "Production";
         if (envTypeRaw == "production") return "Production";
         return new UnknownEnvTypeError(envTypeRaw);
+    }
+
+    public static getEnvSettings() {
+        return this.envSettings;
     }
 }
