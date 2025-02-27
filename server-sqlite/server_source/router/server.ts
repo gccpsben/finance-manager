@@ -9,7 +9,6 @@ import { randomUUID } from 'node:crypto';
 import createHttpError from 'http-errors';
 import { QueryFailedError } from 'typeorm';
 import { UserNameTakenError } from '../db/services/user.service.ts';
-import { EnvManager, isSSLDefined, RESTfulLogType } from '../env.ts';
 import { readFileSync } from 'node:fs';
 import { createServer as createHttpServer, Server as HTTPServer } from 'node:http';
 import { createServer as createHttpsServer, Server as HTTPSServer } from 'node:https';
@@ -23,7 +22,7 @@ import { GlobalCurrencyCache } from '../db/caches/currencyListCache.cache.ts';
 import { GlobalCurrencyRateDatumsCache } from '../db/caches/currencyRateDatumsCache.cache.ts';
 import { GlobalCurrencyToBaseRateCache } from '../db/caches/currencyToBaseRate.cache.ts';
 import { GlobalAccessTokenCache } from '../db/caches/accessTokens.cache.ts';
-import { EnvSettings } from '../env.ts';
+import { EnvSettings, isSSLDefined } from '../env.ts';
 
 export type StartServerConfig =
 {
@@ -171,8 +170,8 @@ export class Server
             {
                 try
                 {
-                    sslKeyFile = readFileSync(env.sslKeyFullPath!);
-                    sslPemFile = readFileSync(env.sslPemFullPath!);
+                    sslKeyFile = readFileSync(env.server.ssl.keyPath!);
+                    sslPemFile = readFileSync(env.server.ssl.pemPath!);
                 }
                 catch(e)
                 {
@@ -207,8 +206,8 @@ export class Server
             if (shouldAttachMorgan)
                 expressApp.use(getDefaultMorganLoggerMiddleware
                 (
-                    env.restfulLogMode === "TO_BOTH" || env.restfulLogMode === "TO_FILE_ONLY",
-                    env.restfulLogMode === "TO_BOTH" || env.restfulLogMode === "TO_CONSOLE_ONLY",
+                    env.logs.logMode === "TO_BOTH" || env.logs.logMode === "TO_FILE_ONLY",
+                    env.logs.logMode === "TO_BOTH" || env.logs.logMode === "TO_CONSOLE_ONLY",
                     (msg, toFile, toConsole) => logger.logGray(msg, toFile, toConsole)
                 ));
 

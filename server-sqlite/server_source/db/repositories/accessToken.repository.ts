@@ -154,7 +154,7 @@ export class AccessTokenRepository extends MeteredRepository
     public async generateTokenForUser
     (
         userId: unknown,
-        nowEpoch: number
+        nowEpoch: number,
     ): Promise<UserNotFoundError | {
         creationDate: number,
         expiryDate: number,
@@ -169,7 +169,7 @@ export class AccessTokenRepository extends MeteredRepository
         {
             const tokenExpiryMs = match(EnvManager.getEnvSettings())
                 .with(["unloaded", P._], () => { throw panic(`AccessTokenService.generateTokenForUser: tokenExpiryMs is not defined.`) })
-                .with(["loaded", { tokenExpiryMs: P.select() }], tokenExpiryMs => tokenExpiryMs)
+                .with(["loaded", { auth: { tokenExpiryMs: P.select() } }], tokenExpiryMs => tokenExpiryMs)
                 .exhaustive();
 
             if (!tokenExpiryMs) throw panic(`AccessTokenService.generateTokenForUser: EnvManager.tokenExpiryMs is not defined.`);

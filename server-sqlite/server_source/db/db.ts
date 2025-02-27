@@ -1,7 +1,6 @@
-import { DataSource, QueryRunner } from "typeorm";
+import { DataSource, LogLevel, QueryRunner } from "typeorm";
 import { User } from "./entities/user.entity.ts";
 import { AccessToken } from "./entities/accessToken.entity.ts";
-import { EnvManager } from "../env.ts";
 import { ExtendedLogger } from "../debug/extendedLog.ts";
 import { Currency } from "./entities/currency.entity.ts";
 import { Container } from "./entities/container.entity.ts";
@@ -25,6 +24,8 @@ import { randomUUID } from "node:crypto";
 import path from "node:path";
 import { memfs } from "memfs";
 import { open } from "node:fs/promises";
+import { EnvSettings } from '../env.ts';
+import { match } from 'ts-pattern';
 
 export class DatabaseInitError<T extends Error> extends MonadError<typeof DatabaseInitError.ERROR_SYMBOL> implements NestableError
 {
@@ -156,6 +157,7 @@ export class Database
                         resolveInner();
                         isEnded = true;
                     };
+
                     runner.startTransaction().then(_newSQLTransaction =>
                     {
                         return resolve(
@@ -172,25 +174,8 @@ export class Database
         });
     }
 
-    /** Create a Database data source from the env file. */
-    public static createAppDataSource(): DataSource | CreateAppDataSourceError<FileNotFoundError>
-    {
-        if (EnvManager.dataLocation[0] === 'unloaded') throw panic(`DataLocation is not correct loaded.`);
-
-        Database.AppDataSource = new DataSource(
-        {
-            type: 'sqlite',
-            entities: [User, AccessToken, Currency, Container, Transaction, TxnTag, CurrencyRateDatum, CurrencyRateSource, Fragment, File],
-            database: EnvManager.dataLocation[0] === 'in-memory' ? ":memory:" : `${EnvManager.dataLocation[1]}/db.db`,
-            synchronize: true,
-            logging: ['warn'],
-            maxQueryExecutionTime: 1,
-        });
-
-        return Database.AppDataSource;
-    }
-
-    public static async init(logger: ExtendedLogger): Promise<DataSource | DatabaseInitError<Error | DatabaseInitMissingDataSourceError>>
+    public static async init(logger: ExtendedLogger, env: EnvSettings)
+        : Promise<DataSource | DatabaseInitError<Error | DatabaseInitMissingDataSourceError>>
     {
         if (!Database.AppDataSource)
             return new DatabaseInitError(new DatabaseInitMissingDataSourceError());
@@ -205,7 +190,7 @@ export class Database
             Database.transactionRepository = new TransactionRepository(dataSource);
             Database.filesRepository = new FileRepository(dataSource);
 
-            if (EnvManager.dataLocation[0] === 'path')
+            if (env.storage.files.type === 'folderOnDisk')
             {
                 Database.fs =
                 {
@@ -242,8 +227,8 @@ export class Database
                 };
             }
 
-            const tempFolderFullPath = Database.getTempFolderPath();
-            const filesFolderFullPath = Database.getFilesStoragePath();
+            const tempFolderFullPath = getTempFolderPath(env.storage.files);
+            const filesFolderFullPath = getFilesStoragePath(env.storage.files);
             if (tempFolderFullPath === null) throw panic(`Temp folder is not found!`); // TODO: Properly handle
             if (filesFolderFullPath === null) throw panic(`Files folder is not found!`); // TODO: Properly handle
             this.fileReceiver = new FileReceiver(
@@ -268,22 +253,65 @@ export class Database
 
     public static getFileReceiver() { return this.fileReceiver; }
 
-    public static getTempFolderPath()
-    {
-        if (EnvManager.dataLocation[0] === 'unloaded') return null;
-        return EnvManager.dataLocation[0] === 'path' ? path.join(EnvManager.dataLocation[1], '/tmp') : '/tmp';
-    }
-
-    public static getFilesStoragePath()
-    {
-        if (EnvManager.dataLocation[0] === 'unloaded') return null;
-        return EnvManager.dataLocation[0] === 'path' ? path.join(EnvManager.dataLocation[1], '/files') : '/files';
-    }
-
     public static getCurrencyRepository() { return this.currencyRepository; }
     public static getAccessTokenRepository() { return this.accessTokenRepository; }
     public static getContainerRepository() { return this.containerRepository; }
     public static getCurrencyRateDatumRepository() { return this.currencyRateDatumRepository; }
     public static getTransactionRepository() { return this.transactionRepository; }
     public static getFileRepository() { return this.filesRepository; }
+}
+
+export function getFilesStoragePath(env: EnvSettings['storage']['files'])
+{
+    return env.type === 'folderOnDisk' ? path.join(env.pathToFolder, '/files') : '/files';
+}
+
+export function getTempFolderPath(env: EnvSettings['storage']['files'])
+{
+    return env.type === 'folderOnDisk' ? path.join(env.pathToFolder, '/tmp') : '/tmp';
+}
+
+/** Create a Database data source from the env file. */
+export function createAppDataSource(
+    env: Readonly<EnvSettings['storage']['db']>
+): DataSource | CreateAppDataSourceError<FileNotFoundError>
+{
+    const entities = [User, AccessToken, Currency, Container, Transaction, TxnTag, CurrencyRateDatum, CurrencyRateSource, Fragment, File];
+    const logging = ['warn'] as LogLevel[];
+    const maxQueryExecutionTime: number = 1000;
+
+    return match(env.type)
+    .with("postgres", _ =>
+    {
+        if (env.type === 'postgres')
+        {
+            return new DataSource({
+                type: 'postgres' as const,
+                entities: entities,
+                host: env.hostname,
+                username: env.username,
+                password: env.password,
+                database: env.database,
+                port: 5432,
+                synchronize: true,
+                logging: logging,
+                maxQueryExecutionTime: maxQueryExecutionTime,
+            });
+        }
+    })
+    .with("sqlite", _ =>
+    {
+        if (env.type === 'sqlite')
+        {
+            return new DataSource({
+                type: 'sqlite' as const,
+                entities: entities,
+                database: env.dbPath,
+                synchronize: true,
+                logging: logging,
+                maxQueryExecutionTime: maxQueryExecutionTime,
+            });
+        }
+    })
+    .exhaustive()!;
 }

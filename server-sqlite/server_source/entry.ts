@@ -24,7 +24,7 @@ import { green, red } from "jsr:@std/internal@^1.0.5/styles";
 // `main` should be called to initialize the app.
 // This is the entry point of the app.
 
-export async function main(envFilePath: ['path', string | undefined] | ['rawContent', string])
+export async function main(envFilePath: ['path', string | undefined] | ['rawJson', string])
 {
     preventEval();
     let logger: ExtendedLogger | null = null;
@@ -36,9 +36,10 @@ export async function main(envFilePath: ['path', string | undefined] | ['rawCont
 
         // Read env file from disk / Parse env file from raw content.
         {
-            const envPath = envFilePath || process.argv[2] || ".env";
-            const envReadResult = EnvManager.readEnv(envPath);
-            if (envReadResult) envReadResult.panic();
+            const envParseResult = match(envFilePath)
+                .with(['path', undefined], () => EnvManager.parseEnv(['path' as const, `${process.argv[2]}` || ".env"]))
+                .otherwise(value => EnvManager.parseEnv(value));
+            if (envParseResult) envParseResult.panic();
 
             // Log will not be saved to file before env is successfully read
             match(EnvManager.envSource)
@@ -49,9 +50,6 @@ export async function main(envFilePath: ['path', string | undefined] | ['rawCont
                 .exhaustive();
         }
 
-        const envParseResult = EnvManager.parseEnv();
-        if (envParseResult !== null) envParseResult.panic();
-
         const loadedEnv = match(EnvManager.getEnvSettings())
         .with(["unloaded", P._], () => { throw panic(`Error in main loop: EnvManager reported env is not loaded and parsed yet.`) })
         .with(["loaded", P.select()], env => env)
@@ -59,29 +57,32 @@ export async function main(envFilePath: ['path', string | undefined] | ['rawCont
 
         // Parse env file
         {
-            logger = new ExtendedLogger();
+            logger = new ExtendedLogger(loadedEnv.logs.logFolderPath);
             logger.logGreen(`Successfully parsed env file.`, false, true); // Log will not be saved to file before env is successfully parsed
 
-            match(loadedEnv.envType)
-            .with("Development", () => logger!.logRed(`EnvType determined to be "${loadedEnv.envType}"`))
-            .with("UnitTest", () => logger!.logCyan(`EnvType determined to be "${loadedEnv.envType}"`))
-            .with("Production", () => logger!.logGreen(`EnvType determined to be "${loadedEnv.envType}"`))
+            match(loadedEnv.nodeEnv)
+            .with("Development", () => logger!.logRed(`EnvType determined to be "${loadedEnv.nodeEnv}"`))
+            .with("UnitTest", () => logger!.logCyan(`EnvType determined to be "${loadedEnv.nodeEnv}"`))
+            .with("Production", () => logger!.logGreen(`EnvType determined to be "${loadedEnv.nodeEnv}"`))
             .exhaustive();
 
-            if (loadedEnv.dataLocation[0] === 'in-memory')
-                logger.logYellow(`Data location set to in-memory.`);
-            else if (loadedEnv.dataLocation[0] === 'path')
-                logger.logYellow(`Data location set to path on disk: "${loadedEnv.dataLocation[1]}".`);
-            else
-                panic(`DataLocation is not correctly loaded in EnvManager: ${loadedEnv.dataLocation}`);
+            logger.logGreen(`Database set to "${loadedEnv.storage.db.type}"`);
 
-            logger.logMagenta(`Dist folder path resolved to "${loadedEnv.distFolderLocation}"`);
+            match(loadedEnv.storage.files.type)
+                .with("inMemory", () => logger!.logGreen(`Files(Attachments) will be stored in memory.`))
+                .with("folderOnDisk", () => {
+                    if (loadedEnv.storage.files.type !== 'folderOnDisk') return;
+                    logger!.logGreen(`Files(Attachments) will be stored in ${loadedEnv.storage.files.pathToFolder}`)
+                })
+                .exhaustive();
+
+            logger.logMagenta(`Dist folder path resolved to "${loadedEnv.server.distFolderPath}"`);
 
             isSSLDefined(loadedEnv) ?
                 logger.logGreen(`SSL is defined, will run in HTTPS mode.`) :
                 logger.logYellow(`SSL is not defined, will run in HTTP mode.`);
 
-            match(loadedEnv.restfulLogMode)
+            match(loadedEnv.logs.logMode)
                 .with("DISABLED", () => logger!.logYellow(`RESTFUL logging is disabled.`))
                 .with("TO_BOTH", () => logger!.logGreen(`RESTFUL logging is enabled for file and console.`))
                 .with("TO_FILE_ONLY", () => logger!.logYellow(`RESTFUL logging is enabled only for file.`))
@@ -92,7 +93,7 @@ export async function main(envFilePath: ['path', string | undefined] | ['rawCont
         // Initialize database
         {
             logger.logGray(`Initializing AppDataSource and database...`);
-            const createAppDataSourceResults = createAppDataSource(loadedEnv);
+            const createAppDataSourceResults = createAppDataSource(loadedEnv.storage.db);
             if (createAppDataSourceResults instanceof CreateAppDataSourceError)
                 return createAppDataSourceResults.panic();
 
@@ -106,13 +107,13 @@ export async function main(envFilePath: ['path', string | undefined] | ['rawCont
 
         // Start Server
         {
-            if (!loadedEnv.serverPort)
+            if (!loadedEnv.server.port)
                 throw panic("Server port is not defined in env.");
 
             return await Server.startServer
             (
-                loadedEnv.serverPort,
-                { attachMorgan: loadedEnv.restfulLogMode !== "DISABLED" },
+                loadedEnv.server.port,
+                { attachMorgan: loadedEnv.logs.logMode !== "DISABLED" },
                 logger,
                 loadedEnv
             );

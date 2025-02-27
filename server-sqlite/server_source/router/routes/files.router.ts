@@ -141,11 +141,11 @@ router.custom<object>(`/api/v1/files/view`,
 
         const dbFiles = await Database.getFileRepository()!.getUserFiles(authResult.ownerUserId);
         const dbFile = dbFiles.find(d => d.id === parsedQuery.id);
-        if (!dbFile || !getFilesStoragePath(env)) throw createHttpError(404);
+        if (!dbFile || !getFilesStoragePath(env.storage.files)) throw createHttpError(404);
 
         console.log(dbFile.fileNameReadable);
         res.setHeader("Content-Disposition", `attachment; filename="${encodeURI(dbFile.fileNameReadable)}"`);
-        res.sendFile(path.join(getFilesStoragePath(env)!, dbFile.id));
+        res.sendFile(path.join(getFilesStoragePath(env.storage.files)!, dbFile.id));
         return {};
     }
 });

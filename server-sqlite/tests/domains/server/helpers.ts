@@ -10,7 +10,7 @@ import { panic } from "../../../server_source/std_errors/monadError.ts";
 
 export async function startServer
 (
-    env: ["path", string | undefined] | ["rawContent", string] = ['path', './.test.env']
+    env: ["path", string | undefined] | ["rawJson", string] = ['path', './.test.json']
 )
 {
     let server: Server | null = null;
@@ -34,5 +34,5 @@ export async function resetDatabase()
 
     try { if (Database.AppDataSource?.isInitialized) await Database.AppDataSource?.dropDatabase(); } catch(_) { /** ignore */ }
     try { if (Database.AppDataSource?.isInitialized) await Database.AppDataSource?.destroy(); } catch(_) { /** ignore */ }
-    await Database.init(new ExtendedLogger(), env);
+    await Database.init(new ExtendedLogger(env.logs.logFolderPath), env);
 }

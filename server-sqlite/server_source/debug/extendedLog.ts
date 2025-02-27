@@ -3,9 +3,6 @@ import chalk from 'chalk';
 import * as fse from 'fs-extra/esm';
 import path from 'node:path';
 import { createStream, RotatingFileStream } from 'rotating-file-stream';
-import { EnvManager } from '../env.ts';
-import { match, P } from 'ts-pattern';
-import createHttpError from 'http-errors';
 
 // let pastLines:any = [];
 
@@ -13,15 +10,8 @@ export class ExtendedLogger
 {
     public writeStream: RotatingFileStream | null;
 
-    public constructor()
+    public constructor(logsFolderPath: string)
     {
-        const logsFolderPath = match(EnvManager.getEnvSettings())
-            .with(["unloaded", P._], () => { throw createHttpError(503) })
-            .with(["loaded", { logsFolderPath: P.select() }], logsFolderPath => logsFolderPath)
-            .exhaustive();
-
-        if (!logsFolderPath) throw new Error(`ensureWriteStream: EnvManager.logsFolderPath is not defined.`);
-
         fse.mkdirs(logsFolderPath);
         this.writeStream = createStream
         (

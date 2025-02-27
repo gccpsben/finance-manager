@@ -21,7 +21,7 @@ export function getMainRouter(
 {
     const router = express.Router();
 
-    if (env.envType === 'Development')
+    if (env.nodeEnv === 'Development')
         router.use("/", devOnlyRouter);
 
     router.use("/", userRouter);
@@ -36,13 +36,13 @@ export function getMainRouter(
     router.use("/", currencyRateDatumSrcsRouter);
     router.use("/", filesRouter);
 
-    if (env.distFolderLocation)
+    if (env.server.distFolderPath)
     {
-        router.use(express.static(env.distFolderLocation));
-        router.get("/manifest.webmanifest", (_, res) => { res.sendFile(`manifest.webmanifest`, { root: env.distFolderLocation }); });
-        router.get("/manifest.json", (_, res) => { res.sendFile(`manifest.webmanifest`, { root: env.distFolderLocation }); });
-        router.get("/assets/*splat", (req, res) => { res.sendFile(req.path, { root: env.distFolderLocation }); });
-        router.get("/*splat", (_, res) => { res.sendFile("index.html", { root: env.distFolderLocation }); });
+        router.use(express.static(env.server.distFolderPath));
+        router.get("/manifest.webmanifest", (_, res) => { res.sendFile(`manifest.webmanifest`, { root: env.server.distFolderPath }); });
+        router.get("/manifest.json", (_, res) => { res.sendFile(`manifest.webmanifest`, { root: env.server.distFolderPath }); });
+        router.get("/assets/*splat", (req, res) => { res.sendFile(req.path, { root: env.server.distFolderPath }); });
+        router.get("/*splat", (_, res) => { res.sendFile("index.html", { root: env.server.distFolderPath }); });
     }
     else
         logger.logYellow(`distFolderLocation is not set. Static dist folder's router will not be mounted.`);

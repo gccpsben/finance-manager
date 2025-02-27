@@ -5,10 +5,10 @@
 	"private": true,
 	"type": "module",
 	"scripts": {
-		"dev-watch": "deno run --watch --allow-all server_source/index.ts ./.dev.env",
+		"dev-watch": "deno run --watch --allow-all server_source/index.ts ./.dev.json",
 		"test-verbose": "deno test --clean --fail-fast --allow-write=./ --allow-ffi --allow-env --allow-read --allow-net ./tests --trace-leaks --coverage=coverage && deno coverage --include=\"./server_source\" && deno coverage --lcov --output=./coverage/lcov.info --include=\"./server_source\"",
 		"test-quiet": "deno test --clean --fail-fast --allow-write=./ --allow-ffi --allow-env --allow-read --allow-net ./tests --quiet --coverage=coverage && deno coverage --include=\"./server_source\" && deno coverage --lcov --output=./coverage/lcov.info --include=\"./server_source\"",
-		"run_prod": "deno run --allow-all server_source/index.ts ./.prod.env",
+		"run_prod": "deno run --allow-all server_source/index.ts ./.prod.json",
 		"check": "deno check ./server_source/index.ts"
 	},
 	"devDependencies": {
@@ -49,6 +49,7 @@
 		"jmespath": "^0.16.0",
 		"json-query": "^2.2.2",
 		"jsonata": "^2.0.6",
+		"jsonschema": "^1.5.0",
 		"memfs": "^4.15.3",
 		"morgan": "^1.10.0",
 		"node-cache": "^5.1.2",
