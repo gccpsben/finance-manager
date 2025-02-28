@@ -1,0 +1,6 @@
+entities
+target
+server/src/entities
+lcov.info
+*.db
+*.sqlite

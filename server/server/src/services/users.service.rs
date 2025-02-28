@@ -1,0 +1,98 @@
+use argon2::password_hash::Error;
+use argon2::PasswordHasher;
+use argon2::{
+    password_hash::{rand_core::OsRng, SaltString},
+    Argon2, PasswordHash, PasswordVerifier,
+};
+use sea_orm::{ColumnTrait, DatabaseConnection, DbErr, EntityTrait, QueryFilter};
+
+use crate::{
+    entities::{access_token, user},
+    repositories,
+};
+
+pub async fn generate_token_unverified(
+    user_id: uuid::Uuid,
+    db: &DatabaseConnection,
+) -> Result<sea_orm::InsertResult<access_token::ActiveModel>, DbErr> {
+    let new_token = access_token::ActiveModel {
+        user_id: sea_orm::ActiveValue::Set(user_id),
+        id: sea_orm::ActiveValue::Set(uuid::Uuid::new_v4()),
+    };
+    let insert_result = access_token::Entity::insert(new_token).exec(db).await;
+    match insert_result {
+        Ok(result) => Ok(result),
+        Err(err) => Err(err),
+    }
+}
+
+#[derive(Debug)]
+pub enum VerifyCredsResult {
+    Ok(user::Model),
+    DbErr,
+    InvalidHash,
+    InvalidCreds,
+}
+
+pub async fn verify_creds(
+    username: &str,
+    password: &str,
+    db: &DatabaseConnection,
+) -> VerifyCredsResult {
+    let queried_user = match user::Entity::find()
+        .filter(user::Column::Name.eq(username))
+        .one(db)
+        .await
+    {
+        Err(_) => return VerifyCredsResult::DbErr,
+        Ok(None) => return VerifyCredsResult::InvalidCreds,
+        Ok(Some(usr)) => usr,
+    };
+    let expected_hash = match PasswordHash::parse(
+        queried_user.password_hash.as_str(),
+        argon2::password_hash::Encoding::B64,
+    ) {
+        Err(_) => return VerifyCredsResult::InvalidHash,
+        Ok(hash) => hash,
+    };
+    let result = Argon2::default().verify_password(password.as_bytes(), &expected_hash);
+    match result {
+        Ok(_) => VerifyCredsResult::Ok(queried_user),
+        Err(_) => VerifyCredsResult::InvalidCreds,
+    }
+}
+
+#[derive(Debug)]
+pub enum RegisterUserErrors {
+    HashError(Error),
+    DbErr(DbErr),
+    EmptyUsername,
+    EmptyPassword,
+}
+
+pub async fn register_user(
+    username: &str,
+    password_raw: &str,
+    db: &DatabaseConnection,
+) -> Result<uuid::Uuid, RegisterUserErrors> {
+    if username.trim().is_empty() {
+        return Err(RegisterUserErrors::EmptyUsername);
+    }
+
+    if password_raw.is_empty() {
+        return Err(RegisterUserErrors::EmptyPassword);
+    }
+
+    let salt = SaltString::generate(&mut OsRng);
+    let argon2 = Argon2::default();
+    let pw_hash = argon2.hash_password(password_raw.as_bytes(), &salt);
+    let pw_hash = match pw_hash {
+        Err(err) => return Err(RegisterUserErrors::HashError(err)),
+        Ok(hash) => hash,
+    };
+
+    match repositories::users::create_user(username, pw_hash.to_string().as_str(), db).await {
+        Ok(new_id) => Ok(new_id),
+        Err(db_err) => Err(RegisterUserErrors::DbErr(db_err)),
+    }
+}

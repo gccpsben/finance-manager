@@ -1,1 +1,0 @@
-export const POST_LOGIN_API_PATH = "/api/v1/auth/login";
