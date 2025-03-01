@@ -136,7 +136,7 @@ pub mod commons {
 
     pub async fn init_table_of_entity<T>(schema: &Schema, entity: T, db: &DatabaseConnection)
     where
-        T: EntityTrait
+        T: EntityTrait,
     {
         let stmts: Vec<IndexCreateStatement> = schema.create_index_from_entity(entity);
         futures::stream::iter(0..stmts.len())
@@ -144,7 +144,7 @@ pub mod commons {
                 let value = stmts.clone();
                 async move {
                     let db_index = value.get(index).unwrap();
-                    println!("Creating index for entity {}" , entity.module_name());
+                    println!("Creating index for entity {}", entity.module_name());
                     db.execute(db.get_database_backend().build(db_index))
                         .await
                         .unwrap_or_else(|_| {

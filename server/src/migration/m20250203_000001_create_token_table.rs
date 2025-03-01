@@ -23,17 +23,13 @@ impl MigrationTrait for Migration {
                             .not_null()
                             .primary_key(),
                     )
-                    .col(
-                        ColumnDef::new(AccessToken::UserId)
-                        .uuid()
-                        .not_null()
-                    )
+                    .col(ColumnDef::new(AccessToken::UserId).uuid().not_null())
                     .foreign_key(
                         ForeignKey::create()
-                        .name("access_token_user")
-                        .take()
-                        .from(AccessToken::Table, AccessToken::UserId)
-                        .to(User::Table, User::Id)
+                            .name("access_token_user")
+                            .take()
+                            .from(AccessToken::Table, AccessToken::UserId)
+                            .to(User::Table, User::Id),
                     )
                     .to_owned(),
             )
@@ -51,5 +47,5 @@ impl MigrationTrait for Migration {
 pub enum AccessToken {
     Table,
     Id,
-    UserId
+    UserId,
 }

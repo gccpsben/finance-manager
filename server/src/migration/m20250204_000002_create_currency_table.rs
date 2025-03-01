@@ -1,5 +1,5 @@
-use sea_orm_migration::prelude::*;
 use super::m20220101_000002_create_user_table::User;
+use sea_orm_migration::prelude::*;
 
 pub struct Migration;
 
@@ -15,7 +15,6 @@ impl MigrationName for Migration {
 #[async_trait::async_trait]
 impl MigrationTrait for Migration {
     async fn up(&self, manager: &SchemaManager) -> Result<(), DbErr> {
-
         // Create table
         manager
             .create_table(
@@ -84,31 +83,51 @@ impl MigrationTrait for Migration {
 
         // Create unique constrain
         {
-            manager.create_index(
-                Index::create()
-                .name(OWNER_NAME_UNIQUE_INDEX_NAME)
-                .table(Currency::Table)
-                .col(Currency::Name)
-                .col(Currency::OwnerId)
-                .unique().take()
-            ).await?;
+            manager
+                .create_index(
+                    Index::create()
+                        .name(OWNER_NAME_UNIQUE_INDEX_NAME)
+                        .table(Currency::Table)
+                        .col(Currency::Name)
+                        .col(Currency::OwnerId)
+                        .unique()
+                        .take(),
+                )
+                .await?;
 
-            manager.create_index(
-                Index::create()
-                .name(OWNER_TICKER_UNIQUE_INDEX_NAME)
-                .table(Currency::Table)
-                .col(Currency::Ticker)
-                .col(Currency::OwnerId)
-                .unique().take()
-            ).await?;
+            manager
+                .create_index(
+                    Index::create()
+                        .name(OWNER_TICKER_UNIQUE_INDEX_NAME)
+                        .table(Currency::Table)
+                        .col(Currency::Ticker)
+                        .col(Currency::OwnerId)
+                        .unique()
+                        .take(),
+                )
+                .await?;
         };
 
         Ok(())
     }
 
     async fn down(&self, manager: &SchemaManager) -> Result<(), DbErr> {
-        manager.drop_index(Index::drop().if_exists().name(OWNER_NAME_UNIQUE_INDEX_NAME).to_owned()).await?;
-        manager.drop_index(Index::drop().if_exists().name(OWNER_TICKER_UNIQUE_INDEX_NAME).to_owned()).await?;
+        manager
+            .drop_index(
+                Index::drop()
+                    .if_exists()
+                    .name(OWNER_NAME_UNIQUE_INDEX_NAME)
+                    .to_owned(),
+            )
+            .await?;
+        manager
+            .drop_index(
+                Index::drop()
+                    .if_exists()
+                    .name(OWNER_TICKER_UNIQUE_INDEX_NAME)
+                    .to_owned(),
+            )
+            .await?;
         manager
             .drop_table(Table::drop().table(Currency::Table).to_owned())
             .await

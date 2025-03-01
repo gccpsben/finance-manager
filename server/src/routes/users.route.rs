@@ -51,14 +51,12 @@ pub mod login {
                     Err(err) => {
                         ErrorInternalServerError(format!("Error querying database: {}", err)).into()
                     }
-                    Ok(token) => {
-                        return HttpResponse::Ok().content_type(ContentType::json()).json(
-                            LoginResponseBody {
-                                token: token.last_insert_id.to_string(),
-                                owner: model.id.to_string(),
-                            },
-                        )
-                    }
+                    Ok(token) => HttpResponse::Ok().content_type(ContentType::json()).json(
+                        LoginResponseBody {
+                            token: token.last_insert_id.to_string(),
+                            owner: model.id.to_string(),
+                        },
+                    ),
                 }
             }
             crate::services::users::VerifyCredsResult::DbErr => {
@@ -96,31 +94,27 @@ pub mod register {
         match register_user(username, password, &data.db).await {
             Ok(new_id) => {
                 let response = PostUserResponseBody { id: new_id.into() };
-                return HttpResponse::Ok()
+                HttpResponse::Ok()
                     .content_type(ContentType::json())
-                    .body(serde_json::to_string(&response).expect("?"));
+                    .body(serde_json::to_string(&response).expect("?"))
             }
-            Err(RegisterUserErrors::EmptyUsername) => {
-                return HttpResponse::BadRequest()
-                    .content_type(ContentType::json())
-                    .body("Empty username")
-            }
-            Err(RegisterUserErrors::EmptyPassword) => {
-                return HttpResponse::BadRequest()
-                    .content_type(ContentType::json())
-                    .body("Empty password")
-            }
+            Err(RegisterUserErrors::EmptyUsername) => HttpResponse::BadRequest()
+                .content_type(ContentType::json())
+                .body("Empty username"),
+            Err(RegisterUserErrors::EmptyPassword) => HttpResponse::BadRequest()
+                .content_type(ContentType::json())
+                .body("Empty password"),
             Err(RegisterUserErrors::DbErr(err)) => {
                 println!("Error occurred: {:?}", err);
-                return HttpResponse::InternalServerError()
+                HttpResponse::InternalServerError()
                     .content_type(ContentType::json())
-                    .body(format!("Error querying database: {}", err));
+                    .body(format!("Error querying database: {}", err))
             }
             Err(RegisterUserErrors::HashError(err)) => {
                 println!("Error occurred: {:?}", err);
-                return HttpResponse::InternalServerError()
+                HttpResponse::InternalServerError()
                     .content_type(ContentType::json())
-                    .body(format!("Hash error: {}", err));
+                    .body(format!("Hash error: {}", err))
             }
         }
     }

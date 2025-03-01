@@ -88,12 +88,17 @@ pub mod post_currency_rate_datum {
         };
 
         let create_result = create_currency_rate_datum(
+            &user,
             domain_to_be_saved,
             db_txn,
             &mut data
                 .currency_rate_datums_cache
                 .lock()
                 .expect("Failed acquiring currency cache lock."),
+            &mut data
+                .currency_cache
+                .lock()
+                .expect("Failed acquiring currency cache lock."), // TODO: add cache here
         )
         .await;
 
@@ -107,10 +112,15 @@ pub mod post_currency_rate_datum {
             Err(create_datum_result) => {
                 match create_datum_result {
                     CreateCurrencyRateDatumErrors::DbErr(_db_err) => {
+                        println!("_db_err: {:?}", _db_err);
                         ErrorInternalServerError("Error querying database.").error_response()
                     }
                     CreateCurrencyRateDatumErrors::CyclicRefAmountCurrency(uuid) => {
                         let msg = format!("The datum target currency references itself (id: {}), creating a cycle.", uuid);
+                        ErrorBadRequest(msg).error_response()
+                    }
+                    CreateCurrencyRateDatumErrors::CurrencyNotFound(uuid) => {
+                        let msg = format!("Cannot find currency with id={}.", uuid);
                         ErrorBadRequest(msg).error_response()
                     }
                 }

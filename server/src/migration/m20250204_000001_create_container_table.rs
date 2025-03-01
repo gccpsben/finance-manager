@@ -24,27 +24,19 @@ impl MigrationTrait for Migration {
                             .not_null()
                             .primary_key(),
                     )
-                    .col(
-                        ColumnDef::new(Container::Name)
-                            .string()
-                            .not_null()
-                    )
-                    .col(
-                        ColumnDef::new(Container::OwnerId)
-                        .uuid()
-                        .not_null()
-                    )
+                    .col(ColumnDef::new(Container::Name).string().not_null())
+                    .col(ColumnDef::new(Container::OwnerId).uuid().not_null())
                     .col(
                         ColumnDef::new(Container::CreationDate)
-                        .date_time()
-                        .not_null()
+                            .date_time()
+                            .not_null(),
                     )
                     .foreign_key(
                         ForeignKey::create()
-                        .name("container")
-                        .take()
-                        .from(Container::Table, Container::OwnerId)
-                        .to(User::Table, User::Id)
+                            .name("container")
+                            .take()
+                            .from(Container::Table, Container::OwnerId)
+                            .to(User::Table, User::Id),
                     )
                     .to_owned(),
             )
@@ -64,5 +56,5 @@ pub enum Container {
     Id,
     OwnerId,
     CreationDate,
-    Name
+    Name,
 }

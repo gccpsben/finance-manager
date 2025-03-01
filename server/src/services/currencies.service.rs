@@ -78,17 +78,15 @@ pub async fn create_currency<'a>(
             ref owner,
             ref fallback_rate_currency_id,
             ..
-        } => {
-            match get_currency_by_id(owner, *fallback_rate_currency_id, db_txn, Some(cache)).await {
-                Ok((Some(_domain_enum), db_txn)) => db_txn,
-                Ok((None, _)) => {
-                    return Err(CreateCurrencyErrors::ReferencedCurrencyNotExist(
-                        *fallback_rate_currency_id,
-                    ))
-                }
-                Err(db_err) => return Err(CreateCurrencyErrors::DbErr(db_err)),
+        } => match get_currency_by_id(owner, *fallback_rate_currency_id, db_txn, cache).await {
+            Ok((Some(_domain_enum), db_txn)) => db_txn,
+            Ok((None, _)) => {
+                return Err(CreateCurrencyErrors::ReferencedCurrencyNotExist(
+                    *fallback_rate_currency_id,
+                ))
             }
-        }
+            Err(db_err) => return Err(CreateCurrencyErrors::DbErr(db_err)),
+        },
     };
 
     match repositories::currencies::create_currency(currency, db_txn, cache).await {

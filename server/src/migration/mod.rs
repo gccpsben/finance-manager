@@ -1,4 +1,4 @@
-pub use sea_orm_migration::prelude::*;
+use sea_orm_migration::{async_trait, MigrationTrait, MigratorTrait};
 
 mod m20220101_000002_create_user_table;
 mod m20250203_000001_create_token_table;
@@ -16,7 +16,7 @@ impl MigratorTrait for Migrator {
             Box::new(m20250203_000001_create_token_table::Migration),
             Box::new(m20250204_000001_create_container_table::Migration),
             Box::new(m20250204_000002_create_currency_table::Migration),
-            Box::new(m20250208_000001_currency_rate_datum::Migration)
+            Box::new(m20250208_000001_currency_rate_datum::Migration),
         ]
     }
 }

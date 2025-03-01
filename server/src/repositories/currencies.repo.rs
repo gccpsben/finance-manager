@@ -208,23 +208,38 @@ pub async fn get_base_currency<'a>(
     }
 }
 
+// TODO: See if this can be parl.
+pub async fn find_first_unknown_currencies<'a>(
+    owner: &AuthUser,
+    ids: &[uuid::Uuid],
+    db_txn: TransactionWithCallback<'a>,
+    cache: &mut CurrencyCache,
+) -> Result<(Option<uuid::Uuid>, TransactionWithCallback<'a>), DbErr> {
+    // TODO: fix this in iter
+    let mut db_txn = db_txn;
+    let cache_mut = cache;
+    for i in 0..ids.len() {
+        let current_id = *ids.get(i).expect("Unable to get item");
+        let currency_result = get_currency_by_id(owner, current_id, db_txn, cache_mut).await;
+        match currency_result {
+            Ok((currency_rate_datum, transaction)) => {
+                if currency_rate_datum.is_none() {
+                    return Ok((Some(current_id), transaction));
+                }
+                db_txn = transaction
+            }
+            Err(db_err) => return Err(db_err),
+        };
+    }
+    Ok((None, db_txn))
+}
+
 pub async fn get_currency_by_id<'a>(
     owner: &AuthUser,
     currency_id: uuid::Uuid,
     db_txn: TransactionWithCallback<'a>,
-    cache: Option<&mut CurrencyCache>,
+    cache: &mut CurrencyCache,
 ) -> Result<(Option<CurrencyDomainEnum>, TransactionWithCallback<'a>), DbErr> {
-    // First we look through the cache first, and we look for it in the database otherwise.
-    let cache_result = match cache {
-        None => None,
-        Some(ref cache) => cache.query_item_by_currency_id(owner, currency_id),
-    };
-
-    if let Some(cached_result) = cache_result {
-        // Clone the value out of the cache.
-        return Ok((Some(cached_result.clone()), db_txn));
-    };
-
     let db_result = currency::Entity::find()
         .filter(currency::Column::OwnerId.eq(owner.user_id))
         .filter(currency::Column::Id.eq(currency_id))
@@ -235,9 +250,7 @@ pub async fn get_currency_by_id<'a>(
         None => Ok((None, db_txn)),
         Some(model) => {
             let cache_entry: CurrencyDomainEnum = model.into();
-            if let Some(cache) = cache {
-                cache.register_item(cache_entry.clone());
-            }
+            cache.register_item(cache_entry.clone());
             Ok((Some(cache_entry), db_txn))
         }
     }

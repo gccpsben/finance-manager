@@ -184,7 +184,7 @@ pub mod get_currency {
                 Ok((currencies, _db_txn)) => currencies,
             },
             Some(parsed_uuid) => {
-                match get_currency_by_id(&user, parsed_uuid, db_txn, Some(&mut cache)).await {
+                match get_currency_by_id(&user, parsed_uuid, db_txn, &mut cache).await {
                     Err(_db_err) => {
                         return HttpResponse::InternalServerError().body("Error querying database.")
                     }
