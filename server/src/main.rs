@@ -19,7 +19,10 @@ use std::{
 };
 
 use actix_web::{web, App, HttpServer};
-use caches::{currency_cache::CurrencyCache, currency_rate_datum::CurrencyRateDatumCache};
+use caches::{
+    currency_cache::CurrencyCache, currency_rate_datum::CurrencyRateDatumCache,
+    txn_tag::TxnTagsCache,
+};
 use clap::{command, Parser, ValueHint};
 use routes::bootstrap::apply_endpoints;
 use sea_orm::{Database, DatabaseConnection};
@@ -107,6 +110,7 @@ pub async fn main() -> Result<(), Box<dyn Error>> {
         db,
         currency_cache: Arc::from(Mutex::from(CurrencyCache::new(128))),
         currency_rate_datums_cache: Arc::from(Mutex::from(CurrencyRateDatumCache::new(128))),
+        txn_tags_cache: Arc::from(Mutex::from(TxnTagsCache::new(128))),
     };
 
     HttpServer::new(move || apply_endpoints(App::new().app_data(web::Data::new(states.clone()))))

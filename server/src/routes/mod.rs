@@ -15,3 +15,6 @@ pub mod currencies;
 
 #[path = "./currency_rate_datums.route.rs"]
 pub mod currency_rate_datums;
+
+#[path = "./txn_tags.route.rs"]
+pub mod txn_tags;

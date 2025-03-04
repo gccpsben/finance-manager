@@ -8,6 +8,9 @@ pub mod user_tests;
 #[path = "./currency_rate_datum.test.rs"]
 pub mod currency_rate_datum;
 
+#[path = "./txn_tag.test.rs"]
+pub mod txn_tag;
+
 #[cfg(test)]
 pub mod commons {
 
@@ -17,10 +20,12 @@ pub mod commons {
 
     use crate::caches::currency_cache::CurrencyCache;
     use crate::caches::currency_rate_datum::CurrencyRateDatumCache;
+    use crate::caches::txn_tag::TxnTagsCache;
     use crate::entities::access_token;
     use crate::entities::container;
     use crate::entities::currency;
     use crate::entities::currency_rate_datum;
+    use crate::entities::txn_tag;
     use crate::entities::user;
     use crate::routes::bootstrap::apply_endpoints;
     use crate::states::database_states::DatabaseStates;
@@ -128,6 +133,7 @@ pub mod commons {
         init_table_of_entity(&schema, container::Entity, &db).await;
         init_table_of_entity(&schema, currency::Entity, &db).await;
         init_table_of_entity(&schema, currency_rate_datum::Entity, &db).await;
+        init_table_of_entity(&schema, txn_tag::Entity, &db).await;
 
         let states = DatabaseStates {
             db,

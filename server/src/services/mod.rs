@@ -12,6 +12,9 @@ pub mod currencies;
 #[path = "currency_rate_datum.service.rs"]
 pub mod currency_rate_datum;
 
+#[path = "txn_tags.service.rs"]
+pub mod txn_tags;
+
 /**
 A wrapped version of the ``DatabaseTransaction`` from seaorm.
 This struct follows the RAII pattern. This transaction will default to rollback when out of scope.
