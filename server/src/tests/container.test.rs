@@ -1,6 +1,8 @@
 #[cfg(test)]
-mod containers {
+pub mod containers {
 
+    use crate::routes::users::register::PostUserRequestBody;
+    use crate::routes::containers::get_container::GetContainerResponse;
     use crate::routes::containers::post_container::*;
     use crate::tests::commons::TestBody;
     use crate::tests::commons::*;
@@ -15,141 +17,89 @@ mod containers {
     use drivers::*;
 
     mod drivers {
-
-        use crate::routes::containers::get_container::GetContainerResponse;
-
         use super::*;
-
-        pub async fn driver_get_containers<E: std::fmt::Debug, const ASSERT_DEFAULT: bool>(
-            token: &str,
+        pub async fn driver_get_containers(
             target_id: Option<&str>,
-            app: &impl Service<Request, Response = ServiceResponse<impl MessageBody>, Error = E>,
+            token: Option<&str>,
+            app: &actix_test::TestServer,
+            assert_default: bool,
         ) -> AssertTestResponse<GetContainerResponse> {
-            let mut req = test::TestRequest::default();
+            let mut req = app.get("/containers");
+            if let Some(target_id) = target_id {
+                req = req.query(&[("id", target_id)]).unwrap();
+            }
             req = req.insert_header(ContentType::json());
-            req = req.insert_header(("authorization", token));
-            req = match target_id {
-                None => req.uri("/containers"),
-                Some(target_id) => req.uri(&format!("/containers?id={}", target_id)),
-            };
-            req = req.method(Method::GET);
-            let res = test::call_service(app, req.to_request()).await;
-            let res_parsed = parse_response_body(res).await;
-            if ASSERT_DEFAULT {
-                assert_eq!(res_parsed.status, StatusCode::OK);
-                assert!(res_parsed.expected.is_some());
+            req = attach_token_to_req(req, token);
+            let mut res = req.send().await.unwrap();
+            let res_parsed: AssertTestResponse<GetContainerResponse> =
+                parse_response_body(&mut res).await;
+            if assert_default {
+                assert_eq!(res.status(), StatusCode::OK);
             }
             res_parsed
         }
 
-        pub async fn driver_post_container<
-            B: MessageBody,
-            E: std::fmt::Debug,
-            const ASSERT_DEFAULT: bool,
-        >(
+        pub async fn driver_post_container(
+            token: Option<&str>,
             body: TestBody<PostContainerRequestBody>,
-            token: &str,
-            app: &impl Service<Request, Response = ServiceResponse<B>, Error = E>,
+            app: &actix_test::TestServer,
+            assert_default: bool,
         ) -> AssertTestResponse<PostContainerResponseBody> {
-            let mut req = test::TestRequest::default();
+            let mut req = app.post("/containers");
+            req = attach_token_to_req(req, token);
             req = req.insert_header(ContentType::json());
-            req = req.insert_header(("authorization", token));
-            req = match body {
-                TestBody::Serialize(seral) => req.set_json(seral),
-                TestBody::Expected(expected_body) => req.set_json(expected_body),
-            };
-            req = req.uri("/containers");
-            req = req.method(Method::POST);
-            let res = test::call_service(app, req.to_request()).await;
-            let res_parsed = parse_response_body(res).await;
-            if ASSERT_DEFAULT {
-                assert_eq!(res_parsed.status, StatusCode::OK);
-                assert!(res_parsed.expected.is_some());
+            let mut res = send_req_with_body(req, body).await;
+            let res_parsed: AssertTestResponse<PostContainerResponseBody> =
+                parse_response_body(&mut res).await;
+            if assert_default {
+                assert_eq!(res.status(), StatusCode::OK);
             }
             res_parsed
         }
     }
 
     mod tests {
-        use crate::routes::users::register::PostUserRequestBody;
-
         use super::*;
         #[actix_web::test]
-        async fn test_post_container() {
-            let app = setup_connection().await;
-
-            let user_1 = PostUserRequestBody {
-                username: String::from("USER_1"),
-                password: String::from("PW_1"),
-            };
-            let user_2 = PostUserRequestBody {
-                username: String::from("USER_2"),
-                password: String::from("PW_2"),
-            };
-
-            // Post user 1
-            let _first_user_id = {
-                let resp =
-                    driver_post_user::<_, _, true>(TestBody::Expected(user_1.clone()), &app).await;
-                resp.expected.unwrap().id
-            };
-
-            // Post user 2
-            let _second_user_id = {
-                let resp =
-                    driver_post_user::<_, _, true>(TestBody::Expected(user_2.clone()), &app).await;
-                resp.expected.unwrap().id
-            };
-
-            let first_user_token = {
-                let resp = driver_login_user::<_, _, true>(
-                    TestBody::<(&str, &str)>::Expected((&user_1.username, &user_1.password)),
-                    &app,
-                )
-                .await;
-                resp.expected.unwrap().token
-            };
-
-            let second_user_token = {
-                let resp = driver_login_user::<_, _, true>(
-                    TestBody::<(&str, &str)>::Expected((&user_2.username, &user_2.password)),
-                    &app,
-                )
-                .await;
-                resp.expected.unwrap().token
-            };
+        async fn test_curd_containers() {
+            let srv = setup_connection().await;
+            let first_usr_token = bootstrap_token(("123", "123"), &srv).await;
+            let second_usr_token = bootstrap_token(("1234", "1234"), &srv).await;
 
             let first_user_container_1_id = {
-                let resp = driver_post_container::<_, _, true>(
+                let resp = driver_post_container(
+                    Some(&first_usr_token),
                     TestBody::Expected(PostContainerRequestBody {
                         container_name: String::from("container 1"),
                     }),
-                    &first_user_token,
-                    &app,
+                    &srv,
+                    true,
                 )
                 .await;
                 resp.expected.unwrap().container_id
             };
 
-            let _first_user_container_2_id = {
-                let resp = driver_post_container::<_, _, true>(
+            let first_user_container_2_id = {
+                let resp = driver_post_container(
+                    Some(&first_usr_token),
                     TestBody::Expected(PostContainerRequestBody {
                         container_name: String::from("container 2"),
                     }),
-                    &first_user_token,
-                    &app,
+                    &srv,
+                    true,
                 )
                 .await;
                 resp.expected.unwrap().container_id
             };
 
-            let _second_user_container_1_id = {
-                let resp = driver_post_container::<_, _, true>(
+            let second_user_container_1_id = {
+                let resp = driver_post_container(
+                    Some(&second_usr_token),
                     TestBody::Expected(PostContainerRequestBody {
                         container_name: String::from("container 1"),
                     }),
-                    &second_user_token,
-                    &app,
+                    &srv,
+                    true,
                 )
                 .await;
                 resp.expected.unwrap().container_id
@@ -157,42 +107,103 @@ mod containers {
 
             // Get all containers of user 1
             {
-                let resp = driver_get_containers::<_, true>(&first_user_token, None, &app).await;
-                assert_eq!(resp.expected.unwrap().items.len(), 2);
+                let resp = driver_get_containers(None, Some(&first_usr_token), &srv, true).await;
+                assert_eq!(
+                    resp.expected.unwrap().items.len(),
+                    2,
+                    "Containers of user 1 should be 2."
+                );
             }
 
             // Get all containers of user 2
             {
-                let resp = driver_get_containers::<_, true>(&second_user_token, None, &app).await;
-                assert_eq!(resp.expected.unwrap().items.len(), 1);
+                let resp = driver_get_containers(None, Some(&second_usr_token), &srv, true).await;
+                assert_eq!(
+                    resp.expected.unwrap().items.len(),
+                    1,
+                    "Containers of user 2 should be 1."
+                );
             }
 
-            // Get user 1 first container
+            // Get the first container of user 1
             {
-                let resp = driver_get_containers::<_, true>(
-                    &first_user_token,
+                let resp = driver_get_containers(
                     Some(&first_user_container_1_id),
-                    &app,
+                    Some(&first_usr_token),
+                    &srv,
+                    true,
                 )
                 .await;
-                assert_eq!(resp.expected.unwrap().items.len(), 1);
+                let actual_items = resp.expected.unwrap().items;
+                assert_eq!(
+                    actual_items.len(),
+                    1,
+                    "Get the first container of user 1: length should be 1"
+                );
+                assert_eq!(
+                    actual_items.first().unwrap().container_id,
+                    first_user_container_1_id,
+                    "Get the first container of user 1: id should match"
+                );
+            }
+
+            // Get the first container of user 2
+            {
+                let resp = driver_get_containers(
+                    Some(&second_user_container_1_id),
+                    Some(&second_usr_token),
+                    &srv,
+                    true,
+                )
+                .await;
+                let actual_items = resp.expected.unwrap().items;
+                assert_eq!(
+                    actual_items.len(),
+                    1,
+                    "Get the first container of user 2: length should be 1"
+                );
+                assert_eq!(
+                    actual_items.first().unwrap().container_id,
+                    second_user_container_1_id,
+                    "Get the first container of user 2: id should match"
+                );
             }
 
             // Get all containers without token
             {
-                let resp = driver_get_containers::<_, false>("", None, &app).await;
-                assert_eq!(resp.status, StatusCode::UNAUTHORIZED);
+                let resp = driver_get_containers(None, None, &srv, false).await;
+                assert_eq!(
+                    resp.status,
+                    StatusCode::UNAUTHORIZED,
+                    "Get all containers without token"
+                );
             }
 
-            // Get container of others
+            // Get any container without token
             {
-                let resp = driver_get_containers::<_, true>(
-                    &second_user_token,
+                let resp =
+                    driver_get_containers(Some(&first_user_container_1_id), None, &srv, false).await;
+                assert_eq!(
+                    resp.status,
+                    StatusCode::UNAUTHORIZED,
+                    "Get any container without token"
+                );
+            }
+
+            // Get containers of others
+            {
+                let resp = driver_get_containers(
                     Some(&first_user_container_1_id),
-                    &app,
+                    Some(&second_usr_token),
+                    &srv,
+                    false,
                 )
                 .await;
-                assert_eq!(resp.expected.unwrap().items.len(), 0);
+                assert_eq!(
+                    resp.expected.unwrap().items.len(),
+                    0,
+                    "Get containers of others: should return 0 item."
+                );
             }
         }
     }

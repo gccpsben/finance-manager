@@ -25,6 +25,9 @@ pub mod commons {
     use crate::routes::bootstrap::apply_endpoints;
     use crate::states::database_states::DatabaseStates;
     use actix_http::StatusCode;
+    use actix_test::ClientRequest;
+    use actix_test::ClientResponse;
+    use actix_test::TestServer;
     use actix_web::body::to_bytes;
     use actix_web::dev::ServiceResponse;
     use actix_web::test::TestRequest;
@@ -37,11 +40,12 @@ pub mod commons {
     use sea_orm::Schema;
     use sea_orm::{sea_query::TableCreateStatement, ConnectionTrait};
     use serde::de;
+    use serde::Serialize;
     use serde_json::Value;
 
-    pub enum TestBody<C> {
-        Serialize(Value),
-        Expected(C),
+    pub enum TestBody<T> {
+        Bytes(Box<[u8]>),
+        Expected(T),
     }
 
     #[derive(Clone, Debug)]
@@ -52,18 +56,27 @@ pub mod commons {
         pub status: StatusCode,
     }
 
-    pub fn attach_token_to_req(req: TestRequest, token: Option<&str>) -> TestRequest {
+    pub fn attach_token_to_req(req: ClientRequest, token: Option<&str>) -> ClientRequest {
         match token {
             None => req,
             Some(token) => req.insert_header(("authorization", token)),
         }
     }
 
-    pub async fn parse_response_body<
-        B: actix_web::body::MessageBody,
-        ExpectedType: de::DeserializeOwned,
-    >(
-        res: ServiceResponse<B>,
+    pub async fn send_req_with_body<T: Serialize>(
+        req: actix_test::ClientRequest,
+        body: TestBody<T>,
+    ) -> ClientResponse {
+        match body {
+            TestBody::Bytes(seral) => req.send_body(seral.into_vec()),
+            TestBody::Expected(expected_body) => req.send_json(&expected_body),
+        }
+        .await
+        .unwrap()
+    }
+
+    pub async fn parse_response_body<ExpectedType: de::DeserializeOwned>(
+        res: &mut ClientResponse,
     ) -> AssertTestResponse<ExpectedType> {
         let status_code = res.status();
         let body_json_str = response_body_to_str(res).await;
@@ -92,10 +105,8 @@ pub mod commons {
         }
     }
 
-    pub async fn response_body_to_str<B: actix_web::body::MessageBody>(
-        response: ServiceResponse<B>,
-    ) -> Option<String> {
-        let res_body = to_bytes(response.into_body()).await;
+    pub async fn response_body_to_str(res: &mut ClientResponse) -> Option<String> {
+        let res_body = res.body().await;
         match res_body {
             Err(_) => None,
             Ok(body_bytes) => match from_utf8(&body_bytes) {
@@ -105,11 +116,7 @@ pub mod commons {
         }
     }
 
-    pub async fn setup_connection() -> impl actix_web::dev::Service<
-        actix_http::Request,
-        Response = actix_web::dev::ServiceResponse<impl actix_web::body::MessageBody>,
-        Error = actix_web::Error,
-    > {
+    pub async fn setup_connection() -> TestServer {
         let db = Database::connect("sqlite::memory:")
             .await
             .expect("failed initializing data");
@@ -126,11 +133,12 @@ pub mod commons {
             db,
             currency_cache: Arc::from(Mutex::from(CurrencyCache::new(128))),
             currency_rate_datums_cache: Arc::from(Mutex::from(CurrencyRateDatumCache::new(128))),
+            txn_tags_cache: Arc::from(Mutex::from(TxnTagsCache::new(128))),
         };
-        test::init_service(apply_endpoints(
-            App::new().app_data(web::Data::new(states.clone())),
-        ))
-        .await
+
+        actix_test::start(move || {
+            apply_endpoints(App::new().app_data(web::Data::new(states.clone())))
+        })
     }
 
     pub async fn init_table_of_entity<T>(schema: &Schema, entity: T, db: &DatabaseConnection)
