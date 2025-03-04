@@ -1,4 +1,4 @@
-use crate::repositories::containers::{get_container, get_containers};
+use crate::services::containers::{get_container, get_containers};
 use crate::{
     extractors::auth_user::AuthUser, services::containers::create_container, DatabaseStates,
 };
@@ -87,8 +87,9 @@ pub mod get_container {
 }
 
 pub mod post_container {
-    use crate::repositories::TransactionWithCallback;
     use sea_orm::{prelude::DateTime, sqlx::types::chrono::Utc, TransactionTrait};
+
+    use crate::services::TransactionWithCallback;
 
     use super::*;
 
@@ -123,7 +124,7 @@ pub mod post_container {
 
         let db_txn = TransactionWithCallback::new(db_txn_raw, vec![]);
         let create_container_result = create_container(
-            user,
+            &user,
             info.container_name.as_str(),
             DateTime::new(Utc::now().date_naive(), Utc::now().time()),
             db_txn,

@@ -1,28 +1,111 @@
 use crate::caches::currency_cache::CurrencyCache;
-use crate::repositories::currencies::{
-    get_base_currency, get_currency_by_id, CreateCurrencyDomainEnum,
-};
-use crate::repositories::{self, TransactionWithCallback};
-use sea_orm::DbErr;
-use uuid::Uuid;
+use crate::extended_models::currency::{Currency, CurrencyId};
+use crate::extractors::auth_user::AuthUser;
+use crate::services::TransactionWithCallback;
+use crate::{entities::currency, extended_models::currency::CreateCurrencyAction};
+use sea_orm::{ColumnTrait, DbErr, EntityTrait, QueryFilter};
+
+pub async fn get_currencies<'a>(
+    owner: &AuthUser,
+    db_txn: TransactionWithCallback<'a>,
+) -> Result<(Vec<Currency>, TransactionWithCallback<'a>), DbErr> {
+    let db_result = currency::Entity::find()
+        .filter(currency::Column::OwnerId.eq(owner.0))
+        .all(db_txn.get_db_txn())
+        .await?;
+    Ok((
+        db_result
+            .iter()
+            .map(|item| {
+                let output: Currency = item.clone().into();
+                output
+            })
+            .collect::<Vec<_>>(),
+        db_txn,
+    ))
+}
+
+pub async fn get_base_currency<'a>(
+    owner: &AuthUser,
+    db_txn: TransactionWithCallback<'a>,
+    cache: Option<&mut CurrencyCache>,
+) -> Result<(Option<Currency>, TransactionWithCallback<'a>), DbErr> {
+    let db_result = currency::Entity::find()
+        .filter(currency::Column::OwnerId.eq(owner.0))
+        .one(db_txn.get_db_txn())
+        .await?;
+
+    match db_result {
+        None => Ok((None, db_txn)),
+        Some(model) => {
+            let cache_entry: Currency = model.into();
+            if let Some(cache) = cache {
+                cache.register_item(cache_entry.clone());
+            }
+            Ok((Some(cache_entry), db_txn))
+        }
+    }
+}
+
+// TODO: See if this can be parl.
+pub async fn find_first_unknown_currencies<'a>(
+    owner: &AuthUser,
+    ids: &[CurrencyId],
+    db_txn: TransactionWithCallback<'a>,
+    cache: &mut CurrencyCache,
+) -> Result<(Option<CurrencyId>, TransactionWithCallback<'a>), DbErr> {
+    let mut db_txn = db_txn;
+    let cache_mut = cache;
+    for current_id in ids {
+        let (currency_rate_datum, transaction) =
+            get_currency_by_id(owner, current_id, db_txn, cache_mut).await?;
+        if currency_rate_datum.is_none() {
+            return Ok((Some(*current_id), transaction));
+        }
+        db_txn = transaction;
+    }
+    Ok((None, db_txn))
+}
+
+pub async fn get_currency_by_id<'a>(
+    owner: &AuthUser,
+    currency_id: &CurrencyId,
+    db_txn: TransactionWithCallback<'a>,
+    cache: &mut CurrencyCache,
+) -> Result<(Option<Currency>, TransactionWithCallback<'a>), DbErr> {
+    let db_result = currency::Entity::find()
+        .filter(currency::Column::OwnerId.eq(owner.0))
+        .filter(currency::Column::Id.eq(currency_id.0))
+        .one(db_txn.get_db_txn())
+        .await?;
+
+    Ok((
+        db_result.map(|model| {
+            let cache_entry: Currency = model.into();
+            cache.register_item(cache_entry.clone());
+            cache_entry
+        }),
+        db_txn,
+    ))
+}
 
 pub enum CreateCurrencyErrors {
     DbErr(DbErr),
     ValidationErr,
-    ReferencedCurrencyNotExist(Uuid),
-    RepeatedBaseCurrency(Uuid),
+    ReferencedCurrencyNotExist(CurrencyId),
+    RepeatedBaseCurrency(CurrencyId),
 }
 
 pub async fn create_currency<'a>(
-    currency: CreateCurrencyDomainEnum,
+    currency: CreateCurrencyAction,
     db_txn: TransactionWithCallback<'a>,
     cache: &mut CurrencyCache,
 ) -> Result<(uuid::Uuid, TransactionWithCallback<'a>), CreateCurrencyErrors> {
     // Ensure fallback coexists
     {
         let fallbacks = match currency {
-            CreateCurrencyDomainEnum::Base { .. } => (true, None, None),
-            CreateCurrencyDomainEnum::Normal {
+            CreateCurrencyAction::Base { .. } => (true, None, None),
+            CreateCurrencyAction::Normal {
                 ref fallback_rate_amount,
                 ref fallback_rate_currency_id,
                 ..
@@ -43,10 +126,10 @@ pub async fn create_currency<'a>(
     // Ensure another base currency doesnt exist
     let db_txn = match currency.is_base() {
         true => {
-            fn extract_id(domain_curr: &repositories::currencies::CurrencyDomainEnum) -> Uuid {
+            fn extract_id(domain_curr: &Currency) -> CurrencyId {
                 match domain_curr {
-                    repositories::currencies::CurrencyDomainEnum::Base { id, .. } => *id,
-                    repositories::currencies::CurrencyDomainEnum::Normal { id, .. } => *id,
+                    Currency::Base { id, .. } => CurrencyId(id.0),
+                    Currency::Normal { id, .. } => CurrencyId(id.0),
                 }
             }
 
@@ -58,14 +141,16 @@ pub async fn create_currency<'a>(
             }
 
             // If not, query the database to see if it's actually not.
-            match get_base_currency(currency.get_owner(), db_txn, Some(cache)).await {
-                Ok((Some(existing_currency), _)) => {
+            match get_base_currency(currency.get_owner(), db_txn, Some(cache))
+                .await
+                .map_err(CreateCurrencyErrors::DbErr)?
+            {
+                (Some(existing_currency), _) => {
                     return Err(CreateCurrencyErrors::RepeatedBaseCurrency(extract_id(
                         &existing_currency,
                     )))
                 }
-                Ok((None, db_txn)) => db_txn, // return moved txn if ok
-                Err(db_err) => return Err(CreateCurrencyErrors::DbErr(db_err)),
+                (None, db_txn) => db_txn, // return moved txn if ok
             }
         }
         false => db_txn,
@@ -73,24 +158,30 @@ pub async fn create_currency<'a>(
 
     // Ensure referenced currency exists
     let db_txn = match currency {
-        CreateCurrencyDomainEnum::Base { .. } => db_txn,
-        CreateCurrencyDomainEnum::Normal {
+        CreateCurrencyAction::Base { .. } => db_txn,
+        CreateCurrencyAction::Normal {
             ref owner,
             ref fallback_rate_currency_id,
             ..
-        } => match get_currency_by_id(owner, *fallback_rate_currency_id, db_txn, cache).await {
-            Ok((Some(_domain_enum), db_txn)) => db_txn,
-            Ok((None, _)) => {
+        } => match get_currency_by_id(owner, fallback_rate_currency_id, db_txn, cache)
+            .await
+            .map_err(CreateCurrencyErrors::DbErr)?
+        {
+            (Some(_domain_enum), db_txn) => db_txn,
+            (None, _) => {
                 return Err(CreateCurrencyErrors::ReferencedCurrencyNotExist(
                     *fallback_rate_currency_id,
                 ))
             }
-            Err(db_err) => return Err(CreateCurrencyErrors::DbErr(db_err)),
         },
     };
 
-    match repositories::currencies::create_currency(currency, db_txn, cache).await {
-        Ok(result) => Ok(result),
-        Err(err) => Err(CreateCurrencyErrors::DbErr(err)),
-    }
+    let create_currency_active_record: currency::ActiveModel = currency.clone().into();
+    let model = currency::Entity::insert(create_currency_active_record)
+        .exec(db_txn.get_db_txn())
+        .await
+        .map_err(CreateCurrencyErrors::DbErr)?;
+
+    cache.register_item(currency.into_domain(model.last_insert_id));
+    Ok((model.last_insert_id, db_txn))
 }

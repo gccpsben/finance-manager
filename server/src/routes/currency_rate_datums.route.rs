@@ -1,8 +1,11 @@
-use crate::repositories::currency_rate_datum::CreateCurrencyRateDatumDomain;
+use crate::entities::currency_rate_datum;
+use crate::extended_models::currency::CurrencyId;
 use crate::{extractors::auth_user::AuthUser, states::database_states::DatabaseStates};
 use actix_web::{post, web, HttpResponse};
+use sea_orm::ActiveValue;
 use serde::{Deserialize, Serialize};
 use ts_rs::TS;
+use uuid::Uuid;
 
 pub mod post_currency_rate_datum {
 
@@ -11,11 +14,9 @@ pub mod post_currency_rate_datum {
     use actix_web::error::{ErrorBadRequest, ErrorInternalServerError};
     use uuid::Uuid;
 
-    use crate::{
-        repositories::TransactionWithCallback,
-        services::currency_rate_datum::{
-            create_currency_rate_datum, CreateCurrencyRateDatumErrors,
-        },
+    use crate::services::{
+        currency_rate_datum::{create_currency_rate_datum, CreateCurrencyRateDatumErrors},
+        TransactionWithCallback,
     };
 
     use super::*;
@@ -45,38 +46,33 @@ pub mod post_currency_rate_datum {
         info: web::Json<PostCurrencyRateDatumRequestBody>,
         data: web::Data<DatabaseStates>,
     ) -> HttpResponse {
+        let exit_bad_uuid = |given_str: &str| {
+            ErrorBadRequest(format!("Invalid uuid given: {}.", given_str)).error_response()
+        };
+
         let uuids = match (
             Uuid::from_str(&info.ref_currency_id),
             Uuid::from_str(&info.ref_amount_currency_id),
         ) {
             (Ok(ref_curr_id), Ok(ref_amount_curr_id)) => (ref_curr_id, ref_amount_curr_id),
             (Ok(_), Err(_)) => {
-                return ErrorBadRequest(format!(
-                    "Invalid uuid given: {}.",
-                    info.ref_amount_currency_id
-                ))
-                .error_response();
+                return exit_bad_uuid(&info.ref_amount_currency_id);
             }
             (Err(_), Ok(_)) => {
-                return ErrorBadRequest(format!("Invalid uuid given: {}.", info.ref_currency_id))
-                    .error_response();
+                return exit_bad_uuid(&info.ref_amount_currency_id);
             }
             (Err(_), Err(_)) => {
-                return ErrorBadRequest(format!(
-                    "Invalid uuid given: {}.",
-                    info.ref_amount_currency_id
-                ))
-                .error_response();
+                return exit_bad_uuid(&info.ref_amount_currency_id);
             }
         };
 
         // Convert request to create domain enum
-        let domain_to_be_saved = CreateCurrencyRateDatumDomain {
+        let domain_to_be_saved = CreateCurrencyRateDatumAction {
             amount: info.amount.clone(),
             date: info.date,
-            owner: user.user_id,
-            ref_currency_id: uuids.0,
-            ref_amount_currency_id: uuids.1,
+            owner: user.clone(),
+            ref_currency_id: CurrencyId(uuids.0),
+            ref_amount_currency_id: CurrencyId(uuids.1),
         };
 
         let db_txn = match TransactionWithCallback::from_db_conn(&data.db, vec![]).await {
@@ -125,6 +121,51 @@ pub mod post_currency_rate_datum {
                     }
                 }
             }
+        }
+    }
+}
+
+#[derive(Clone, Debug)]
+pub struct CurrencyRateDatum {
+    pub id: Uuid,
+    pub amount: String,
+    pub ref_currency_id: CurrencyId,
+    pub ref_amount_currency_id: CurrencyId,
+    pub owner: AuthUser,
+    pub date: i32,
+}
+
+#[derive(Clone, Debug)]
+pub struct CreateCurrencyRateDatumAction {
+    pub amount: String,
+    pub ref_currency_id: CurrencyId,
+    pub ref_amount_currency_id: CurrencyId,
+    pub owner: AuthUser,
+    pub date: i32,
+}
+
+impl CreateCurrencyRateDatumAction {
+    pub fn into_domain(self, db_id: uuid::Uuid) -> CurrencyRateDatum {
+        CurrencyRateDatum {
+            id: db_id,
+            amount: self.amount.to_string(),
+            owner: self.owner,
+            ref_amount_currency_id: self.ref_amount_currency_id,
+            ref_currency_id: self.ref_currency_id,
+            date: self.date,
+        }
+    }
+}
+
+impl From<CreateCurrencyRateDatumAction> for currency_rate_datum::ActiveModel {
+    fn from(value: CreateCurrencyRateDatumAction) -> Self {
+        Self {
+            id: ActiveValue::Set(uuid::Uuid::new_v4()),
+            owner_id: ActiveValue::Set(value.owner.0),
+            amount: ActiveValue::Set(value.amount),
+            ref_currency_id: ActiveValue::Set(value.ref_currency_id.0),
+            ref_amount_currency_id: ActiveValue::Set(value.ref_amount_currency_id.0),
+            date: ActiveValue::Set(value.date),
         }
     }
 }

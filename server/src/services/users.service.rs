@@ -6,10 +6,26 @@ use argon2::{
 };
 use sea_orm::{ColumnTrait, DatabaseConnection, DbErr, EntityTrait, QueryFilter};
 
-use crate::{
-    entities::{access_token, user},
-    repositories,
-};
+use crate::entities::{access_token, user};
+
+use sea_orm::ActiveValue;
+
+pub async fn create_user(
+    username: &str,
+    password_hash: &str,
+    db: &DatabaseConnection,
+) -> Result<uuid::Uuid, DbErr> {
+    let new_user = user::ActiveModel {
+        id: ActiveValue::Set(uuid::Uuid::new_v4()),
+        name: ActiveValue::Set(username.to_string()),
+        password_hash: ActiveValue::Set(password_hash.to_string()),
+    };
+    let insert_result = user::Entity::insert(new_user).exec(db).await;
+    match insert_result {
+        Ok(model) => Ok(model.last_insert_id),
+        Err(db_err) => Err(db_err),
+    }
+}
 
 pub async fn generate_token_unverified(
     user_id: uuid::Uuid,
@@ -19,16 +35,11 @@ pub async fn generate_token_unverified(
         user_id: sea_orm::ActiveValue::Set(user_id),
         id: sea_orm::ActiveValue::Set(uuid::Uuid::new_v4()),
     };
-    let insert_result = access_token::Entity::insert(new_token).exec(db).await;
-    match insert_result {
-        Ok(result) => Ok(result),
-        Err(err) => Err(err),
-    }
+    access_token::Entity::insert(new_token).exec(db).await
 }
 
 #[derive(Debug)]
-pub enum VerifyCredsResult {
-    Ok(user::Model),
+pub enum VerifyCredsErr {
     DbErr,
     InvalidHash,
     InvalidCreds,
@@ -38,28 +49,25 @@ pub async fn verify_creds(
     username: &str,
     password: &str,
     db: &DatabaseConnection,
-) -> VerifyCredsResult {
-    let queried_user = match user::Entity::find()
+) -> Result<user::Model, VerifyCredsErr> {
+    let existing_queried_user = user::Entity::find()
         .filter(user::Column::Name.eq(username))
         .one(db)
         .await
-    {
-        Err(_) => return VerifyCredsResult::DbErr,
-        Ok(None) => return VerifyCredsResult::InvalidCreds,
-        Ok(Some(usr)) => usr,
-    };
-    let expected_hash = match PasswordHash::parse(
-        queried_user.password_hash.as_str(),
+        .map_err(|_| VerifyCredsErr::DbErr)?
+        .ok_or(VerifyCredsErr::InvalidCreds)?;
+
+    let expected_hash = PasswordHash::parse(
+        existing_queried_user.password_hash.as_str(),
         argon2::password_hash::Encoding::B64,
-    ) {
-        Err(_) => return VerifyCredsResult::InvalidHash,
-        Ok(hash) => hash,
-    };
-    let result = Argon2::default().verify_password(password.as_bytes(), &expected_hash);
-    match result {
-        Ok(_) => VerifyCredsResult::Ok(queried_user),
-        Err(_) => VerifyCredsResult::InvalidCreds,
-    }
+    )
+    .map_err(|_| VerifyCredsErr::InvalidHash)?;
+
+    Argon2::default()
+        .verify_password(password.as_bytes(), &expected_hash)
+        .map_err(|_| VerifyCredsErr::InvalidCreds)?;
+
+    Ok(existing_queried_user)
 }
 
 #[derive(Debug)]
@@ -91,8 +99,7 @@ pub async fn register_user(
         Ok(hash) => hash,
     };
 
-    match repositories::users::create_user(username, pw_hash.to_string().as_str(), db).await {
-        Ok(new_id) => Ok(new_id),
-        Err(db_err) => Err(RegisterUserErrors::DbErr(db_err)),
-    }
+    create_user(username, pw_hash.to_string().as_str(), db)
+        .await
+        .map_err(RegisterUserErrors::DbErr)
 }

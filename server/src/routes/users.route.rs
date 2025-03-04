@@ -8,6 +8,8 @@ use ts_rs::TS;
 
 pub mod login {
 
+    use crate::services::users::VerifyCredsErr;
+
     use super::*;
 
     #[derive(Serialize, Deserialize, Clone, Debug)]
@@ -37,15 +39,14 @@ pub mod login {
         let given_username = &info.username;
         let given_password = &info.password;
 
-        let is_creds_valid = verify_creds(
+        match verify_creds(
             given_username.as_str(),
             given_password.as_str(),
             db_connection,
         )
-        .await;
-
-        match is_creds_valid {
-            crate::services::users::VerifyCredsResult::Ok(model) => {
+        .await
+        {
+            Ok(model) => {
                 let token_gen_result = generate_token_unverified(model.id, db_connection).await;
                 match token_gen_result {
                     Err(err) => {
@@ -59,10 +60,13 @@ pub mod login {
                     ),
                 }
             }
-            crate::services::users::VerifyCredsResult::DbErr => {
-                ErrorInternalServerError("Error querying database.").into()
-            }
-            _ => ErrorUnauthorized("").into(),
+            Err(verify_creds_err) => match verify_creds_err {
+                VerifyCredsErr::DbErr => {
+                    ErrorInternalServerError("Error querying database.").into()
+                }
+                VerifyCredsErr::InvalidCreds => ErrorUnauthorized("Unauthorized").into(),
+                VerifyCredsErr::InvalidHash => ErrorUnauthorized("Unauthorized").into(),
+            },
         }
     }
 }

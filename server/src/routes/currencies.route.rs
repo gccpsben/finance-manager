@@ -1,11 +1,5 @@
 use crate::services::currencies::CreateCurrencyErrors;
-use crate::{
-    extractors::auth_user::AuthUser, repositories::TransactionWithCallback,
-    states::database_states::DatabaseStates,
-};
-use crate::{
-    repositories::currencies::CreateCurrencyDomainEnum, services::currencies::create_currency,
-};
+use crate::{extractors::auth_user::AuthUser, states::database_states::DatabaseStates};
 use actix_web::error::ErrorBadRequest;
 use actix_web::{get, http::header::ContentType, post, web, HttpResponse};
 use sea_orm::TransactionTrait;
@@ -14,6 +8,11 @@ use std::str::FromStr;
 use ts_rs::TS;
 
 pub mod post_currency {
+
+    use crate::{
+        extended_models::currency::{CreateCurrencyAction, CurrencyId},
+        services::{currencies::create_currency, TransactionWithCallback},
+    };
 
     use super::*;
 
@@ -47,19 +46,19 @@ pub mod post_currency {
             info.fallback_rate_amount.clone(),
             info.fallback_rate_currency_id.clone(),
         ) {
-            (None, None) => CreateCurrencyDomainEnum::Base {
+            (None, None) => CreateCurrencyAction::Base {
                 name: info.name.clone(),
                 owner: user,
                 ticker: info.ticker.clone(),
             },
             (Some(ref fallback_rate_amount), Some(ref fallback_rate_currency_id)) => {
-                match uuid::Uuid::from_str(fallback_rate_currency_id) {
-                    Ok(parsed_uuid) => CreateCurrencyDomainEnum::Normal {
+                match uuid::Uuid::from_str(fallback_rate_currency_id.to_string().as_str()) {
+                    Ok(parsed_uuid) => CreateCurrencyAction::Normal {
                         name: info.name.clone(),
                         owner: user,
                         ticker: info.ticker.clone(),
                         fallback_rate_amount: fallback_rate_amount.clone(),
-                        fallback_rate_currency_id: parsed_uuid,
+                        fallback_rate_currency_id: CurrencyId(parsed_uuid),
                     },
                     Err(_uuid_err) => {
                         return HttpResponse::BadRequest()
@@ -102,7 +101,7 @@ pub mod post_currency {
             }
             Err(CreateCurrencyErrors::RepeatedBaseCurrency(uuid)) => ErrorBadRequest(format!(
                 "Another base currency (id: {}) is already registered.",
-                uuid
+                uuid.0
             ))
             .into(),
             Err(CreateCurrencyErrors::ValidationErr) => {
@@ -111,7 +110,7 @@ pub mod post_currency {
             Err(CreateCurrencyErrors::ReferencedCurrencyNotExist(uuid)) => {
                 ErrorBadRequest(format!(
                     "The currency referenced in the currency object ({}) cannot be found.",
-                    uuid
+                    uuid.0
                 ))
                 .into()
             }
@@ -124,8 +123,15 @@ pub mod post_currency {
 
 pub mod get_currency {
 
+    use crate::{
+        extended_models::currency::{Currency, CurrencyId},
+        services::{
+            currencies::{get_currencies, get_currency_by_id},
+            TransactionWithCallback,
+        },
+    };
+
     use super::*;
-    use crate::repositories::currencies::{get_currencies, get_currency_by_id, CurrencyDomainEnum};
 
     #[derive(Serialize, Deserialize)]
     pub struct GetCurrencyQuery {
@@ -168,14 +174,14 @@ pub mod get_currency {
             .expect("Failed acquiring currency cache lock.");
 
         let parsed_uuid = match &query.id {
-            Some(unparsed_uuid) => match uuid::Uuid::from_str(unparsed_uuid.as_str()) {
-                Ok(parsed_uuid) => Some(parsed_uuid),
+            Some(unparsed_uuid) => match uuid::Uuid::from_str(unparsed_uuid.to_string().as_str()) {
+                Ok(parsed_uuid) => Some(CurrencyId(parsed_uuid)),
                 Err(_parse_err) => return HttpResponse::BadRequest().body("Invalid uuid given."),
             },
             None => None,
         };
 
-        let currencies_found: Vec<CurrencyDomainEnum> = match parsed_uuid {
+        let currencies_found: Vec<Currency> = match parsed_uuid {
             // Get all currencies if no params are given
             None => match get_currencies(&user, db_txn).await {
                 Err(_db_err) => {
@@ -184,7 +190,7 @@ pub mod get_currency {
                 Ok((currencies, _db_txn)) => currencies,
             },
             Some(parsed_uuid) => {
-                match get_currency_by_id(&user, parsed_uuid, db_txn, &mut cache).await {
+                match get_currency_by_id(&user, &parsed_uuid, db_txn, &mut cache).await {
                     Err(_db_err) => {
                         return HttpResponse::InternalServerError().body("Error querying database.")
                     }
@@ -199,7 +205,7 @@ pub mod get_currency {
                 items: currencies_found
                     .iter()
                     .map(|currency_model| match currency_model {
-                        CurrencyDomainEnum::Base {
+                        Currency::Base {
                             id,
                             name,
                             owner,
@@ -207,13 +213,13 @@ pub mod get_currency {
                         } => GetCurrencyResponseItem {
                             fallback_rate_amount: None,
                             fallback_rate_currency_id: None,
-                            id: id.to_string(),
+                            id: id.0.to_string(),
                             name: name.to_string(),
-                            owner: owner.to_string(),
+                            owner: owner.0.to_string(),
                             ticker: ticker.to_string(),
-                            is_base: false,
+                            is_base: true,
                         },
-                        CurrencyDomainEnum::Normal {
+                        Currency::Normal {
                             id,
                             name,
                             owner,
@@ -222,10 +228,12 @@ pub mod get_currency {
                             fallback_rate_currency_id,
                         } => GetCurrencyResponseItem {
                             fallback_rate_amount: Some(fallback_rate_amount.to_string()),
-                            fallback_rate_currency_id: Some(fallback_rate_currency_id.to_string()),
-                            id: id.to_string(),
+                            fallback_rate_currency_id: Some(
+                                fallback_rate_currency_id.0.to_string(),
+                            ),
+                            id: id.0.to_string(),
                             name: name.to_string(),
-                            owner: owner.to_string(),
+                            owner: owner.0.to_string(),
                             ticker: ticker.to_string(),
                             is_base: false,
                         },

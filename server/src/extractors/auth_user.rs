@@ -14,10 +14,7 @@ use crate::{
 };
 
 #[derive(Serialize, Deserialize, Debug, Default, Clone)]
-pub struct AuthUser {
-    pub username: String,
-    pub user_id: uuid::Uuid,
-}
+pub struct AuthUser(pub uuid::Uuid);
 
 impl FromRequest for AuthUser {
     type Error = Error;
@@ -34,19 +31,16 @@ impl FromRequest for AuthUser {
         let req = req.clone();
         let unauthorized_msg = "Authorization header not provided or user is not found.";
         Box::pin(async move {
-            let token_header_utf8 = match req.headers().get("authorization") {
-                None => return Err(ErrorUnauthorized(unauthorized_msg)),
-                Some(token_header_unknown) => match token_header_unknown.to_str() {
-                    Err(_) => return Err(ErrorUnauthorized(unauthorized_msg)),
-                    Ok(token_header_utf8) => token_header_utf8,
-                },
-            };
+            let token_header_utf8 = req
+                .headers()
+                .get("authorization")
+                .ok_or(ErrorUnauthorized(unauthorized_msg))?
+                .to_str()
+                .map_err(|_| ErrorUnauthorized(unauthorized_msg))?;
 
             let token_header_parsed = String::from(token_header_utf8).clone();
-            let uuid_header_parsed = match uuid::Uuid::from_str(token_header_parsed.as_str()) {
-                Err(_) => return Err(ErrorUnauthorized(unauthorized_msg)),
-                Ok(uuid) => uuid,
-            };
+            let uuid_header_parsed = uuid::Uuid::from_str(token_header_parsed.as_str())
+                .map_err(|_| ErrorUnauthorized(unauthorized_msg))?;
 
             let token_owner_query = user::Entity::find()
                 .join(
@@ -62,15 +56,12 @@ impl FromRequest for AuthUser {
                         .into(),
                 )
                 .one(&db_connection)
-                .await;
+                .await
+                .map_err(|_db_err| ErrorInternalServerError("Error querying database."))?;
 
             match token_owner_query {
-                Err(_db_err) => Err(ErrorInternalServerError("Error querying database.")),
-                Ok(None) => Err(ErrorUnauthorized(unauthorized_msg)),
-                Ok(Some(token_owner)) => Ok(AuthUser {
-                    user_id: token_owner.id,
-                    username: token_owner.name,
-                }),
+                None => Err(ErrorUnauthorized(unauthorized_msg)),
+                Some(token_owner_query) => Ok(AuthUser(token_owner_query.id)),
             }
         })
     }

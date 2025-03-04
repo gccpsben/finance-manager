@@ -1,11 +1,11 @@
-use crate::{extractors::auth_user::AuthUser, repositories::currencies::CurrencyDomainEnum};
+use crate::{extended_models::currency::Currency, extractors::auth_user::AuthUser};
 
 // TODO: We might be able to use concurrency map for this. For now just use Mutex on the whole thing first.
 // TODO: Or we might be able to use VecDeque for this.
 
 #[derive(Clone)]
 pub struct CurrencyCache {
-    items: Vec<CurrencyDomainEnum>,
+    items: Vec<Currency>,
 }
 
 impl CurrencyCache {
@@ -14,43 +14,42 @@ impl CurrencyCache {
             items: Vec::with_capacity(size),
         }
     }
-    pub fn register_item(&mut self, entry: CurrencyDomainEnum) {
+    pub fn register_item(&mut self, entry: Currency) {
         self.items.push(entry);
     }
-    pub fn query_base_currency(&self, owner: &AuthUser) -> Option<&CurrencyDomainEnum> {
+    pub fn query_base_currency(&self, owner: &AuthUser) -> Option<&Currency> {
         self.items.iter().find(|item| {
             let cache_item_is_base = match item {
-                CurrencyDomainEnum::Base { .. } => true,
-                CurrencyDomainEnum::Normal { .. } => false,
+                Currency::Base { .. } => true,
+                Currency::Normal { .. } => false,
             };
             let cache_item_owner_id = match item {
-                CurrencyDomainEnum::Base { owner, .. } => owner,
-                CurrencyDomainEnum::Normal { owner, .. } => owner,
+                Currency::Base { owner, .. } => owner.0,
+                Currency::Normal { owner, .. } => owner.0,
             }
             .to_string();
 
-            cache_item_is_base && cache_item_owner_id == owner.user_id.to_string()
+            cache_item_is_base && cache_item_owner_id == owner.0.to_string()
         })
     }
     pub fn query_item_by_currency_id(
         &self,
         owner: &AuthUser,
         currency_id: uuid::Uuid,
-    ) -> Option<&CurrencyDomainEnum> {
+    ) -> Option<&Currency> {
         self.items.iter().find(|item| {
             let cache_item_currency_id = match item {
-                CurrencyDomainEnum::Base { id, .. } => id,
-                CurrencyDomainEnum::Normal { id, .. } => id,
+                Currency::Base { id, .. } => id,
+                Currency::Normal { id, .. } => id,
             };
 
             let cache_item_owner_id = match item {
-                CurrencyDomainEnum::Base { owner, .. } => owner,
-                CurrencyDomainEnum::Normal { owner, .. } => owner,
+                Currency::Base { owner, .. } => owner.0,
+                Currency::Normal { owner, .. } => owner.0,
             }
             .to_string();
 
-            *cache_item_currency_id == currency_id
-                && owner.user_id.to_string() == cache_item_owner_id
+            cache_item_currency_id.0 == currency_id && owner.0.to_string() == cache_item_owner_id
         })
     }
 }

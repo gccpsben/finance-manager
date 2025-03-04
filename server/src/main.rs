@@ -1,12 +1,13 @@
 #![allow(clippy::await_holding_lock)]
+#![allow(unused)]
 
 mod caches;
 mod entities;
 mod env;
+mod extended_models;
 mod extractors;
 mod logging;
 mod migration;
-mod repositories;
 mod routes;
 mod services;
 mod states;
@@ -39,6 +40,7 @@ struct Args {
     exit_on_not_fully_migrated: Option<bool>,
 }
 
+#[cfg_attr(test, mutants::skip)]
 pub async fn are_all_migrations_applied(db: &DatabaseConnection) -> bool {
     !migration::Migrator::get_migration_with_status(db)
         .await
@@ -67,11 +69,16 @@ pub async fn main() -> Result<(), Box<dyn Error>> {
             None => None,
             Some(ref server_section) => server_section.port,
         };
-        info!("No port given in env file, finding unused port starting from 1000.");
-        let unused_port = port_check::free_local_ipv4_port_in_range(1000..65535);
-        let unused_port = unused_port.expect("Unable to find an unused port.");
-        info!("Unused port {} on ipv4 is found.", unused_port);
-        unused_port
+        match port {
+            Some(port_given) => port_given,
+            None => {
+                info!("No port given in env file, finding unused port starting from 1000.");
+                let unused_port = port_check::free_local_ipv4_port_in_range(1000..65535);
+                let unused_port = unused_port.expect("Unable to find an unused port.");
+                info!("Unused port {} on ipv4 is found.", unused_port);
+                unused_port
+            }
+        }
     };
 
     let db = {

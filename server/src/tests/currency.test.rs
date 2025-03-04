@@ -12,8 +12,9 @@ pub mod currencies {
         test::{self},
     };
     pub mod drivers {
-        use crate::routes::currencies::post_currency::{
-            PostCurrencyRequestBody, PostCurrencyResponseBody,
+        use crate::routes::currencies::{
+            get_currency::{GetCurrencyQuery, GetCurrencyResponse},
+            post_currency::{PostCurrencyRequestBody, PostCurrencyResponseBody},
         };
 
         use super::*;
@@ -43,10 +44,40 @@ pub mod currencies {
             }
             res_parsed
         }
+
+        pub async fn driver_get_currency<
+            B: MessageBody,
+            E: std::fmt::Debug,
+            const ASSERT_DEFAULT: bool,
+        >(
+            query: Option<GetCurrencyQuery>,
+            token: Option<&str>,
+            app: &impl Service<Request, Response = ServiceResponse<B>, Error = E>,
+        ) -> AssertTestResponse<GetCurrencyResponse> {
+            let mut req = test::TestRequest::default();
+            req = req.insert_header(ContentType::json());
+            req = attach_token_to_req(req, token);
+            let query_str = match query {
+                None => String::from(""),
+                Some(query) => format!("?{}", serde_urlencoded::to_string(&query).unwrap()),
+            };
+            req = req.uri(&format!("/currencies{}", query_str));
+            req = req.method(Method::GET);
+            let res = test::call_service(app, req.to_request()).await;
+            let res_parsed = parse_response_body(res).await;
+            if ASSERT_DEFAULT {
+                assert_eq!(res_parsed.status, StatusCode::OK);
+                assert!(res_parsed.expected.is_some());
+            }
+            res_parsed
+        }
     }
 
     mod tests {
-        use super::{drivers::driver_post_currency, *};
+        use super::{
+            drivers::{driver_get_currency, driver_post_currency},
+            *,
+        };
         use crate::routes::users::register::PostUserRequestBody;
 
         #[actix_web::test]
@@ -231,20 +262,88 @@ pub mod currencies {
             }
 
             // Create valid secondary currency
-            {
+            let secondary_currency_id = {
                 driver_post_currency::<_, _, true>(
                     TestBody::Expected(
                         crate::routes::currencies::post_currency::PostCurrencyRequestBody {
                             name: String::from("Curr2"),
                             ticker: String::from("CUR2"),
                             fallback_rate_amount: Some("2".to_string()),
-                            fallback_rate_currency_id: Some(base_currency_id),
+                            fallback_rate_currency_id: Some(base_currency_id.clone()),
                         },
                     ),
                     Some(&user_1_token),
                     &app,
                 )
+                .await
+                .expected
+                .expect("Create valid secondary currency: unexpected body")
+                .id
+            };
+
+            // Get created base currency
+            {
+                let resp = driver_get_currency::<_, _, true>(
+                    Some(crate::routes::currencies::get_currency::GetCurrencyQuery {
+                        id: Some(base_currency_id.clone()),
+                    }),
+                    Some(&user_1_token),
+                    &app,
+                )
                 .await;
+
+                let expected_body = resp.expected.unwrap();
+
+                assert_eq!(expected_body.items.len(), 1);
+                assert_eq!(expected_body.items.first().unwrap().id, base_currency_id);
+                assert_eq!(
+                    expected_body.items.first().unwrap().fallback_rate_amount,
+                    None
+                );
+                assert_eq!(
+                    expected_body
+                        .items
+                        .first()
+                        .unwrap()
+                        .fallback_rate_currency_id,
+                    None
+                );
+                assert!(expected_body.items.first().unwrap().is_base);
+            }
+
+            // Get invalid uuid currency
+            {
+                let resp = driver_get_currency::<_, _, false>(
+                    Some(crate::routes::currencies::get_currency::GetCurrencyQuery {
+                        id: Some(String::from("abcd")),
+                    }),
+                    Some(&user_1_token),
+                    &app,
+                )
+                .await;
+
+                assert_eq!(resp.status, StatusCode::BAD_REQUEST)
+            }
+
+            // Get created secondary currency
+            {
+                let resp = driver_get_currency::<_, _, true>(
+                    Some(crate::routes::currencies::get_currency::GetCurrencyQuery {
+                        id: Some(secondary_currency_id.clone()),
+                    }),
+                    Some(&user_1_token),
+                    &app,
+                )
+                .await;
+
+                let expected_body = resp.expected.unwrap();
+
+                assert_eq!(expected_body.items.len(), 1);
+                assert_eq!(
+                    expected_body.items.first().unwrap().id,
+                    secondary_currency_id
+                );
+                assert!(!expected_body.items.first().unwrap().is_base);
             }
         }
     }

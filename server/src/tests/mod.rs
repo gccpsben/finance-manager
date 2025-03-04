@@ -60,7 +60,6 @@ pub mod commons {
     }
 
     pub async fn parse_response_body<
-        'a,
         B: actix_web::body::MessageBody,
         ExpectedType: de::DeserializeOwned,
     >(
