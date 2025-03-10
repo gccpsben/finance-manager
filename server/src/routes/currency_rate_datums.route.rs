@@ -2,6 +2,7 @@ use crate::entities::currency_rate_datum;
 use crate::extended_models::currency::CurrencyId;
 use crate::{extractors::auth_user::AuthUser, states::database_states::DatabaseStates};
 use actix_web::{post, web, HttpResponse};
+use sea_orm::prelude::DateTime;
 use sea_orm::ActiveValue;
 use serde::{Deserialize, Serialize};
 use ts_rs::TS;
@@ -29,7 +30,7 @@ pub mod post_currency_rate_datum {
         pub ref_currency_id: String,
         pub ref_amount_currency_id: String,
         pub amount: String,
-        pub date: i32,
+        pub date: DateTime,
     }
 
     #[derive(Serialize, Deserialize, Debug)]
@@ -94,7 +95,7 @@ pub mod post_currency_rate_datum {
             &mut data
                 .currency_cache
                 .lock()
-                .expect("Failed acquiring currency cache lock."), // TODO: add cache here
+                .expect("Failed acquiring currency cache lock."),
         )
         .await;
 
@@ -132,7 +133,7 @@ pub struct CurrencyRateDatum {
     pub ref_currency_id: CurrencyId,
     pub ref_amount_currency_id: CurrencyId,
     pub owner: AuthUser,
-    pub date: i32,
+    pub date: DateTime,
 }
 
 #[derive(Clone, Debug)]
@@ -141,7 +142,7 @@ pub struct CreateCurrencyRateDatumAction {
     pub ref_currency_id: CurrencyId,
     pub ref_amount_currency_id: CurrencyId,
     pub owner: AuthUser,
-    pub date: i32,
+    pub date: DateTime,
 }
 
 impl CreateCurrencyRateDatumAction {

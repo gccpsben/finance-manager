@@ -37,6 +37,9 @@ pub mod currency_rate_datums {
     }
 
     mod tests {
+        use chrono::{NaiveDate, TimeZone};
+        use finance_manager_migration::{ChronoDateTimeUtc, DateTime};
+
         use crate::{routes::{currencies::post_currency::PostCurrencyRequestBody, currency_rate_datums::post_currency_rate_datum::PostCurrencyRateDatumRequestBody}, tests::currency_tests::currencies::drivers::driver_post_currency, *};
         use super::*;
 
@@ -87,7 +90,7 @@ pub mod currency_rate_datums {
                         ref_currency_id: second_currency_id.clone(),
                         ref_amount_currency_id: base_currency_id.clone(),
                         amount: "10".to_string(),
-                        date: 1,
+                        date: chrono::Utc.with_ymd_and_hms(2000,1, 1, 1, 1, 1).unwrap().naive_utc(),
                     }),
                     &srv,
                     true
@@ -120,7 +123,7 @@ pub mod currency_rate_datums {
                         ref_currency_id: second_currency_id.clone(),
                         ref_amount_currency_id: second_currency_id.clone(),
                         amount: "10".to_string(),
-                        date: 2,
+                        date: chrono::Utc.with_ymd_and_hms(2000,1, 1, 1, 1, 1).unwrap().naive_utc(),
                     }),
                     &srv,
                     false
@@ -137,7 +140,7 @@ pub mod currency_rate_datums {
                         ref_currency_id: uuid::Uuid::new_v4().to_string(),
                         ref_amount_currency_id: base_currency_id.clone(),
                         amount: "10".to_string(),
-                        date: 2,
+                        date: chrono::Utc.with_ymd_and_hms(2000,1, 1, 1, 1, 1).unwrap().naive_utc(),
                     }),
                     &srv,
                     false

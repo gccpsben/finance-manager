@@ -1,2 +1,1 @@
-pub use sea_orm_migration::prelude::*;
-pub mod migration;
+// pub use finance_manager_migration::prelude::*;

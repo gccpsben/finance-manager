@@ -6,8 +6,8 @@ mod entities;
 mod env;
 mod extended_models;
 mod extractors;
+mod linear_interpolator;
 mod logging;
-mod migration;
 mod routes;
 mod services;
 mod states;
@@ -15,18 +15,20 @@ mod tests;
 
 use std::{
     error::Error,
+    str::FromStr,
     sync::{Arc, Mutex},
 };
-
 use actix_web::{web, App, HttpServer};
 use caches::{
     currency_cache::CurrencyCache, currency_rate_datum::CurrencyRateDatumCache,
     txn_tag::TxnTagsCache,
 };
 use clap::{command, Parser, ValueHint};
+use finance_manager_migration::{Migrator, MigratorTrait};
+use finance_manager_migration::MigrationStatus;
 use routes::bootstrap::apply_endpoints;
+use rust_decimal::Decimal;
 use sea_orm::{Database, DatabaseConnection};
-use sea_orm_migration::MigratorTrait;
 use states::database_states::DatabaseStates;
 use tracing::info;
 
@@ -45,12 +47,12 @@ struct Args {
 
 #[cfg_attr(test, mutants::skip)]
 pub async fn are_all_migrations_applied(db: &DatabaseConnection) -> bool {
-    !migration::Migrator::get_migration_with_status(db)
+    Migrator::get_migration_with_status(db)
         .await
         .iter()
         .any(|m| {
             m.iter()
-                .any(|m2| matches!(m2.status(), sea_orm_migration::MigrationStatus::Pending))
+                .any(|m2| matches!(m2.status(), MigrationStatus::Pending))
         })
 }
 
@@ -100,7 +102,7 @@ pub async fn main() -> Result<(), Box<dyn Error>> {
             }
             false => {
                 info!("Performing migrations...");
-                migration::Migrator::up(&db, None).await?;
+                Migrator::up(&db, None).await?;
                 info!("Migrations applied.");
             }
         }

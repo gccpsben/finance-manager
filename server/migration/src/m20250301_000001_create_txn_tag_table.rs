@@ -66,7 +66,7 @@ impl MigrationTrait for Migration {
     }
 }
 
-#[derive(Iden)]
+#[derive(sea_orm::Iden)]
 pub enum TxnTag {
     Table,
     Id,

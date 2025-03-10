@@ -1,7 +1,6 @@
 use crate::caches::txn_tag::TxnTagsCache;
 use crate::{
     caches::{currency_cache::CurrencyCache, currency_rate_datum::CurrencyRateDatumCache},
-    entities::prelude::TxnTag,
 };
 use sea_orm::DatabaseConnection;
 use std::sync::{Arc, Mutex};

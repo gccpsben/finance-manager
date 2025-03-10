@@ -61,6 +61,10 @@ pub mod txn_tags {
     }
 
     mod tests {
+        use std::str::FromStr;
+
+        use rust_decimal::Decimal;
+
         use super::{
             drivers::{driver_get_txn_tags, driver_post_txn_tag},
             *,

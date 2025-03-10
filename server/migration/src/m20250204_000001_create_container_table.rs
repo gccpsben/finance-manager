@@ -1,5 +1,4 @@
 use sea_orm_migration::prelude::*;
-
 use super::m20220101_000002_create_user_table::User;
 
 pub struct Migration;

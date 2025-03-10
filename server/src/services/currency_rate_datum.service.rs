@@ -1,19 +1,60 @@
 use crate::entities::currency_rate_datum;
-use crate::routes::currency_rate_datums::CreateCurrencyRateDatumAction;
+use crate::extended_models::currency::CurrencyId;
+use crate::routes::currency_rate_datums::{CreateCurrencyRateDatumAction, CurrencyRateDatum};
 use crate::services::TransactionWithCallback;
 use crate::{
     caches::{currency_cache::CurrencyCache, currency_rate_datum::CurrencyRateDatumCache},
     extractors::auth_user::AuthUser,
 };
-use sea_orm::{DbErr, EntityTrait};
+use sea_orm::prelude::Expr;
+use sea_orm::sqlx::types::chrono::{self, Utc};
+use sea_orm::{
+    ColumnTrait, DbErr, EntityTrait, PaginatorTrait, QueryFilter, QueryOrder, QuerySelect, Value,
+};
 use uuid::Uuid;
-
 use super::currencies::{find_first_unknown_currencies, get_currency_by_id};
 
 pub enum CreateCurrencyRateDatumErrors {
     DbErr(DbErr),
     CyclicRefAmountCurrency(Uuid),
     CurrencyNotFound(Uuid),
+}
+
+// TODO: Don't call db every time
+pub async fn get_nearest_2_datums<'a>(
+    owner: &AuthUser,
+    date: chrono::DateTime<Utc>,
+    currency_id: CurrencyId,
+    db_txn: TransactionWithCallback<'a>,
+) -> Result<
+    (
+        Option<CurrencyRateDatum>,
+        Option<CurrencyRateDatum>,
+        TransactionWithCallback<'a>,
+    ),
+    DbErr,
+> {
+    println!(
+        "{:?}",
+        currency_rate_datum::Entity::find()
+            .filter(
+                currency_rate_datum::Column::OwnerId
+                    .eq(owner.0.to_string())
+                    .and(
+                        currency_rate_datum::Column::RefAmountCurrencyId
+                            .eq(currency_id.0.to_string())
+                    )
+            )
+            .order_by(
+                Expr::col(currency_rate_datum::Column::Date)
+                    .sub(Value::ChronoDateTimeUtc(Some(Box::new(date)))),
+                sea_orm::Order::Asc
+            )
+            .limit(2)
+            .all(db_txn.get_db_txn())
+            .await
+    );
+    Ok((None, None, db_txn))
 }
 
 pub async fn create_currency_rate_datum<'a>(

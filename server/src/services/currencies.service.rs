@@ -3,7 +3,42 @@ use crate::extended_models::currency::{Currency, CurrencyId};
 use crate::extractors::auth_user::AuthUser;
 use crate::services::TransactionWithCallback;
 use crate::{entities::currency, extended_models::currency::CreateCurrencyAction};
+use rust_decimal::Decimal;
+use sea_orm::sqlx::sqlite::SqliteTransactionManager;
 use sea_orm::{ColumnTrait, DbErr, EntityTrait, QueryFilter};
+use serde::{Deserialize, Serialize};
+
+#[derive(Debug)]
+pub enum CalculateCurrencyRateErrors {
+    DbErr(DbErr),
+    CurrencyNotFound(CurrencyId),
+}
+
+// /// Calculate the exchange rate of the given currency at a given date.
+// pub async fn calculate_currency_rate<'a>(
+//     owner: &AuthUser,
+//     currency_id: CurrencyId,
+//     db_txn: TransactionWithCallback<'a>,
+//     date: i32,
+//     cache: &mut CurrencyCache,
+// ) -> Result<(Decimal, TransactionWithCallback<'a>), CalculateCurrencyRateErrors> {
+//     let (curr, db_txn) = get_currency_by_id(owner, &currency_id, db_txn, cache)
+//         .await
+//         .map_err(CalculateCurrencyRateErrors::DbErr)?;
+
+//     match curr {
+//         Some(Currency::Base { id, .. }) => {
+//             return Ok((
+//                 Decimal::from_str_exact("1").expect("Cannot convert \"1\" to exact decimal."),
+//                 db_txn,
+//             ));
+//         }
+//         Some(Currency::Normal { id, name, owner, ticker, fallback_rate_amount, fallback_rate_currency_id }) => {
+            
+//         }
+//         None => return Err(CalculateCurrencyRateErrors::CurrencyNotFound(currency_id)),
+//     }
+// }
 
 pub async fn get_currencies<'a>(
     owner: &AuthUser,

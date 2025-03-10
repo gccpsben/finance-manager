@@ -1,5 +1,5 @@
+use crate::m20250204_000002_create_currency_table::Currency;
 use super::m20220101_000002_create_user_table::User;
-use crate::migration::m20250204_000002_create_currency_table::Currency;
 use sea_orm_migration::prelude::*;
 
 pub struct Migration;
@@ -82,7 +82,7 @@ impl MigrationTrait for Migration {
 
         {
             table = table
-                .col(ColumnDef::new(CurrencyRateDatum::Date).integer().not_null())
+                .col(ColumnDef::new(CurrencyRateDatum::Date).date_time().not_null())
                 .index(
                     Index::create()
                         .name(OWNER_CURR_DATE_UNIQUE_INDEX_NAME)

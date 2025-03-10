@@ -1,0 +1,19 @@
+[package]
+name = "finance_manager_migration"
+publish = false
+edition = "2021"
+
+[lib]
+name = "finance_manager_migration"
+path = "src/lib.rs"
+
+[dependencies]
+async-std = { version = "1", features = ["attributes", "tokio1"] }
+sea-orm = { version = "1.1.7", features = [ "sqlx-sqlite", "sqlx-postgres", "runtime-async-std-native-tls", "macros", "with-json", "debug-print", "with-uuid" ] }
+
+[dependencies.sea-orm-migration]
+version = "1.1.7"
+features = [
+  "runtime-async-std-native-tls",
+  "sqlx-sqlite"
+]

@@ -11,6 +11,9 @@ pub mod currency_rate_datum;
 #[path = "./txn_tag.test.rs"]
 pub mod txn_tag;
 
+#[path = "./linear_interpolator.test.rs"]
+pub mod linear_interpolator;
+
 #[cfg(test)]
 pub mod commons {
 
