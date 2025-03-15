@@ -14,32 +14,26 @@ pub mod txn_tag;
 #[path = "./linear_interpolator.test.rs"]
 pub mod linear_interpolator;
 
+#[path = "./neighbors.test.rs"]
+pub mod neighbors;
+
 #[cfg(test)]
 pub mod commons {
 
     use std::str::from_utf8;
     use std::sync::Arc;
-    use std::sync::Mutex;
 
     use crate::caches::currency_cache::CurrencyCache;
     use crate::caches::currency_rate_datum::CurrencyRateDatumCache;
     use crate::caches::txn_tag::TxnTagsCache;
-    use crate::entities::access_token;
-    use crate::entities::container;
-    use crate::entities::currency;
-    use crate::entities::currency_rate_datum;
-    use crate::entities::txn_tag;
-    use crate::entities::user;
     use crate::routes::bootstrap::apply_endpoints;
     use crate::states::database_states::DatabaseStates;
     use actix_http::StatusCode;
     use actix_test::ClientRequest;
     use actix_test::ClientResponse;
     use actix_test::TestServer;
-    use actix_web::body::to_bytes;
-    use actix_web::dev::ServiceResponse;
-    use actix_web::test::TestRequest;
-    use actix_web::{test, web, App};
+    use actix_web::{web, App};
+    use finance_manager_migration::Migrator;
     use futures::prelude::*;
     use sea_orm::sea_query::IndexCreateStatement;
     use sea_orm::Database;
@@ -49,7 +43,7 @@ pub mod commons {
     use sea_orm::{sea_query::TableCreateStatement, ConnectionTrait};
     use serde::de;
     use serde::Serialize;
-    use serde_json::Value;
+    use tokio::sync::Mutex;
 
     pub enum TestBody<T> {
         Bytes(Box<[u8]>),
@@ -59,7 +53,9 @@ pub mod commons {
     #[derive(Clone, Debug)]
     pub struct AssertTestResponse<ExpectedType> {
         pub expected: Option<ExpectedType>,
+        #[allow(unused)]
         pub json: Option<std::collections::HashMap<String, serde_json::Value>>,
+        #[allow(unused)]
         pub str: Option<String>,
         pub status: StatusCode,
     }
@@ -125,19 +121,14 @@ pub mod commons {
     }
 
     pub async fn setup_connection() -> TestServer {
-        let db = Database::connect("sqlite::memory:")
-            .await
-            .expect("failed initializing data");
+        let db = Database::connect(
+            std::env::var("TEST_DB_URL")
+                .expect("TEST_DB_URL is not defined. Cannot setup database for testing."),
+        )
+        .await
+        .expect("failed initializing data");
 
-        let builder = db.get_database_backend();
-        let schema = sea_orm::Schema::new(builder);
-        init_table_of_entity(&schema, user::Entity, &db).await;
-        init_table_of_entity(&schema, access_token::Entity, &db).await;
-        init_table_of_entity(&schema, container::Entity, &db).await;
-        init_table_of_entity(&schema, currency::Entity, &db).await;
-        init_table_of_entity(&schema, currency_rate_datum::Entity, &db).await;
-        init_table_of_entity(&schema, txn_tag::Entity, &db).await;
-
+        let _ = <Migrator as finance_manager_migration::MigratorTrait>::fresh(&db).await;
         let states = DatabaseStates {
             db,
             currency_cache: Arc::from(Mutex::from(CurrencyCache::new(128))),
@@ -150,6 +141,7 @@ pub mod commons {
         })
     }
 
+    #[allow(unused)]
     pub async fn init_table_of_entity<T>(schema: &Schema, entity: T, db: &DatabaseConnection)
     where
         T: EntityTrait,

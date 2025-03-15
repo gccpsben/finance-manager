@@ -31,7 +31,7 @@ impl<'a> TransactionWithCallback<'a> {
         db_txn: DatabaseTransaction,
         callbacks: Vec<Box<dyn FnMut() + 'a>>,
     ) -> TransactionWithCallback<'a> {
-        TransactionWithCallback { callbacks, db_txn }
+        TransactionWithCallback { db_txn, callbacks }
     }
     pub async fn from_db_conn(
         db_conn: &DatabaseConnection,
@@ -43,9 +43,11 @@ impl<'a> TransactionWithCallback<'a> {
     pub fn get_db_txn(&self) -> &DatabaseTransaction {
         &self.db_txn
     }
+    #[allow(unused)]
     pub fn add_callback(&mut self, callback: Box<dyn FnMut() + 'a>) {
         self.callbacks.push(callback);
     }
+    #[allow(unused)]
     pub async fn rollback(self) {
         self.db_txn
             .rollback()

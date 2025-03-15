@@ -1,23 +1,18 @@
-#![allow(clippy::await_holding_lock)]
-#![allow(unused)]
-
 mod caches;
+mod date;
+#[allow(unused)]
 mod entities;
 mod env;
 mod extended_models;
 mod extractors;
 mod linear_interpolator;
 mod logging;
+mod maths;
 mod routes;
 mod services;
 mod states;
 mod tests;
 
-use std::{
-    error::Error,
-    str::FromStr,
-    sync::{Arc, Mutex},
-};
 use actix_web::{web, App, HttpServer};
 use caches::{
     currency_cache::CurrencyCache, currency_rate_datum::CurrencyRateDatumCache,
@@ -25,12 +20,14 @@ use caches::{
 };
 use clap::{command, Parser, ValueHint};
 use finance_manager_migration::{Migrator, MigratorTrait};
-use finance_manager_migration::MigrationStatus;
 use routes::bootstrap::apply_endpoints;
-use rust_decimal::Decimal;
-use sea_orm::{Database, DatabaseConnection};
+use sea_orm::Database;
 use states::database_states::DatabaseStates;
+use std::{error::Error, sync::Arc};
+use tokio::sync::Mutex;
 use tracing::info;
+
+const RESTFUL_DIGITS: u32 = 20;
 
 #[derive(Parser, Debug)]
 #[command(version, about, long_about = None)]
@@ -43,17 +40,6 @@ struct Args {
     /// Exit the program when database is not migrated to the latest schema.
     #[arg(long("exit-on-not-fully-migrated"), value_name = "BOOL")]
     exit_on_not_fully_migrated: Option<bool>,
-}
-
-#[cfg_attr(test, mutants::skip)]
-pub async fn are_all_migrations_applied(db: &DatabaseConnection) -> bool {
-    Migrator::get_migration_with_status(db)
-        .await
-        .iter()
-        .any(|m| {
-            m.iter()
-                .any(|m2| matches!(m2.status(), MigrationStatus::Pending))
-        })
 }
 
 #[cfg_attr(test, mutants::skip)]
@@ -74,39 +60,26 @@ pub async fn main() -> Result<(), Box<dyn Error>> {
             None => None,
             Some(ref server_section) => server_section.port,
         };
-        match port {
-            Some(port_given) => port_given,
-            None => {
-                info!("No port given in env file, finding unused port starting from 1000.");
-                let unused_port = port_check::free_local_ipv4_port_in_range(1000..65535);
-                let unused_port = unused_port.expect("Unable to find an unused port.");
-                info!("Unused port {} on ipv4 is found.", unused_port);
-                unused_port
-            }
+        if let Some(port_given) = port {
+            port_given
+        } else {
+            info!("No port given in env file, finding unused port starting from 1000.");
+            let unused_port = port_check::free_local_ipv4_port_in_range(1000..65535);
+            let unused_port = unused_port.expect("Unable to find an unused port.");
+            info!("Unused port {} on ipv4 is found.", unused_port);
+            unused_port
         }
     };
 
     let db = {
         info!("Connecting to database...");
-        let connect_options = env.to_connection_options().to_owned();
+        let connect_options = env.to_connection_options().clone();
         let db = Database::connect(connect_options).await?;
         info!("Connected to database...");
         db
     };
 
-    // Migrate if needed
-    {
-        match are_all_migrations_applied(&db).await {
-            true => {
-                info!("No migrations needed, skipping migrations.");
-            }
-            false => {
-                info!("Performing migrations...");
-                Migrator::up(&db, None).await?;
-                info!("Migrations applied.");
-            }
-        }
-    }
+    Migrator::up(&db, None).await?;
 
     let states = DatabaseStates {
         db,

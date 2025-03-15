@@ -6,7 +6,7 @@ pub mod bootstrap;
 #[path = "./containers.route.rs"]
 pub mod containers;
 
-#[cfg(debug_assertions)]
+// #[cfg(debug_assertions)]
 #[path = "./dev.route.rs"]
 pub mod dev;
 

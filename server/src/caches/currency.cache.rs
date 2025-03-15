@@ -19,19 +19,16 @@ impl CurrencyCache {
     }
     pub fn query_base_currency(&self, owner: &AuthUser) -> Option<&Currency> {
         self.items.iter().find(|item| {
-            let cache_item_is_base = match item {
-                Currency::Base { .. } => true,
-                Currency::Normal { .. } => false,
-            };
+            let cache_item_is_base = matches!(item, Currency::Base { .. });
             let cache_item_owner_id = match item {
-                Currency::Base { owner, .. } => owner.0,
-                Currency::Normal { owner, .. } => owner.0,
+                Currency::Normal { owner, .. } | Currency::Base { owner, .. } => owner.0,
             }
             .to_string();
 
             cache_item_is_base && cache_item_owner_id == owner.0.to_string()
         })
     }
+    #[allow(unused)]
     pub fn query_item_by_currency_id(
         &self,
         owner: &AuthUser,
@@ -39,8 +36,7 @@ impl CurrencyCache {
     ) -> Option<&Currency> {
         self.items.iter().find(|item| {
             let cache_item_currency_id = match item {
-                Currency::Base { id, .. } => id,
-                Currency::Normal { id, .. } => id,
+                Currency::Normal { id, .. } | Currency::Base { id, .. } => id,
             };
 
             let cache_item_owner_id = match item {

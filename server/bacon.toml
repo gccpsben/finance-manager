@@ -1,0 +1,24 @@
+[jobs.coverage]
+command = [
+    "cargo",
+    "llvm-cov",
+    "--color",
+    "always",
+    "nextest",
+    "--lcov",
+    "--output-path",
+    "./lcov.info",
+    "--test-threads=1",
+]
+need_stdout = true
+
+[jobs.coverage-console]
+command = [
+    "cargo",
+    "llvm-cov",
+    "--color",
+    "always",
+    "nextest",
+    "--test-threads=1",
+]
+need_stdout = true

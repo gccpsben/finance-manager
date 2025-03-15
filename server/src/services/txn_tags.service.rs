@@ -1,7 +1,7 @@
 use crate::caches::txn_tag::TxnTagsCache;
 use crate::services::TransactionWithCallback;
 use crate::{entities::txn_tag, extractors::auth_user::AuthUser};
-use sea_orm::{ActiveValue, ColumnTrait, DatabaseConnection, DbErr, EntityTrait, QueryFilter};
+use sea_orm::{ActiveValue, ColumnTrait, DbErr, EntityTrait, QueryFilter};
 use uuid::Uuid;
 
 pub async fn create_txn_tag<'a>(
@@ -26,6 +26,7 @@ pub async fn create_txn_tag<'a>(
     Ok((model.last_insert_id, db_txn))
 }
 
+#[allow(unused)]
 pub async fn get_txn(
     user: &AuthUser,
     id: uuid::Uuid,

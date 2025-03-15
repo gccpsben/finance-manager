@@ -1,5 +1,4 @@
 use crate::{entities::txn_tag::Model as TxnTag, extractors::auth_user::AuthUser};
-use sea_orm::*;
 
 #[derive(Clone)]
 pub struct TxnTagsCache {

@@ -1,7 +1,6 @@
-use std::fs;
-
 use sea_orm::ConnectOptions;
 use serde::{Deserialize, Serialize};
+use std::{fs, time::Duration};
 
 #[derive(Debug, Serialize, Deserialize)]
 pub enum AppMode {
@@ -77,10 +76,15 @@ impl AppEnv {
                 username,
                 database,
             } => ConnectOptions::new(format!(
-                "postgres://{}:{}@{}/{}",
-                username, password, hostname, database
-            )),
-            EnvDb::SQLite { path } => ConnectOptions::new(format!("sqlite://{}", path)),
+                "postgres://{username}:{password}@{hostname}/{database}"
+            ))
+            .max_connections(50)
+            .min_connections(10)
+            .max_lifetime(Duration::from_secs_f64(120.0))
+            .acquire_timeout(Duration::from_secs(60))
+            .connect_timeout(Duration::from_secs(60))
+            .clone(),
+            EnvDb::SQLite { path } => ConnectOptions::new(format!("sqlite://{path}")),
             EnvDb::SQLiteMemory => ConnectOptions::new("sqlite::memory:"),
         }
     }

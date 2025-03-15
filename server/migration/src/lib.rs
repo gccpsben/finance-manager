@@ -1,6 +1,6 @@
 pub use finance_manager_migration::Migrator;
 pub use sea_orm::prelude::*;
-pub use sea_orm_migration::{MigrationTrait, MigratorTrait, MigrationStatus};
+pub use sea_orm_migration::{MigrationStatus, MigrationTrait, MigratorTrait};
 mod m20220101_000002_create_user_table;
 mod m20250203_000001_create_token_table;
 mod m20250204_000001_create_container_table;

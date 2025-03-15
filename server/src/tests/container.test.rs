@@ -1,22 +1,17 @@
 #[cfg(test)]
 pub mod containers {
 
-    use crate::routes::users::register::PostUserRequestBody;
     use crate::routes::containers::get_container::GetContainerResponse;
     use crate::routes::containers::post_container::*;
     use crate::tests::commons::TestBody;
     use crate::tests::commons::*;
     use crate::tests::user_tests::users::drivers::*;
-    use actix_http::{Request, StatusCode};
-    use actix_web::body::MessageBody;
-    use actix_web::{
-        dev::{Service, ServiceResponse},
-        http::{header::ContentType, Method},
-        test::{self},
-    };
+    use actix_http::StatusCode;
+    use actix_web::http::header::ContentType;
     use drivers::*;
 
     mod drivers {
+
         use super::*;
         pub async fn driver_get_containers(
             target_id: Option<&str>,
@@ -79,7 +74,7 @@ pub mod containers {
                 resp.expected.unwrap().container_id
             };
 
-            let first_user_container_2_id = {
+            let _first_user_container_2_id = {
                 let resp = driver_post_container(
                     Some(&first_usr_token),
                     TestBody::Expected(PostContainerRequestBody {
@@ -182,7 +177,8 @@ pub mod containers {
             // Get any container without token
             {
                 let resp =
-                    driver_get_containers(Some(&first_user_container_1_id), None, &srv, false).await;
+                    driver_get_containers(Some(&first_user_container_1_id), None, &srv, false)
+                        .await;
                 assert_eq!(
                     resp.status,
                     StatusCode::UNAUTHORIZED,

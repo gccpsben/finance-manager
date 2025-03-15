@@ -26,6 +26,9 @@ actix-test = "0.1.5"
 rust_decimal = "1.36.0"
 chrono = "0.4.39"
 finance_manager_migration = { path="./migration" }
+bson = { version = "2.13.0", features = ["chrono-0_4"] }
+thiserror = "2.0.12"
+tokio = { version = "1.44.1", features = ["sync"] }
 
 [dependencies.uuid]
 version = "1.15.1"

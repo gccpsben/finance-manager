@@ -1,14 +1,14 @@
-use crate::linear_interpolator::{self, try_linear_interpolate};
+#[cfg(test)]
+use crate::linear_interpolator::try_linear_interpolate;
+#[cfg(test)]
 use rust_decimal::Decimal;
 
 #[cfg(test)]
 pub fn make_xys(x: &str, y: &str) -> Option<(Decimal, Decimal)> {
-    Some(
-        (
-            Decimal::from_str_exact(x).unwrap(),
-            Decimal::from_str_exact(y).unwrap()
-        )
-    )
+    Some((
+        Decimal::from_str_exact(x).unwrap(),
+        Decimal::from_str_exact(y).unwrap(),
+    ))
 }
 
 #[cfg(test)]

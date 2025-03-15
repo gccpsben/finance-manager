@@ -6,14 +6,9 @@ pub mod users {
     use crate::tests::commons::*;
     use crate::tests::user_tests::users::drivers::*;
     use crate::{routes::users::login::LoginResponseBody, tests::commons::setup_connection};
-    use actix_http::{Request, StatusCode};
+    use actix_http::StatusCode;
     use actix_test::TestServer;
-    use actix_web::body::MessageBody;
-    use actix_web::{
-        dev::{Service, ServiceResponse},
-        http::{header::ContentType, Method},
-        test::{self},
-    };
+    use actix_web::http::header::ContentType;
     use serde_json::json;
 
     pub mod drivers {
@@ -129,7 +124,7 @@ pub mod users {
             let app = setup_connection().await;
             // Post user correctly
             {
-                let resp = driver_post_user(
+                driver_post_user(
                     TestBody::Expected(PostUserRequestBody {
                         username: String::from("123"),
                         password: String::from("1234"),
@@ -138,7 +133,7 @@ pub mod users {
                     true,
                 )
                 .await;
-                let resp = driver_post_user(
+                driver_post_user(
                     TestBody::Expected(PostUserRequestBody {
                         username: String::from("1234"),
                         password: String::from("123"),
@@ -190,7 +185,7 @@ pub mod users {
 
             // Post user correctly
             {
-                let resp = driver_post_user(
+                driver_post_user(
                     TestBody::Expected(PostUserRequestBody {
                         username: String::from("123"),
                         password: String::from("1234"),
@@ -199,7 +194,7 @@ pub mod users {
                     true,
                 )
                 .await;
-                let resp = driver_post_user(
+                driver_post_user(
                     TestBody::Expected(PostUserRequestBody {
                         username: String::from("1234"),
                         password: String::from("123"),

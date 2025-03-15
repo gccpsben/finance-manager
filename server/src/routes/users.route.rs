@@ -1,14 +1,13 @@
 use crate::services::users::{generate_token_unverified, verify_creds};
 use crate::DatabaseStates;
-use actix_web::error::{ErrorInternalServerError, ErrorUnauthorized};
 use actix_web::post;
-use actix_web::{http::header::ContentType, web, HttpResponse};
+use actix_web::web;
 use serde::{Deserialize, Serialize};
 use ts_rs::TS;
 
 pub mod login {
 
-    use crate::services::users::VerifyCredsErr;
+    use crate::routes::bootstrap::EndpointsErrors;
 
     use super::*;
 
@@ -34,47 +33,29 @@ pub mod login {
     async fn handler(
         info: web::Json<LoginRequestBody>,
         data: web::Data<DatabaseStates>,
-    ) -> HttpResponse {
+    ) -> Result<web::Json<LoginResponseBody>, EndpointsErrors> {
         let db_connection = &data.db;
         let given_username = &info.username;
         let given_password = &info.password;
 
-        match verify_creds(
+        let model = verify_creds(
             given_username.as_str(),
             given_password.as_str(),
             db_connection,
         )
-        .await
-        {
-            Ok(model) => {
-                let token_gen_result = generate_token_unverified(model.id, db_connection).await;
-                match token_gen_result {
-                    Err(err) => {
-                        ErrorInternalServerError(format!("Error querying database: {}", err)).into()
-                    }
-                    Ok(token) => HttpResponse::Ok().content_type(ContentType::json()).json(
-                        LoginResponseBody {
-                            token: token.last_insert_id.to_string(),
-                            owner: model.id.to_string(),
-                        },
-                    ),
-                }
-            }
-            Err(verify_creds_err) => match verify_creds_err {
-                VerifyCredsErr::DbErr => {
-                    ErrorInternalServerError("Error querying database.").into()
-                }
-                VerifyCredsErr::InvalidCreds => ErrorUnauthorized("Unauthorized").into(),
-                VerifyCredsErr::InvalidHash => ErrorUnauthorized("Unauthorized").into(),
-            },
-        }
+        .await?;
+
+        let token = generate_token_unverified(model.id, db_connection).await?;
+        Ok(web::Json(LoginResponseBody {
+            token: token.last_insert_id.to_string(),
+            owner: model.id.to_string(),
+        }))
     }
 }
 
 pub mod register {
-    use crate::services::users::{register_user, RegisterUserErrors};
-
     use super::*;
+    use crate::{routes::bootstrap::EndpointsErrors, services::users::register_user};
 
     #[derive(Serialize, Deserialize, Clone)]
     pub struct PostUserResponseBody {
@@ -91,35 +72,11 @@ pub mod register {
     async fn handler(
         info: web::Json<PostUserRequestBody>,
         data: web::Data<DatabaseStates>,
-    ) -> HttpResponse {
+    ) -> Result<web::Json<PostUserResponseBody>, EndpointsErrors> {
         let username = &info.username;
         let password = &info.password;
 
-        match register_user(username, password, &data.db).await {
-            Ok(new_id) => {
-                let response = PostUserResponseBody { id: new_id.into() };
-                HttpResponse::Ok()
-                    .content_type(ContentType::json())
-                    .body(serde_json::to_string(&response).expect("?"))
-            }
-            Err(RegisterUserErrors::EmptyUsername) => HttpResponse::BadRequest()
-                .content_type(ContentType::json())
-                .body("Empty username"),
-            Err(RegisterUserErrors::EmptyPassword) => HttpResponse::BadRequest()
-                .content_type(ContentType::json())
-                .body("Empty password"),
-            Err(RegisterUserErrors::DbErr(err)) => {
-                println!("Error occurred: {:?}", err);
-                HttpResponse::InternalServerError()
-                    .content_type(ContentType::json())
-                    .body(format!("Error querying database: {}", err))
-            }
-            Err(RegisterUserErrors::HashError(err)) => {
-                println!("Error occurred: {:?}", err);
-                HttpResponse::InternalServerError()
-                    .content_type(ContentType::json())
-                    .body(format!("Hash error: {}", err))
-            }
-        }
+        let user = register_user(username, password, &data.db).await?;
+        Ok(web::Json(PostUserResponseBody { id: user.into() }))
     }
 }

@@ -1,7 +1,4 @@
-use crate::extended_models::currency::CurrencyId;
-use crate::extractors::auth_user::AuthUser;
 use crate::routes::currency_rate_datums::CurrencyRateDatum;
-use crate::services::TransactionWithCallback;
 use std::collections::HashMap;
 use uuid::Uuid;
 

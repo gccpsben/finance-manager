@@ -90,8 +90,8 @@ impl CreateCurrencyAction {
     }
     pub fn get_owner(&self) -> &AuthUser {
         match self {
-            CreateCurrencyAction::Base { owner, .. } => owner,
-            CreateCurrencyAction::Normal { owner, .. } => owner,
+            CreateCurrencyAction::Normal { owner, .. }
+            | CreateCurrencyAction::Base { owner, .. } => owner,
         }
     }
     pub fn into_domain(self, db_id: uuid::Uuid) -> Currency {

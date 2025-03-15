@@ -7,6 +7,7 @@ use argon2::{
 use sea_orm::{ColumnTrait, DatabaseConnection, DbErr, EntityTrait, QueryFilter};
 
 use crate::entities::{access_token, user};
+use crate::routes::bootstrap::EndpointsErrors;
 
 use sea_orm::ActiveValue;
 
@@ -40,9 +41,19 @@ pub async fn generate_token_unverified(
 
 #[derive(Debug)]
 pub enum VerifyCredsErr {
-    DbErr,
+    DbErr(DbErr),
     InvalidHash,
     InvalidCreds,
+}
+
+impl From<VerifyCredsErr> for EndpointsErrors {
+    fn from(value: VerifyCredsErr) -> Self {
+        match value {
+            VerifyCredsErr::DbErr(err) => Self::DbErr(err),
+            VerifyCredsErr::InvalidCreds => Self::Unauthorized,
+            VerifyCredsErr::InvalidHash => Self::Unauthorized,
+        }
+    }
 }
 
 pub async fn verify_creds(
@@ -54,7 +65,7 @@ pub async fn verify_creds(
         .filter(user::Column::Name.eq(username))
         .one(db)
         .await
-        .map_err(|_| VerifyCredsErr::DbErr)?
+        .map_err(VerifyCredsErr::DbErr)?
         .ok_or(VerifyCredsErr::InvalidCreds)?;
 
     let expected_hash = PasswordHash::parse(
@@ -76,6 +87,19 @@ pub enum RegisterUserErrors {
     DbErr(DbErr),
     EmptyUsername,
     EmptyPassword,
+}
+
+impl From<RegisterUserErrors> for EndpointsErrors {
+    fn from(value: RegisterUserErrors) -> Self {
+        match value {
+            RegisterUserErrors::HashError(_err) => Self::InternalServerError {
+                msg: "Hash error.".to_string(),
+            },
+            RegisterUserErrors::DbErr(db_err) => Self::DbErr(db_err),
+            RegisterUserErrors::EmptyUsername => Self::MissingUsername,
+            RegisterUserErrors::EmptyPassword => Self::MissingPassword,
+        }
+    }
 }
 
 pub async fn register_user(
