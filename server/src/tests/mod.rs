@@ -1,5 +1,5 @@
-#[path = "./container.test.rs"]
-pub mod container_tests;
+#[path = "./account.test.rs"]
+pub mod account_tests;
 #[path = "./currency.test.rs"]
 pub mod currency_tests;
 #[path = "./user.test.rs"]

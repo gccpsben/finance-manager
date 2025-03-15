@@ -3,8 +3,8 @@ pub mod users;
 
 pub mod bootstrap;
 
-#[path = "./containers.route.rs"]
-pub mod containers;
+#[path = "./accounts.route.rs"]
+pub mod accounts;
 
 // #[cfg(debug_assertions)]
 #[path = "./dev.route.rs"]

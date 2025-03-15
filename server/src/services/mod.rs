@@ -3,8 +3,8 @@ use sea_orm::{DatabaseConnection, DatabaseTransaction};
 #[path = "users.service.rs"]
 pub mod users;
 
-#[path = "containers.service.rs"]
-pub mod containers;
+#[path = "accounts.service.rs"]
+pub mod accounts;
 
 #[path = "currencies.service.rs"]
 pub mod currencies;

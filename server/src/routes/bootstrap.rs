@@ -93,13 +93,13 @@ pub fn apply_endpoints(
     let mut app = app
         .service(routes::users::login::handler)
         .service(routes::users::register::handler)
-        .service(routes::containers::post_container::handler)
+        .service(routes::accounts::post_account::handler)
         .service(routes::currencies::post_currency::handler)
         .service(routes::currencies::get_currency::handler)
         .service(routes::currency_rate_datums::post_currency_rate_datum::handler)
         .service(routes::txn_tags::get_tags::handler)
         .service(routes::txn_tags::create_tag::handler)
-        .service(routes::containers::get_container::handler);
+        .service(routes::accounts::get_account::handler);
 
     #[cfg(debug_assertions)]
     {

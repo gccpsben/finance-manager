@@ -5,7 +5,7 @@ pub struct Migration;
 
 impl MigrationName for Migration {
     fn name(&self) -> &str {
-        "m20250203_000001_create_token_table" // Make sure this matches with the file name
+        "m20250203_000001_create_token_table"
     }
 }
 

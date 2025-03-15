@@ -5,36 +5,35 @@ pub struct Migration;
 
 impl MigrationName for Migration {
     fn name(&self) -> &str {
-        "m20250204_000001_create_container_table" // Make sure this matches with the file name
+        "m20250204_000001_create_account_table"
     }
 }
 
 #[async_trait::async_trait]
 impl MigrationTrait for Migration {
-    // Define how to apply this migration: Create the Bakery table.
     async fn up(&self, manager: &SchemaManager) -> Result<(), DbErr> {
         manager
             .create_table(
                 Table::create()
-                    .table(Container::Table)
+                    .table(Account::Table)
                     .col(
-                        ColumnDef::new(Container::Id)
+                        ColumnDef::new(Account::Id)
                             .uuid()
                             .not_null()
                             .primary_key(),
                     )
-                    .col(ColumnDef::new(Container::Name).string().not_null())
-                    .col(ColumnDef::new(Container::OwnerId).uuid().not_null())
+                    .col(ColumnDef::new(Account::Name).string().not_null())
+                    .col(ColumnDef::new(Account::OwnerId).uuid().not_null())
                     .col(
-                        ColumnDef::new(Container::CreationDate)
+                        ColumnDef::new(Account::CreationDate)
                             .date_time()
                             .not_null(),
                     )
                     .foreign_key(
                         ForeignKey::create()
-                            .name("container")
+                            .name("account")
                             .take()
-                            .from(Container::Table, Container::OwnerId)
+                            .from(Account::Table, Account::OwnerId)
                             .to(User::Table, User::Id),
                     )
                     .to_owned(),
@@ -44,13 +43,13 @@ impl MigrationTrait for Migration {
 
     async fn down(&self, manager: &SchemaManager) -> Result<(), DbErr> {
         manager
-            .drop_table(Table::drop().table(Container::Table).to_owned())
+            .drop_table(Table::drop().table(Account::Table).to_owned())
             .await
     }
 }
 
 #[derive(Iden)]
-pub enum Container {
+pub enum Account {
     Table,
     Id,
     OwnerId,
