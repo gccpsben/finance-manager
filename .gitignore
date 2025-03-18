@@ -1,3 +1,4 @@
+/docker_volume
 /dist
 .vscode
 *.env
@@ -10,5 +11,6 @@
 /server/**/*.db
 /server/**/lcov.info
 /server-sqlite-prod
+*.log
 
 *.code-workspace
