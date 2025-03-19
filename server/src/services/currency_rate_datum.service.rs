@@ -209,7 +209,7 @@ pub async fn create_currency_rate_datum<'a>(
         rates_cache
             .lock()
             .await
-            .register_item(datum.into_domain(model.last_insert_id));
+            .register_item(datum.into_domain(model.last_insert_id.0));
     }
-    Ok((model.last_insert_id, db_txn))
+    Ok((model.last_insert_id.0, db_txn))
 }

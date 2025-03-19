@@ -1,7 +1,5 @@
 use crate::services::accounts::{get_account, get_accounts};
-use crate::{
-    extractors::auth_user::AuthUser, services::accounts::create_account, DatabaseStates,
-};
+use crate::{extractors::auth_user::AuthUser, services::accounts::create_account, DatabaseStates};
 use actix_web::get;
 use actix_web::{post, web};
 use serde::Deserialize;
@@ -86,7 +84,7 @@ pub mod post_account {
     #[derive(TS)]
     #[ts(export)]
     pub struct PostAccountResponseBody {
-        pub account_id: String,
+        pub id: String,
     }
 
     #[post("/accounts")]
@@ -104,8 +102,6 @@ pub mod post_account {
         .await?;
 
         db_txn.commit().await;
-        Ok(web::Json(PostAccountResponseBody {
-            account_id: id.to_string(),
-        }))
+        Ok(web::Json(PostAccountResponseBody { id: id.to_string() }))
     }
 }

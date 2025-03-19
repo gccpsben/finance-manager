@@ -19,21 +19,27 @@ impl MigrationTrait for Migration {
         let mut table = main_table.table(CurrencyRateDatum::Table);
 
         {
-            table = table.col(
-                ColumnDef::new(CurrencyRateDatum::Id)
-                    .uuid()
-                    .not_null()
-                    .primary_key(),
+            table = table.col(ColumnDef::new(CurrencyRateDatum::Id).uuid().not_null());
+            table = table.col(ColumnDef::new(CurrencyRateDatum::OwnerId).uuid().not_null());
+            table = table.primary_key(
+                Index::create()
+                    .col(CurrencyRateDatum::Id)
+                    .col(CurrencyRateDatum::OwnerId),
+            );
+            table = table.foreign_key(
+                ForeignKey::create()
+                    .name("account")
+                    .take()
+                    .from(CurrencyRateDatum::Table, CurrencyRateDatum::OwnerId)
+                    .to(User::Table, User::Id),
             );
         }
 
-        {
-            table = table.col(
-                ColumnDef::new(CurrencyRateDatum::Amount)
-                    .string()
-                    .not_null(),
-            );
-        }
+        table = table.col(
+            ColumnDef::new(CurrencyRateDatum::Amount)
+                .string()
+                .not_null(),
+        );
 
         {
             table = table.col(
@@ -43,10 +49,13 @@ impl MigrationTrait for Migration {
             );
             table = table.foreign_key(
                 ForeignKey::create()
-                    .name("refCurrencyId")
+                    .name("ref_currency_id")
                     .take()
-                    .from(CurrencyRateDatum::Table, CurrencyRateDatum::RefCurrencyId)
-                    .to(Currency::Table, Currency::Id),
+                    .from(
+                        CurrencyRateDatum::Table,
+                        (CurrencyRateDatum::RefCurrencyId, CurrencyRateDatum::OwnerId),
+                    )
+                    .to(Currency::Table, (Currency::Id, Currency::OwnerId)),
             );
         }
 
@@ -58,25 +67,16 @@ impl MigrationTrait for Migration {
             );
             table = table.foreign_key(
                 ForeignKey::create()
-                    .name("refAmountCurrencyId")
+                    .name("ref_amount_currency_id")
                     .take()
                     .from(
                         CurrencyRateDatum::Table,
-                        CurrencyRateDatum::RefAmountCurrencyId,
+                        (
+                            CurrencyRateDatum::RefAmountCurrencyId,
+                            CurrencyRateDatum::OwnerId,
+                        ),
                     )
-                    .to(Currency::Table, Currency::Id),
-            );
-        }
-
-        {
-            table = table.col(ColumnDef::new(CurrencyRateDatum::OwnerId).uuid().not_null());
-
-            table = table.foreign_key(
-                ForeignKey::create()
-                    .name("owner")
-                    .take()
-                    .from(CurrencyRateDatum::Table, CurrencyRateDatum::OwnerId)
-                    .to(User::Table, User::Id),
+                    .to(Currency::Table, (Currency::Id, Currency::OwnerId)),
             );
         }
 

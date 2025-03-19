@@ -1,4 +1,4 @@
-use super::m20220101_000002_create_user_table::User;
+use crate::m20220101_000002_create_user_table::User;
 use sea_orm_migration::prelude::*;
 
 pub struct Migration;
@@ -15,71 +15,50 @@ impl MigrationName for Migration {
 #[async_trait::async_trait]
 impl MigrationTrait for Migration {
     async fn up(&self, manager: &SchemaManager) -> Result<(), DbErr> {
-        // Create table
-        manager
-            .create_table(
-                Table::create()
-                    .table(Currency::Table)
-                    .col(
-                        ColumnDef::new(Currency::Id)
-                            .uuid()
-                            .not_null()
-                            .primary_key()
-                    )
-                    .col(
-                        ColumnDef::new(Currency::Name)
-                            .string()
-                            .not_null()
-                    )
-                    .col(
-                        ColumnDef::new(Currency::OwnerId)
-                        .uuid()
-                        .not_null()
-                    )
-                    .foreign_key(
-                        ForeignKey::create()
-                        .name("currency")
-                        .take()
-                        .from(Currency::Table, Currency::OwnerId)
-                        .to(User::Table, User::Id)
-                    )
-                    .col(
-                        ColumnDef::new(Currency::Ticker)
-                        .string()
-                        .not_null()
-                    )
-                    .col(
-                        ColumnDef::new(Currency::IsBase)
-                        .boolean()
-                        .not_null()
-                    )
-                    .col(
-                        ColumnDef::new(Currency::FallbackRateAmount)
-                        .string()
-                    )
-                    .col(
-                        ColumnDef::new(Currency::FallbackRateCurrencyId)
-                        .uuid()
-                    )
-                    .foreign_key(
-                        ForeignKey::create()
-                        .name("currency_self_relation")
-                        .take()
-                        .from(Currency::Table, Currency::FallbackRateCurrencyId)
-                        .to(Currency::Table, Currency::Id)
-                    )
-                    .check(
-                        SimpleExpr::Custom("CASE WHEN fallback_rate_amount IS NOT NULL THEN NOT is_base ELSE is_base END".to_string())
-                    )
-                    .check(
-                        SimpleExpr::Custom("CASE WHEN NOT is_base THEN fallback_rate_amount IS NOT NULL ELSE fallback_rate_amount IS NULL END".to_string())
-                    )
-                    .check(
-                        SimpleExpr::Custom("CASE WHEN NOT is_base THEN fallback_rate_currency_id IS NOT NULL ELSE fallback_rate_currency_id IS NULL END".to_string())
-                    )
-                    .to_owned(),
-            )
-            .await?;
+        let mut main_table = Table::create();
+        let mut table = main_table.table(Currency::Table);
+
+        table = table.col(ColumnDef::new(Currency::Id).uuid().not_null());
+        table = table.col(ColumnDef::new(Currency::OwnerId).uuid().not_null());
+        table = table.primary_key(Index::create().col(Currency::Id).col(Currency::OwnerId));
+        table = table.foreign_key(
+            ForeignKey::create()
+                .name("account")
+                .take()
+                .from(Currency::Table, Currency::OwnerId)
+                .to(User::Table, User::Id),
+        );
+
+        table = table.col(ColumnDef::new(Currency::Name).string().not_null());
+        table = table.col(ColumnDef::new(Currency::Ticker).string().not_null());
+        table = table.col(ColumnDef::new(Currency::IsBase).boolean().not_null());
+        table = table.col(ColumnDef::new(Currency::FallbackRateAmount).string());
+        table = table.col(ColumnDef::new(Currency::FallbackRateCurrencyId).uuid());
+
+        // TODO: Using multi-value primary keys here will break SeaORM entities generation.
+        table = table.foreign_key(
+            ForeignKey::create()
+                .name("currency")
+                .take()
+                .from(
+                    Currency::Table,
+                    (Currency::OwnerId, Currency::FallbackRateCurrencyId),
+                )
+                .to(Currency::Table, (Currency::OwnerId, Currency::Id)),
+        );
+
+        table = table.check(SimpleExpr::Custom(
+            "CASE WHEN fallback_rate_amount IS NOT NULL THEN NOT is_base ELSE is_base END"
+                .to_string(),
+        ));
+        table = table.check(
+            SimpleExpr::Custom("CASE WHEN NOT is_base THEN fallback_rate_amount IS NOT NULL ELSE fallback_rate_amount IS NULL END".to_string())
+        );
+        table = table.check(
+            SimpleExpr::Custom("CASE WHEN NOT is_base THEN fallback_rate_currency_id IS NOT NULL ELSE fallback_rate_currency_id IS NULL END".to_string())
+        );
+
+        manager.create_table(table.to_owned()).await?;
 
         // Create unique constrain
         {
@@ -102,6 +81,18 @@ impl MigrationTrait for Migration {
                         .table(Currency::Table)
                         .col(Currency::Ticker)
                         .col(Currency::OwnerId)
+                        .unique()
+                        .take(),
+                )
+                .await?;
+
+            manager
+                .create_index(
+                    Index::create()
+                        .name("owner-Id-unique")
+                        .table(Currency::Table)
+                        .col(Currency::OwnerId)
+                        .col(Currency::Id)
                         .unique()
                         .take(),
                 )

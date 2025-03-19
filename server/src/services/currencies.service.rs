@@ -328,6 +328,6 @@ pub async fn create_currency(
         .clone()
         .lock()
         .await
-        .register_item(currency.into_domain(model.last_insert_id));
-    Ok((model.last_insert_id, db_txn))
+        .register_item(currency.into_domain(model.last_insert_id.0));
+    Ok((model.last_insert_id.0, db_txn))
 }

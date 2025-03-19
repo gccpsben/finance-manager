@@ -71,7 +71,7 @@ pub mod accounts {
                     true,
                 )
                 .await;
-                resp.expected.unwrap().account_id
+                resp.expected.unwrap().id
             };
 
             let _first_user_account_2_id = {
@@ -84,7 +84,7 @@ pub mod accounts {
                     true,
                 )
                 .await;
-                resp.expected.unwrap().account_id
+                resp.expected.unwrap().id
             };
 
             let second_user_account_1_id = {
@@ -97,7 +97,7 @@ pub mod accounts {
                     true,
                 )
                 .await;
-                resp.expected.unwrap().account_id
+                resp.expected.unwrap().id
             };
 
             // Get all accounts of user 1
@@ -177,8 +177,7 @@ pub mod accounts {
             // Get any account without token
             {
                 let resp =
-                    driver_get_accounts(Some(&first_user_account_1_id), None, &srv, false)
-                        .await;
+                    driver_get_accounts(Some(&first_user_account_1_id), None, &srv, false).await;
                 assert_eq!(
                     resp.status,
                     StatusCode::UNAUTHORIZED,

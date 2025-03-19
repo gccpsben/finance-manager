@@ -19,11 +19,11 @@ pub async fn create_txn_tag<'a>(
         .exec(db_txn.get_db_txn())
         .await?;
     txn_tags_cache.register_item(txn_tag::Model {
-        id: model.last_insert_id,
+        id: model.last_insert_id.0,
         name: name.to_string(),
         owner_id: owner.0,
     });
-    Ok((model.last_insert_id, db_txn))
+    Ok((model.last_insert_id.0, db_txn))
 }
 
 #[allow(unused)]

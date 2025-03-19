@@ -17,34 +17,27 @@ impl MigrationTrait for Migration {
         let mut main_table = Table::create();
         let mut table = main_table.table(TxnTag::Table);
 
-        {
-            table = table.col(ColumnDef::new(TxnTag::Id).uuid().not_null().primary_key());
-        }
+        table = table.col(ColumnDef::new(TxnTag::Id).uuid().not_null());
+        table = table.col(ColumnDef::new(TxnTag::OwnerId).uuid().not_null());
+        table = table.primary_key(Index::create().col(TxnTag::Id).col(TxnTag::OwnerId));
+        table = table.foreign_key(
+            ForeignKey::create()
+                .name("account")
+                .take()
+                .from(TxnTag::Table, TxnTag::OwnerId)
+                .to(User::Table, User::Id),
+        );
 
-        {
-            table = table
-                .col(ColumnDef::new(TxnTag::Name).string().not_null())
-                .index(
-                    Index::create()
-                        .name(OWNER_TAG_NAME_UNIQUE_INDEX_NAME)
-                        .table(TxnTag::Table)
-                        .col(TxnTag::Name)
-                        .col(TxnTag::OwnerId)
-                        .unique(),
-                );
-        }
-
-        {
-            table = table.col(ColumnDef::new(TxnTag::OwnerId).uuid().not_null());
-
-            table = table.foreign_key(
-                ForeignKey::create()
-                    .name("owner")
-                    .take()
-                    .from(TxnTag::Table, TxnTag::OwnerId)
-                    .to(User::Table, User::Id),
+        table = table
+            .col(ColumnDef::new(TxnTag::Name).string().not_null())
+            .index(
+                Index::create()
+                    .name(OWNER_TAG_NAME_UNIQUE_INDEX_NAME)
+                    .table(TxnTag::Table)
+                    .col(TxnTag::Name)
+                    .col(TxnTag::OwnerId)
+                    .unique(),
             );
-        }
 
         manager.create_table(table.to_owned()).await?;
 

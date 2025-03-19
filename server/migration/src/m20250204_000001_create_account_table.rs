@@ -12,33 +12,24 @@ impl MigrationName for Migration {
 #[async_trait::async_trait]
 impl MigrationTrait for Migration {
     async fn up(&self, manager: &SchemaManager) -> Result<(), DbErr> {
-        manager
-            .create_table(
-                Table::create()
-                    .table(Account::Table)
-                    .col(
-                        ColumnDef::new(Account::Id)
-                            .uuid()
-                            .not_null()
-                            .primary_key(),
-                    )
-                    .col(ColumnDef::new(Account::Name).string().not_null())
-                    .col(ColumnDef::new(Account::OwnerId).uuid().not_null())
-                    .col(
-                        ColumnDef::new(Account::CreationDate)
-                            .date_time()
-                            .not_null(),
-                    )
-                    .foreign_key(
-                        ForeignKey::create()
-                            .name("account")
-                            .take()
-                            .from(Account::Table, Account::OwnerId)
-                            .to(User::Table, User::Id),
-                    )
-                    .to_owned(),
-            )
-            .await
+        let mut main_table = Table::create();
+        let mut table = main_table.table(Account::Table);
+
+        table = table.col(ColumnDef::new(Account::Id).uuid().not_null());
+        table = table.col(ColumnDef::new(Account::OwnerId).uuid().not_null());
+        table = table.primary_key(Index::create().col(Account::Id).col(Account::OwnerId));
+        table = table.foreign_key(
+            ForeignKey::create()
+                .name("account")
+                .take()
+                .from(Account::Table, Account::OwnerId)
+                .to(User::Table, User::Id),
+        );
+
+        table = table.col(ColumnDef::new(Account::CreationDate).date_time().not_null());
+        table = table.col(ColumnDef::new(Account::Name).string().not_null());
+
+        manager.create_table(table.to_owned()).await
     }
 
     async fn down(&self, manager: &SchemaManager) -> Result<(), DbErr> {
@@ -51,8 +42,8 @@ impl MigrationTrait for Migration {
 #[derive(Iden)]
 pub enum Account {
     Table,
-    Id,
     OwnerId,
+    Id,
     CreationDate,
     Name,
 }

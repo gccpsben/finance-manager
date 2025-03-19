@@ -19,17 +19,17 @@ pub async fn create_account<'a>(
     let model = account::Entity::insert(new_account)
         .exec(db_txn.get_db_txn())
         .await?;
-    Ok((model.last_insert_id, db_txn))
+    Ok((model.last_insert_id.0, db_txn))
 }
 
 pub async fn get_account(
     user: &AuthUser,
-    id: uuid::Uuid,
+    account_id: uuid::Uuid,
     db: &DatabaseConnection,
 ) -> Result<Option<account::Model>, DbErr> {
     account::Entity::find()
         .filter(account::Column::OwnerId.eq(user.0))
-        .filter(account::Column::Id.eq(id))
+        .filter(account::Column::Id.eq(account_id))
         .one(db)
         .await
 }
