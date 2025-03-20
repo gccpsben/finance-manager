@@ -20,12 +20,6 @@ pub mod neighbors;
 #[cfg(test)]
 pub mod commons {
 
-    use std::str::from_utf8;
-    use std::sync::Arc;
-
-    use crate::caches::currency_cache::CurrencyCache;
-    use crate::caches::currency_rate_datum::CurrencyRateDatumCache;
-    use crate::caches::txn_tag::TxnTagsCache;
     use crate::routes::bootstrap::apply_endpoints;
     use crate::states::database_states::DatabaseStates;
     use actix_http::StatusCode;
@@ -43,7 +37,7 @@ pub mod commons {
     use sea_orm::{sea_query::TableCreateStatement, ConnectionTrait};
     use serde::de;
     use serde::Serialize;
-    use tokio::sync::Mutex;
+    use std::str::from_utf8;
 
     pub enum TestBody<T> {
         Bytes(Box<[u8]>),
@@ -120,24 +114,32 @@ pub mod commons {
         }
     }
 
+    /// Setup connection to a test database.
+    /// WARN: The content in the given database will be cleared.
     pub async fn setup_connection() -> TestServer {
-        let db = Database::connect(
-            std::env::var("TEST_DB_URL")
-                .expect("TEST_DB_URL is not defined. Cannot setup database for testing."),
-        )
+        let tests_threads: u32 = std::env::var("NEXTEST_TEST_GLOBAL_SLOT")
+            .expect("Cannot find NEXTEST_TEST_GLOBAL_SLOT.")
+            .parse()
+            .expect("The number of NEXTEST_TEST_GLOBAL_SLOT should be a u32 number.");
+
+        let test_db_url = format!("TEST_DB_URL_{tests_threads}");
+
+        let db = Database::connect(std::env::var(test_db_url.clone()).unwrap_or_else(|_| {
+            panic!(
+                "Env var {} is not defined. Cannot setup database for testing. Notice that the number of database url required is the same as the number of test threads.",
+                test_db_url
+            )
+        }))
         .await
         .expect("failed initializing data");
 
         let _ = <Migrator as finance_manager_migration::MigratorTrait>::fresh(&db).await;
-        let states = DatabaseStates {
-            db,
-            currency_cache: Arc::from(Mutex::from(CurrencyCache::new(128))),
-            currency_rate_datums_cache: Arc::from(Mutex::from(CurrencyRateDatumCache::new(128))),
-            txn_tags_cache: Arc::from(Mutex::from(TxnTagsCache::new(128))),
-        };
+        let states = DatabaseStates::new(db);
 
         actix_test::start(move || {
-            apply_endpoints(App::new().app_data(web::Data::new(states.clone())))
+            let app_data = web::Data::new(states.clone());
+            let app = App::new().app_data(app_data);
+            apply_endpoints(app)
         })
     }
 
