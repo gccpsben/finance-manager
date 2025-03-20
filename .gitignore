@@ -11,6 +11,8 @@
 /server/**/*.db
 /server/**/lcov.info
 /server-sqlite-prod
+/server/mutants.out
+/server/mutants.out.old
 *.log
 
 *.code-workspace
