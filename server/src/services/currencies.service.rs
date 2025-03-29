@@ -210,7 +210,7 @@ pub async fn get_base_currency<'a>(
     }
 }
 
-// TODO: See if this can be parl.
+// TODO: See if this can be optimized at DB level
 pub async fn find_first_unknown_currencies<'a>(
     owner: &AuthUser,
     ids: &[CurrencyId],

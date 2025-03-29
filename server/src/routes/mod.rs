@@ -18,3 +18,6 @@ pub mod currency_rate_datums;
 
 #[path = "./txn_tags.route.rs"]
 pub mod txn_tags;
+
+#[path = "./txns.route.rs"]
+pub mod txns;

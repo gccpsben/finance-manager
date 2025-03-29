@@ -14,17 +14,12 @@ mod states;
 mod tests;
 
 use actix_web::{web, App, HttpServer};
-use caches::{
-    currency_cache::CurrencyCache, currency_rate_datum::CurrencyRateDatumCache,
-    txn_tag::TxnTagsCache,
-};
 use clap::{command, Parser, ValueHint};
 use finance_manager_migration::{Migrator, MigratorTrait};
 use routes::bootstrap::apply_endpoints;
 use sea_orm::Database;
 use states::database_states::DatabaseStates;
-use std::{error::Error, sync::Arc};
-use tokio::sync::Mutex;
+use std::error::Error;
 use tracing::info;
 
 const RESTFUL_DIGITS: u32 = 20;
@@ -81,17 +76,14 @@ pub async fn main() -> Result<(), Box<dyn Error>> {
 
     Migrator::up(&db, None).await?;
 
-    let states = DatabaseStates {
-        db,
-        currency_cache: Arc::from(Mutex::from(CurrencyCache::new(128))),
-        currency_rate_datums_cache: Arc::from(Mutex::from(CurrencyRateDatumCache::new(128))),
-        txn_tags_cache: Arc::from(Mutex::from(TxnTagsCache::new(128))),
-    };
-
-    HttpServer::new(move || apply_endpoints(App::new().app_data(web::Data::new(states.clone()))))
-        .bind(("127.0.0.1", port))?
-        .run()
-        .await?;
+    HttpServer::new(move || {
+        let states = DatabaseStates::new(db.clone());
+        let app_data = web::Data::new(states);
+        apply_endpoints(App::new().app_data(app_data))
+    })
+    .bind(("127.0.0.1", port))?
+    .run()
+    .await?;
 
     Ok(())
 }

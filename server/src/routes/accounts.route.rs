@@ -8,7 +8,13 @@ use ts_rs::TS;
 
 pub mod get_account {
 
-    use crate::routes::bootstrap::{parse_uuid, EndpointsErrors};
+    use sea_orm::TransactionTrait;
+
+    use crate::{
+        extended_models::account::AccountId,
+        routes::bootstrap::{parse_uuid, EndpointsErrors},
+        services::TransactionWithCallback,
+    };
 
     use super::*;
 
@@ -40,18 +46,22 @@ pub mod get_account {
         query: web::Query<GetAccountQuery>,
         data: web::Data<DatabaseStates>,
     ) -> Result<web::Json<GetAccountResponse>, EndpointsErrors> {
-        let parsed_uuid: Option<uuid::Uuid> = match &query.id {
-            Some(unparsed_uuid) => Some(parse_uuid(unparsed_uuid.as_str())?),
-            None => None,
+        let requested_acc_id: Option<uuid::Uuid> = query
+            .id
+            .clone()
+            .map(|unparsed_uuid| parse_uuid(unparsed_uuid.as_str()))
+            .transpose()?;
+
+        let db_txn = TransactionWithCallback::new(data.db.begin().await?, vec![]);
+        let (accounts_found, db_txn) = match requested_acc_id {
+            Some(parsed_uuid) => match get_account(&user, &AccountId(parsed_uuid), db_txn).await? {
+                (Some(account_found), db_txn) => (vec![account_found], db_txn),
+                (None, db_txn) => (vec![], db_txn),
+            },
+            None => get_accounts(&user, db_txn).await?,
         };
 
-        let accounts_found = match parsed_uuid {
-            Some(parsed_uuid) => match get_account(&user, parsed_uuid, &data.db).await? {
-                Some(account_found) => vec![account_found],
-                None => vec![],
-            },
-            None => get_accounts(&user, &data.db).await?,
-        };
+        db_txn.commit().await;
 
         Ok(web::Json(GetAccountResponse {
             items: accounts_found

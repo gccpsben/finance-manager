@@ -17,6 +17,9 @@ pub mod linear_interpolator;
 #[path = "./neighbors.test.rs"]
 pub mod neighbors;
 
+#[path = "./txn.test.rs"]
+pub mod txn;
+
 #[cfg(test)]
 pub mod commons {
 
@@ -37,6 +40,7 @@ pub mod commons {
     use sea_orm::{sea_query::TableCreateStatement, ConnectionTrait};
     use serde::de;
     use serde::Serialize;
+
     use std::str::from_utf8;
 
     pub enum TestBody<T> {

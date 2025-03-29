@@ -11,3 +11,14 @@ pub struct DatabaseStates {
     pub currency_rate_datums_cache: Arc<Mutex<CurrencyRateDatumCache>>,
     pub txn_tags_cache: Arc<Mutex<TxnTagsCache>>,
 }
+
+impl DatabaseStates {
+    pub fn new(connection: DatabaseConnection) -> Self {
+        Self {
+            db: connection,
+            currency_cache: Arc::from(Mutex::from(CurrencyCache::new(128))),
+            currency_rate_datums_cache: Arc::from(Mutex::from(CurrencyRateDatumCache::new(128))),
+            txn_tags_cache: Arc::from(Mutex::from(TxnTagsCache::new(128))),
+        }
+    }
+}

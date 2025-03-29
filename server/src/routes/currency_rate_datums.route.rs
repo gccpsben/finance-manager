@@ -12,7 +12,7 @@ use uuid::Uuid;
 
 pub mod post_currency_rate_datum {
 
-    use crate::{date::utc_str_to_iso8601, routes::bootstrap::EndpointsErrors};
+    use crate::{date::js_iso_to_iso8601, routes::bootstrap::EndpointsErrors};
 
     use super::*;
 
@@ -58,7 +58,7 @@ pub mod post_currency_rate_datum {
             }
         };
 
-        let date = utc_str_to_iso8601(info.date_utc.as_str())?;
+        let date = js_iso_to_iso8601(info.date_utc.as_str())?;
 
         // Convert request to create domain enum
         let domain_to_be_saved = CreateCurrencyRateDatumAction {

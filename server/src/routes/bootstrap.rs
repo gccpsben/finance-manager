@@ -1,4 +1,8 @@
-use crate::{date::ParseISO8601Errors, extended_models::currency::CurrencyId, routes};
+use crate::{
+    date::ParseISO8601Errors,
+    extended_models::{account::AccountId, currency::CurrencyId},
+    routes,
+};
 use actix_http::StatusCode;
 use actix_web::{
     body::{BoxBody, MessageBody},
@@ -39,6 +43,8 @@ pub enum EndpointsErrors {
     MissingUsername,
     #[error("Missing password.")]
     MissingPassword,
+    #[error("The given account: {} is not found.", .0.0)]
+    AccountNotFound(AccountId),
 }
 
 pub fn parse_uuid(value: &str) -> Result<uuid::Uuid, EndpointsErrors> {
@@ -57,6 +63,7 @@ impl actix_web::ResponseError for EndpointsErrors {
             E::DbErr(_db_err) => StatusCode::INTERNAL_SERVER_ERROR,
             E::InternalServerError { .. } => StatusCode::INTERNAL_SERVER_ERROR,
             E::CurrencyNotFound(_currency_id) => StatusCode::NOT_FOUND,
+            E::AccountNotFound(_account_id) => StatusCode::NOT_FOUND,
             E::Unauthorized => StatusCode::UNAUTHORIZED,
             E::ParseISO8601Errors(_parse_iso8601_errors) => StatusCode::BAD_REQUEST,
             E::CyclicRefAmountCurrency(_uuid) => StatusCode::BAD_REQUEST,
@@ -99,7 +106,9 @@ pub fn apply_endpoints(
         .service(routes::currency_rate_datums::post_currency_rate_datum::handler)
         .service(routes::txn_tags::get_tags::handler)
         .service(routes::txn_tags::create_tag::handler)
-        .service(routes::accounts::get_account::handler);
+        .service(routes::accounts::get_account::handler)
+        .service(routes::txns::post_txns::handler)
+        .service(routes::txns::get_txns::handler);
 
     #[cfg(debug_assertions)]
     {

@@ -81,7 +81,7 @@ pub mod get_currency {
     use rust_decimal::Decimal;
 
     use crate::{
-        date::utc_str_to_iso8601,
+        date::js_iso_to_iso8601,
         extended_models::currency::{Currency, CurrencyId},
         routes::bootstrap::{parse_uuid, EndpointsErrors},
         services::{
@@ -149,9 +149,7 @@ pub mod get_currency {
 
         // The DateTime to calculate rate against.
         let rate_to_base_time: chrono::DateTime<chrono::Utc> = match &query.date {
-            Some(date_str) => {
-                utc_str_to_iso8601(date_str).map_err(Into::<EndpointsErrors>::into)?
-            }
+            Some(date_str) => js_iso_to_iso8601(date_str).map_err(Into::<EndpointsErrors>::into)?,
             None => chrono::Utc::now(),
         };
 

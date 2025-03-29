@@ -10,7 +10,7 @@ pub mod accounts {
     use actix_web::http::header::ContentType;
     use drivers::*;
 
-    mod drivers {
+    pub mod drivers {
 
         use super::*;
         pub async fn driver_get_accounts(
@@ -50,6 +50,25 @@ pub mod accounts {
                 assert_eq!(res.status(), StatusCode::OK);
             }
             res_parsed
+        }
+
+        pub async fn bootstrap_post_account(
+            account_name: &str,
+            token: &str,
+            srv: &actix_test::TestServer,
+        ) -> String {
+            driver_post_account(
+                Some(token),
+                TestBody::Expected(PostAccountRequestBody {
+                    account_name: account_name.to_string(),
+                }),
+                srv,
+                true,
+            )
+            .await
+            .expected
+            .unwrap()
+            .id
         }
     }
 
