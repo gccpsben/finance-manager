@@ -1,3 +1,5 @@
+use crate::entities::{access_token, user};
+use crate::routes::bootstrap::EndpointsErrors;
 use argon2::password_hash::Error;
 use argon2::PasswordHasher;
 use argon2::{
@@ -5,9 +7,6 @@ use argon2::{
     Argon2, PasswordHash, PasswordVerifier,
 };
 use sea_orm::{ColumnTrait, DatabaseConnection, DbErr, EntityTrait, QueryFilter};
-
-use crate::entities::{access_token, user};
-use crate::routes::bootstrap::EndpointsErrors;
 
 use sea_orm::ActiveValue;
 

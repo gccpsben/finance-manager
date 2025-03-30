@@ -86,13 +86,13 @@ pub fn fragments_to_curr_ids(fragments: &[CreateTxnActionFragment]) -> Vec<Curre
 }
 
 /// Get all transactions of a given user.
-pub async fn get_txns<'a>(
+pub async fn get_txns(
     owner: &AuthUser,
-    db_txn: TransactionWithCallback<'a>,
+    db_txn: TransactionWithCallback,
 ) -> Result<
     (
         Vec<(txn::Model, Vec<fragment::Model>)>,
-        TransactionWithCallback<'a>,
+        TransactionWithCallback,
     ),
     DbErr,
 > {
@@ -107,11 +107,11 @@ pub async fn get_txns<'a>(
 
 #[allow(unused)]
 /// Get a transaction of a given user given ID.
-pub async fn get_txn_by_id<'a>(
+pub async fn get_txn_by_id(
     owner: &AuthUser,
     id: uuid::Uuid,
-    db_txn: TransactionWithCallback<'a>,
-) -> Result<(Option<txn::Model>, TransactionWithCallback<'a>), DbErr> {
+    db_txn: TransactionWithCallback,
+) -> Result<(Option<txn::Model>, TransactionWithCallback), DbErr> {
     let model = txn::Entity::find()
         .filter(txn::Column::OwnerId.eq(owner.0))
         .filter(txn::Column::Id.eq(id))
@@ -121,13 +121,13 @@ pub async fn get_txn_by_id<'a>(
     Ok((model, db_txn))
 }
 
-pub async fn create_txn<'a>(
+pub async fn create_txn(
     txn: CreateTxnAction,
     fragments: &[CreateTxnActionFragment],
-    db_txn: TransactionWithCallback<'a>,
+    db_txn: TransactionWithCallback,
     owner: &AuthUser,
     currency_cache: Arc<Mutex<CurrencyCache>>,
-) -> Result<(Uuid, TransactionWithCallback<'a>), CreateTxnErrors> {
+) -> Result<(Uuid, TransactionWithCallback), CreateTxnErrors> {
     // Ensure accounts exist
     let db_txn = {
         let (unknown_account, db_txn) =
@@ -148,7 +148,7 @@ pub async fn create_txn<'a>(
             owner,
             &fragments_to_curr_ids(fragments),
             db_txn,
-            currency_cache,
+            currency_cache.clone(),
         )
         .await
         .map_err(CreateTxnErrors::DbErr)?;

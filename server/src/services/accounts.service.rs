@@ -5,12 +5,12 @@ use crate::services::TransactionWithCallback;
 use sea_orm::prelude::DateTime;
 use sea_orm::{ActiveValue, ColumnTrait, DbErr, EntityTrait, QueryFilter};
 
-pub async fn create_account<'a>(
+pub async fn create_account(
     auth_user: &AuthUser,
     name: &str,
     creation_date: DateTime,
-    db_txn: TransactionWithCallback<'a>,
-) -> Result<(uuid::Uuid, TransactionWithCallback<'a>), DbErr> {
+    db_txn: TransactionWithCallback,
+) -> Result<(uuid::Uuid, TransactionWithCallback), DbErr> {
     let new_account = account::ActiveModel {
         id: ActiveValue::Set(uuid::Uuid::new_v4()),
         name: ActiveValue::Set(name.to_string()),
@@ -20,14 +20,15 @@ pub async fn create_account<'a>(
     let model = account::Entity::insert(new_account)
         .exec(db_txn.get_db_txn())
         .await?;
+
     Ok((model.last_insert_id.0, db_txn))
 }
 
-pub async fn get_account<'a>(
+pub async fn get_account(
     user: &AuthUser,
     account_id: &AccountId,
-    db_txn: TransactionWithCallback<'a>,
-) -> Result<(Option<account::Model>, TransactionWithCallback<'a>), DbErr> {
+    db_txn: TransactionWithCallback,
+) -> Result<(Option<account::Model>, TransactionWithCallback), DbErr> {
     let result = account::Entity::find()
         .filter(account::Column::OwnerId.eq(user.0))
         .filter(account::Column::Id.eq(account_id.0))
@@ -36,10 +37,10 @@ pub async fn get_account<'a>(
     Ok((result, db_txn))
 }
 
-pub async fn get_accounts<'a>(
+pub async fn get_accounts(
     user: &AuthUser,
-    db_txn: TransactionWithCallback<'a>,
-) -> Result<(Vec<account::Model>, TransactionWithCallback<'a>), DbErr> {
+    db_txn: TransactionWithCallback,
+) -> Result<(Vec<account::Model>, TransactionWithCallback), DbErr> {
     let result = account::Entity::find()
         .filter(account::Column::OwnerId.eq(user.0))
         .all(db_txn.get_db_txn())
@@ -48,11 +49,11 @@ pub async fn get_accounts<'a>(
 }
 
 // TODO: See if this can be optimized at DB level
-pub async fn find_first_unknown_account<'a>(
+pub async fn find_first_unknown_account(
     owner: &AuthUser,
     ids: &[AccountId],
-    db_txn: TransactionWithCallback<'a>,
-) -> Result<(Option<AccountId>, TransactionWithCallback<'a>), DbErr> {
+    db_txn: TransactionWithCallback,
+) -> Result<(Option<AccountId>, TransactionWithCallback), DbErr> {
     let mut db_txn = db_txn;
     for acc_id in ids {
         let (currency_rate_datum, transaction) = get_account(owner, acc_id, db_txn).await?;

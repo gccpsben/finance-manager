@@ -18,28 +18,31 @@ pub mod txn_tags;
 #[path = "txns.service.rs"]
 pub mod txns;
 
+type AsyncCallbackBox =
+    Box<dyn FnOnce() -> std::pin::Pin<Box<dyn std::future::Future<Output = ()>>>>;
+
 /**
 A wrapped version of the ``DatabaseTransaction`` from seaorm.
 This struct follows the RAII pattern. This transaction will default to rollback when out of scope.
 It is recommended when being used as parameters of a function, the function consumes this transaction.
 The transaction should be returned to the caller upon success, and be consumed when failed.
 */
-pub struct TransactionWithCallback<'a> {
+pub struct TransactionWithCallback {
     db_txn: DatabaseTransaction,
-    callbacks: Vec<Box<dyn FnMut() + 'a>>,
+    callbacks: Vec<AsyncCallbackBox>,
 }
 
-impl<'a> TransactionWithCallback<'a> {
+impl TransactionWithCallback {
     pub fn new(
         db_txn: DatabaseTransaction,
-        callbacks: Vec<Box<dyn FnMut() + 'a>>,
-    ) -> TransactionWithCallback<'a> {
+        callbacks: Vec<AsyncCallbackBox>,
+    ) -> TransactionWithCallback {
         TransactionWithCallback { db_txn, callbacks }
     }
     pub async fn from_db_conn(
         db_conn: &DatabaseConnection,
-        callbacks: Vec<Box<dyn FnMut() + 'a>>,
-    ) -> Result<TransactionWithCallback<'a>, sea_orm::DbErr> {
+        callbacks: Vec<AsyncCallbackBox>,
+    ) -> Result<TransactionWithCallback, sea_orm::DbErr> {
         let db_txn_raw = sea_orm::TransactionTrait::begin(db_conn).await?;
         Ok(Self::new(db_txn_raw, callbacks))
     }
@@ -47,8 +50,8 @@ impl<'a> TransactionWithCallback<'a> {
         &self.db_txn
     }
     #[allow(unused)]
-    pub fn add_callback(&mut self, callback: Box<dyn FnMut() + 'a>) {
-        self.callbacks.push(callback);
+    pub fn add_callback(&mut self, callback: impl std::future::Future<Output = ()> + 'static) {
+        self.callbacks.push(Box::new(|| Box::pin(callback)));
     }
     #[allow(unused)]
     pub async fn rollback(self) {
@@ -57,13 +60,13 @@ impl<'a> TransactionWithCallback<'a> {
             .await
             .expect("Error while rolling back database transaction.");
     }
-    pub async fn commit(mut self) {
+    pub async fn commit(self) {
         self.db_txn
             .commit()
             .await
             .expect("Database transaction commit failure.");
-        for f in self.callbacks.iter_mut() {
-            f();
+        for f in self.callbacks {
+            f().await;
         }
     }
 }

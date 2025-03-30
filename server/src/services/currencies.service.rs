@@ -42,13 +42,13 @@ impl From<CalculateCurrencyRateErrors> for EndpointsErrors {
 }
 
 /// A shorthand method to get 2 datums rates, given the left and right datums, in the same database transaction.
-async fn get_left_right_datum_rate<'a>(
+async fn get_left_right_datum_rate(
     owner: &AuthUser,
     left_datum: &Model,
     right_datum: &Model,
-    db_txn: TransactionWithCallback<'a>,
+    db_txn: TransactionWithCallback,
     cache: Arc<Mutex<CurrencyCache>>,
-) -> Result<(Decimal, Decimal, TransactionWithCallback<'a>), CalculateCurrencyRateErrors> {
+) -> Result<(Decimal, Decimal, TransactionWithCallback), CalculateCurrencyRateErrors> {
     let (left_rate, db_txn) = calculate_currency_rate(
         owner,
         CurrencyId(left_datum.ref_amount_currency_id),
@@ -73,13 +73,13 @@ async fn get_left_right_datum_rate<'a>(
 }
 
 /// Calculate the exchange rate of the given currency at a given date.
-pub async fn calculate_currency_rate<'a>(
+pub async fn calculate_currency_rate(
     owner: &AuthUser,
     currency_id: CurrencyId,
-    db_txn: TransactionWithCallback<'a>,
+    db_txn: TransactionWithCallback,
     date: chrono::DateTime<chrono::Utc>,
     cache: Arc<Mutex<CurrencyCache>>,
-) -> Result<(Decimal, TransactionWithCallback<'a>), CalculateCurrencyRateErrors> {
+) -> Result<(Decimal, TransactionWithCallback), CalculateCurrencyRateErrors> {
     let (curr, db_txn) = get_currency_by_id(owner, &currency_id, db_txn, cache.clone())
         .await
         .map_err(CalculateCurrencyRateErrors::DbErr)?;
@@ -168,10 +168,10 @@ pub async fn calculate_currency_rate<'a>(
     }
 }
 
-pub async fn get_currencies<'a>(
+pub async fn get_currencies(
     owner: &AuthUser,
-    db_txn: TransactionWithCallback<'a>,
-) -> Result<(Vec<Currency>, TransactionWithCallback<'a>), DbErr> {
+    db_txn: TransactionWithCallback,
+) -> Result<(Vec<Currency>, TransactionWithCallback), DbErr> {
     let db_result = currency::Entity::find()
         .filter(currency::Column::OwnerId.eq(owner.0))
         .all(db_txn.get_db_txn())
@@ -188,11 +188,11 @@ pub async fn get_currencies<'a>(
     ))
 }
 
-pub async fn get_base_currency<'a>(
+pub async fn get_base_currency(
     owner: &AuthUser,
-    db_txn: TransactionWithCallback<'a>,
+    db_txn: TransactionWithCallback,
     cache: Arc<Mutex<CurrencyCache>>,
-) -> Result<(Option<Currency>, TransactionWithCallback<'a>), DbErr> {
+) -> Result<(Option<Currency>, TransactionWithCallback), DbErr> {
     let db_result = currency::Entity::find()
         .filter(currency::Column::OwnerId.eq(owner.0))
         .one(db_txn.get_db_txn())
@@ -211,12 +211,12 @@ pub async fn get_base_currency<'a>(
 }
 
 // TODO: See if this can be optimized at DB level
-pub async fn find_first_unknown_currencies<'a>(
+pub async fn find_first_unknown_currencies(
     owner: &AuthUser,
     ids: &[CurrencyId],
-    db_txn: TransactionWithCallback<'a>,
+    db_txn: TransactionWithCallback,
     cache: Arc<Mutex<CurrencyCache>>,
-) -> Result<(Option<CurrencyId>, TransactionWithCallback<'a>), DbErr> {
+) -> Result<(Option<CurrencyId>, TransactionWithCallback), DbErr> {
     let mut db_txn = db_txn;
     for current_id in ids {
         let (currency_rate_datum, transaction) =
@@ -229,12 +229,12 @@ pub async fn find_first_unknown_currencies<'a>(
     Ok((None, db_txn))
 }
 
-pub async fn get_currency_by_id<'a>(
+pub async fn get_currency_by_id(
     owner: &AuthUser,
     currency_id: &CurrencyId,
-    db_txn: TransactionWithCallback<'a>,
+    db_txn: TransactionWithCallback,
     cache: Arc<Mutex<CurrencyCache>>,
-) -> Result<(Option<Currency>, TransactionWithCallback<'a>), DbErr> {
+) -> Result<(Option<Currency>, TransactionWithCallback), DbErr> {
     let db_result = currency::Entity::find()
         .filter(currency::Column::OwnerId.eq(owner.0))
         .filter(currency::Column::Id.eq(currency_id.0))
@@ -269,9 +269,9 @@ impl From<CreateCurrencyErrors> for EndpointsErrors {
 
 pub async fn create_currency(
     currency: CreateCurrencyAction,
-    db_txn: TransactionWithCallback<'_>,
+    db_txn: TransactionWithCallback,
     cache: Arc<Mutex<CurrencyCache>>,
-) -> Result<(uuid::Uuid, TransactionWithCallback<'_>), CreateCurrencyErrors> {
+) -> Result<(uuid::Uuid, TransactionWithCallback), CreateCurrencyErrors> {
     // Ensure another base currency doesnt exist
     let db_txn = match currency.is_base() {
         true => {

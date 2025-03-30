@@ -75,16 +75,16 @@ pub fn find_neighbors_left_biased<T: Ord + Clone, R>(
 // TODO: Don't call db every time
 /// Get the nearest 2 datums of a currency given a date.
 /// If the given date is exactly the same as one of the 2 nearest datums, the returned pair of datums will be the same.
-pub async fn get_datum_left_right<'a>(
+pub async fn get_datum_left_right(
     owner: &AuthUser,
     date: chrono::DateTime<Utc>,
     currency_id: CurrencyId,
-    db_txn: TransactionWithCallback<'a>,
+    db_txn: TransactionWithCallback,
 ) -> Result<
     (
         Option<currency_rate_datum::Model>,
         Option<currency_rate_datum::Model>,
-        TransactionWithCallback<'a>,
+        TransactionWithCallback,
     ),
     DbErr,
 > {
@@ -145,13 +145,13 @@ pub async fn get_datum_left_right<'a>(
     }
 }
 
-pub async fn create_currency_rate_datum<'a>(
+pub async fn create_currency_rate_datum(
     owner: &AuthUser,
     datum: CreateCurrencyRateDatumAction,
-    db_txn: TransactionWithCallback<'a>,
+    db_txn: TransactionWithCallback,
     rates_cache: Arc<Mutex<CurrencyRateDatumCache>>,
     currency_cache: Arc<Mutex<CurrencyCache>>,
-) -> Result<(uuid::Uuid, TransactionWithCallback<'a>), CreateCurrencyRateDatumErrors> {
+) -> Result<(uuid::Uuid, TransactionWithCallback), CreateCurrencyRateDatumErrors> {
     // Check if all currencies referenced exist
     let db_txn = {
         let currencies_to_check = [datum.ref_currency_id, datum.ref_amount_currency_id];

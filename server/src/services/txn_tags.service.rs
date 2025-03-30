@@ -4,12 +4,12 @@ use crate::{entities::txn_tag, extractors::auth_user::AuthUser};
 use sea_orm::{ActiveValue, ColumnTrait, DbErr, EntityTrait, QueryFilter};
 use uuid::Uuid;
 
-pub async fn create_txn_tag<'a>(
+pub async fn create_txn_tag(
     owner: &AuthUser,
     name: &str,
-    db_txn: TransactionWithCallback<'a>,
+    db_txn: TransactionWithCallback,
     txn_tags_cache: &mut TxnTagsCache,
-) -> Result<(Uuid, TransactionWithCallback<'a>), DbErr> {
+) -> Result<(Uuid, TransactionWithCallback), DbErr> {
     let new_tag = txn_tag::ActiveModel {
         id: ActiveValue::Set(uuid::Uuid::new_v4()),
         name: ActiveValue::Set(name.to_string()),
@@ -30,7 +30,7 @@ pub async fn create_txn_tag<'a>(
 pub async fn get_txn(
     user: &AuthUser,
     id: uuid::Uuid,
-    db_txn: TransactionWithCallback<'_>,
+    db_txn: TransactionWithCallback,
     txn_tags_cache: &mut TxnTagsCache,
 ) -> Result<Option<txn_tag::Model>, DbErr> {
     let query_result = txn_tags_cache.query_txn_tag(user);
@@ -53,7 +53,7 @@ pub async fn get_txn(
 
 pub async fn get_txn_tags(
     user: &AuthUser,
-    db_txn: TransactionWithCallback<'_>,
+    db_txn: TransactionWithCallback,
 ) -> Result<Vec<txn_tag::Model>, DbErr> {
     txn_tag::Entity::find()
         .filter(txn_tag::Column::OwnerId.eq(user.0))
