@@ -13,6 +13,7 @@
 /server-sqlite-prod
 /server/mutants.out
 /server/mutants.out.old
+/api_types/
 *.log
 
 *.code-workspace
