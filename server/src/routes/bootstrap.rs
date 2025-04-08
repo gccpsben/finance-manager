@@ -98,17 +98,51 @@ pub fn apply_endpoints(
     >,
 > {
     let mut app = app
-        .service(routes::users::login::handler)
-        .service(routes::users::register::handler)
-        .service(routes::accounts::post_account::handler)
-        .service(routes::currencies::post_currency::handler)
-        .service(routes::currencies::get_currency::handler)
-        .service(routes::currency_rate_datums::post_currency_rate_datum::handler)
-        .service(routes::txn_tags::get_tags::handler)
-        .service(routes::txn_tags::create_tag::handler)
-        .service(routes::accounts::get_account::handler)
-        .service(routes::txns::post_txns::handler)
-        .service(routes::txns::get_txns::handler);
+        .route(
+            "/api/v1/auth/login",
+            actix_web::web::post().to(routes::users::login::handler),
+        )
+        .route(
+            "/api/v1/auth/users",
+            actix_web::web::post().to(routes::users::register::handler),
+        )
+        .route(
+            "/api/v1/accounts",
+            actix_web::web::post().to(routes::accounts::post_account::handler),
+        )
+        .route(
+            "/api/v1/currencies",
+            actix_web::web::post().to(routes::currencies::post_currency::handler),
+        )
+        .route(
+            "/api/v1/currencies",
+            actix_web::web::get().to(routes::currencies::get_currency::handler),
+        )
+        .route(
+            "/api/v1/currency_rate_datums",
+            actix_web::web::post()
+                .to(routes::currency_rate_datums::post_currency_rate_datum::handler),
+        )
+        .route(
+            "/api/v1/txnTags",
+            actix_web::web::get().to(routes::txn_tags::get_tags::handler),
+        )
+        .route(
+            "/api/v1/txnTags",
+            actix_web::web::post().to(routes::txn_tags::create_tag::handler),
+        )
+        .route(
+            "/api/v1/accounts",
+            actix_web::web::get().to(routes::accounts::get_account::handler),
+        )
+        .route(
+            "/api/v1/transactions",
+            actix_web::web::post().to(routes::txns::post_txns::handler),
+        )
+        .route(
+            "/api/v1/transactions",
+            actix_web::web::get().to(routes::txns::get_txns::handler),
+        );
 
     #[cfg(debug_assertions)]
     {

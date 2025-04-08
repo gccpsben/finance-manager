@@ -1,7 +1,6 @@
 use crate::services::accounts::{get_account, get_accounts};
 use crate::{extractors::auth_user::AuthUser, services::accounts::create_account, DatabaseStates};
-use actix_web::get;
-use actix_web::{post, web};
+use actix_web::web;
 use serde::Deserialize;
 use serde::Serialize;
 use ts_rs::TS;
@@ -40,8 +39,7 @@ pub mod get_account {
         pub items: Vec<GetAccountResponseItem>,
     }
 
-    #[get("/accounts")]
-    async fn handler(
+    pub async fn handler(
         user: AuthUser,
         query: web::Query<GetAccountQuery>,
         data: web::Data<DatabaseStates>,
@@ -97,8 +95,7 @@ pub mod post_account {
         pub id: String,
     }
 
-    #[post("/accounts")]
-    async fn handler(
+    pub async fn handler(
         user: AuthUser,
         info: web::Json<PostAccountRequestBody>,
         data: web::Data<DatabaseStates>,

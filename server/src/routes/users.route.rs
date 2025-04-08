@@ -1,15 +1,12 @@
 use crate::services::users::{generate_token_unverified, verify_creds};
 use crate::DatabaseStates;
-use actix_web::post;
 use actix_web::web;
 use serde::{Deserialize, Serialize};
 use ts_rs::TS;
 
 pub mod login {
-
-    use crate::routes::bootstrap::EndpointsErrors;
-
     use super::*;
+    use crate::routes::bootstrap::EndpointsErrors;
 
     #[derive(Serialize, Deserialize, Clone, Debug)]
     #[serde(rename_all = "camelCase")]
@@ -29,8 +26,7 @@ pub mod login {
         pub owner: String,
     }
 
-    #[post("/login")]
-    async fn handler(
+    pub async fn handler(
         info: web::Json<LoginRequestBody>,
         data: web::Data<DatabaseStates>,
     ) -> Result<web::Json<LoginResponseBody>, EndpointsErrors> {
@@ -68,8 +64,7 @@ pub mod register {
         pub password: String,
     }
 
-    #[post("/users")]
-    async fn handler(
+    pub async fn handler(
         info: web::Json<PostUserRequestBody>,
         data: web::Data<DatabaseStates>,
     ) -> Result<web::Json<PostUserResponseBody>, EndpointsErrors> {

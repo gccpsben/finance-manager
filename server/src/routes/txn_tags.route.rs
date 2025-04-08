@@ -4,8 +4,6 @@ use crate::{
     services::{txn_tags::create_txn_tag, TransactionWithCallback},
 };
 use ::serde::{Deserialize, Serialize};
-use actix_web::get;
-use actix_web::post;
 use actix_web::{http::header::ContentType, web, HttpResponse};
 use ts_rs::TS;
 
@@ -28,8 +26,7 @@ pub mod create_tag {
         pub id: String,
     }
 
-    #[post("/txnTags")]
-    async fn handler(
+    pub async fn handler(
         user: AuthUser,
         info: web::Json<PostTxnTagRequestBody>,
         data: web::Data<DatabaseStates>,
@@ -82,8 +79,7 @@ pub mod get_tags {
         pub tags: Vec<GetTxnTagsResponseBodyItem>,
     }
 
-    #[get("/txnTags")]
-    async fn handler(
+    pub async fn handler(
         user: AuthUser,
         data: web::Data<DatabaseStates>,
     ) -> Result<web::Json<GetTxnTagsResponseBody>, EndpointsErrors> {

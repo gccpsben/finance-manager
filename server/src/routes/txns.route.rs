@@ -8,8 +8,6 @@ use crate::services::txns::CreateTxnActionFragment;
 use crate::services::txns::CreateTxnActionFragmentSide;
 use crate::services::TransactionWithCallback;
 use crate::states::database_states::DatabaseStates;
-use actix_web::get;
-use actix_web::post;
 use actix_web::web;
 use rust_decimal::Decimal;
 use sea_orm::TransactionTrait;
@@ -63,8 +61,7 @@ pub mod get_txns {
         pub items: Vec<GetTxnsResponseItem>,
     }
 
-    #[get("/txns")]
-    async fn handler(
+    pub async fn handler(
         user: AuthUser,
         data: web::Data<DatabaseStates>,
     ) -> Result<web::Json<GetTxnsResponse>, EndpointsErrors> {
@@ -145,8 +142,7 @@ pub mod post_txns {
         pub id: String,
     }
 
-    #[post("/txns")]
-    async fn handler(
+    pub async fn handler(
         user: AuthUser,
         info: web::Json<PostTxnRequest>,
         data: web::Data<DatabaseStates>,

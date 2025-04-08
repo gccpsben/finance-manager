@@ -2,7 +2,7 @@ use crate::entities::currency_rate_datum;
 use crate::extended_models::currency::CurrencyId;
 use crate::services::{currency_rate_datum::create_currency_rate_datum, TransactionWithCallback};
 use crate::{extractors::auth_user::AuthUser, states::database_states::DatabaseStates};
-use actix_web::{post, web};
+use actix_web::web;
 use sea_orm::prelude::DateTime;
 use sea_orm::ActiveValue;
 use serde::{Deserialize, Serialize};
@@ -35,8 +35,7 @@ pub mod post_currency_rate_datum {
         pub id: String,
     }
 
-    #[post("/currency_rate_datums")]
-    async fn handler(
+    pub async fn handler(
         user: AuthUser,
         info: web::Json<PostCurrencyRateDatumRequest>,
         data: web::Data<DatabaseStates>,

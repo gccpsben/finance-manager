@@ -1,5 +1,5 @@
 use crate::{extractors::auth_user::AuthUser, states::database_states::DatabaseStates};
-use actix_web::{get, post, web};
+use actix_web::web;
 use sea_orm::TransactionTrait;
 use serde::{Deserialize, Serialize};
 use ts_rs::TS;
@@ -33,8 +33,7 @@ pub mod post_currency {
         pub id: String,
     }
 
-    #[post("/currencies")]
-    async fn handler(
+    pub async fn handler(
         user: AuthUser,
         info: web::Json<PostCurrencyRequestBody>,
         data: web::Data<DatabaseStates>,
@@ -116,8 +115,7 @@ pub mod get_currency {
         pub items: Vec<GetCurrencyResponseItem>,
     }
 
-    #[get("/currencies")]
-    async fn handler(
+    pub async fn handler(
         user: AuthUser,
         query: web::Query<GetCurrencyQuery>,
         data: web::Data<DatabaseStates>,
