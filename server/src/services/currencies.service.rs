@@ -299,7 +299,7 @@ pub async fn create_currency(
     };
 
     // Ensure referenced currency exists
-    let db_txn = match currency {
+    let mut db_txn = match currency {
         CreateCurrencyAction::Base { .. } => db_txn,
         CreateCurrencyAction::Normal {
             ref owner,
@@ -324,10 +324,14 @@ pub async fn create_currency(
         .await
         .map_err(CreateCurrencyErrors::DbErr)?;
 
-    cache
-        .clone()
-        .lock()
-        .await
-        .register_item(currency.into_domain(model.last_insert_id.0));
+    {
+        db_txn.add_callback(async move {
+            cache
+                .lock()
+                .await
+                .register_item(currency.into_domain(model.last_insert_id.0));
+        });
+    }
+
     Ok((model.last_insert_id.0, db_txn))
 }

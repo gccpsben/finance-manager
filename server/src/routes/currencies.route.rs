@@ -93,12 +93,18 @@ pub mod get_currency {
     use super::*;
 
     #[derive(Serialize, Deserialize)]
+    #[serde(rename_all = "camelCase")]
+    #[derive(TS)]
+    #[ts(export)]
     pub struct GetCurrencyQuery {
         pub id: Option<String>,
         pub date: Option<String>,
     }
 
     #[derive(Serialize, Deserialize)]
+    #[serde(rename_all = "camelCase")]
+    #[derive(TS)]
+    #[ts(export)]
     pub struct GetCurrencyResponseItem {
         pub id: String,
         pub name: String,
@@ -111,6 +117,9 @@ pub mod get_currency {
     }
 
     #[derive(Serialize, Deserialize)]
+    #[serde(rename_all = "camelCase")]
+    #[derive(TS)]
+    #[ts(export)]
     pub struct GetCurrencyResponse {
         pub items: Vec<GetCurrencyResponseItem>,
     }

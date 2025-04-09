@@ -35,6 +35,9 @@ pub mod get_account {
     }
 
     #[derive(Serialize, Deserialize)]
+    #[serde(rename_all = "camelCase")]
+    #[derive(TS)]
+    #[ts(export)]
     pub struct GetAccountResponse {
         pub items: Vec<GetAccountResponseItem>,
     }
