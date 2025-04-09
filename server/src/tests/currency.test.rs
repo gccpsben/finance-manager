@@ -20,7 +20,7 @@ pub mod currencies {
             app: &actix_test::TestServer,
             assert_default: bool,
         ) -> AssertTestResponse<PostCurrencyResponseBody> {
-            let mut req = app.post("/currencies");
+            let mut req = app.post("/api/v1/currencies");
             req = attach_token_to_req(req, token);
             req = req.insert_header(ContentType::json());
             let mut res = send_req_with_body(req, body).await;
@@ -38,7 +38,7 @@ pub mod currencies {
             app: &actix_test::TestServer,
             assert_default: bool,
         ) -> AssertTestResponse<GetCurrencyResponse> {
-            let mut req = app.get("/currencies");
+            let mut req = app.get("/api/v1/currencies");
 
             if let Some(query) = query {
                 req = req

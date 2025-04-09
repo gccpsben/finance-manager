@@ -42,7 +42,7 @@ pub mod users {
             app: &TestServer,
             assert_default: bool,
         ) -> AssertTestResponse<LoginResponseBody> {
-            let mut req = app.post("/login");
+            let mut req = app.post("/api/v1/auth/login");
             req = req.insert_header(ContentType::json());
             let mut res = send_req_with_body(req, body).await;
             let res_parsed: AssertTestResponse<LoginResponseBody> =
@@ -58,7 +58,7 @@ pub mod users {
             app: &TestServer,
             assert_default: bool,
         ) -> AssertTestResponse<PostUserResponseBody> {
-            let mut req = app.post("/users");
+            let mut req = app.post("/api/v1/auth/users");
             req = req.insert_header(ContentType::json());
             let mut res = send_req_with_body(req, body).await;
             let res_parsed: AssertTestResponse<PostUserResponseBody> =

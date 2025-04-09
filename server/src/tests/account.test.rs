@@ -19,7 +19,7 @@ pub mod accounts {
             app: &actix_test::TestServer,
             assert_default: bool,
         ) -> AssertTestResponse<GetAccountResponse> {
-            let mut req = app.get("/accounts");
+            let mut req = app.get("/api/v1/accounts");
             if let Some(target_id) = target_id {
                 req = req.query(&[("id", target_id)]).unwrap();
             }
@@ -40,7 +40,7 @@ pub mod accounts {
             app: &actix_test::TestServer,
             assert_default: bool,
         ) -> AssertTestResponse<PostAccountResponseBody> {
-            let mut req = app.post("/accounts");
+            let mut req = app.post("/api/v1/accounts");
             req = attach_token_to_req(req, token);
             req = req.insert_header(ContentType::json());
             let mut res = send_req_with_body(req, body).await;

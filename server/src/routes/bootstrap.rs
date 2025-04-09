@@ -119,7 +119,7 @@ pub fn apply_endpoints(
             actix_web::web::get().to(routes::currencies::get_currency::handler),
         )
         .route(
-            "/api/v1/currency_rate_datums",
+            "/api/v1/currencyRateDatums",
             actix_web::web::post()
                 .to(routes::currency_rate_datums::post_currency_rate_datum::handler),
         )
@@ -136,11 +136,11 @@ pub fn apply_endpoints(
             actix_web::web::get().to(routes::accounts::get_account::handler),
         )
         .route(
-            "/api/v1/transactions",
+            "/api/v1/txns",
             actix_web::web::post().to(routes::txns::post_txns::handler),
         )
         .route(
-            "/api/v1/transactions",
+            "/api/v1/txns",
             actix_web::web::get().to(routes::txns::get_txns::handler),
         );
 

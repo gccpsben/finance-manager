@@ -22,7 +22,7 @@ pub mod txn_tags {
             app: &TestServer,
             assert_default: bool,
         ) -> AssertTestResponse<PostTxnTagResponseBody> {
-            let mut req = app.post("/txnTags");
+            let mut req = app.post("/api/v1/txnTags");
             req = req.insert_header(ContentType::json());
             req = attach_token_to_req(req, token);
             let mut res = send_req_with_body(req, body).await;
@@ -39,7 +39,7 @@ pub mod txn_tags {
             app: &TestServer,
             assert_default: bool,
         ) -> AssertTestResponse<GetTxnTagsResponseBody> {
-            let mut req = app.get("/txnTags");
+            let mut req = app.get("/api/v1/txnTags");
             req = req.insert_header(ContentType::json());
             req = attach_token_to_req(req, token);
             let mut res = req
@@ -52,6 +52,27 @@ pub mod txn_tags {
                 assert_eq!(res.status(), StatusCode::OK);
             }
             res_parsed
+        }
+
+        pub async fn bootstrap_txn_tag(
+            tag_name: &str,
+            token: &str,
+            srv: &TestServer,
+        ) -> String {
+            driver_post_txn_tag(
+                TestBody::Expected(
+                    crate::routes::txn_tags::create_tag::PostTxnTagRequestBody {
+                        name: tag_name.to_string()
+                    },
+                ),
+                Some(token),
+                srv,
+                true,
+            )
+            .await
+            .expected
+            .unwrap()
+            .id
         }
     }
 

@@ -19,7 +19,7 @@ pub mod currency_rate_datums {
             app: &actix_test::TestServer,
             assert_default: bool,
         ) -> AssertTestResponse<PostCurrencyRateDatumResponse> {
-            let mut req = app.post("/currency_rate_datums");
+            let mut req = app.post("/api/v1/currencyRateDatums");
             req = attach_token_to_req(req, token);
             req = req.insert_header(ContentType::json());
             let mut res = send_req_with_body(req, body).await;
