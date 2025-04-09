@@ -70,12 +70,12 @@ import BaseButton from '@/modules/core/components/inputs/BaseButton.vue';
 import router, { ROUTER_NAME_CREATE_NEW_CONTAINER, ROUTER_NAME_EDIT_SINGLE_CONTAINER, ROUTER_NAME_SINGLE_CONTAINER_OVERVIEW } from '@/router';
 import { API_CONTAINERS_PATH } from '@/apiPaths';
 import { useNetworkRequest } from '@/modules/core/composables/useNetworkRequest';
-import type { GetContainerAPI } from '../../../../../api-types/container';
+import type { GetAccountResponse } from '@/../../api_types/GetAccountResponse.ts';
 import OverlapArea from '@/modules/core/components/layout/OverlapArea.vue';
 
 const currenciesStore = useCurrenciesStore();
 currenciesStore.currencies.updateData();
-const containersFetchRequest = useNetworkRequest<GetContainerAPI.ResponseDTO>('', { includeAuthHeaders: true, updateOnMount: false } );
+const containersFetchRequest = useNetworkRequest<GetAccountResponse>('', { includeAuthHeaders: true, updateOnMount: false } );
 const currentPageIndex = ref(0);
 const mainPagination = useNetworkPaginationNew(
 {

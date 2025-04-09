@@ -81,7 +81,6 @@ import { isNullOrUndefined } from "@/modules/core/utils/equals";
 import { buildSearchParams } from "@/modules/core/utils/urlParams";
 import router, { ROUTER_NAME_CREATE_NEW_TXN, ROUTER_NAME_SINGLE_TXN } from "@/router";
 import { computed, onMounted, ref } from 'vue';
-import type { GetTxnAPI, GetTxnJsonQueryAPI } from '../../../../../api-types/txn.js';
 import NumberPagination from '@/modules/core/components/data-display/NumberPagination.vue';
 import OverlapArea from '@/modules/core/components/layout/OverlapArea.vue';
 import NetworkCircularIndicator from '@/modules/core/components/data-display/NetworkCircularIndicator.vue';
@@ -93,6 +92,7 @@ import BaseButton from '@/modules/core/components/inputs/BaseButton.vue';
 import { VTooltip } from 'vuetify/components';
 import TxnTableRow from '../components/TxnTableRow.vue';
 import TxnTableHeader from '../components/TxnTableHeader.vue';
+import type { GetTxnsResponseItem } from '@/../../api_types/GetTxnsResponseItem';
 
 const itemsInPage = 50;
 const { authGet, updateAll: mainStoreUpdateAll } = useMainStore();
@@ -109,9 +109,9 @@ const uiRangeText = computed(() =>
     return `Showing ${start} - ${end} of ${totalItems}`;
 });
 
-const mainPagination = useNetworkPaginationNew<GetTxnAPI.TxnDTO>(
+const mainPagination = useNetworkPaginationNew<GetTxnsResponseItem>(
 {
-    updater: async (start:number, end:number): Promise<UpdaterReturnType<GetTxnAPI.TxnDTO>> =>
+    updater: async (start:number, end:number): Promise<UpdaterReturnType<GetTxnsResponseItem>> =>
     {
         const sendQuery = async (url:string) => await authGet(url);
 
