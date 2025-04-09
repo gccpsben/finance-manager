@@ -18,6 +18,7 @@ use uuid::Uuid;
 
 use super::accounts::find_first_unknown_account;
 use super::currencies::find_first_unknown_currencies;
+use super::unpack_db_txn;
 
 #[derive(Debug)]
 pub enum CreateTxnErrors {
@@ -129,36 +130,18 @@ pub async fn create_txn(
     currency_cache: Arc<Mutex<CurrencyCache>>,
 ) -> Result<(Uuid, TransactionWithCallback), CreateTxnErrors> {
     // Ensure accounts exist
-    let db_txn = {
-        let (unknown_account, db_txn) =
-            find_first_unknown_account(owner, &fragments_to_account_ids(fragments), db_txn)
-                .await
-                .map_err(CreateTxnErrors::DbErr)?;
-
-        if let Some(unknown_acc) = unknown_account {
-            return Err(CreateTxnErrors::AccountNotFound(unknown_acc));
-        }
-
-        db_txn
-    };
+    let db_txn = unpack_db_txn(
+        find_first_unknown_account(owner, &fragments_to_account_ids(fragments), db_txn)
+        .await
+        .map_err(CreateTxnErrors::DbErr)?
+    ).map_err(CreateTxnErrors::AccountNotFound)?;
 
     // Ensure currencies exist
-    let db_txn = {
-        let (unknown_currency, db_txn) = find_first_unknown_currencies(
-            owner,
-            &fragments_to_curr_ids(fragments),
-            db_txn,
-            currency_cache.clone(),
-        )
+    let db_txn = unpack_db_txn(
+        find_first_unknown_currencies(owner, &fragments_to_curr_ids(fragments), db_txn, currency_cache.clone(),)
         .await
-        .map_err(CreateTxnErrors::DbErr)?;
-
-        if let Some(unknown_curr) = unknown_currency {
-            return Err(CreateTxnErrors::CurrencyNotFound(unknown_curr));
-        }
-
-        db_txn
-    };
+        .map_err(CreateTxnErrors::DbErr)?
+    ).map_err(CreateTxnErrors::CurrencyNotFound)?;
 
     let generated_txn_uuid = uuid::Uuid::new_v4();
     let active_model = {
