@@ -76,17 +76,17 @@ pub mod accounts {
         use super::*;
         #[actix_web::test]
         async fn test_curd_accounts() {
-            let srv = setup_connection().await;
-            let first_usr_token = bootstrap_token(("123", "123"), &srv).await;
-            let second_usr_token = bootstrap_token(("1234", "1234"), &srv).await;
+            let runtime = setup_connection().await;
+            let first_usr_token = bootstrap_token(("123", "123"), &runtime.server).await;
+            let second_usr_token = bootstrap_token(("1234", "1234"), &runtime.server).await;
 
             let first_user_account_1_id = {
                 let resp = driver_post_account(
-                    Some(&first_usr_token),
+                    Some(&first_usr_token.token),
                     TestBody::Expected(PostAccountRequestBody {
                         account_name: String::from("account 1"),
                     }),
-                    &srv,
+                    &runtime.server,
                     true,
                 )
                 .await;
@@ -95,11 +95,11 @@ pub mod accounts {
 
             let _first_user_account_2_id = {
                 let resp = driver_post_account(
-                    Some(&first_usr_token),
+                    Some(&first_usr_token.token),
                     TestBody::Expected(PostAccountRequestBody {
                         account_name: String::from("account 2"),
                     }),
-                    &srv,
+                    &runtime.server,
                     true,
                 )
                 .await;
@@ -108,11 +108,11 @@ pub mod accounts {
 
             let second_user_account_1_id = {
                 let resp = driver_post_account(
-                    Some(&second_usr_token),
+                    Some(&second_usr_token.token),
                     TestBody::Expected(PostAccountRequestBody {
                         account_name: String::from("account 1"),
                     }),
-                    &srv,
+                    &runtime.server,
                     true,
                 )
                 .await;
@@ -121,7 +121,9 @@ pub mod accounts {
 
             // Get all accounts of user 1
             {
-                let resp = driver_get_accounts(None, Some(&first_usr_token), &srv, true).await;
+                let resp =
+                    driver_get_accounts(None, Some(&first_usr_token.token), &runtime.server, true)
+                        .await;
                 assert_eq!(
                     resp.expected.unwrap().items.len(),
                     2,
@@ -131,7 +133,9 @@ pub mod accounts {
 
             // Get all accounts of user 2
             {
-                let resp = driver_get_accounts(None, Some(&second_usr_token), &srv, true).await;
+                let resp =
+                    driver_get_accounts(None, Some(&second_usr_token.token), &runtime.server, true)
+                        .await;
                 assert_eq!(
                     resp.expected.unwrap().items.len(),
                     1,
@@ -143,8 +147,8 @@ pub mod accounts {
             {
                 let resp = driver_get_accounts(
                     Some(&first_user_account_1_id),
-                    Some(&first_usr_token),
-                    &srv,
+                    Some(&first_usr_token.token),
+                    &runtime.server,
                     true,
                 )
                 .await;
@@ -165,8 +169,8 @@ pub mod accounts {
             {
                 let resp = driver_get_accounts(
                     Some(&second_user_account_1_id),
-                    Some(&second_usr_token),
-                    &srv,
+                    Some(&second_usr_token.token),
+                    &runtime.server,
                     true,
                 )
                 .await;
@@ -185,7 +189,7 @@ pub mod accounts {
 
             // Get all accounts without token
             {
-                let resp = driver_get_accounts(None, None, &srv, false).await;
+                let resp = driver_get_accounts(None, None, &runtime.server, false).await;
                 assert_eq!(
                     resp.status,
                     StatusCode::UNAUTHORIZED,
@@ -195,8 +199,13 @@ pub mod accounts {
 
             // Get any account without token
             {
-                let resp =
-                    driver_get_accounts(Some(&first_user_account_1_id), None, &srv, false).await;
+                let resp = driver_get_accounts(
+                    Some(&first_user_account_1_id),
+                    None,
+                    &runtime.server,
+                    false,
+                )
+                .await;
                 assert_eq!(
                     resp.status,
                     StatusCode::UNAUTHORIZED,
@@ -208,8 +217,8 @@ pub mod accounts {
             {
                 let resp = driver_get_accounts(
                     Some(&first_user_account_1_id),
-                    Some(&second_usr_token),
-                    &srv,
+                    Some(&second_usr_token.token),
+                    &runtime.server,
                     false,
                 )
                 .await;

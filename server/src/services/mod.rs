@@ -73,9 +73,11 @@ impl TransactionWithCallback {
 
 /// Unpack a tuple of `(Option<T>, TransactionWithCallback)`, returning the transaction if `None`,
 /// `T` if `Some`.
-pub fn unpack_db_txn<T>(pair: (Option<T>, TransactionWithCallback)) -> Result<TransactionWithCallback, T> {
+pub fn unpack_db_txn<T>(
+    pair: (Option<T>, TransactionWithCallback),
+) -> Result<TransactionWithCallback, T> {
     if let Some(val) = pair.0 {
-        return Err(val)
+        return Err(val);
     }
     Ok(pair.1)
 }

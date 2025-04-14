@@ -71,8 +71,8 @@ pub mod currency_rate_datums {
 
         #[actix_web::test]
         async fn test_curd_currency_rate_datums() {
-            let srv = setup_connection().await;
-            let user_token = bootstrap_token(("123", "123"), &srv).await;
+            let runtime = setup_connection().await;
+            let user_token = bootstrap_token(("123", "123"), &runtime.server).await.token;
 
             // Create valid base currency
             let base_currency_id = driver_post_currency(
@@ -83,7 +83,7 @@ pub mod currency_rate_datums {
                     name: String::from("Base Currency"),
                     ticker: String::from("BASE"),
                 }),
-                &srv,
+                &runtime.server,
                 true,
             )
             .await
@@ -100,7 +100,7 @@ pub mod currency_rate_datums {
                     name: String::from("Secondary Currency"),
                     ticker: String::from("SEC"),
                 }),
-                &srv,
+                &runtime.server,
                 true,
             )
             .await
@@ -118,7 +118,7 @@ pub mod currency_rate_datums {
                         amount: "10".to_string(),
                         date_utc: "2000-01-01T01:01:01.000".to_string(),
                     }),
-                    &srv,
+                    &runtime.server,
                     false,
                 )
                 .await;
@@ -135,7 +135,7 @@ pub mod currency_rate_datums {
                         amount: "10".to_string(),
                         date_utc: "2000-01-01 01:01:01.000Z".to_string(),
                     }),
-                    &srv,
+                    &runtime.server,
                     false,
                 )
                 .await;
@@ -152,7 +152,7 @@ pub mod currency_rate_datums {
                         amount: "10".to_string(),
                         date_utc: "2000-01-01T01:01:01.000Z".to_string(),
                     }),
-                    &srv,
+                    &runtime.server,
                     true,
                 )
                 .await;
@@ -168,7 +168,7 @@ pub mod currency_rate_datums {
             //             amount: "11".to_string(),
             //             date_utc: "2000-01-01T01:01:01.000Z".to_string(),
             //         }),
-            //         &srv,
+            //         &runtime.server,
             //         false,
             //     )
             //     .await;
@@ -185,7 +185,7 @@ pub mod currency_rate_datums {
                         amount: "10".to_string(),
                         date_utc: "2000-01-01T01:01:01.000Z".to_string(),
                     }),
-                    &srv,
+                    &runtime.server,
                     false,
                 )
                 .await;
@@ -202,7 +202,7 @@ pub mod currency_rate_datums {
                         amount: "10".to_string(),
                         date_utc: "2000-01-01T01:01:01.000Z".to_string(),
                     }),
-                    &srv,
+                    &runtime.server,
                     false,
                 )
                 .await;

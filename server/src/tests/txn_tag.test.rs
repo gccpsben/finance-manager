@@ -54,17 +54,11 @@ pub mod txn_tags {
             res_parsed
         }
 
-        pub async fn bootstrap_txn_tag(
-            tag_name: &str,
-            token: &str,
-            srv: &TestServer,
-        ) -> String {
+        pub async fn bootstrap_txn_tag(tag_name: &str, token: &str, srv: &TestServer) -> String {
             driver_post_txn_tag(
-                TestBody::Expected(
-                    crate::routes::txn_tags::create_tag::PostTxnTagRequestBody {
-                        name: tag_name.to_string()
-                    },
-                ),
+                TestBody::Expected(crate::routes::txn_tags::create_tag::PostTxnTagRequestBody {
+                    name: tag_name.to_string(),
+                }),
                 Some(token),
                 srv,
                 true,
@@ -84,7 +78,7 @@ pub mod txn_tags {
 
         #[actix_web::test]
         async fn test_curd_txn_tags() {
-            let srv = setup_connection().await;
+            let runtime = setup_connection().await;
             let user_1_creds = PostUserRequestBody {
                 password: String::from("123"),
                 username: String::from("123"),
@@ -92,18 +86,22 @@ pub mod txn_tags {
 
             // Post user
             let _user_1_id = {
-                driver_post_user(TestBody::Expected(user_1_creds.clone()), &srv, true)
-                    .await
-                    .expected
-                    .unwrap()
-                    .id
+                driver_post_user(
+                    TestBody::Expected(user_1_creds.clone()),
+                    &runtime.server,
+                    true,
+                )
+                .await
+                .expected
+                .unwrap()
+                .id
             };
 
             // Login
             let user_1_token = {
                 driver_login_user(
                     TestBody::<(&str, &str)>::Expected(("123", "123")),
-                    &srv,
+                    &runtime.server,
                     true,
                 )
                 .await
@@ -120,7 +118,7 @@ pub mod txn_tags {
                         },
                     ),
                     None,
-                    &srv,
+                    &runtime.server,
                     false,
                 )
                 .await;
@@ -135,7 +133,7 @@ pub mod txn_tags {
                 let resp = driver_post_txn_tag(
                     TestBody::Bytes(Box::from("{}".as_bytes())),
                     Some(&user_1_token),
-                    &srv,
+                    &runtime.server,
                     false,
                 )
                 .await;
@@ -152,13 +150,13 @@ pub mod txn_tags {
                     name: "My Tag".to_string(),
                 }),
                 Some(&user_1_token),
-                &srv,
+                &runtime.server,
                 true,
             )
             .await;
 
             {
-                let resp = driver_get_txn_tags(None, &srv, false).await;
+                let resp = driver_get_txn_tags(None, &runtime.server, false).await;
                 assert_eq!(
                     resp.status,
                     StatusCode::UNAUTHORIZED,
@@ -167,7 +165,7 @@ pub mod txn_tags {
             }
 
             {
-                let resp = driver_get_txn_tags(Some(&user_1_token), &srv, true).await;
+                let resp = driver_get_txn_tags(Some(&user_1_token), &runtime.server, true).await;
                 assert_eq!(
                     resp.status,
                     StatusCode::OK,

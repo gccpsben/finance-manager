@@ -77,13 +77,20 @@ pub mod txns {
 
         #[actix_web::test]
         async fn test_curd_txns() {
-            let srv = setup_connection().await;
-            let token = bootstrap_token(("123", "123"), &srv).await;
-            let base_cid = bootstrap_base_curr(("BASE", "Base"), &token, &srv).await;
-            let _sec_cid =
-                bootstrap_sec_curr(("Sec", "Sec Curr"), "5", base_cid.as_str(), &token, &srv).await;
-            let first_account = bootstrap_post_account("My account", &token, &srv).await;
-            let first_tag = bootstrap_txn_tag("my tag", &token, &srv).await;
+            let runtime = setup_connection().await;
+
+            let token = bootstrap_token(("123", "123"), &runtime.server).await.token;
+            let base_cid = bootstrap_base_curr(("BASE", "Base"), &token, &runtime.server).await;
+            let _sec_cid = bootstrap_sec_curr(
+                ("Sec", "Sec Curr"),
+                "5",
+                base_cid.as_str(),
+                &token,
+                &runtime.server,
+            )
+            .await;
+            let first_account = bootstrap_post_account("My account", &token, &runtime.server).await;
+            let first_tag = bootstrap_txn_tag("my tag", &token, &runtime.server).await;
 
             let first_txn_to_post = PostTxnRequest {
                 description: "my description".to_string(),
@@ -97,6 +104,7 @@ pub mod txns {
                     }),
                     to: None,
                 }],
+                tags: vec![first_tag],
             };
 
             let second_txn_to_post = PostTxnRequest {
@@ -121,13 +129,14 @@ pub mod txns {
                         from: None,
                     },
                 ],
+                tags: vec![],
             };
 
             // Creating valid txn (single fragment)
             driver_post_txn(
                 Some(&token),
                 TestBody::Expected(first_txn_to_post.clone()),
-                &srv,
+                &runtime.server,
                 true,
             )
             .await;
@@ -136,14 +145,14 @@ pub mod txns {
             driver_post_txn(
                 Some(&token),
                 TestBody::Expected(second_txn_to_post.clone()),
-                &srv,
+                &runtime.server,
                 true,
             )
             .await;
 
             // Getting the created txns
             {
-                let resp = driver_get_txns(Some(&token), &srv, true).await;
+                let resp = driver_get_txns(Some(&token), &runtime.server, true).await;
                 let mut txns = resp
                     .expected
                     .expect("returned items not empty")
@@ -238,8 +247,9 @@ pub mod txns {
                             }),
                             to: None,
                         }],
+                        tags: vec![],
                     }),
-                    &srv,
+                    &runtime.server,
                     false,
                 )
                 .await;
@@ -265,8 +275,9 @@ pub mod txns {
                             }),
                             to: None,
                         }],
+                        tags: vec![],
                     }),
-                    &srv,
+                    &runtime.server,
                     false,
                 )
                 .await;

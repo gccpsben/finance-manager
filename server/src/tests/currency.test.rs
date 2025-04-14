@@ -129,25 +129,31 @@ pub mod currencies {
     }
 
     mod tests {
+
         use super::*;
         use crate::tests::currency_rate_datum::currency_rate_datums::drivers::bootstrap_post_rate_datum;
 
         #[actix_web::test]
         async fn test_currencies_rate_sec_fallback() {
-            let srv = setup_connection().await;
-            let user_1_token = bootstrap_token(("123", "123"), &srv).await;
+            let runtime = setup_connection().await;
+            let token = bootstrap_token(("123", "123"), &runtime.server).await;
             let base_curr_id =
-                bootstrap_base_curr(("BASE", "Base Curr"), &user_1_token, &srv).await;
+                bootstrap_base_curr(("BASE", "Base Curr"), &token.token, &runtime.server).await;
             let sec_curr_id = bootstrap_sec_curr(
                 ("Sec", "Sec Curr"),
                 "5",
                 base_curr_id.as_str(),
-                &user_1_token,
-                &srv,
+                &token.token,
+                &runtime.server,
             )
             .await;
-            let fetch_result =
-                bootstrap_get_curr(Some(sec_curr_id.clone()), None, &user_1_token, &srv).await;
+            let fetch_result = bootstrap_get_curr(
+                Some(sec_curr_id.clone()),
+                None,
+                &token.token,
+                &runtime.server,
+            )
+            .await;
 
             assert_eq!(fetch_result.items.len(), 1);
             assert_eq!(fetch_result.items.first().unwrap().id, sec_curr_id);
@@ -156,12 +162,17 @@ pub mod currencies {
 
         #[actix_web::test]
         async fn test_currencies_rate_base() {
-            let srv = setup_connection().await;
-            let user_1_token = bootstrap_token(("123", "123"), &srv).await;
+            let runtime = setup_connection().await;
+            let token = bootstrap_token(("123", "123"), &runtime.server).await;
             let base_curr_id =
-                bootstrap_base_curr(("BASE", "Base Curr"), &user_1_token, &srv).await;
-            let fetch_result =
-                bootstrap_get_curr(Some(base_curr_id.clone()), None, &user_1_token, &srv).await;
+                bootstrap_base_curr(("BASE", "Base Curr"), &token.token, &runtime.server).await;
+            let fetch_result = bootstrap_get_curr(
+                Some(base_curr_id.clone()),
+                None,
+                &token.token,
+                &runtime.server,
+            )
+            .await;
 
             assert_eq!(fetch_result.items.len(), 1);
             assert_eq!(fetch_result.items.first().unwrap().id, base_curr_id);
@@ -170,15 +181,16 @@ pub mod currencies {
 
         #[actix_web::test]
         async fn test_currencies_rate_sec_normal() {
-            let srv = setup_connection().await;
-            let token = bootstrap_token(("123", "123"), &srv).await;
-            let base_curr_id = bootstrap_base_curr(("BASE", "Base Curr"), &token, &srv).await;
+            let runtime = setup_connection().await;
+            let token = bootstrap_token(("123", "123"), &runtime.server).await;
+            let base_curr_id =
+                bootstrap_base_curr(("BASE", "Base Curr"), &token.token, &runtime.server).await;
             let sec_curr_id = bootstrap_sec_curr(
                 ("Sec", "Sec Curr"),
                 "3.14",
                 base_curr_id.as_str(),
-                &token,
-                &srv,
+                &token.token,
+                &runtime.server,
             )
             .await;
             bootstrap_post_rate_datum(
@@ -186,8 +198,8 @@ pub mod currencies {
                 "2025-01-01T01:00:00.000Z",
                 &base_curr_id,
                 &sec_curr_id,
-                &token,
-                &srv,
+                &token.token,
+                &runtime.server,
             )
             .await;
             bootstrap_post_rate_datum(
@@ -195,8 +207,8 @@ pub mod currencies {
                 "2025-01-01T01:01:00.000Z",
                 &base_curr_id,
                 &sec_curr_id,
-                &token,
-                &srv,
+                &token.token,
+                &runtime.server,
             )
             .await;
             bootstrap_post_rate_datum(
@@ -204,8 +216,8 @@ pub mod currencies {
                 "2025-01-01T01:02:00.000Z",
                 &base_curr_id,
                 &sec_curr_id,
-                &token,
-                &srv,
+                &token.token,
+                &runtime.server,
             )
             .await;
             bootstrap_post_rate_datum(
@@ -213,8 +225,8 @@ pub mod currencies {
                 "2025-01-01T01:03:00.000Z",
                 &base_curr_id,
                 &sec_curr_id,
-                &token,
-                &srv,
+                &token.token,
+                &runtime.server,
             )
             .await;
 
@@ -232,8 +244,8 @@ pub mod currencies {
                 let fetch_result = bootstrap_get_curr(
                     Some(sec_curr_id.clone()),
                     Some(case.0.to_string()),
-                    &token,
-                    &srv,
+                    &token.token,
+                    &runtime.server,
                 )
                 .await;
                 assert!(
@@ -257,27 +269,33 @@ pub mod currencies {
 
         #[actix_web::test]
         async fn test_currencies_rate_nested_normal() {
-            let srv = setup_connection().await;
-            let token = bootstrap_token(("123", "123"), &srv).await;
-            let base_curr_id = bootstrap_base_curr(("BASE", "Base Curr"), &token, &srv).await;
+            let runtime = setup_connection().await;
+            let token = bootstrap_token(("123", "123"), &runtime.server).await;
+            let base_curr_id =
+                bootstrap_base_curr(("BASE", "Base Curr"), &token.token, &runtime.server).await;
             let sec_curr_id = bootstrap_sec_curr(
                 ("Sec", "Sec Curr"),
                 "3.14",
                 base_curr_id.as_str(),
-                &token,
-                &srv,
+                &token.token,
+                &runtime.server,
             )
             .await;
-            let thi_curr_id =
-                bootstrap_sec_curr(("Thi", "Thi Curr"), "6", sec_curr_id.as_str(), &token, &srv)
-                    .await;
+            let thi_curr_id = bootstrap_sec_curr(
+                ("Thi", "Thi Curr"),
+                "6",
+                sec_curr_id.as_str(),
+                &token.token,
+                &runtime.server,
+            )
+            .await;
             bootstrap_post_rate_datum(
                 "10",
                 "2025-01-01T01:00:00.000Z",
                 &base_curr_id,
                 &sec_curr_id,
-                &token,
-                &srv,
+                &token.token,
+                &runtime.server,
             )
             .await;
             bootstrap_post_rate_datum(
@@ -285,8 +303,8 @@ pub mod currencies {
                 "2025-01-01T01:01:00.000Z",
                 &base_curr_id,
                 &sec_curr_id,
-                &token,
-                &srv,
+                &token.token,
+                &runtime.server,
             )
             .await;
             bootstrap_post_rate_datum(
@@ -294,8 +312,8 @@ pub mod currencies {
                 "2025-01-01T01:02:00.000Z",
                 &base_curr_id,
                 &sec_curr_id,
-                &token,
-                &srv,
+                &token.token,
+                &runtime.server,
             )
             .await;
             bootstrap_post_rate_datum(
@@ -303,8 +321,8 @@ pub mod currencies {
                 "2025-01-01T01:03:00.000Z",
                 &base_curr_id,
                 &sec_curr_id,
-                &token,
-                &srv,
+                &token.token,
+                &runtime.server,
             )
             .await;
             bootstrap_post_rate_datum(
@@ -312,8 +330,8 @@ pub mod currencies {
                 "2025-01-01T01:00:00.000Z",
                 &sec_curr_id,
                 &thi_curr_id,
-                &token,
-                &srv,
+                &token.token,
+                &runtime.server,
             )
             .await;
             bootstrap_post_rate_datum(
@@ -321,8 +339,8 @@ pub mod currencies {
                 "2025-01-01T01:01:00.000Z",
                 &sec_curr_id,
                 &thi_curr_id,
-                &token,
-                &srv,
+                &token.token,
+                &runtime.server,
             )
             .await;
             bootstrap_post_rate_datum(
@@ -330,8 +348,8 @@ pub mod currencies {
                 "2025-01-01T01:02:00.000Z",
                 &sec_curr_id,
                 &thi_curr_id,
-                &token,
-                &srv,
+                &token.token,
+                &runtime.server,
             )
             .await;
             bootstrap_post_rate_datum(
@@ -339,8 +357,8 @@ pub mod currencies {
                 "2025-01-01T01:03:00.000Z",
                 &sec_curr_id,
                 &thi_curr_id,
-                &token,
-                &srv,
+                &token.token,
+                &runtime.server,
             )
             .await;
 
@@ -356,8 +374,8 @@ pub mod currencies {
                 let fetch_result = bootstrap_get_curr(
                     Some(case.0.to_string()),
                     Some(case.1.to_string()),
-                    &token,
-                    &srv,
+                    &token.token,
+                    &runtime.server,
                 )
                 .await;
                 assert!(
@@ -381,15 +399,16 @@ pub mod currencies {
 
         #[actix_web::test]
         async fn test_currencies_rate_rounding() {
-            let srv = setup_connection().await;
-            let token = bootstrap_token(("123", "123"), &srv).await;
-            let base_curr_id = bootstrap_base_curr(("BASE", "Base Curr"), &token, &srv).await;
+            let runtime = setup_connection().await;
+            let token = bootstrap_token(("123", "123"), &runtime.server).await;
+            let base_curr_id =
+                bootstrap_base_curr(("BASE", "Base Curr"), &token.token, &runtime.server).await;
             let sec_curr_id = bootstrap_sec_curr(
                 ("Sec", "Sec Curr"),
                 "3.14",
                 base_curr_id.as_str(),
-                &token,
-                &srv,
+                &token.token,
+                &runtime.server,
             )
             .await;
             bootstrap_post_rate_datum(
@@ -397,8 +416,8 @@ pub mod currencies {
                 "2025-01-01T01:00:00.000Z",
                 &base_curr_id,
                 &sec_curr_id,
-                &token,
-                &srv,
+                &token.token,
+                &runtime.server,
             )
             .await;
             bootstrap_post_rate_datum(
@@ -406,8 +425,8 @@ pub mod currencies {
                 "2025-01-01T01:01:00.000Z",
                 &base_curr_id,
                 &sec_curr_id,
-                &token,
-                &srv,
+                &token.token,
+                &runtime.server,
             )
             .await;
             bootstrap_post_rate_datum(
@@ -415,8 +434,8 @@ pub mod currencies {
                 "2025-01-01T01:02:00.000Z",
                 &base_curr_id,
                 &sec_curr_id,
-                &token,
-                &srv,
+                &token.token,
+                &runtime.server,
             )
             .await;
             bootstrap_post_rate_datum(
@@ -424,8 +443,8 @@ pub mod currencies {
                 "2025-01-01T01:03:00.000Z",
                 &base_curr_id,
                 &sec_curr_id,
-                &token,
-                &srv,
+                &token.token,
+                &runtime.server,
             )
             .await;
 
@@ -441,8 +460,8 @@ pub mod currencies {
                 let fetch_result = bootstrap_get_curr(
                     Some(sec_curr_id.clone()),
                     Some(case.0.to_string()),
-                    &token,
-                    &srv,
+                    &token.token,
+                    &runtime.server,
                 )
                 .await;
                 assert!(
@@ -466,21 +485,22 @@ pub mod currencies {
 
         #[actix_web::test]
         async fn test_no_repeated_tickers() {
-            let srv = setup_connection().await;
-            let token = bootstrap_token(("123", "123"), &srv).await;
-            let base_curr_id = bootstrap_base_curr(("BASE", "Base Curr"), &token, &srv).await;
+            let runtime = setup_connection().await;
+            let token = bootstrap_token(("123", "123"), &runtime.server).await;
+            let base_curr_id =
+                bootstrap_base_curr(("BASE", "Base Curr"), &token.token, &runtime.server).await;
             let _sec_curr_id = bootstrap_sec_curr(
                 ("SEC", "Sec Curr"),
                 "3.14",
                 base_curr_id.as_str(),
-                &token,
-                &srv,
+                &token.token,
+                &runtime.server,
             )
             .await;
             // Disallow creating second currency with same ticker
             {
                 let resp = driver_post_currency(
-                    Some(&token),
+                    Some(&token.token),
                     TestBody::Expected(
                         crate::routes::currencies::post_currency::PostCurrencyRequestBody {
                             name: String::from("123"),
@@ -489,7 +509,7 @@ pub mod currencies {
                             fallback_rate_currency_id: None,
                         },
                     ),
-                    &srv,
+                    &runtime.server,
                     false,
                 )
                 .await;
@@ -503,21 +523,22 @@ pub mod currencies {
 
         #[actix_web::test]
         async fn test_no_repeated_names() {
-            let srv = setup_connection().await;
-            let token = bootstrap_token(("123", "123"), &srv).await;
-            let base_curr_id = bootstrap_base_curr(("BASE", "Base Curr"), &token, &srv).await;
+            let runtime = setup_connection().await;
+            let token = bootstrap_token(("123", "123"), &runtime.server).await;
+            let base_curr_id =
+                bootstrap_base_curr(("BASE", "Base Curr"), &token.token, &runtime.server).await;
             let _sec_curr_id = bootstrap_sec_curr(
                 ("Sec", "Sec Curr"),
                 "3.14",
                 base_curr_id.as_str(),
-                &token,
-                &srv,
+                &token.token,
+                &runtime.server,
             )
             .await;
             // Disallow creating second currency with same names
             {
                 let resp = driver_post_currency(
-                    Some(&token),
+                    Some(&token.token),
                     TestBody::Expected(
                         crate::routes::currencies::post_currency::PostCurrencyRequestBody {
                             name: String::from("Sec Curr"),
@@ -526,7 +547,7 @@ pub mod currencies {
                             fallback_rate_currency_id: None,
                         },
                     ),
-                    &srv,
+                    &runtime.server,
                     false,
                 )
                 .await;
@@ -540,15 +561,16 @@ pub mod currencies {
 
         #[actix_web::test]
         async fn test_bursts() {
-            let srv = setup_connection().await;
-            let token = bootstrap_token(("123", "123"), &srv).await;
-            let base_curr_id = bootstrap_base_curr(("BASE", "Base Curr"), &token, &srv).await;
+            let runtime = setup_connection().await;
+            let token = bootstrap_token(("123", "123"), &runtime.server).await;
+            let base_curr_id =
+                bootstrap_base_curr(("BASE", "Base Curr"), &token.token, &runtime.server).await;
             let sec_curr_id = bootstrap_sec_curr(
                 ("Sec", "Sec Curr"),
                 "3.14",
                 base_curr_id.as_str(),
-                &token,
-                &srv,
+                &token.token,
+                &runtime.server,
             )
             .await;
             bootstrap_post_rate_datum(
@@ -556,8 +578,8 @@ pub mod currencies {
                 "2025-01-01T01:00:00.000Z",
                 &base_curr_id,
                 &sec_curr_id,
-                &token,
-                &srv,
+                &token.token,
+                &runtime.server,
             )
             .await;
             bootstrap_post_rate_datum(
@@ -565,8 +587,8 @@ pub mod currencies {
                 "2025-01-01T01:01:00.000Z",
                 &base_curr_id,
                 &sec_curr_id,
-                &token,
-                &srv,
+                &token.token,
+                &runtime.server,
             )
             .await;
             bootstrap_post_rate_datum(
@@ -574,8 +596,8 @@ pub mod currencies {
                 "2025-01-01T01:02:00.000Z",
                 &base_curr_id,
                 &sec_curr_id,
-                &token,
-                &srv,
+                &token.token,
+                &runtime.server,
             )
             .await;
             bootstrap_post_rate_datum(
@@ -583,20 +605,21 @@ pub mod currencies {
                 "2025-01-01T01:03:00.000Z",
                 &base_curr_id,
                 &sec_curr_id,
-                &token,
-                &srv,
+                &token.token,
+                &runtime.server,
             )
             .await;
         }
 
         #[actix_web::test]
         async fn test_no_repeated_base() {
-            let srv = setup_connection().await;
-            let token = bootstrap_token(("123", "123"), &srv).await;
-            let _base_curr_id = bootstrap_base_curr(("BASE", "Base Curr"), &token, &srv).await;
+            let runtime = setup_connection().await;
+            let token = bootstrap_token(("123", "123"), &runtime.server).await;
+            let _base_curr_id =
+                bootstrap_base_curr(("BASE", "Base Curr"), &token.token, &runtime.server).await;
 
             let resp = driver_post_currency(
-                Some(&token),
+                Some(&token.token),
                 TestBody::Expected(
                     crate::routes::currencies::post_currency::PostCurrencyRequestBody {
                         name: String::from("Sec Curr"),
@@ -605,7 +628,7 @@ pub mod currencies {
                         fallback_rate_currency_id: None,
                     },
                 ),
-                &srv,
+                &runtime.server,
                 false,
             )
             .await;
@@ -618,8 +641,8 @@ pub mod currencies {
 
         #[actix_web::test]
         async fn test_curd_currencies() {
-            let srv = setup_connection().await;
-            let user_1_token = bootstrap_token(("123", "123"), &srv).await;
+            let runtime = setup_connection().await;
+            let token = bootstrap_token(("123", "123"), &runtime.server).await;
 
             // Create currency without token
             {
@@ -633,7 +656,7 @@ pub mod currencies {
                             fallback_rate_currency_id: None,
                         },
                     ),
-                    &srv,
+                    &runtime.server,
                     false,
                 )
                 .await;
@@ -647,7 +670,7 @@ pub mod currencies {
             // Ensure fallback rate amount and fallback rate currency must coexist.
             {
                 let resp = driver_post_currency(
-                    Some(&user_1_token),
+                    Some(&token.token),
                     TestBody::Expected(
                         crate::routes::currencies::post_currency::PostCurrencyRequestBody {
                             name: String::from("Curr1"),
@@ -656,7 +679,7 @@ pub mod currencies {
                             fallback_rate_currency_id: None,
                         },
                     ),
-                    &srv,
+                    &runtime.server,
                     false,
                 )
                 .await;
@@ -669,7 +692,7 @@ pub mod currencies {
 
             // Create valid base currency
             let base_currency_id = driver_post_currency(
-                Some(&user_1_token),
+                Some(&token.token),
                 TestBody::Expected(
                     crate::routes::currencies::post_currency::PostCurrencyRequestBody {
                         name: String::from("Curr1"),
@@ -678,7 +701,7 @@ pub mod currencies {
                         fallback_rate_currency_id: None,
                     },
                 ),
-                &srv,
+                &runtime.server,
                 true,
             )
             .await
@@ -689,7 +712,7 @@ pub mod currencies {
             // Create secondary currency referencing unknown currency
             {
                 let resp = driver_post_currency(
-                    Some(&user_1_token),
+                    Some(&token.token),
                     TestBody::Expected(
                         crate::routes::currencies::post_currency::PostCurrencyRequestBody {
                             name: String::from("Curr2"),
@@ -701,7 +724,7 @@ pub mod currencies {
                             )),
                         },
                     ),
-                    &srv,
+                    &runtime.server,
                     false,
                 )
                 .await;
@@ -715,7 +738,7 @@ pub mod currencies {
             // Create secondary currency referencing invalid uuid
             {
                 let resp = driver_post_currency(
-                    Some(&user_1_token),
+                    Some(&token.token),
                     TestBody::Expected(
                         crate::routes::currencies::post_currency::PostCurrencyRequestBody {
                             name: String::from("Curr2"),
@@ -724,7 +747,7 @@ pub mod currencies {
                             fallback_rate_currency_id: Some(format!("{}asd", base_currency_id)),
                         },
                     ),
-                    &srv,
+                    &runtime.server,
                     false,
                 )
                 .await;
@@ -737,7 +760,7 @@ pub mod currencies {
 
             // Create valid secondary currency
             let secondary_currency_id = driver_post_currency(
-                Some(&user_1_token),
+                Some(&token.token),
                 TestBody::Expected(
                     crate::routes::currencies::post_currency::PostCurrencyRequestBody {
                         name: String::from("Curr2"),
@@ -746,7 +769,7 @@ pub mod currencies {
                         fallback_rate_currency_id: Some(base_currency_id.clone()),
                     },
                 ),
-                &srv,
+                &runtime.server,
                 true,
             )
             .await
@@ -761,8 +784,8 @@ pub mod currencies {
                         id: Some(base_currency_id.clone()),
                         date: None,
                     }),
-                    Some(&user_1_token),
-                    &srv,
+                    Some(&token.token),
+                    &runtime.server,
                     true,
                 )
                 .await;
@@ -805,8 +828,8 @@ pub mod currencies {
                         id: Some(base_currency_id.clone()),
                         date: None,
                     }),
-                    Some(&user_1_token),
-                    &srv,
+                    Some(&token.token),
+                    &runtime.server,
                     true,
                 )
                 .await;
@@ -836,8 +859,8 @@ pub mod currencies {
                         id: Some(String::from("abcd")),
                         date: None,
                     }),
-                    Some(&user_1_token),
-                    &srv,
+                    Some(&token.token),
+                    &runtime.server,
                     false,
                 )
                 .await;
@@ -851,8 +874,8 @@ pub mod currencies {
                         id: Some(secondary_currency_id.clone()),
                         date: None,
                     }),
-                    Some(&user_1_token),
-                    &srv,
+                    Some(&token.token),
+                    &runtime.server,
                     true,
                 )
                 .await;

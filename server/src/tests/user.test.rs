@@ -12,29 +12,52 @@ pub mod users {
     use serde_json::json;
 
     pub mod drivers {
+        use std::str::FromStr;
+
+        use uuid::Uuid;
+
         use super::*;
+
+        pub(crate) struct TokenBootstrap {
+            pub token: String,
+            pub user_id: String,
+        }
+
+        impl TokenBootstrap {
+            pub fn unwrap_token_uuid(&self) -> Uuid {
+                Uuid::from_str(&self.token).unwrap()
+            }
+            pub fn unwrap_id_uuid(&self) -> Uuid {
+                Uuid::from_str(&self.user_id).unwrap()
+            }
+            pub fn unwrap_auth_user(&self) -> crate::extractors::auth_user::AuthUser {
+                crate::extractors::auth_user::AuthUser(self.unwrap_id_uuid())
+            }
+        }
 
         /// Quickly post user, login and return a token.
         /// This is useful for quickly setting up a test case.
         /// This function also perform `StatusCode == OK` assertions.
-        pub async fn bootstrap_token(creds: (&str, &str), srv: &TestServer) -> String {
+        pub async fn bootstrap_token(creds: (&str, &str), srv: &TestServer) -> TokenBootstrap {
             let user_1_creds = PostUserRequestBody {
                 password: creds.0.to_string(),
                 username: creds.1.to_string(),
             };
             // Post user
-            let _user_1_id = {
+            let user_id = {
                 driver_post_user(TestBody::Expected(user_1_creds.clone()), srv, true)
                     .await
                     .expected
                     .unwrap()
                     .id
             };
-            driver_login_user(TestBody::<(&str, &str)>::Expected(creds), srv, true)
+            let token = driver_login_user(TestBody::<(&str, &str)>::Expected(creds), srv, true)
                 .await
                 .expected
                 .unwrap()
-                .token
+                .token;
+
+            TokenBootstrap { token, user_id }
         }
 
         pub async fn driver_login_user(
@@ -75,12 +98,16 @@ pub mod users {
 
         #[actix_web::test]
         async fn test_malformed_logins() {
-            let app = setup_connection().await;
+            let runtime = setup_connection().await;
 
             // Post user - empty
             {
-                let resp =
-                    driver_post_user(TestBody::Bytes(Box::from("".as_bytes())), &app, false).await;
+                let resp = driver_post_user(
+                    TestBody::Bytes(Box::from("".as_bytes())),
+                    &runtime.server,
+                    false,
+                )
+                .await;
                 assert_eq!(resp.status, StatusCode::BAD_REQUEST);
             }
 
@@ -94,7 +121,7 @@ pub mod users {
                         .to_string()
                         .as_bytes(),
                     )),
-                    &app,
+                    &runtime.server,
                     false,
                 )
                 .await;
@@ -111,7 +138,7 @@ pub mod users {
                         .to_string()
                         .as_bytes(),
                     )),
-                    &app,
+                    &runtime.server,
                     false,
                 )
                 .await;
@@ -121,7 +148,7 @@ pub mod users {
 
         #[actix_web::test]
         async fn test_successful_logins() {
-            let app = setup_connection().await;
+            let runtime = setup_connection().await;
             // Post user correctly
             {
                 driver_post_user(
@@ -129,7 +156,7 @@ pub mod users {
                         username: String::from("123"),
                         password: String::from("1234"),
                     }),
-                    &app,
+                    &runtime.server,
                     true,
                 )
                 .await;
@@ -138,7 +165,7 @@ pub mod users {
                         username: String::from("1234"),
                         password: String::from("123"),
                     }),
-                    &app,
+                    &runtime.server,
                     true,
                 )
                 .await;
@@ -155,7 +182,7 @@ pub mod users {
                         .to_string()
                         .as_bytes(),
                     )),
-                    &app,
+                    &runtime.server,
                     true,
                 )
                 .await;
@@ -172,7 +199,7 @@ pub mod users {
                         .to_string()
                         .as_bytes(),
                     )),
-                    &app,
+                    &runtime.server,
                     true,
                 )
                 .await;
@@ -181,7 +208,7 @@ pub mod users {
 
         #[actix_web::test]
         async fn test_invalid_logins() {
-            let app = setup_connection().await;
+            let runtime = setup_connection().await;
 
             // Post user correctly
             {
@@ -190,7 +217,7 @@ pub mod users {
                         username: String::from("123"),
                         password: String::from("1234"),
                     }),
-                    &app,
+                    &runtime.server,
                     true,
                 )
                 .await;
@@ -199,7 +226,7 @@ pub mod users {
                         username: String::from("1234"),
                         password: String::from("123"),
                     }),
-                    &app,
+                    &runtime.server,
                     true,
                 )
                 .await;
@@ -221,7 +248,7 @@ pub mod users {
 
             // All items in `bad_reqs` should fail.
             for (count, test_item) in bad_reqs.into_iter().enumerate() {
-                let resp = driver_login_user(test_item, &app, false).await;
+                let resp = driver_login_user(test_item, &runtime.server, false).await;
                 assert_eq!(
                     resp.status,
                     StatusCode::BAD_REQUEST,
@@ -241,7 +268,7 @@ pub mod users {
 
             // All items in `bad_reqs` should fail.
             for (count, test_item) in unauth.into_iter().enumerate() {
-                let resp = driver_login_user(test_item, &app, false).await;
+                let resp = driver_login_user(test_item, &runtime.server, false).await;
                 assert_eq!(
                     resp.status,
                     StatusCode::UNAUTHORIZED,

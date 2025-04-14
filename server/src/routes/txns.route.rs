@@ -17,30 +17,29 @@ use std::str::FromStr;
 use ts_rs::TS;
 use uuid::Uuid;
 
+#[derive(Serialize, Deserialize, Debug, Clone)]
+#[serde(rename_all = "camelCase")]
+#[derive(TS)]
+#[ts(export)]
+pub struct GetTxnsResponseFragmentSide {
+    pub account: Uuid,
+    pub amount: String,
+    pub currency: Uuid,
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone)]
+#[serde(rename_all = "camelCase")]
+#[derive(TS)]
+#[ts(export)]
+pub struct GetTxnsResponseFragment {
+    pub from: Option<GetTxnsResponseFragmentSide>,
+    pub to: Option<GetTxnsResponseFragmentSide>,
+}
+
 /// Get all transactions as a user.
 pub mod get_txns {
 
     use super::*;
-
-    #[derive(Serialize, Deserialize, Debug, Clone)]
-    #[serde(rename_all = "camelCase")]
-    #[derive(TS)]
-    #[ts(export)]
-    pub struct GetTxnsResponseFragmentSide {
-        pub account: Uuid,
-        pub amount: String,
-        pub currency: Uuid,
-    }
-
-    #[derive(Serialize, Deserialize, Debug, Clone)]
-    #[serde(rename_all = "camelCase")]
-    #[derive(TS)]
-    #[ts(export)]
-    pub struct GetTxnsResponseFragment {
-        pub from: Option<GetTxnsResponseFragmentSide>,
-        pub to: Option<GetTxnsResponseFragmentSide>,
-    }
-
     #[derive(Serialize, Deserialize, Debug, Clone)]
     #[serde(rename_all = "camelCase")]
     #[derive(TS)]
@@ -66,7 +65,7 @@ pub mod get_txns {
         data: web::Data<DatabaseStates>,
     ) -> Result<web::Json<GetTxnsResponse>, EndpointsErrors> {
         let db_txn = TransactionWithCallback::new(data.db.begin().await?, vec![]);
-        let (txns, db_txn) = get_txns(&user, db_txn).await?;
+        let (txns, db_txn) = get_txns(&user, crate::services::PaginationReq::All, db_txn).await?;
 
         db_txn.commit().await;
         Ok(web::Json(GetTxnsResponse {
@@ -100,9 +99,10 @@ pub mod get_txns {
 
 pub mod post_txns {
 
-    use crate::date::js_iso_to_iso8601;
-
     use super::*;
+    use crate::{
+        date::js_iso_to_iso8601, extended_models::txn_tag::TxnTagId, services::parse_uuids,
+    };
 
     #[derive(Serialize, Deserialize, Debug, Clone)]
     #[serde(rename_all = "camelCase")]
@@ -113,6 +113,7 @@ pub mod post_txns {
         pub title: String,
         pub date_utc: String,
         pub fragments: Vec<PostTxnRequestFragment>,
+        pub tags: Vec<String>,
     }
 
     #[derive(Serialize, Deserialize, Debug, Clone)]
@@ -150,6 +151,8 @@ pub mod post_txns {
         let db_txn = TransactionWithCallback::new(data.db.begin().await?, vec![]);
         let mut fragments: Vec<CreateTxnActionFragment> = Vec::with_capacity(info.fragments.len());
         let map_to_err = |_| EndpointsErrors::OverflowOrUnderflow;
+        let txn_tags_ids = parse_uuids(&info.tags).map_err(EndpointsErrors::InvalidUUID)?;
+
         for frag in info.fragments.iter() {
             let map_side_checked = |side: Option<PostTxnRequestFragmentSide>| {
                 side.map(|side| {
@@ -186,9 +189,14 @@ pub mod post_txns {
                 description: info.description.clone(),
             },
             &fragments,
+            &txn_tags_ids
+                .iter()
+                .map(|tag| TxnTagId(*tag))
+                .collect::<Vec<_>>(),
             db_txn,
             &user,
             data.currency_cache.clone(),
+            data.txn_tags_cache.clone(),
         )
         .await?;
 

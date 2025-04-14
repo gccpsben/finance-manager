@@ -1,16 +1,18 @@
 use crate::{
     date::ParseISO8601Errors,
-    extended_models::{account::AccountId, currency::CurrencyId},
+    extended_models::{account::AccountId, currency::CurrencyId, txn_tag::TxnTagId},
     routes,
 };
 use actix_http::StatusCode;
 use actix_web::{
     body::{BoxBody, MessageBody},
-    dev::{ServiceFactory, ServiceRequest, ServiceResponse},
+    dev::{Service, ServiceFactory, ServiceRequest, ServiceResponse},
     App, Error, HttpResponse,
 };
+use futures::FutureExt;
 use sea_orm::DbErr;
 use thiserror::Error;
+use tracing::error;
 
 #[derive(Error, Debug)]
 pub enum EndpointsErrors {
@@ -45,6 +47,8 @@ pub enum EndpointsErrors {
     MissingPassword,
     #[error("The given account: {} is not found.", .0.0)]
     AccountNotFound(AccountId),
+    #[error("The given txn tag: {} is not found.", .0.0)]
+    TxnTagNotFound(TxnTagId),
 }
 
 pub fn parse_uuid(value: &str) -> Result<uuid::Uuid, EndpointsErrors> {
@@ -74,6 +78,7 @@ impl actix_web::ResponseError for EndpointsErrors {
             E::InvalidUUID(_error) => StatusCode::BAD_REQUEST,
             E::MissingUsername => StatusCode::BAD_REQUEST,
             E::MissingPassword => StatusCode::BAD_REQUEST,
+            E::TxnTagNotFound(_id) => StatusCode::NOT_FOUND,
         }
     }
 }
@@ -97,6 +102,25 @@ pub fn apply_endpoints(
         Error = Error,
     >,
 > {
+    let app = app.wrap_fn(|req, srv| {
+        srv.call(req).map(|res| {
+            if let Ok(ref res) = res {
+                if matches!(res.status(), StatusCode::INTERNAL_SERVER_ERROR) {
+                    error!(
+                        "Server encountered INTERVAL_SERVER_ERROR: {:?}",
+                        res.response()
+                    );
+                    #[cfg(test)]
+                    eprintln!(
+                        "Server encountered INTERVAL_SERVER_ERROR: {:?}",
+                        res.response()
+                    );
+                }
+            }
+            res
+        })
+    });
+
     let mut app = app
         .route(
             "/api/v1/auth/login",

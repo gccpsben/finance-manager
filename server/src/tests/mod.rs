@@ -43,6 +43,17 @@ pub mod commons {
 
     use std::str::from_utf8;
 
+    pub struct TestRuntime {
+        pub server: TestServer,
+        pub states: DatabaseStates,
+    }
+
+    impl TestRuntime {
+        pub fn new(server: TestServer, states: DatabaseStates) -> Self {
+            Self { server, states }
+        }
+    }
+
     pub enum TestBody<T> {
         Bytes(Box<[u8]>),
         Expected(T),
@@ -120,7 +131,7 @@ pub mod commons {
 
     /// Setup connection to a test database.
     /// WARN: The content in the given database will be cleared.
-    pub async fn setup_connection() -> TestServer {
+    pub async fn setup_connection() -> TestRuntime {
         let tests_threads: u32 = std::env::var("NEXTEST_TEST_GLOBAL_SLOT")
             .expect("Cannot find NEXTEST_TEST_GLOBAL_SLOT.")
             .parse()
@@ -137,14 +148,17 @@ pub mod commons {
         .await
         .expect("failed initializing data");
 
-        let _ = <Migrator as finance_manager_migration::MigratorTrait>::fresh(&db).await;
+        <Migrator as finance_manager_migration::MigratorTrait>::fresh(&db)
+            .await
+            .expect("Migrator fresh failure");
         let states = DatabaseStates::new(db);
-
-        actix_test::start(move || {
-            let app_data = web::Data::new(states.clone());
+        let states_cloned = states.clone();
+        let server = actix_test::start(move || {
+            let app_data = web::Data::new(states_cloned.clone());
             let app = App::new().app_data(app_data);
             apply_endpoints(app)
-        })
+        });
+        TestRuntime::new(server, states.clone())
     }
 
     #[allow(unused)]

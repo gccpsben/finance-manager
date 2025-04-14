@@ -1,16 +1,24 @@
 use crate::caches::currency_cache::CurrencyCache;
-use crate::entities::{fragment, txn};
+use crate::caches::txn_tag::TxnTagsCache;
+use crate::entities::fragment;
+use crate::entities::txn;
+use crate::entities::txn_txn_tag_mapping;
 use crate::extended_models::account::AccountId;
 use crate::extended_models::currency::CurrencyId;
+use crate::extended_models::txn_tag::TxnTagId;
 use crate::extractors::auth_user::AuthUser;
 use crate::routes::bootstrap::EndpointsErrors;
 use crate::services::TransactionWithCallback;
 use chrono::NaiveDateTime;
 use rust_decimal::Decimal;
-use sea_orm::{
-    ActiveModelBehavior, ActiveModelTrait, ActiveValue, ColumnTrait, DbErr, EntityTrait,
-    QueryFilter,
-};
+use sea_orm::ActiveModelBehavior;
+use sea_orm::ActiveModelTrait;
+use sea_orm::ActiveValue;
+use sea_orm::ColumnTrait;
+use sea_orm::DbErr;
+use sea_orm::EntityTrait;
+use sea_orm::QueryFilter;
+use sea_orm::QueryOrder;
 use std::collections::HashSet;
 use std::sync::Arc;
 use tokio::sync::Mutex;
@@ -18,13 +26,17 @@ use uuid::Uuid;
 
 use super::accounts::find_first_unknown_account;
 use super::currencies::find_first_unknown_currencies;
+use super::txn_tags::find_first_unknown_tag;
+use super::txn_tags::replace_txn_tags_of_txn;
 use super::unpack_db_txn;
+use super::PaginationReq;
 
 #[derive(Debug)]
 pub enum CreateTxnErrors {
     DbErr(DbErr),
     CurrencyNotFound(CurrencyId),
     AccountNotFound(AccountId),
+    TxnTagNotFound(TxnTagId),
 }
 
 impl From<CreateTxnErrors> for EndpointsErrors {
@@ -33,6 +45,7 @@ impl From<CreateTxnErrors> for EndpointsErrors {
             CreateTxnErrors::CurrencyNotFound(uuid) => EndpointsErrors::CurrencyNotFound(uuid),
             CreateTxnErrors::DbErr(db_err) => EndpointsErrors::DbErr(db_err),
             CreateTxnErrors::AccountNotFound(uuid) => EndpointsErrors::AccountNotFound(uuid),
+            CreateTxnErrors::TxnTagNotFound(uuid) => EndpointsErrors::TxnTagNotFound(uuid),
         }
     }
 }
@@ -59,27 +72,27 @@ pub struct CreateTxnActionFragment {
 
 pub fn fragments_to_account_ids(fragments: &[CreateTxnActionFragment]) -> Vec<AccountId> {
     let mut acc_ids = HashSet::<Uuid>::new();
-    for frag in fragments {
+    fragments.iter().for_each(|frag| {
         if let Some(from) = &frag.from {
             acc_ids.insert(from.account);
         }
         if let Some(to) = &frag.to {
             acc_ids.insert(to.account);
         }
-    }
+    });
     acc_ids.iter().map(|id| AccountId(*id)).collect::<Vec<_>>()
 }
 
 pub fn fragments_to_curr_ids(fragments: &[CreateTxnActionFragment]) -> Vec<CurrencyId> {
     let mut curr_ids = HashSet::<Uuid>::new();
-    for frag in fragments {
+    fragments.iter().for_each(|frag| {
         if let Some(from) = &frag.from {
             curr_ids.insert(from.currency);
         }
         if let Some(to) = &frag.to {
             curr_ids.insert(to.currency);
         }
-    }
+    });
     curr_ids
         .iter()
         .map(|id| CurrencyId(*id))
@@ -112,36 +125,66 @@ pub async fn get_txn_by_id(
     owner: &AuthUser,
     id: uuid::Uuid,
     db_txn: TransactionWithCallback,
-) -> Result<(Option<txn::Model>, TransactionWithCallback), DbErr> {
+) -> Result<
+    (
+        Option<txn::Model>,
+        Vec<txn_txn_tag_mapping::Model>,
+        TransactionWithCallback,
+    ),
+    DbErr,
+> {
     let model = txn::Entity::find()
         .filter(txn::Column::OwnerId.eq(owner.0))
         .filter(txn::Column::Id.eq(id))
         .one(db_txn.get_db_txn())
         .await?;
 
-    Ok((model, db_txn))
+    let tag_ids = txn_txn_tag_mapping::Entity::find()
+        .filter(txn_txn_tag_mapping::Column::OwnerId.eq(owner.0))
+        .filter(txn_txn_tag_mapping::Column::TxnId.eq(id))
+        .all(db_txn.get_db_txn())
+        .await?;
+
+    Ok((model, tag_ids, db_txn))
 }
 
 pub async fn create_txn(
     txn: CreateTxnAction,
     fragments: &[CreateTxnActionFragment],
+    tags: &[TxnTagId],
     db_txn: TransactionWithCallback,
     owner: &AuthUser,
     currency_cache: Arc<Mutex<CurrencyCache>>,
+    txn_tags_cache: Arc<Mutex<TxnTagsCache>>,
 ) -> Result<(Uuid, TransactionWithCallback), CreateTxnErrors> {
     // Ensure accounts exist
     let db_txn = unpack_db_txn(
         find_first_unknown_account(owner, &fragments_to_account_ids(fragments), db_txn)
-        .await
-        .map_err(CreateTxnErrors::DbErr)?
-    ).map_err(CreateTxnErrors::AccountNotFound)?;
+            .await
+            .map_err(CreateTxnErrors::DbErr)?,
+    )
+    .map_err(CreateTxnErrors::AccountNotFound)?;
 
     // Ensure currencies exist
     let db_txn = unpack_db_txn(
-        find_first_unknown_currencies(owner, &fragments_to_curr_ids(fragments), db_txn, currency_cache.clone(),)
+        find_first_unknown_currencies(
+            owner,
+            &fragments_to_curr_ids(fragments),
+            db_txn,
+            currency_cache.clone(),
+        )
         .await
-        .map_err(CreateTxnErrors::DbErr)?
-    ).map_err(CreateTxnErrors::CurrencyNotFound)?;
+        .map_err(CreateTxnErrors::DbErr)?,
+    )
+    .map_err(CreateTxnErrors::CurrencyNotFound)?;
+
+    // Ensure txn tags exist
+    let db_txn = unpack_db_txn(
+        find_first_unknown_tag(owner, tags, db_txn, txn_tags_cache.clone())
+            .await
+            .map_err(CreateTxnErrors::DbErr)?,
+    )
+    .map_err(CreateTxnErrors::TxnTagNotFound)?;
 
     let generated_txn_uuid = uuid::Uuid::new_v4();
     let active_model = {
@@ -154,12 +197,10 @@ pub async fn create_txn(
         model
     };
 
-    let _inserted_txn = active_model
+    active_model
         .insert(db_txn.get_db_txn())
         .await
-        .map_err(CreateTxnErrors::DbErr);
-
-    let _inserted_txn = _inserted_txn?;
+        .map_err(CreateTxnErrors::DbErr)?;
 
     let fragment_models = {
         let mut models: Vec<fragment::ActiveModel> = vec![];
@@ -185,6 +226,11 @@ pub async fn create_txn(
             .await
             .map_err(CreateTxnErrors::DbErr)?;
     }
+
+    // Populate txn tags
+    let db_txn = replace_txn_tags_of_txn(owner, &generated_txn_uuid, tags, db_txn)
+        .await
+        .map_err(CreateTxnErrors::DbErr)?;
 
     Ok((generated_txn_uuid, db_txn))
 }
