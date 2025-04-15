@@ -452,5 +452,103 @@ pub mod txns {
             .await;
             assert_eq!(resp.status, StatusCode::NOT_FOUND);
         }
+        #[actix_web::test]
+        async fn test_create_txn_extra_args_req_root() {
+            let runtime = setup_connection().await;
+            let token = bootstrap_token(("123", "123"), &runtime.server).await.token;
+            let base_cid = bootstrap_base_curr(("BASE", "Base"), &token, &runtime.server).await;
+            let first_account = bootstrap_post_account("My account", &token, &runtime.server).await;
+
+            let mut base_valid_json = json!(PostTxnRequest {
+                description: "my description".to_string(),
+                title: "my title".to_string(),
+                date_utc: "2025-01-01T01:02:00.000Z".to_string(),
+                fragments: vec![PostTxnRequestFragment {
+                    from: Some(PostTxnRequestFragmentSide {
+                        account: first_account.clone(),
+                        currency: base_cid.clone(),
+                        amount: "1".to_string(),
+                    }),
+                    to: None,
+                }],
+                tags: vec![],
+            });
+            base_valid_json["test_not_expected_arg"] = json!(1);
+
+            let resp = driver_post_txn(
+                Some(&token),
+                TestBody::Bytes(Box::from(base_valid_json.to_string().as_bytes())),
+                &runtime.server,
+                false,
+            )
+            .await;
+            assert_eq!(resp.status, StatusCode::BAD_REQUEST);
+        }
+
+        #[actix_web::test]
+        async fn test_create_txn_extra_args_req_frag() {
+            let runtime = setup_connection().await;
+            let token = bootstrap_token(("123", "123"), &runtime.server).await.token;
+            let base_cid = bootstrap_base_curr(("BASE", "Base"), &token, &runtime.server).await;
+            let first_account = bootstrap_post_account("My account", &token, &runtime.server).await;
+
+            let mut base_valid_json = json!(PostTxnRequest {
+                description: "my description".to_string(),
+                title: "my title".to_string(),
+                date_utc: "2025-01-01T01:02:00.000Z".to_string(),
+                fragments: vec![PostTxnRequestFragment {
+                    from: Some(PostTxnRequestFragmentSide {
+                        account: first_account.clone(),
+                        currency: base_cid.clone(),
+                        amount: "1".to_string(),
+                    }),
+                    to: None,
+                }],
+                tags: vec![],
+            });
+            base_valid_json["fragments"][0]["field_other_than_from_to"] = json!({});
+
+            let resp = driver_post_txn(
+                Some(&token),
+                TestBody::Bytes(Box::from(base_valid_json.to_string().as_bytes())),
+                &runtime.server,
+                false,
+            )
+            .await;
+            assert_eq!(resp.status, StatusCode::BAD_REQUEST);
+        }
+
+        #[actix_web::test]
+        async fn test_create_txn_extra_args_req_frag_side() {
+            let runtime = setup_connection().await;
+            let token = bootstrap_token(("123", "123"), &runtime.server).await.token;
+            let base_cid = bootstrap_base_curr(("BASE", "Base"), &token, &runtime.server).await;
+            let first_account = bootstrap_post_account("My account", &token, &runtime.server).await;
+
+            let mut base_valid_json = json!(PostTxnRequest {
+                description: "my description".to_string(),
+                title: "my title".to_string(),
+                date_utc: "2025-01-01T01:02:00.000Z".to_string(),
+                fragments: vec![PostTxnRequestFragment {
+                    from: Some(PostTxnRequestFragmentSide {
+                        account: first_account.clone(),
+                        currency: base_cid.clone(),
+                        amount: "1".to_string(),
+                    }),
+                    to: None,
+                }],
+                tags: vec![],
+            });
+            base_valid_json["fragments"][0]["from"]["field_other_than_from_to"] = json!({});
+
+            let resp = driver_post_txn(
+                Some(&token),
+                TestBody::Bytes(Box::from(base_valid_json.to_string().as_bytes())),
+                &runtime.server,
+                false,
+            )
+            .await;
+            assert_eq!(resp.status, StatusCode::BAD_REQUEST);
+        }
     }
 }

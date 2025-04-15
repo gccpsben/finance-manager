@@ -17,7 +17,7 @@ pub mod post_currency_rate_datum {
     use super::*;
 
     #[derive(Serialize, Deserialize, Debug)]
-    #[serde(rename_all = "camelCase")]
+    #[serde(rename_all = "camelCase", deny_unknown_fields)]
     #[derive(TS)]
     #[ts(export)]
     pub struct PostCurrencyRateDatumRequest {

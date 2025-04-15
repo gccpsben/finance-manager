@@ -15,7 +15,7 @@ pub mod post_currency {
     use super::*;
 
     #[derive(Serialize, Deserialize, Debug)]
-    #[serde(rename_all = "camelCase")]
+    #[serde(rename_all = "camelCase", deny_unknown_fields)]
     #[derive(TS)]
     #[ts(export)]
     pub struct PostCurrencyRequestBody {

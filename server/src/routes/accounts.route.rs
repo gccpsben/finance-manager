@@ -83,7 +83,7 @@ pub mod post_account {
     use sea_orm::{prelude::DateTime, sqlx::types::chrono::Utc, TransactionTrait};
 
     #[derive(Serialize, Deserialize)]
-    #[serde(rename_all = "camelCase")]
+    #[serde(rename_all = "camelCase", deny_unknown_fields)]
     #[derive(TS)]
     #[ts(export)]
     pub struct PostAccountRequestBody {

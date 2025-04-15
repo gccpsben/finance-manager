@@ -9,7 +9,7 @@ pub mod login {
     use crate::routes::bootstrap::EndpointsErrors;
 
     #[derive(Serialize, Deserialize, Clone, Debug)]
-    #[serde(rename_all = "camelCase")]
+    #[serde(rename_all = "camelCase", deny_unknown_fields)]
     #[derive(TS)]
     #[ts(export)]
     pub struct LoginRequestBody {

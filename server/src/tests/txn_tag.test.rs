@@ -75,6 +75,28 @@ pub mod txn_tags {
             drivers::{driver_get_txn_tags, driver_post_txn_tag},
             *,
         };
+        use crate::routes::txn_tags::create_tag::PostTxnTagRequestBody;
+        use serde_json::json;
+
+        #[actix_web::test]
+        async fn test_post_txn_tags_extra_fields() {
+            let runtime = setup_connection().await;
+            let token = bootstrap_token(("123", "123"), &runtime.server).await.token;
+            let mut base_valid_json = json!(PostTxnTagRequestBody {
+                name: "My Tag".to_string(),
+            });
+            base_valid_json["extra_field"] = json!("test");
+
+            // Create valid txn tag
+            let resp = driver_post_txn_tag(
+                TestBody::Bytes(base_valid_json.to_string().as_bytes().into()),
+                Some(&token),
+                &runtime.server,
+                false,
+            )
+            .await;
+            assert_eq!(resp.status, StatusCode::BAD_REQUEST);
+        }
 
         #[actix_web::test]
         async fn test_curd_txn_tags() {

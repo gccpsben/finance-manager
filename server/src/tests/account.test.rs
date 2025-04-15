@@ -73,7 +73,29 @@ pub mod accounts {
     }
 
     mod tests {
+        use serde_json::json;
+
         use super::*;
+
+        #[actix_web::test]
+        async fn test_post_account_extra_field() {
+            let runtime = setup_connection().await;
+            let first_usr_token = bootstrap_token(("123", "123"), &runtime.server).await;
+            let mut base_valid_json = json!(PostAccountRequestBody {
+                account_name: String::from("account 1"),
+            });
+            base_valid_json["extra_field"] = json!("test");
+
+            let resp = driver_post_account(
+                Some(&first_usr_token.token),
+                TestBody::Bytes(base_valid_json.to_string().as_bytes().into()),
+                &runtime.server,
+                false,
+            )
+            .await;
+            assert_eq!(resp.status, StatusCode::BAD_REQUEST);
+        }
+
         #[actix_web::test]
         async fn test_curd_accounts() {
             let runtime = setup_connection().await;

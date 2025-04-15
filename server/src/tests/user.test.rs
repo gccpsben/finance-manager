@@ -1,11 +1,12 @@
 #[cfg(test)]
 pub mod users {
 
+    use crate::routes::users::login::LoginResponseBody;
     use crate::routes::users::register::PostUserRequestBody;
     use crate::routes::users::register::PostUserResponseBody;
+    use crate::tests::commons::setup_connection;
     use crate::tests::commons::*;
     use crate::tests::user_tests::users::drivers::*;
-    use crate::{routes::users::login::LoginResponseBody, tests::commons::setup_connection};
     use actix_http::StatusCode;
     use actix_test::TestServer;
     use actix_web::http::header::ContentType;
@@ -95,6 +96,38 @@ pub mod users {
 
     mod tests {
         use super::*;
+
+        #[actix_web::test]
+        async fn test_valid_login_extra_fields() {
+            let runtime = setup_connection().await;
+
+            driver_post_user(
+                TestBody::Expected(PostUserRequestBody {
+                    username: String::from("123"),
+                    password: String::from("1234"),
+                }),
+                &runtime.server,
+                true,
+            )
+            .await;
+
+            // Login with correct creds, but with extra fields
+            let resp = driver_login_user(
+                TestBody::<(&str, &str)>::Bytes(Box::from(
+                    json!({
+                        "username": "123",
+                        "password": "1234",
+                        "extra_field": "123"
+                    })
+                    .to_string()
+                    .as_bytes(),
+                )),
+                &runtime.server,
+                false,
+            )
+            .await;
+            assert_eq!(resp.status, StatusCode::BAD_REQUEST);
+        }
 
         #[actix_web::test]
         async fn test_malformed_logins() {

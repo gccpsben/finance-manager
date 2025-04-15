@@ -125,7 +125,7 @@ pub mod post_txns {
     use crate::services::parse_uuids;
 
     #[derive(Serialize, Deserialize, Debug, Clone)]
-    #[serde(rename_all = "camelCase")]
+    #[serde(rename_all = "camelCase", deny_unknown_fields)]
     #[derive(TS)]
     #[ts(export)]
     pub struct PostTxnRequest {
@@ -137,7 +137,7 @@ pub mod post_txns {
     }
 
     #[derive(Serialize, Deserialize, Debug, Clone)]
-    #[serde(rename_all = "camelCase")]
+    #[serde(rename_all = "camelCase", deny_unknown_fields)]
     #[derive(TS)]
     #[ts(export)]
     pub struct PostTxnRequestFragmentSide {
@@ -147,7 +147,7 @@ pub mod post_txns {
     }
 
     #[derive(Serialize, Deserialize, Debug, Clone)]
-    #[serde(rename_all = "camelCase")]
+    #[serde(rename_all = "camelCase", deny_unknown_fields)]
     #[derive(TS)]
     #[ts(export)]
     pub struct PostTxnRequestFragment {

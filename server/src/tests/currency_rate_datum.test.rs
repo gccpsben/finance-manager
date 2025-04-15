@@ -60,14 +60,50 @@ pub mod currency_rate_datums {
     }
 
     mod tests {
+        use serde_json::json;
+
         use super::*;
         use crate::{
             routes::{
                 currencies::post_currency::PostCurrencyRequestBody,
                 currency_rate_datums::post_currency_rate_datum::PostCurrencyRateDatumRequest,
             },
-            tests::currency_tests::currencies::drivers::driver_post_currency,
+            tests::currency_tests::currencies::drivers::{
+                bootstrap_base_curr, bootstrap_sec_curr, driver_post_currency,
+            },
         };
+
+        #[actix_web::test]
+        async fn test_create_datum_extra_fields() {
+            let runtime = setup_connection().await;
+            let token = bootstrap_token(("123", "123"), &runtime.server).await.token;
+            let base_cid = bootstrap_base_curr(("BASE", "Base"), &token, &runtime.server).await;
+            let sec_cid = bootstrap_sec_curr(
+                ("Sec", "Sec Curr"),
+                "5",
+                base_cid.as_str(),
+                &token,
+                &runtime.server,
+            )
+            .await;
+
+            let mut base_valid_json = json!(PostCurrencyRateDatumRequest {
+                ref_currency_id: sec_cid.clone(),
+                ref_amount_currency_id: base_cid.clone(),
+                amount: "10".to_string(),
+                date_utc: "2000-01-01T01:01:01.000Z".to_string(),
+            });
+            base_valid_json["extra_field"] = json!("test");
+
+            let resp = driver_post_currency_rate_datum(
+                Some(&token),
+                TestBody::Bytes(base_valid_json.to_string().as_bytes().into()),
+                &runtime.server,
+                false,
+            )
+            .await;
+            assert_eq!(resp.status, StatusCode::BAD_REQUEST);
+        }
 
         #[actix_web::test]
         async fn test_curd_currency_rate_datums() {

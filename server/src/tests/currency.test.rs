@@ -130,8 +130,32 @@ pub mod currencies {
 
     mod tests {
 
+        use serde_json::json;
+
         use super::*;
         use crate::tests::currency_rate_datum::currency_rate_datums::drivers::bootstrap_post_rate_datum;
+
+        #[actix_web::test]
+        async fn test_create_currency_extra_field() {
+            let runtime = setup_connection().await;
+            let token = bootstrap_token(("123", "123"), &runtime.server).await.token;
+            let mut base_valid_json = json!(PostCurrencyRequestBody {
+                name: String::from("Curr1"),
+                ticker: String::from("CUR1"),
+                fallback_rate_amount: None,
+                fallback_rate_currency_id: None,
+            });
+            base_valid_json["extra_field"] = json!("test");
+
+            let resp = driver_post_currency(
+                Some(&token),
+                TestBody::Bytes(base_valid_json.to_string().as_bytes().into()),
+                &runtime.server,
+                false,
+            )
+            .await;
+            assert_eq!(resp.status, StatusCode::BAD_REQUEST);
+        }
 
         #[actix_web::test]
         async fn test_currencies_rate_sec_fallback() {
