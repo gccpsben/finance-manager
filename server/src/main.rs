@@ -12,6 +12,7 @@ mod paging;
 mod routes;
 mod services;
 mod states;
+mod iter;
 mod tests;
 
 use actix_web::{web, App, HttpServer};

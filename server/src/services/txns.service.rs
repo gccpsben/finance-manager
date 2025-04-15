@@ -7,6 +7,7 @@ use crate::extended_models::account::AccountId;
 use crate::extended_models::currency::CurrencyId;
 use crate::extended_models::txn_tag::TxnTagId;
 use crate::extractors::auth_user::AuthUser;
+use crate::iter::get_first_duplicated;
 use crate::paging::PagedContent;
 use crate::routes::bootstrap::EndpointsErrors;
 use crate::services::TransactionWithCallback;
@@ -42,6 +43,7 @@ pub enum CreateTxnErrors {
     CurrencyNotFound(CurrencyId),
     AccountNotFound(AccountId),
     TxnTagNotFound(TxnTagId),
+    RepeatedTxnTags(TxnTagId)
 }
 
 impl From<CreateTxnErrors> for EndpointsErrors {
@@ -51,6 +53,7 @@ impl From<CreateTxnErrors> for EndpointsErrors {
             CreateTxnErrors::DbErr(db_err) => EndpointsErrors::DbErr(db_err),
             CreateTxnErrors::AccountNotFound(uuid) => EndpointsErrors::AccountNotFound(uuid),
             CreateTxnErrors::TxnTagNotFound(uuid) => EndpointsErrors::TxnTagNotFound(uuid),
+            CreateTxnErrors::RepeatedTxnTags(uuid) => EndpointsErrors::RepeatedTxnTags(uuid),
         }
     }
 }
@@ -237,6 +240,11 @@ pub async fn create_txn(
             .map_err(CreateTxnErrors::DbErr)?,
     )
     .map_err(CreateTxnErrors::TxnTagNotFound)?;
+
+    // Ensure txn tags doesn't repeat in the given array
+    if let Some(repeated_tag) = get_first_duplicated(tags) {
+        return Err(CreateTxnErrors::RepeatedTxnTags(repeated_tag))
+    }
 
     let generated_txn_uuid = uuid::Uuid::new_v4();
     let active_model = {

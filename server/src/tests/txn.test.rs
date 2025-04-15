@@ -443,6 +443,42 @@ pub mod txns {
             .await;
             assert_eq!(resp.status, StatusCode::NOT_FOUND);
         }
+
+        #[actix_web::test]
+        async fn test_create_txn_repeated_tags() {
+            let runtime = setup_connection().await;
+
+            let token = bootstrap_token(("123", "123"), &runtime.server).await.token;
+            let base_cid = bootstrap_base_curr(("BASE", "Base"), &token, &runtime.server).await;
+            let first_account = bootstrap_post_account("My account", &token, &runtime.server).await;
+            let first_tag = bootstrap_txn_tag("my tag", &token, &runtime.server).await;
+
+            let txn_req = PostTxnRequest {
+                description: "my description".to_string(),
+                title: "my title 1".to_string(),
+                date_utc: "2025-02-01T01:02:00.000Z".to_string(),
+                fragments: vec![PostTxnRequestFragment {
+                    from: Some(PostTxnRequestFragmentSide {
+                        account: first_account.clone(),
+                        currency: base_cid.clone(),
+                        amount: "1".to_string(),
+                    }),
+                    to: None,
+                }],
+                tags: vec![first_tag.clone(), first_tag],
+            };
+
+            let resp = driver_post_txn(
+                Some(&token),
+                TestBody::Expected(txn_req.clone()),
+                &runtime.server,
+                false,
+            )
+            .await;
+
+            assert_eq!(resp.status, StatusCode::BAD_REQUEST);
+        }
+
         #[actix_web::test]
         async fn test_create_txn_extra_args_req_root() {
             let runtime = setup_connection().await;
