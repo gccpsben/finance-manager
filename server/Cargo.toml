@@ -29,6 +29,7 @@ finance_manager_migration = { path="./migration" }
 bson = { version = "2.13.0", features = ["chrono-0_4"] }
 thiserror = "2.0.12"
 tokio = { version = "1.44.1", features = ["sync"] }
+itertools = "0.14.0"
 
 [dependencies.uuid]
 version = "1.15.1"
