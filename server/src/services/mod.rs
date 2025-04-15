@@ -1,4 +1,8 @@
-use sea_orm::{DatabaseConnection, DatabaseTransaction};
+use std::num::NonZeroU64;
+
+use sea_orm::DatabaseConnection;
+use sea_orm::DatabaseTransaction;
+use uuid::Uuid;
 
 #[path = "users.service.rs"]
 pub mod users;
@@ -80,4 +84,20 @@ pub fn unpack_db_txn<T>(
         return Err(val);
     }
     Ok(pair.1)
+}
+
+pub fn parse_uuids(items: &[String]) -> Result<Vec<Uuid>, String> {
+    let mut output: Vec<Uuid> = vec![];
+    for item in items {
+        output.push(Uuid::try_parse(item).map_err(|_| item)?);
+    }
+    Ok(output)
+}
+
+pub enum PaginationReq {
+    All,
+    Paged {
+        page_size: NonZeroU64,
+        page_index: u32,
+    },
 }

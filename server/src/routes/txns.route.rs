@@ -1,4 +1,5 @@
 use crate::date::iso8601_to_js_iso;
+use crate::entities::fragment;
 use crate::extractors::auth_user::AuthUser;
 use crate::routes::bootstrap::EndpointsErrors;
 use crate::services::txns::create_txn;
@@ -17,7 +18,7 @@ use std::str::FromStr;
 use ts_rs::TS;
 use uuid::Uuid;
 
-#[derive(Serialize, Deserialize, Debug, Clone)]
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq)]
 #[serde(rename_all = "camelCase")]
 #[derive(TS)]
 #[ts(export)]
@@ -27,13 +28,30 @@ pub struct GetTxnsResponseFragmentSide {
     pub currency: Uuid,
 }
 
-#[derive(Serialize, Deserialize, Debug, Clone)]
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq)]
 #[serde(rename_all = "camelCase")]
 #[derive(TS)]
 #[ts(export)]
 pub struct GetTxnsResponseFragment {
     pub from: Option<GetTxnsResponseFragmentSide>,
     pub to: Option<GetTxnsResponseFragmentSide>,
+}
+
+impl From<&fragment::Model> for GetTxnsResponseFragment {
+    fn from(value: &fragment::Model) -> Self {
+        Self {
+            from: value.from_account.map(|_| GetTxnsResponseFragmentSide {
+                account: value.from_account.unwrap(),
+                currency: value.from_currency_id.unwrap(),
+                amount: value.from_amount.clone().unwrap().to_string(),
+            }),
+            to: value.to_account.map(|_| GetTxnsResponseFragmentSide {
+                account: value.to_account.unwrap(),
+                currency: value.to_currency_id.unwrap(),
+                amount: value.to_amount.clone().unwrap().to_string(),
+            }),
+        }
+    }
 }
 
 /// Get all transactions as a user.
@@ -50,6 +68,7 @@ pub mod get_txns {
         pub description: String,
         pub date: String,
         pub fragments: Vec<GetTxnsResponseFragment>,
+        pub tags: Vec<String>,
     }
 
     #[derive(Serialize, Deserialize, Debug, Clone)]
@@ -58,6 +77,9 @@ pub mod get_txns {
     #[ts(export)]
     pub struct GetTxnsResponse {
         pub items: Vec<GetTxnsResponseItem>,
+        pub page_index: u64,
+        pub total_items: u64,
+        pub page_size: u64,
     }
 
     pub async fn handler(
@@ -65,34 +87,32 @@ pub mod get_txns {
         data: web::Data<DatabaseStates>,
     ) -> Result<web::Json<GetTxnsResponse>, EndpointsErrors> {
         let db_txn = TransactionWithCallback::new(data.db.begin().await?, vec![]);
-        let (txns, db_txn) = get_txns(&user, crate::services::PaginationReq::All, db_txn).await?;
-
+        let (paginated_txns, db_txn) =
+            get_txns(&user, crate::services::PaginationReq::All, db_txn).await?;
         db_txn.commit().await;
+
         Ok(web::Json(GetTxnsResponse {
-            items: txns
+            items: paginated_txns
+                .items
                 .iter()
-                .map(|(txn, fragments)| GetTxnsResponseItem {
+                .map(|(txn, fragments, txn_tags)| GetTxnsResponseItem {
                     date: iso8601_to_js_iso(txn.date.and_utc()),
                     description: txn.description.to_string(),
                     id: txn.id.to_string(),
                     title: txn.title.to_string(),
                     fragments: fragments
                         .iter()
-                        .map(|fragment| GetTxnsResponseFragment {
-                            from: fragment.from_account.map(|_| GetTxnsResponseFragmentSide {
-                                account: fragment.from_account.unwrap(),
-                                currency: fragment.from_currency_id.unwrap(),
-                                amount: fragment.from_amount.clone().unwrap().to_string(),
-                            }),
-                            to: fragment.to_account.map(|_| GetTxnsResponseFragmentSide {
-                                account: fragment.to_account.unwrap(),
-                                currency: fragment.to_currency_id.unwrap(),
-                                amount: fragment.to_amount.clone().unwrap().to_string(),
-                            }),
-                        })
+                        .map(GetTxnsResponseFragment::from)
+                        .collect::<Vec<_>>(),
+                    tags: txn_tags
+                        .iter()
+                        .map(|tag| tag.tag_id.to_string())
                         .collect::<Vec<_>>(),
                 })
                 .collect::<Vec<_>>(),
+            page_index: paginated_txns.page_index,
+            total_items: paginated_txns.total_items,
+            page_size: paginated_txns.page_size,
         }))
     }
 }
@@ -100,9 +120,9 @@ pub mod get_txns {
 pub mod post_txns {
 
     use super::*;
-    use crate::{
-        date::js_iso_to_iso8601, extended_models::txn_tag::TxnTagId, services::parse_uuids,
-    };
+    use crate::date::js_iso_to_iso8601;
+    use crate::extended_models::txn_tag::TxnTagId;
+    use crate::services::parse_uuids;
 
     #[derive(Serialize, Deserialize, Debug, Clone)]
     #[serde(rename_all = "camelCase")]
@@ -151,16 +171,16 @@ pub mod post_txns {
         let db_txn = TransactionWithCallback::new(data.db.begin().await?, vec![]);
         let mut fragments: Vec<CreateTxnActionFragment> = Vec::with_capacity(info.fragments.len());
         let map_to_err = |_| EndpointsErrors::OverflowOrUnderflow;
+        let handled_parse_uuid = |str: &str| {
+            Uuid::from_str(str).map_err(|_| EndpointsErrors::InvalidUUID(str.to_string()))
+        };
         let txn_tags_ids = parse_uuids(&info.tags).map_err(EndpointsErrors::InvalidUUID)?;
 
         for frag in info.fragments.iter() {
             let map_side_checked = |side: Option<PostTxnRequestFragmentSide>| {
                 side.map(|side| {
-                    let account_uuid = Uuid::from_str(&side.account)
-                        .map_err(|_| EndpointsErrors::InvalidUUID(side.account));
-                    let currency_uuid = Uuid::from_str(&side.currency)
-                        .map_err(|_| EndpointsErrors::InvalidUUID(side.currency));
-
+                    let account_uuid = handled_parse_uuid(&side.account);
+                    let currency_uuid = handled_parse_uuid(&side.currency);
                     match (account_uuid, currency_uuid) {
                         (Err(err), _) | (_, Err(err)) => Err(err),
                         (Ok(account_uuid), Ok(currency_uuid)) => {

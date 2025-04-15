@@ -63,6 +63,8 @@ pub mod txns {
 
     mod tests {
 
+        use serde_json::json;
+
         use super::drivers::driver_get_txns;
         use super::drivers::driver_post_txn;
         use super::*;
@@ -104,7 +106,7 @@ pub mod txns {
                     }),
                     to: None,
                 }],
-                tags: vec![first_tag],
+                tags: vec![first_tag.clone()],
             };
 
             let second_txn_to_post = PostTxnRequest {
@@ -228,61 +230,227 @@ pub mod txns {
                     }
                 }
 
+                // Checking for tags
+                {
+                    // First txn
+                    {
+                        assert_eq!(item_0.tags.len(), 1);
+                        assert_eq!(item_0.tags.first(), first_txn_to_post.tags.first())
+                    }
+
+                    // Second txn
+                    {
+                        assert_eq!(item_1.tags.len(), 0);
+                    }
+                }
+
                 assert_eq!(item_1.fragments.len(), 2);
             }
+        }
 
-            // Txn referencing unknown account
-            {
+        #[actix_web::test]
+        async fn test_create_get_txn_single_fragment() {
+            let runtime = setup_connection().await;
+            let token = bootstrap_token(("123", "123"), &runtime.server).await.token;
+            let base_cid = bootstrap_base_curr(("BASE", "Base"), &token, &runtime.server).await;
+            let first_account = bootstrap_post_account("My account", &token, &runtime.server).await;
+            let first_tag = bootstrap_txn_tag("my tag", &token, &runtime.server).await;
+
+            let txn_to_be_posted = PostTxnRequest {
+                description: "my description".to_string(),
+                title: "my title 1".to_string(),
+                date_utc: "2025-02-01T01:02:00.000Z".to_string(),
+                fragments: vec![PostTxnRequestFragment {
+                    from: Some(PostTxnRequestFragmentSide {
+                        account: first_account.clone(),
+                        currency: base_cid.clone(),
+                        amount: "1".to_string(),
+                    }),
+                    to: None,
+                }],
+                tags: vec![first_tag.clone()],
+            };
+
+            driver_post_txn(
+                Some(&token),
+                TestBody::Expected(txn_to_be_posted.clone()),
+                &runtime.server,
+                true,
+            )
+            .await;
+
+            let resp = driver_get_txns(Some(&token), &runtime.server, true).await;
+            let txns = resp
+                .expected
+                .expect("returned items not empty")
+                .items
+                .clone();
+            assert_eq!(txns.len(), 1, "expect there are 1 item");
+            let item_0 = txns.first().unwrap();
+            assert_eq!(item_0.fragments.len(), 1);
+            let first_fragment = item_0.fragments.first().unwrap().clone();
+            let first_frag_from = first_fragment.from.clone().unwrap();
+            let first_frag_to = first_fragment.to.clone();
+            assert_eq!(
+                first_frag_from.account.to_string(),
+                first_account.to_string()
+            );
+            assert_eq!(first_frag_from.amount.to_string(), "1");
+            assert_eq!(first_frag_from.currency.to_string(), base_cid.to_string());
+            assert_eq!(first_frag_to, None);
+        }
+
+        #[actix_web::test]
+        async fn test_create_txn_unknown_currency() {
+            let runtime = setup_connection().await;
+            let token = bootstrap_token(("123", "123"), &runtime.server).await.token;
+            let base_cid = bootstrap_base_curr(("BASE", "Base"), &token, &runtime.server).await;
+            let first_account = bootstrap_post_account("My account", &token, &runtime.server).await;
+
+            let resp = driver_post_txn(
+                Some(&token),
+                TestBody::Expected(PostTxnRequest {
+                    description: "my description".to_string(),
+                    title: "my title".to_string(),
+                    date_utc: "2025-01-01T01:02:00.000Z".to_string(),
+                    fragments: vec![PostTxnRequestFragment {
+                        from: Some(PostTxnRequestFragmentSide {
+                            account: format!("{}A1234", &first_account[0..first_account.len() - 5]),
+                            currency: base_cid.clone(),
+                            amount: "1".to_string(),
+                        }),
+                        to: None,
+                    }],
+                    tags: vec![],
+                }),
+                &runtime.server,
+                false,
+            )
+            .await;
+            assert_eq!(resp.status, StatusCode::NOT_FOUND);
+        }
+
+        #[actix_web::test]
+        async fn test_create_txn_empty_json() {
+            let runtime = setup_connection().await;
+            let token = bootstrap_token(("123", "123"), &runtime.server).await.token;
+
+            let resp = driver_post_txn(
+                Some(&token),
+                TestBody::Bytes(Box::from(json!({}).to_string().as_bytes())),
+                &runtime.server,
+                false,
+            )
+            .await;
+            assert_eq!(resp.status, StatusCode::BAD_REQUEST);
+        }
+
+        #[actix_web::test]
+        async fn test_create_txn_incomplete_fragment_sides() {
+            let runtime = setup_connection().await;
+            let token = bootstrap_token(("123", "123"), &runtime.server).await.token;
+            let base_cid = bootstrap_base_curr(("BASE", "Base"), &token, &runtime.server).await;
+            let first_account = bootstrap_post_account("My account", &token, &runtime.server).await;
+            let post_and_assert = async |json_value: serde_json::Value| {
                 let resp = driver_post_txn(
                     Some(&token),
-                    TestBody::Expected(PostTxnRequest {
-                        description: "my description".to_string(),
-                        title: "my title".to_string(),
-                        date_utc: "2025-01-01T01:02:00.000Z".to_string(),
-                        fragments: vec![PostTxnRequestFragment {
-                            from: Some(PostTxnRequestFragmentSide {
-                                account: first_account.clone(),
-                                currency: format!("{}A1234", &base_cid[0..base_cid.len() - 5]),
-                                amount: "1".to_string(),
-                            }),
-                            to: None,
-                        }],
-                        tags: vec![],
-                    }),
+                    TestBody::Bytes(Box::from(json_value.to_string().as_bytes())),
                     &runtime.server,
                     false,
                 )
                 .await;
-                assert_eq!(resp.status, StatusCode::NOT_FOUND);
+                assert_eq!(resp.status, StatusCode::BAD_REQUEST);
+            };
+
+            // missing currency
+            {
+                let mut base_valid_json = json!(PostTxnRequest {
+                    description: "my description".to_string(),
+                    title: "my title".to_string(),
+                    date_utc: "2025-01-01T01:02:00.000Z".to_string(),
+                    fragments: vec![PostTxnRequestFragment {
+                        from: Some(PostTxnRequestFragmentSide {
+                            account: first_account.clone(),
+                            currency: base_cid.clone(),
+                            amount: "1".to_string(),
+                        }),
+                        to: None,
+                    }],
+                    tags: vec![],
+                });
+                base_valid_json["fragments"][0]["from"]["currency"] = json!(null);
+                post_and_assert(base_valid_json).await;
             }
 
-            // Txn referencing unknown currency
+            // missing amount
             {
-                let resp = driver_post_txn(
-                    Some(&token),
-                    TestBody::Expected(PostTxnRequest {
-                        description: "my description".to_string(),
-                        title: "my title".to_string(),
-                        date_utc: "2025-01-01T01:02:00.000Z".to_string(),
-                        fragments: vec![PostTxnRequestFragment {
-                            from: Some(PostTxnRequestFragmentSide {
-                                account: format!(
-                                    "{}A1234",
-                                    &first_account[0..first_account.len() - 5]
-                                ),
-                                currency: base_cid.clone(),
-                                amount: "1".to_string(),
-                            }),
-                            to: None,
-                        }],
-                        tags: vec![],
-                    }),
-                    &runtime.server,
-                    false,
-                )
-                .await;
-                assert_eq!(resp.status, StatusCode::NOT_FOUND);
+                let mut base_valid_json = json!(PostTxnRequest {
+                    description: "my description".to_string(),
+                    title: "my title".to_string(),
+                    date_utc: "2025-01-01T01:02:00.000Z".to_string(),
+                    fragments: vec![PostTxnRequestFragment {
+                        from: Some(PostTxnRequestFragmentSide {
+                            account: first_account.clone(),
+                            currency: base_cid.clone(),
+                            amount: "1".to_string(),
+                        }),
+                        to: None,
+                    }],
+                    tags: vec![],
+                });
+                base_valid_json["fragments"][0]["from"]["amount"] = json!(null);
+                post_and_assert(base_valid_json).await;
             }
+
+            // missing account
+            {
+                let mut base_valid_json = json!(PostTxnRequest {
+                    description: "my description".to_string(),
+                    title: "my title".to_string(),
+                    date_utc: "2025-01-01T01:02:00.000Z".to_string(),
+                    fragments: vec![PostTxnRequestFragment {
+                        from: Some(PostTxnRequestFragmentSide {
+                            account: first_account.clone(),
+                            currency: base_cid.clone(),
+                            amount: "1".to_string(),
+                        }),
+                        to: None,
+                    }],
+                    tags: vec![],
+                });
+                base_valid_json["fragments"][0]["from"]["account"] = json!(null);
+                post_and_assert(base_valid_json).await;
+            }
+        }
+
+        #[actix_web::test]
+        async fn test_create_txn_unknown_account() {
+            let runtime = setup_connection().await;
+            let token = bootstrap_token(("123", "123"), &runtime.server).await.token;
+            let base_cid = bootstrap_base_curr(("BASE", "Base"), &token, &runtime.server).await;
+            let first_account = bootstrap_post_account("My account", &token, &runtime.server).await;
+
+            let resp = driver_post_txn(
+                Some(&token),
+                TestBody::Expected(PostTxnRequest {
+                    description: "my description".to_string(),
+                    title: "my title".to_string(),
+                    date_utc: "2025-01-01T01:02:00.000Z".to_string(),
+                    fragments: vec![PostTxnRequestFragment {
+                        from: Some(PostTxnRequestFragmentSide {
+                            account: first_account.clone(),
+                            currency: format!("{}A1234", &base_cid[0..base_cid.len() - 5]),
+                            amount: "1".to_string(),
+                        }),
+                        to: None,
+                    }],
+                    tags: vec![],
+                }),
+                &runtime.server,
+                false,
+            )
+            .await;
+            assert_eq!(resp.status, StatusCode::NOT_FOUND);
         }
     }
 }

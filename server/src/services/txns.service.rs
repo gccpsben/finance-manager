@@ -7,9 +7,11 @@ use crate::extended_models::account::AccountId;
 use crate::extended_models::currency::CurrencyId;
 use crate::extended_models::txn_tag::TxnTagId;
 use crate::extractors::auth_user::AuthUser;
+use crate::paging::PagedContent;
 use crate::routes::bootstrap::EndpointsErrors;
 use crate::services::TransactionWithCallback;
 use chrono::NaiveDateTime;
+use itertools::izip;
 use rust_decimal::Decimal;
 use sea_orm::ActiveModelBehavior;
 use sea_orm::ActiveModelTrait;
@@ -17,6 +19,9 @@ use sea_orm::ActiveValue;
 use sea_orm::ColumnTrait;
 use sea_orm::DbErr;
 use sea_orm::EntityTrait;
+use sea_orm::LoaderTrait;
+use sea_orm::ModelTrait;
+use sea_orm::PaginatorTrait;
 use sea_orm::QueryFilter;
 use sea_orm::QueryOrder;
 use std::collections::HashSet;
@@ -99,24 +104,61 @@ pub fn fragments_to_curr_ids(fragments: &[CreateTxnActionFragment]) -> Vec<Curre
         .collect::<Vec<_>>()
 }
 
-/// Get all transactions of a given user.
+/// Get paginated transactions of a given user.
+/// Notice that the txns will be sorted in descending order of timestamp, before being paginated.
 pub async fn get_txns(
     owner: &AuthUser,
+    pagination: PaginationReq,
     db_txn: TransactionWithCallback,
 ) -> Result<
     (
-        Vec<(txn::Model, Vec<fragment::Model>)>,
+        PagedContent<(
+            txn::Model,
+            Vec<fragment::Model>,
+            Vec<txn_txn_tag_mapping::Model>,
+        )>,
         TransactionWithCallback,
     ),
     DbErr,
 > {
-    let models = txn::Entity::find()
-        .filter(txn::Column::OwnerId.eq(owner.0))
-        .find_with_related(fragment::Entity)
-        .all(db_txn.get_db_txn())
-        .await?;
+    let query = txn::Entity::find().filter(txn::Column::OwnerId.eq(owner.0));
+    let query = query.order_by_desc(txn::Column::Date);
 
-    Ok((models, db_txn))
+    let (txn_models, total_items, page_index, page_size) = match pagination {
+        PaginationReq::All => {
+            let items = query.all(db_txn.get_db_txn()).await?;
+            let len = items.len() as u64;
+            (items, len, 0, len)
+        }
+        PaginationReq::Paged {
+            page_size,
+            page_index,
+        } => {
+            let paginator = query.paginate(db_txn.get_db_txn(), page_size.into());
+            let num_pages_items = paginator.num_items_and_pages().await?;
+            let page_index_to_fetch =
+                std::cmp::min(num_pages_items.number_of_pages - 1, page_index.into());
+            let page_content = paginator.fetch_page(page_index_to_fetch).await?;
+            (
+                page_content,
+                num_pages_items.number_of_items,
+                page_index_to_fetch,
+                u64::from(page_size),
+            )
+        }
+    };
+
+    let fragment_models = txn_models
+        .load_many(fragment::Entity, db_txn.get_db_txn())
+        .await?;
+    let tag_models = txn_models
+        .load_many(txn_txn_tag_mapping::Entity, db_txn.get_db_txn())
+        .await?;
+    let zipped = izip!(txn_models, fragment_models, tag_models).collect::<Vec<_>>();
+    Ok((
+        PagedContent::new(&zipped, total_items, page_index, page_size),
+        db_txn,
+    ))
 }
 
 #[allow(unused)]
@@ -127,25 +169,35 @@ pub async fn get_txn_by_id(
     db_txn: TransactionWithCallback,
 ) -> Result<
     (
-        Option<txn::Model>,
-        Vec<txn_txn_tag_mapping::Model>,
+        Option<(
+            txn::Model,
+            Vec<fragment::Model>,
+            Vec<txn_txn_tag_mapping::Model>,
+        )>,
         TransactionWithCallback,
     ),
     DbErr,
 > {
-    let model = txn::Entity::find()
-        .filter(txn::Column::OwnerId.eq(owner.0))
-        .filter(txn::Column::Id.eq(id))
+    let model = txn::Entity::find_by_id((owner.0, id))
         .one(db_txn.get_db_txn())
         .await?;
 
-    let tag_ids = txn_txn_tag_mapping::Entity::find()
-        .filter(txn_txn_tag_mapping::Column::OwnerId.eq(owner.0))
-        .filter(txn_txn_tag_mapping::Column::TxnId.eq(id))
-        .all(db_txn.get_db_txn())
-        .await?;
+    match model {
+        None => Ok((None, db_txn)),
+        Some(txn_model) => {
+            let fragments = txn_model
+                .find_related(fragment::Entity)
+                .all(db_txn.get_db_txn())
+                .await?;
 
-    Ok((model, tag_ids, db_txn))
+            let txn_tags = txn_model
+                .find_related(txn_txn_tag_mapping::Entity)
+                .all(db_txn.get_db_txn())
+                .await?;
+
+            Ok((Some((txn_model, fragments, txn_tags)), db_txn))
+        }
+    }
 }
 
 pub async fn create_txn(
