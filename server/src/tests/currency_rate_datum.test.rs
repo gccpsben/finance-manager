@@ -106,43 +106,19 @@ pub mod currency_rate_datums {
         }
 
         #[actix_web::test]
-        async fn test_curd_currency_rate_datums() {
+        async fn test_create_datum_invalid_dates() {
             let runtime = setup_connection().await;
             let user_token = bootstrap_token(("123", "123"), &runtime.server).await.token;
-
-            // Create valid base currency
-            let base_currency_id = driver_post_currency(
-                Some(&user_token),
-                TestBody::Expected(PostCurrencyRequestBody {
-                    fallback_rate_amount: None,
-                    fallback_rate_currency_id: None,
-                    name: String::from("Base Currency"),
-                    ticker: String::from("BASE"),
-                }),
+            let base_currency_id =
+                bootstrap_base_curr(("BASE", "Base Currency"), &user_token, &runtime.server).await;
+            let second_currency_id = bootstrap_sec_curr(
+                ("SEC", "Secondary Currency"),
+                "10",
+                base_currency_id.as_str(),
+                &user_token,
                 &runtime.server,
-                true,
             )
-            .await
-            .expected
-            .unwrap()
-            .id;
-
-            // Create valid secondary currency
-            let second_currency_id = driver_post_currency(
-                Some(&user_token),
-                TestBody::Expected(PostCurrencyRequestBody {
-                    fallback_rate_amount: Some("10".to_string()),
-                    fallback_rate_currency_id: Some(base_currency_id.clone()),
-                    name: String::from("Secondary Currency"),
-                    ticker: String::from("SEC"),
-                }),
-                &runtime.server,
-                true,
-            )
-            .await
-            .expected
-            .unwrap()
-            .id;
+            .await;
 
             // Create datum with invalid dates (missing UTC)
             {
@@ -177,6 +153,74 @@ pub mod currency_rate_datums {
                 .await;
                 assert_eq!(resp.status, StatusCode::BAD_REQUEST);
             }
+        }
+
+        #[actix_web::test]
+        async fn test_create_datum_cyclic() {
+            let runtime = setup_connection().await;
+            let user_token = bootstrap_token(("123", "123"), &runtime.server).await.token;
+            let base_currency_id =
+                bootstrap_base_curr(("BASE", "Base Currency"), &user_token, &runtime.server).await;
+            let second_currency_id = bootstrap_sec_curr(
+                ("SEC", "Secondary Currency"),
+                "10",
+                base_currency_id.as_str(),
+                &user_token,
+                &runtime.server,
+            )
+            .await;
+
+            let resp = driver_post_currency_rate_datum(
+                Some(&user_token),
+                TestBody::Expected(PostCurrencyRateDatumRequest {
+                    ref_currency_id: second_currency_id.clone(),
+                    ref_amount_currency_id: second_currency_id.clone(),
+                    amount: "10".to_string(),
+                    date_utc: "2000-01-01T01:01:01.000Z".to_string(),
+                }),
+                &runtime.server,
+                false,
+            )
+            .await;
+            assert_eq!(resp.status, StatusCode::BAD_REQUEST);
+        }
+
+        #[actix_web::test]
+        async fn test_create_datum_unknown_currency() {
+            let runtime = setup_connection().await;
+            let user_token = bootstrap_token(("123", "123"), &runtime.server).await.token;
+            let base_currency_id =
+                bootstrap_base_curr(("BASE", "Base Currency"), &user_token, &runtime.server).await;
+
+            let resp = driver_post_currency_rate_datum(
+                Some(&user_token),
+                TestBody::Expected(PostCurrencyRateDatumRequest {
+                    ref_currency_id: uuid::Uuid::new_v4().to_string(),
+                    ref_amount_currency_id: base_currency_id.clone(),
+                    amount: "10".to_string(),
+                    date_utc: "2000-01-01T01:01:01.000Z".to_string(),
+                }),
+                &runtime.server,
+                false,
+            )
+            .await;
+            assert_eq!(resp.status, StatusCode::NOT_FOUND);
+        }
+
+        #[actix_web::test]
+        async fn test_curd_currency_rate_datums() {
+            let runtime = setup_connection().await;
+            let user_token = bootstrap_token(("123", "123"), &runtime.server).await.token;
+            let base_currency_id =
+                bootstrap_base_curr(("BASE", "Base Currency"), &user_token, &runtime.server).await;
+            let second_currency_id = bootstrap_sec_curr(
+                ("SEC", "Secondary Currency"),
+                "10",
+                base_currency_id.as_str(),
+                &user_token,
+                &runtime.server,
+            )
+            .await;
 
             // Create valid datum
             {
@@ -210,40 +254,6 @@ pub mod currency_rate_datums {
             //     .await;
             //     assert_eq!(resp.status, StatusCode::BAD_REQUEST);
             // }
-
-            // Disallow cyclic datums
-            {
-                let resp = driver_post_currency_rate_datum(
-                    Some(&user_token),
-                    TestBody::Expected(PostCurrencyRateDatumRequest {
-                        ref_currency_id: second_currency_id.clone(),
-                        ref_amount_currency_id: second_currency_id.clone(),
-                        amount: "10".to_string(),
-                        date_utc: "2000-01-01T01:01:01.000Z".to_string(),
-                    }),
-                    &runtime.server,
-                    false,
-                )
-                .await;
-                assert_eq!(resp.status, StatusCode::BAD_REQUEST);
-            }
-
-            // Disallow unknown currencies
-            {
-                let resp = driver_post_currency_rate_datum(
-                    Some(&user_token),
-                    TestBody::Expected(PostCurrencyRateDatumRequest {
-                        ref_currency_id: uuid::Uuid::new_v4().to_string(),
-                        ref_amount_currency_id: base_currency_id.clone(),
-                        amount: "10".to_string(),
-                        date_utc: "2000-01-01T01:01:01.000Z".to_string(),
-                    }),
-                    &runtime.server,
-                    false,
-                )
-                .await;
-                assert_eq!(resp.status, StatusCode::NOT_FOUND);
-            }
         }
     }
 }

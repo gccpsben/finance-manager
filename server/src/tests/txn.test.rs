@@ -73,7 +73,6 @@ pub mod txns {
         use crate::tests::account_tests::accounts::drivers::bootstrap_post_account;
         use crate::tests::commons::setup_connection;
         use crate::tests::currency_tests::currencies::drivers::bootstrap_base_curr;
-        use crate::tests::currency_tests::currencies::drivers::bootstrap_sec_curr;
         use crate::tests::txn_tag::txn_tags::drivers::bootstrap_txn_tag;
         use crate::tests::user_tests::users::drivers::bootstrap_token;
 
@@ -83,14 +82,6 @@ pub mod txns {
 
             let token = bootstrap_token(("123", "123"), &runtime.server).await.token;
             let base_cid = bootstrap_base_curr(("BASE", "Base"), &token, &runtime.server).await;
-            let _sec_cid = bootstrap_sec_curr(
-                ("Sec", "Sec Curr"),
-                "5",
-                base_cid.as_str(),
-                &token,
-                &runtime.server,
-            )
-            .await;
             let first_account = bootstrap_post_account("My account", &token, &runtime.server).await;
             let first_tag = bootstrap_txn_tag("my tag", &token, &runtime.server).await;
 
@@ -544,6 +535,60 @@ pub mod txns {
             let resp = driver_post_txn(
                 Some(&token),
                 TestBody::Bytes(Box::from(base_valid_json.to_string().as_bytes())),
+                &runtime.server,
+                false,
+            )
+            .await;
+            assert_eq!(resp.status, StatusCode::BAD_REQUEST);
+        }
+
+        #[actix_web::test]
+        async fn test_create_txn_invalid_date() {
+            let runtime = setup_connection().await;
+            let token = bootstrap_token(("123", "123"), &runtime.server).await.token;
+            let base_cid = bootstrap_base_curr(("BASE", "Base"), &token, &runtime.server).await;
+            let first_account = bootstrap_post_account("My account", &token, &runtime.server).await;
+
+            let resp = driver_post_txn(
+                Some(&token),
+                TestBody::Expected(PostTxnRequest {
+                    description: "my description".to_string(),
+                    title: "my title".to_string(),
+                    date_utc: "2025-01-01T01:02:00.000".to_string(),
+                    fragments: vec![PostTxnRequestFragment {
+                        from: Some(PostTxnRequestFragmentSide {
+                            account: first_account.clone(),
+                            currency: base_cid.clone(),
+                            amount: "1".to_string(),
+                        }),
+                        to: None,
+                    }],
+                    tags: vec![],
+                }),
+                &runtime.server,
+                false,
+            )
+            .await;
+            assert_eq!(resp.status, StatusCode::BAD_REQUEST);
+        }
+
+        #[actix_web::test]
+        async fn test_create_txn_frag_with_no_from_to() {
+            let runtime = setup_connection().await;
+            let token = bootstrap_token(("123", "123"), &runtime.server).await.token;
+
+            let resp = driver_post_txn(
+                Some(&token),
+                TestBody::Expected(PostTxnRequest {
+                    description: "my description".to_string(),
+                    title: "my title".to_string(),
+                    date_utc: "2025-01-01T01:02:00.000".to_string(),
+                    fragments: vec![PostTxnRequestFragment {
+                        from: None,
+                        to: None,
+                    }],
+                    tags: vec![],
+                }),
                 &runtime.server,
                 false,
             )

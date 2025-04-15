@@ -130,53 +130,69 @@ pub mod users {
         }
 
         #[actix_web::test]
-        async fn test_malformed_logins() {
+        async fn test_login_empty_username() {
             let runtime = setup_connection().await;
+            let resp = driver_post_user(
+                TestBody::Bytes(Box::from("".as_bytes())),
+                &runtime.server,
+                false,
+            )
+            .await;
+            assert_eq!(resp.status, StatusCode::BAD_REQUEST);
+        }
 
-            // Post user - empty
-            {
-                let resp = driver_post_user(
-                    TestBody::Bytes(Box::from("".as_bytes())),
-                    &runtime.server,
-                    false,
-                )
-                .await;
-                assert_eq!(resp.status, StatusCode::BAD_REQUEST);
-            }
+        #[actix_web::test]
+        async fn test_login_no_username_field() {
+            let runtime = setup_connection().await;
+            let resp = driver_post_user(
+                TestBody::Bytes(Box::from(
+                    json!({
+                        "password": "1231"
+                    })
+                    .to_string()
+                    .as_bytes(),
+                )),
+                &runtime.server,
+                false,
+            )
+            .await;
+            assert_eq!(resp.status, StatusCode::BAD_REQUEST);
+        }
 
-            // Post user - no username
-            {
-                let resp = driver_post_user(
-                    TestBody::Bytes(Box::from(
-                        json!({
-                            "password": "1231"
-                        })
-                        .to_string()
-                        .as_bytes(),
-                    )),
-                    &runtime.server,
-                    false,
-                )
-                .await;
-                assert_eq!(resp.status, StatusCode::BAD_REQUEST);
-            }
+        #[actix_web::test]
+        async fn test_login_empty_password() {
+            let runtime = setup_connection().await;
+            let resp = driver_post_user(
+                TestBody::Bytes(Box::from(
+                    json!({
+                        "username": "123"
+                    })
+                    .to_string()
+                    .as_bytes(),
+                )),
+                &runtime.server,
+                false,
+            )
+            .await;
+            assert_eq!(resp.status, StatusCode::BAD_REQUEST);
+        }
 
-            // Post user - no password
-            {
-                let resp = driver_post_user(
-                    TestBody::Bytes(Box::from(
-                        json!({
-                            "username": "123"
-                        })
-                        .to_string()
-                        .as_bytes(),
-                    )),
-                    &runtime.server,
-                    false,
-                )
-                .await;
-                assert_eq!(resp.status, StatusCode::BAD_REQUEST);
-            }
+        #[actix_web::test]
+        async fn test_login_no_password_field() {
+            let runtime = setup_connection().await;
+            let resp = driver_post_user(
+                TestBody::Bytes(Box::from(
+                    json!({
+                        "username": "1231"
+                    })
+                    .to_string()
+                    .as_bytes(),
+                )),
+                &runtime.server,
+                false,
+            )
+            .await;
+            assert_eq!(resp.status, StatusCode::BAD_REQUEST);
         }
 
         #[actix_web::test]
