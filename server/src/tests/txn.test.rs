@@ -76,6 +76,123 @@ pub mod txns {
         use crate::tests::txn_tag::txn_tags::drivers::bootstrap_txn_tag;
         use crate::tests::user_tests::users::drivers::bootstrap_token;
 
+        /// Test for IDOR vulnerability in posting transactions.
+        #[actix_web::test]
+        async fn test_create_txn_idor_vulnerability() {
+            let server = setup_connection().await.server;
+            let token_u1 = bootstrap_token(("user_1", "123"), &server).await.token;
+            let token_u2 = bootstrap_token(("user_2", "123"), &server).await.token;
+            let base_cid_u1 = bootstrap_base_curr(("BASE", "Base"), &token_u1, &server).await;
+            let base_cid_u2 = bootstrap_base_curr(("BASE", "Base"), &token_u2, &server).await;
+            let first_account_u1 = bootstrap_post_account("My account", &token_u1, &server).await;
+            let first_account_u2 = bootstrap_post_account("My account", &token_u2, &server).await;
+
+            let mut test_case_num = 0;
+            let mut test = async |side: PostTxnRequestFragmentSide, token: &str, is_from: bool| {
+                test_case_num += 1;
+                let resp = driver_post_txn(
+                    Some(token),
+                    TestBody::Expected(PostTxnRequest {
+                        description: "my description".to_string(),
+                        title: "my title 1".to_string(),
+                        date_utc: "2025-02-01T01:02:00.000Z".to_string(),
+                        fragments: vec![match is_from {
+                            true => PostTxnRequestFragment {
+                                from: Some(side),
+                                to: None,
+                            },
+                            false => PostTxnRequestFragment {
+                                from: None,
+                                to: Some(side),
+                            },
+                        }],
+                        tags: vec![],
+                    }),
+                    &server,
+                    false,
+                )
+                .await;
+                assert_eq!(
+                    resp.status,
+                    StatusCode::NOT_FOUND,
+                    "Test for IDOR vulnerability posting txn [currency]. test case num: {}",
+                    test_case_num
+                );
+            };
+
+            // Posting txn of u1, referencing u2's base currency [FROM]
+            test(
+                PostTxnRequestFragmentSide {
+                    account: first_account_u1.clone(),
+                    currency: base_cid_u2.clone(),
+                    amount: "1".to_string(),
+                },
+                &token_u1,
+                true,
+            )
+            .await;
+
+            // Posting txn of u2, referencing u1's base currency  [FROM]
+            test(
+                PostTxnRequestFragmentSide {
+                    account: first_account_u2.clone(),
+                    currency: base_cid_u1.clone(),
+                    amount: "1".to_string(),
+                },
+                &token_u2,
+                true,
+            )
+            .await;
+
+            // Posting txn of u1, referencing u2's base currency [TO]
+            test(
+                PostTxnRequestFragmentSide {
+                    account: first_account_u1.clone(),
+                    currency: base_cid_u2.clone(),
+                    amount: "1".to_string(),
+                },
+                &token_u1,
+                false,
+            )
+            .await;
+
+            // Posting txn of u2, referencing u1's base currency  [TO]
+            test(
+                PostTxnRequestFragmentSide {
+                    account: first_account_u2.clone(),
+                    currency: base_cid_u1.clone(),
+                    amount: "1".to_string(),
+                },
+                &token_u2,
+                false,
+            )
+            .await;
+
+            // Posting txn of u1, referencing u2's account  [FROM]
+            test(
+                PostTxnRequestFragmentSide {
+                    account: first_account_u2.clone(),
+                    currency: base_cid_u1.clone(),
+                    amount: "1".to_string(),
+                },
+                &token_u1,
+                true,
+            )
+            .await;
+
+            // Posting txn of u2, referencing u1's account  [FROM]
+            test(
+                PostTxnRequestFragmentSide {
+                    account: first_account_u1.clone(),
+                    currency: base_cid_u2.clone(),
+                    amount: "1".to_string(),
+                },
+                &token_u2,
+                true,
+            )
+            .await;
+        }
+
         #[actix_web::test]
         async fn test_curd_txns() {
             let runtime = setup_connection().await;

@@ -1,7 +1,6 @@
 #[cfg(test)]
 pub mod txn_tags {
 
-    use crate::routes::users::register::PostUserRequestBody;
     use crate::tests::commons::setup_connection;
     use crate::tests::commons::*;
     use crate::tests::user_tests::users::drivers::*;
@@ -87,7 +86,6 @@ pub mod txn_tags {
             });
             base_valid_json["extra_field"] = json!("test");
 
-            // Create valid txn tag
             let resp = driver_post_txn_tag(
                 TestBody::Bytes(base_valid_json.to_string().as_bytes().into()),
                 Some(&token),
@@ -99,95 +97,86 @@ pub mod txn_tags {
         }
 
         #[actix_web::test]
-        async fn test_curd_txn_tags() {
+        async fn test_post_txn_tags_empty_json() {
             let runtime = setup_connection().await;
-            let user_1_creds = PostUserRequestBody {
-                password: String::from("123"),
-                username: String::from("123"),
-            };
+            let token = bootstrap_token(("123", "123"), &runtime.server).await.token;
 
-            // Post user
-            let _user_1_id = {
-                driver_post_user(
-                    TestBody::Expected(user_1_creds.clone()),
-                    &runtime.server,
-                    true,
-                )
-                .await
-                .expected
-                .unwrap()
-                .id
-            };
+            let resp = driver_post_txn_tag(
+                TestBody::Bytes(json!({}).to_string().as_bytes().into()),
+                Some(&token),
+                &runtime.server,
+                false,
+            )
+            .await;
+            assert_eq!(resp.status, StatusCode::BAD_REQUEST);
+        }
 
-            // Login
-            let user_1_token = {
-                driver_login_user(
-                    TestBody::<(&str, &str)>::Expected(("123", "123")),
-                    &runtime.server,
-                    true,
-                )
-                .await
-                .expected
-                .unwrap()
-                .token
-            };
+        #[actix_web::test]
+        async fn test_get_txn_tags_no_token() {
+            let runtime = setup_connection().await;
+            let _ = bootstrap_token(("123", "123"), &runtime.server).await.token;
+            let resp = driver_get_txn_tags(None, &runtime.server, false).await;
+            assert_eq!(
+                resp.status,
+                StatusCode::UNAUTHORIZED,
+                "Get posted txn tags without token"
+            );
+        }
 
-            {
-                let resp = driver_post_txn_tag(
-                    TestBody::Expected(
-                        crate::routes::txn_tags::create_tag::PostTxnTagRequestBody {
-                            name: "My Tag".to_string(),
-                        },
-                    ),
-                    None,
-                    &runtime.server,
-                    false,
-                )
-                .await;
-                assert_eq!(
-                    resp.status,
-                    StatusCode::UNAUTHORIZED,
-                    "Create valid txn tag without token"
-                )
-            }
-
-            {
-                let resp = driver_post_txn_tag(
-                    TestBody::Bytes(Box::from("{}".as_bytes())),
-                    Some(&user_1_token),
-                    &runtime.server,
-                    false,
-                )
-                .await;
-                assert_eq!(
-                    resp.status,
-                    StatusCode::BAD_REQUEST,
-                    "Create valid txn tag without name"
-                )
-            }
-
-            // Create valid txn tag
-            driver_post_txn_tag(
-                TestBody::Expected(crate::routes::txn_tags::create_tag::PostTxnTagRequestBody {
+        #[actix_web::test]
+        async fn test_post_txn_tags_no_token() {
+            let runtime = setup_connection().await;
+            let _ = bootstrap_token(("123", "123"), &runtime.server).await.token;
+            let resp = driver_post_txn_tag(
+                TestBody::Expected(PostTxnTagRequestBody {
                     name: "My Tag".to_string(),
                 }),
-                Some(&user_1_token),
+                None,
+                &runtime.server,
+                false,
+            )
+            .await;
+            assert_eq!(
+                resp.status,
+                StatusCode::UNAUTHORIZED,
+                "Create valid txn tag without token"
+            )
+        }
+
+        #[actix_web::test]
+        async fn test_post_txn_tags_empty_name() {
+            let runtime = setup_connection().await;
+            let token = bootstrap_token(("123", "123"), &runtime.server).await.token;
+            let resp = driver_post_txn_tag(
+                TestBody::Expected(PostTxnTagRequestBody {
+                    name: "".to_string(),
+                }),
+                Some(&token),
+                &runtime.server,
+                false,
+            )
+            .await;
+            assert_eq!(resp.status, StatusCode::OK)
+        }
+
+        #[actix_web::test]
+        async fn test_post_get_valid_txn_tags() {
+            let runtime = setup_connection().await;
+            let user_1_creds = bootstrap_token(("123", "123"), &runtime.server).await;
+
+            driver_post_txn_tag(
+                TestBody::Expected(PostTxnTagRequestBody {
+                    name: "My Tag".to_string(),
+                }),
+                Some(&user_1_creds.token),
                 &runtime.server,
                 true,
             )
             .await;
 
             {
-                let resp = driver_get_txn_tags(None, &runtime.server, false).await;
-                assert_eq!(
-                    resp.status,
-                    StatusCode::UNAUTHORIZED,
-                    "Get posted txn tags without token"
-                );
-            }
-
-            {
-                let resp = driver_get_txn_tags(Some(&user_1_token), &runtime.server, true).await;
+                let resp =
+                    driver_get_txn_tags(Some(&user_1_creds.token), &runtime.server, true).await;
                 assert_eq!(
                     resp.status,
                     StatusCode::OK,

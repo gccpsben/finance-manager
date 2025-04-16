@@ -43,7 +43,7 @@ pub enum CreateTxnErrors {
     CurrencyNotFound(CurrencyId),
     AccountNotFound(AccountId),
     TxnTagNotFound(TxnTagId),
-    RepeatedTxnTags(TxnTagId)
+    RepeatedTxnTags(TxnTagId),
 }
 
 impl From<CreateTxnErrors> for EndpointsErrors {
@@ -243,7 +243,7 @@ pub async fn create_txn(
 
     // Ensure txn tags doesn't repeat in the given array
     if let Some(repeated_tag) = get_first_duplicated(tags) {
-        return Err(CreateTxnErrors::RepeatedTxnTags(repeated_tag))
+        return Err(CreateTxnErrors::RepeatedTxnTags(repeated_tag));
     }
 
     let generated_txn_uuid = uuid::Uuid::new_v4();

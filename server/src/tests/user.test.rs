@@ -41,8 +41,8 @@ pub mod users {
         /// This function also perform `StatusCode == OK` assertions.
         pub async fn bootstrap_token(creds: (&str, &str), srv: &TestServer) -> TokenBootstrap {
             let user_1_creds = PostUserRequestBody {
-                password: creds.0.to_string(),
-                username: creds.1.to_string(),
+                username: creds.0.to_string(),
+                password: creds.1.to_string(),
             };
             // Post user
             let user_id = {

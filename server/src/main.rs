@@ -5,6 +5,7 @@ mod entities;
 mod env;
 mod extended_models;
 mod extractors;
+mod iter;
 mod linear_interpolator;
 mod logging;
 mod maths;
@@ -12,7 +13,6 @@ mod paging;
 mod routes;
 mod services;
 mod states;
-mod iter;
 mod tests;
 
 use actix_web::{web, App, HttpServer};

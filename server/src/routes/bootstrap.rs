@@ -49,6 +49,8 @@ pub enum EndpointsErrors {
     AccountNotFound(AccountId),
     #[error("The given txn tag: {} is not found.", .0.0)]
     TxnTagNotFound(TxnTagId),
+    #[error("The given request contains repeated txn tags with id={}", .0.0)]
+    RepeatedTxnTags(TxnTagId),
 }
 
 pub fn parse_uuid(value: &str) -> Result<uuid::Uuid, EndpointsErrors> {
@@ -78,6 +80,7 @@ impl actix_web::ResponseError for EndpointsErrors {
             E::InvalidUUID(_error) => StatusCode::BAD_REQUEST,
             E::MissingUsername => StatusCode::BAD_REQUEST,
             E::MissingPassword => StatusCode::BAD_REQUEST,
+            E::RepeatedTxnTags(_) => StatusCode::BAD_REQUEST,
             E::TxnTagNotFound(_id) => StatusCode::NOT_FOUND,
         }
     }
