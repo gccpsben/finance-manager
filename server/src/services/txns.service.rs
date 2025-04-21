@@ -164,7 +164,6 @@ pub async fn get_txns(
     ))
 }
 
-#[allow(unused)]
 /// Get a transaction of a given user given ID.
 pub async fn get_txn_by_id(
     owner: &AuthUser,
@@ -181,7 +180,7 @@ pub async fn get_txn_by_id(
     ),
     DbErr,
 > {
-    let model = txn::Entity::find_by_id((owner.0, id))
+    let model = txn::Entity::find_by_id((id, owner.0))
         .one(db_txn.get_db_txn())
         .await?;
 

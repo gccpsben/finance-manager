@@ -1,6 +1,6 @@
 use crate::{
     date::ParseISO8601Errors,
-    extended_models::{account::AccountId, currency::CurrencyId, txn_tag::TxnTagId},
+    extended_models::{account::AccountId, currency::CurrencyId, txn::TxnId, txn_tag::TxnTagId},
     routes,
 };
 use actix_http::StatusCode;
@@ -51,6 +51,8 @@ pub enum EndpointsErrors {
     TxnTagNotFound(TxnTagId),
     #[error("The given request contains repeated txn tags with id={}", .0.0)]
     RepeatedTxnTags(TxnTagId),
+    #[error("The given txn: {} is not found.", .0.0)]
+    TxnNotFound(TxnId),
 }
 
 pub fn parse_uuid(value: &str) -> Result<uuid::Uuid, EndpointsErrors> {
@@ -82,6 +84,7 @@ impl actix_web::ResponseError for EndpointsErrors {
             E::MissingPassword => StatusCode::BAD_REQUEST,
             E::RepeatedTxnTags(_) => StatusCode::BAD_REQUEST,
             E::TxnTagNotFound(_id) => StatusCode::NOT_FOUND,
+            E::TxnNotFound(_id) => StatusCode::NOT_FOUND
         }
     }
 }
@@ -169,6 +172,10 @@ pub fn apply_endpoints(
         .route(
             "/api/v1/txns",
             actix_web::web::get().to(routes::txns::get_txns::handler),
+        )
+        .route(
+            "/api/v1/txn",
+            actix_web::web::get().to(routes::txns::get_txn::handler),
         );
 
     #[cfg(debug_assertions)]

@@ -10,8 +10,11 @@ pub mod txns {
     use crate::tests::commons::TestBody;
     use actix_http::StatusCode;
     use actix_web::http::header::ContentType;
+    use uuid::Uuid;
 
     pub mod drivers {
+
+        use crate::routes::txns::get_txn::GetTxnResponse;
 
         use super::*;
 
@@ -59,12 +62,39 @@ pub mod txns {
             }
             res_parsed
         }
+
+        pub async fn driver_get_txn(
+            id: Option<&str>,
+            token: Option<&str>,
+            app: &actix_test::TestServer,
+            assert_default: bool,
+        ) -> AssertTestResponse<GetTxnResponse> {
+            let mut req = app.get("/api/v1/txn");
+            req = attach_token_to_req(req, token);
+            req = req.insert_header(ContentType::json());
+            if let Some(target_id) = id {
+                req = req.query(&[("id", target_id)]).unwrap();
+            }
+            let mut res = req.send().await.unwrap();
+            let res_parsed = parse_response_body(&mut res).await;
+            if assert_default {
+                assert_eq!(
+                    res.status(),
+                    StatusCode::OK,
+                    "body: {:?} {:?}",
+                    res_parsed.json,
+                    res_parsed.str
+                );
+            }
+            res_parsed
+        }
     }
 
     mod tests {
 
         use serde_json::json;
 
+        use super::drivers::driver_get_txn;
         use super::drivers::driver_get_txns;
         use super::drivers::driver_post_txn;
         use super::*;
@@ -748,5 +778,161 @@ pub mod txns {
             .await;
             assert_eq!(resp.status, StatusCode::BAD_REQUEST);
         }
+
+        #[actix_web::test]
+        async fn test_get_single_txn() {
+            let runtime = setup_connection().await;
+            let token = bootstrap_token(("123", "123"), &runtime.server).await.token;
+            let base_cid = bootstrap_base_curr(("BASE", "Base"), &token, &runtime.server).await;
+            let first_account = bootstrap_post_account("My account", &token, &runtime.server).await;
+            let first_tag = bootstrap_txn_tag("my tag", &token, &runtime.server).await;
+
+            let txn_body = PostTxnRequest {
+                description: "my description".to_string(),
+                title: "my title".to_string(),
+                date_utc: "2025-01-01T01:02:00.000Z".to_string(),
+                fragments: vec![PostTxnRequestFragment {
+                    from: Some(PostTxnRequestFragmentSide {
+                        account: first_account.clone(),
+                        currency: base_cid.clone(),
+                        amount: "1".to_string(),
+                    }),
+                    to: None,
+                }],
+                tags: vec![first_tag.clone()],
+            };
+            let decoy_txn_body = PostTxnRequest {
+                description: "my description2".to_string(),
+                title: "my title2".to_string(),
+                date_utc: "2025-01-01T01:02:00.002Z".to_string(),
+                fragments: vec![PostTxnRequestFragment {
+                    from: Some(PostTxnRequestFragmentSide {
+                        account: first_account.clone(),
+                        currency: base_cid.clone(),
+                        amount: "1".to_string(),
+                    }),
+                    to: None,
+                }],
+                tags: vec![first_tag],
+            };
+
+            // Post decoy txn
+            driver_post_txn(
+                Some(&token),
+                TestBody::Expected(decoy_txn_body.clone()),
+                &runtime.server,
+                true,
+            )
+            .await
+            .expected
+            .unwrap();
+
+            let txn_id = driver_post_txn(
+                Some(&token),
+                TestBody::Expected(txn_body.clone()),
+                &runtime.server,
+                true,
+            )
+            .await
+            .expected
+            .unwrap()
+            .id;
+
+            let resp = driver_get_txn(Some(&txn_id), Some(&token), &runtime.server, true).await;
+            let resp_body = resp.expected.unwrap();
+            assert_eq!(resp.status, StatusCode::OK);
+            assert_eq!(resp_body.id, txn_id);
+            assert_eq!(resp_body.date, txn_body.date_utc);
+            assert_eq!(resp_body.description, txn_body.description);
+            assert_eq!(resp_body.title, txn_body.title);
+            assert_eq!(resp_body.tags.first(), txn_body.tags.first());
+        }
+
+        #[actix_web::test]
+        async fn test_get_single_txn_no_token() {
+            let runtime = setup_connection().await;
+            let token = bootstrap_token(("123", "123"), &runtime.server).await.token;
+            let base_cid = bootstrap_base_curr(("BASE", "Base"), &token, &runtime.server).await;
+            let first_account = bootstrap_post_account("My account", &token, &runtime.server).await;
+            let first_tag = bootstrap_txn_tag("my tag", &token, &runtime.server).await;
+
+            let txn_body = PostTxnRequest {
+                description: "my description".to_string(),
+                title: "my title".to_string(),
+                date_utc: "2025-01-01T01:02:00.000Z".to_string(),
+                fragments: vec![PostTxnRequestFragment {
+                    from: Some(PostTxnRequestFragmentSide {
+                        account: first_account.clone(),
+                        currency: base_cid.clone(),
+                        amount: "1".to_string(),
+                    }),
+                    to: None,
+                }],
+                tags: vec![first_tag.clone()],
+            };
+
+            let txn_id = driver_post_txn(
+                Some(&token),
+                TestBody::Expected(txn_body.clone()),
+                &runtime.server,
+                true,
+            )
+            .await
+            .expected
+            .unwrap()
+            .id;
+
+            let resp = driver_get_txn(Some(&txn_id), None, &runtime.server, false).await;
+            assert_eq!(resp.status, StatusCode::UNAUTHORIZED);
+        }
+
+        #[actix_web::test]
+        async fn test_get_single_txn_invalid_uuid() {
+            let runtime = setup_connection().await;
+            let token = bootstrap_token(("123", "123"), &runtime.server).await.token;
+            let random_uuid = Uuid::new_v4();
+            let resp = driver_get_txn(Some(&format!("{random_uuid}2")), Some(&token), &runtime.server, false).await;
+            assert_eq!(resp.status, StatusCode::BAD_REQUEST);
+        }
+
+        #[actix_web::test]
+        async fn test_get_single_txn_unknown_uuid() {
+            let runtime = setup_connection().await;
+            let token = bootstrap_token(("123", "123"), &runtime.server).await.token;
+            let base_cid = bootstrap_base_curr(("BASE", "Base"), &token, &runtime.server).await;
+            let first_account = bootstrap_post_account("My account", &token, &runtime.server).await;
+            let first_tag = bootstrap_txn_tag("my tag", &token, &runtime.server).await;
+
+            let txn_body = PostTxnRequest {
+                description: "my description".to_string(),
+                title: "my title".to_string(),
+                date_utc: "2025-01-01T01:02:00.000Z".to_string(),
+                fragments: vec![PostTxnRequestFragment {
+                    from: Some(PostTxnRequestFragmentSide {
+                        account: first_account.clone(),
+                        currency: base_cid.clone(),
+                        amount: "1".to_string(),
+                    }),
+                    to: None,
+                }],
+                tags: vec![first_tag.clone()],
+            };
+
+            let _txn_id = driver_post_txn(
+                Some(&token),
+                TestBody::Expected(txn_body.clone()),
+                &runtime.server,
+                true,
+            )
+            .await
+            .expected
+            .unwrap()
+            .id;
+
+            let random_uuid = Uuid::new_v4();
+            let resp = driver_get_txn(Some(&format!("{random_uuid}")), Some(&token), &runtime.server, false).await;
+            assert_eq!(resp.status, StatusCode::NOT_FOUND);
+        }
+
     }
 }

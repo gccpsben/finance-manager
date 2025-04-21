@@ -54,7 +54,7 @@ impl From<&fragment::Model> for GetTxnsResponseFragment {
     }
 }
 
-/// Get all transactions as a user.
+/// Get all transactions of a user.
 pub mod get_txns {
 
     use super::*;
@@ -113,6 +113,64 @@ pub mod get_txns {
             page_index: paginated_txns.page_index,
             total_items: paginated_txns.total_items,
             page_size: paginated_txns.page_size,
+        }))
+    }
+}
+
+/// Get a single transaction of a user.
+pub mod get_txn {
+    use crate::{extended_models::txn::TxnId, services::txns::get_txn_by_id};
+
+    use super::*;
+
+    #[derive(Serialize, Deserialize, Debug, Clone)]
+    #[serde(rename_all = "camelCase")]
+    #[derive(TS)]
+    #[ts(export)]
+    pub struct GetTxnResponse {
+        pub id: String,
+        pub title: String,
+        pub description: String,
+        pub date: String,
+        pub fragments: Vec<GetTxnsResponseFragment>,
+        pub tags: Vec<String>,
+    }
+
+    #[derive(TS)]
+    #[ts(export)]
+    #[derive(Serialize, Deserialize, Debug, Clone)]
+    pub struct GetTxnQuery {
+        pub id: String,
+    }
+
+    pub async fn handler(
+        user: AuthUser,
+        data: web::Data<DatabaseStates>,
+        query: web::Query<GetTxnQuery>,
+    ) -> Result<web::Json<GetTxnResponse>, EndpointsErrors> {
+        let db_txn = TransactionWithCallback::new(data.db.begin().await?, vec![]);
+
+        let requested_uuid = TxnId(
+            Uuid::parse_str(&query.id)
+                .map_err(|_err| EndpointsErrors::InvalidUUID(query.id.clone()))?,
+        );
+
+        let (txn, db_txn) = get_txn_by_id(&user, requested_uuid.0, db_txn).await?;
+        db_txn.commit().await;
+
+        let txn = txn.ok_or(EndpointsErrors::TxnNotFound(TxnId(requested_uuid.0)))?;
+
+        Ok(web::Json(GetTxnResponse {
+            id: txn.0.id.to_string(),
+            title: txn.0.title.to_string(),
+            description: txn.0.description.to_string(),
+            date: iso8601_to_js_iso(txn.0.date.and_utc()),
+            fragments: txn.1.iter().map(|frag| {
+                frag.into()
+            }).collect::<Vec<_>>(),
+            tags: txn.2.iter().map(|txn_tag_mapping| {
+                txn_tag_mapping.tag_id.to_string()
+            }).collect::<Vec<_>>(),
         }))
     }
 }
