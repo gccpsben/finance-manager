@@ -1294,6 +1294,7 @@ dependencies = [
  "finance_manager_migration",
  "futures",
  "itertools",
+ "lru",
  "mutants",
  "port_check",
  "rust_decimal",
@@ -2054,6 +2055,15 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "04cbf5b083de1c7e0222a7a51dbfdba1cbe1c6ab0b15e29fff3f6c077fd9cd9f"
 dependencies = [
  "value-bag",
+]
+
+[[package]]
+name = "lru"
+version = "0.14.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "9f8cc7106155f10bdf99a6f379688f543ad6596a415375b36a59a054ceda1198"
+dependencies = [
+ "hashbrown 0.15.2",
 ]
 
 [[package]]

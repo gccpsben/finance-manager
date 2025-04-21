@@ -1,6 +1,8 @@
+use crate::caches::cache::AuthPartitionCache;
 use crate::caches::txn_tag::TxnTagsCache;
 use crate::caches::{currency_cache::CurrencyCache, currency_rate_datum::CurrencyRateDatumCache};
 use sea_orm::DatabaseConnection;
+use std::num::NonZero;
 use std::sync::Arc;
 use tokio::sync::Mutex;
 
@@ -14,11 +16,18 @@ pub struct DatabaseStates {
 
 impl DatabaseStates {
     pub fn new(connection: DatabaseConnection) -> Self {
+        DatabaseStates::with_capacity(connection, 128.try_into().unwrap())
+    }
+    pub fn with_capacity(connection: DatabaseConnection, size: NonZero<usize>) -> Self {
+        let txn_tags_cache_inner = AuthPartitionCache::<_, _>::new(size, size);
+
         Self {
             db: connection,
-            currency_cache: Arc::from(Mutex::from(CurrencyCache::new(128))),
-            currency_rate_datums_cache: Arc::from(Mutex::from(CurrencyRateDatumCache::new(128))),
-            txn_tags_cache: Arc::from(Mutex::from(TxnTagsCache::new(128))),
+            currency_cache: Arc::from(Mutex::from(CurrencyCache::new(size.get()))),
+            currency_rate_datums_cache: Arc::from(Mutex::from(CurrencyRateDatumCache::new(
+                size.get(),
+            ))),
+            txn_tags_cache: Arc::from(Mutex::from(TxnTagsCache(txn_tags_cache_inner))),
         }
     }
 }

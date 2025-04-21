@@ -20,6 +20,9 @@ pub mod neighbors;
 #[path = "./txn.test.rs"]
 pub mod txn;
 
+#[path = "./cache_base.test.rs"]
+pub mod cache_base;
+
 #[cfg(test)]
 pub mod commons {
 

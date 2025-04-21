@@ -1,14 +1,12 @@
 use crate::entities::account;
 use crate::extended_models::account::AccountId;
 use crate::extractors::auth_user::AuthUser;
-use crate::paging::PagedContent;
 use crate::services::TransactionWithCallback;
 use sea_orm::prelude::DateTime;
 use sea_orm::ActiveValue;
 use sea_orm::ColumnTrait;
 use sea_orm::DbErr;
 use sea_orm::EntityTrait;
-use sea_orm::PaginatorTrait;
 use sea_orm::QueryFilter;
 
 pub async fn create_account(
@@ -43,22 +41,22 @@ pub async fn get_account(
     Ok((result, db_txn))
 }
 
-pub async fn get_accounts_paged(
-    user: &AuthUser,
-    db_txn: TransactionWithCallback,
-    page_index: u64,
-    page_size: u64,
-) -> Result<(PagedContent<account::Model>, TransactionWithCallback), DbErr> {
-    let paginator = account::Entity::find()
-        .filter(account::Column::OwnerId.eq(user.0))
-        .paginate(db_txn.get_db_txn(), page_size);
-    let num_and_pages = paginator.num_items_and_pages().await?;
-    let page_items = paginator.fetch_page(page_index).await?;
-    Ok((
-        PagedContent::new(&page_items, page_size, num_and_pages.number_of_items),
-        db_txn,
-    ))
-}
+// pub async fn get_accounts_paged(
+//     user: &AuthUser,
+//     db_txn: TransactionWithCallback,
+//     page_index: u64,
+//     page_size: u64,
+// ) -> Result<(PagedContent<account::Model>, TransactionWithCallback), DbErr> {
+//     let paginator = account::Entity::find()
+//         .filter(account::Column::OwnerId.eq(user.0))
+//         .paginate(db_txn.get_db_txn(), page_size);
+//     let num_and_pages = paginator.num_items_and_pages().await?;
+//     let page_items = paginator.fetch_page(page_index).await?;
+//     Ok((
+//         PagedContent::new(&page_items, page_size, num_and_pages.number_of_items),
+//         db_txn,
+//     ))
+// }
 
 pub async fn get_accounts(
     user: &AuthUser,

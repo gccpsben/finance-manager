@@ -13,7 +13,7 @@ use crate::{
     DatabaseStates,
 };
 
-#[derive(Serialize, Deserialize, Debug, Default, Clone)]
+#[derive(Serialize, Deserialize, Debug, Default, Clone, Hash, PartialEq, Eq)]
 pub struct AuthUser(pub uuid::Uuid);
 
 impl FromRequest for AuthUser {

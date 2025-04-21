@@ -74,8 +74,96 @@ pub mod txn_tags {
             drivers::{driver_get_txn_tags, driver_post_txn_tag},
             *,
         };
-        use crate::routes::txn_tags::create_tag::PostTxnTagRequestBody;
+        use crate::{
+            extended_models::txn_tag::TxnTagId, routes::txn_tags::create_tag::PostTxnTagRequestBody,
+        };
         use serde_json::json;
+        use uuid::Uuid;
+
+        /// Test if the txn tags endpoint is actually using the cache.
+        #[actix_web::test]
+        async fn test_post_txn_tags_cache() {
+            let runtime = setup_connection().await;
+            let server = runtime.server;
+            let states = runtime.states;
+            let u1 = bootstrap_token(("123", "123"), &server).await;
+            let u1_auth = u1.unwrap_auth_user();
+            let txn_tag_name_for_test = "My Tag".to_string();
+
+            // Check if cache is empty
+            {
+                let mut cache_lock = states.txn_tags_cache.lock().await;
+                assert!(cache_lock.0.get_user_entry_mut(&u1_auth).is_none());
+                drop(cache_lock);
+            }
+
+            // Post txn tag via API
+            let posted_tag_id = {
+                Uuid::parse_str(
+                    &driver_post_txn_tag(
+                        TestBody::Expected(PostTxnTagRequestBody {
+                            name: txn_tag_name_for_test.clone(),
+                        }),
+                        Some(&u1.token),
+                        &server,
+                        true,
+                    )
+                    .await
+                    .expected
+                    .expect("the returned resp is not expected at posted_tag_id")
+                    .id,
+                )
+                .expect("cannot parse uuid at posted_tag_id")
+            };
+
+            // Ensure new entry created in txn tags cache
+            {
+                let mut cache_lock = states.txn_tags_cache.lock().await;
+                assert_eq!(cache_lock.0.get_user_entry_mut(&u1_auth).unwrap().len(), 1);
+            }
+
+            // Trigger a full reload of user's txn tags
+            // This should set the cache state to FULL
+            {
+                let tags = driver_get_txn_tags(Some(&u1.token), &server, true)
+                    .await
+                    .expected
+                    .unwrap()
+                    .tags;
+                assert_eq!(tags.first().unwrap().name, txn_tag_name_for_test);
+            }
+
+            // Modify the data in cached txn tag directly.
+            // This should not change the state of the cache away from FULL.
+            {
+                let mut cache_lock = states.txn_tags_cache.lock().await;
+                cache_lock.0.register(
+                    &u1_auth,
+                    &TxnTagId(posted_tag_id),
+                    crate::entities::txn_tag::Model {
+                        id: posted_tag_id,
+                        owner_id: u1_auth.0,
+                        name: "THIS IS A NEW NAME THAT IS MODIFIED".to_string(),
+                    },
+                );
+            }
+
+            // After modified the newly created txn tags in cache, but not the db.
+            // we should see difference in cache and db.
+            let txn_tag_name_via_endpoint = driver_get_txn_tags(Some(&u1.token), &server, true)
+                .await
+                .expected
+                .unwrap()
+                .tags
+                .first()
+                .unwrap()
+                .name
+                .clone();
+            assert_ne!(
+                txn_tag_name_via_endpoint, txn_tag_name_for_test,
+                "txn tag name still the same after modifying cache"
+            );
+        }
 
         #[actix_web::test]
         async fn test_post_txn_tags_extra_fields() {

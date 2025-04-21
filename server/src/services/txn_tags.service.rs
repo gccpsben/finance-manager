@@ -1,5 +1,6 @@
 use std::sync::Arc;
 
+use crate::caches::cache::PartialCacheState;
 use crate::caches::txn_tag::TxnTagsCache;
 use crate::entities;
 use crate::extended_models::txn_tag::TxnTagId;
@@ -11,14 +12,14 @@ use sea_orm::DbErr;
 use sea_orm::EntityTrait;
 use sea_orm::QueryFilter;
 use sea_orm::Value;
-use tokio::sync::Mutex;
+use tokio::sync::{Mutex, MutexGuard};
 use uuid::Uuid;
 
 pub async fn create_txn_tag(
     owner: &AuthUser,
     name: &str,
     db_txn: TransactionWithCallback,
-    txn_tags_cache: &mut TxnTagsCache,
+    txn_tags_cache: Arc<Mutex<TxnTagsCache>>,
 ) -> Result<(Uuid, TransactionWithCallback), DbErr> {
     let new_tag = txn_tag::ActiveModel {
         id: ActiveValue::Set(uuid::Uuid::new_v4()),
@@ -28,11 +29,25 @@ pub async fn create_txn_tag(
     let model = txn_tag::Entity::insert(new_tag)
         .exec(db_txn.get_db_txn())
         .await?;
-    txn_tags_cache.register_item(txn_tag::Model {
-        id: model.last_insert_id.0,
-        name: name.to_string(),
-        owner_id: owner.0,
+
+    let mut db_txn = db_txn;
+
+    let name_clone = name.to_string();
+    let owner_clone = owner.clone();
+    db_txn.add_callback(async move {
+        let owner = owner_clone;
+        let name = name_clone;
+        txn_tags_cache.lock().await.0.register(
+            &owner,
+            &TxnTagId(model.last_insert_id.0),
+            txn_tag::Model {
+                id: model.last_insert_id.0,
+                name,
+                owner_id: owner.0,
+            },
+        );
     });
+
     Ok((model.last_insert_id.0, db_txn))
 }
 
@@ -43,7 +58,8 @@ pub async fn get_txn_tag_by_id(
     db_txn: TransactionWithCallback,
     txn_tags_cache: Arc<Mutex<TxnTagsCache>>,
 ) -> Result<(Option<txn_tag::Model>, TransactionWithCallback), DbErr> {
-    let query_result = txn_tags_cache.lock().await.query_txn_tag(user);
+    let mut cache_lock = txn_tags_cache.lock().await;
+    let query_result = cache_lock.0.get_user_entry_item(user, &TxnTagId(id));
     let cache_result = query_result
         .iter()
         .find(|cached_tag| cached_tag.owner_id == user.0 && id == cached_tag.id)
@@ -58,18 +74,58 @@ pub async fn get_txn_tag_by_id(
                 .await?,
             db_txn,
         )),
-        Some(tag) => Ok((Some(tag), db_txn)),
+        Some(tag) => Ok((Some(tag.clone()), db_txn)),
     }
 }
 
+/// Get all txn tags of given a user.
+/// This will also update the given cache after fetching data from database.
 pub async fn get_txn_tags(
     user: &AuthUser,
     db_txn: TransactionWithCallback,
-) -> Result<Vec<txn_tag::Model>, DbErr> {
-    txn_tag::Entity::find()
-        .filter(txn_tag::Column::OwnerId.eq(user.0))
-        .all(db_txn.get_db_txn())
-        .await
+    txn_tags_cache: Arc<Mutex<TxnTagsCache>>,
+) -> Result<(Vec<txn_tag::Model>, TransactionWithCallback), DbErr> {
+    let mut cache_lock = txn_tags_cache.lock().await;
+    let txn_tag_cache_state = cache_lock.0.get_user_entry_state(user);
+    drop(cache_lock);
+
+    let extract_items_from_cache = |mut cache_lock: MutexGuard<TxnTagsCache>| {
+        cache_lock
+            .0
+            .get_all_items(user)
+            .expect("this should not be none if cache state returned FULL")
+            .iter()
+            .map(|pair| pair.1.clone())
+            .collect::<Vec<_>>()
+    };
+
+    match txn_tag_cache_state {
+        // If the requested user record is not in cache, or the cache is not fully loaded, fetch from db.
+        None | Some(PartialCacheState::Partial) => {
+            let txn_tags_from_db = txn_tag::Entity::find()
+                .filter(txn_tag::Column::OwnerId.eq(user.0))
+                .all(db_txn.get_db_txn())
+                .await?;
+
+            // Load the tags into cache.
+            let all_tags = extract_items_from_cache(txn_tags_cache.lock().await)
+                .iter()
+                .map(|txn| (TxnTagId(txn.id), txn.clone()))
+                .collect::<Vec<_>>();
+            txn_tags_cache
+                .lock()
+                .await
+                .0
+                .replace_full(&AuthUser(user.0), Box::from(all_tags));
+
+            Ok((txn_tags_from_db, db_txn))
+        }
+        // If the cache is fully loaded, return the cache
+        _ => {
+            let cache_lock = txn_tags_cache.lock().await;
+            Ok((extract_items_from_cache(cache_lock), db_txn))
+        }
+    }
 }
 
 // TODO: See if this can be optimized at DB level

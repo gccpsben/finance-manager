@@ -39,9 +39,7 @@ pub mod create_tag {
             Ok(db_txn) => db_txn,
         };
 
-        let tags_cache = &mut data.txn_tags_cache.lock().await;
-
-        match create_txn_tag(&user, &info.name, db_txn, tags_cache).await {
+        match create_txn_tag(&user, &info.name, db_txn, data.txn_tags_cache.clone()).await {
             Err(db_err) => HttpResponse::InternalServerError()
                 .content_type(ContentType::json())
                 .body(format!("Error querying database: {db_err}")),
@@ -84,9 +82,10 @@ pub mod get_tags {
         data: web::Data<DatabaseStates>,
     ) -> Result<web::Json<GetTxnTagsResponseBody>, EndpointsErrors> {
         let db_txn = TransactionWithCallback::from_db_conn(&data.db, vec![]).await?;
-        let txn_tags = get_txn_tags(&user, db_txn).await?;
+        let txn_tags = get_txn_tags(&user, db_txn, data.txn_tags_cache.clone()).await?;
         Ok(web::Json(GetTxnTagsResponseBody {
             tags: txn_tags
+                .0
                 .iter()
                 .map(|tag| GetTxnTagsResponseBodyItem {
                     name: tag.name.clone(),
