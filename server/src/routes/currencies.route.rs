@@ -164,7 +164,7 @@ pub mod get_currency {
 
         let mut db_txn = db_txn;
         let mut output: Vec<GetCurrencyResponseItem> = Vec::with_capacity(currencies_len);
-        for currency_model in currencies_found.iter() {
+        for currency_model in &currencies_found {
             db_txn = match currency_model {
                 Currency::Base {
                     id,

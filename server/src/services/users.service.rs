@@ -49,8 +49,7 @@ impl From<VerifyCredsErr> for EndpointsErrors {
     fn from(value: VerifyCredsErr) -> Self {
         match value {
             VerifyCredsErr::DbErr(err) => Self::DbErr(err),
-            VerifyCredsErr::InvalidCreds => Self::Unauthorized,
-            VerifyCredsErr::InvalidHash => Self::Unauthorized,
+            VerifyCredsErr::InvalidCreds | VerifyCredsErr::InvalidHash => Self::Unauthorized,
         }
     }
 }

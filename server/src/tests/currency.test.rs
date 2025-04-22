@@ -279,14 +279,12 @@ pub mod currencies {
                 assert_eq!(
                     fetch_result.items.first().unwrap().id,
                     sec_curr_id,
-                    "returned result is not the target currency in assertion {}",
-                    index
+                    "returned result is not the target currency in assertion {index}"
                 );
                 assert_eq!(
                     fetch_result.items.first().unwrap().rate_to_base,
                     case.1,
-                    "returned result failed assertion {}",
-                    index
+                    "returned result failed assertion {index}"
                 );
             }
         }
@@ -409,14 +407,12 @@ pub mod currencies {
                 assert_eq!(
                     fetch_result.items.first().unwrap().id,
                     case.0.to_string(),
-                    "returned result is not the target currency in assertion {}",
-                    index
+                    "returned result is not the target currency in assertion {index}",
                 );
                 assert_eq!(
                     fetch_result.items.first().unwrap().rate_to_base,
                     case.2,
-                    "returned result failed assertion {}",
-                    index
+                    "returned result failed assertion {index}"
                 );
             }
         }
@@ -495,14 +491,12 @@ pub mod currencies {
                 assert_eq!(
                     fetch_result.items.first().unwrap().id,
                     sec_curr_id,
-                    "returned result is not the target currency in assertion {}",
-                    index
+                    "returned result is not the target currency in assertion {index}"
                 );
                 assert_eq!(
                     fetch_result.items.first().unwrap().rate_to_base,
                     case.1,
-                    "returned result failed assertion {}",
-                    index
+                    "returned result failed assertion {index}"
                 );
             }
         }
@@ -713,7 +707,7 @@ pub mod currencies {
                     false,
                 )
                 .await;
-                assert_eq!(resp.status, StatusCode::BAD_REQUEST)
+                assert_eq!(resp.status, StatusCode::BAD_REQUEST);
             }
         }
 
@@ -762,7 +756,7 @@ pub mod currencies {
                         name: String::from("Curr2"),
                         ticker: String::from("CUR2"),
                         fallback_rate_amount: Some("2".to_string()),
-                        fallback_rate_currency_id: Some(format!("{}asd", base_currency_id)),
+                        fallback_rate_currency_id: Some(format!("{base_currency_id}asd")),
                     },
                 ),
                 &runtime.server,

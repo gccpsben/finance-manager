@@ -82,8 +82,8 @@ mod cache_base_tests {
         assert!(cache.query(&1).is_none());
         assert!(matches!(cache.query(&3), Some(4)));
         assert!(matches!(cache.query(&2), Some(3)));
-        cache.remove(1);
-        cache.remove(2);
+        cache.remove(&1);
+        cache.remove(&2);
         assert!(cache.query(&1).is_none());
         assert!(cache.query(&2).is_none());
         assert!(matches!(cache.query(&3), Some(4)));
@@ -93,9 +93,9 @@ mod cache_base_tests {
     pub async fn test_cache_base_contains() {
         let mut cache = PartialCache::<i32, i32>::new(NonZero::<usize>::new(2).unwrap());
         cache.replace_full(Box::from([(1, 2), (2, 3), (3, 4)]));
-        assert!(!cache.contains(1));
-        assert!(cache.contains(2));
-        assert!(cache.contains(3));
+        assert!(!cache.contains(&1));
+        assert!(cache.contains(&2));
+        assert!(cache.contains(&3));
     }
 
     #[actix_web::test]
@@ -127,12 +127,8 @@ mod auth_partitioned_cache_tests {
     }
 
     pub fn make_fake_uuid(counter: u32) -> Uuid {
-        Uuid::from_str(&format!("00000000-0000-4000-8000-{:0>12}", counter)).unwrap_or_else(|_| {
-            panic!(
-                "Cannot make fake UUIDv4 for test from counter = {}",
-                counter
-            )
-        })
+        Uuid::from_str(&format!("00000000-0000-4000-8000-{counter:0>12}"))
+            .unwrap_or_else(|_| panic!("Cannot make fake UUIDv4 for test from counter = {counter}"))
     }
 
     #[actix_web::test]

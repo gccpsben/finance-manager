@@ -64,13 +64,9 @@ pub mod currency_rate_datums {
 
         use super::*;
         use crate::{
-            routes::{
-                currencies::post_currency::PostCurrencyRequestBody,
-                currency_rate_datums::post_currency_rate_datum::PostCurrencyRateDatumRequest,
-            },
-            tests::currency_tests::currencies::drivers::{
-                bootstrap_base_curr, bootstrap_sec_curr, driver_post_currency,
-            },
+            routes::currency_rate_datums::post_currency_rate_datum::PostCurrencyRateDatumRequest,
+            tests::currency_tests::currencies::drivers::bootstrap_base_curr,
+            tests::currency_tests::currencies::drivers::bootstrap_sec_curr,
         };
 
         #[actix_web::test]

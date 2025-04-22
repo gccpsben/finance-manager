@@ -40,8 +40,7 @@ impl CurrencyCache {
             };
 
             let cache_item_owner_id = match item {
-                Currency::Base { owner, .. } => owner.0,
-                Currency::Normal { owner, .. } => owner.0,
+                Currency::Normal { owner, .. } | Currency::Base { owner, .. } => owner.0,
             }
             .to_string();
 

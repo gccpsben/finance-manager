@@ -171,12 +171,12 @@ pub mod get_txn {
             title: txn.0.title.to_string(),
             description: txn.0.description.to_string(),
             date: iso8601_to_js_iso(txn.0.date.and_utc()),
-            fragments: txn.1.iter().map(|frag| {
-                frag.into()
-            }).collect::<Vec<_>>(),
-            tags: txn.2.iter().map(|txn_tag_mapping| {
-                txn_tag_mapping.tag_id.to_string()
-            }).collect::<Vec<_>>(),
+            fragments: txn.1.iter().map(|frag| frag.into()).collect::<Vec<_>>(),
+            tags: txn
+                .2
+                .iter()
+                .map(|txn_tag_mapping| txn_tag_mapping.tag_id.to_string())
+                .collect::<Vec<_>>(),
         }))
     }
 }
@@ -240,7 +240,7 @@ pub mod post_txns {
         };
         let txn_tags_ids = parse_uuids(&info.tags).map_err(EndpointsErrors::InvalidUUID)?;
 
-        for frag in info.fragments.iter() {
+        for frag in &info.fragments {
             let map_side_checked = |side: Option<PostTxnRequestFragmentSide>| {
                 side.map(|side| {
                     let account_uuid = handled_parse_uuid(&side.account);
@@ -281,6 +281,7 @@ pub mod post_txns {
             &user,
             data.currency_cache.clone(),
             data.txn_tags_cache.clone(),
+            data.txns_cache.clone(),
         )
         .await?;
 

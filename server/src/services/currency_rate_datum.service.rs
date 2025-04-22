@@ -44,9 +44,10 @@ pub fn find_neighbors_left_biased<T: Ord + Clone, R>(
     match (pair_1, pair_2) {
         (Some(first), Some(second)) => {
             // Simple swap if not sorted
-            let (first, second) = match first.0 > second.0 {
-                true => (second, first),
-                false => (first, second),
+            let (first, second) = if first.0 > second.0 {
+                (second, first)
+            } else {
+                (first, second)
             };
 
             match (target >= &first.0, target <= &second.0) {
@@ -57,15 +58,17 @@ pub fn find_neighbors_left_biased<T: Ord + Clone, R>(
             }
         }
         (Some(first), None) => {
-            match target >= &first.0 {
-                true => (Some(first.1), None), // A T
-                false => (None, None),         // T A
+            if target >= &first.0 {
+                (Some(first.1), None) // A T
+            } else {
+                (None, None) // T A
             }
         }
         (None, Some(second)) => {
-            match target >= &second.0 {
-                true => (Some(second.1), None), // B T
-                false => (None, None),          // T B
+            if target >= &second.0 {
+                (Some(second.1), None) // B T
+            } else {
+                (None, None) // T B
             }
         }
         (None, None) => (None, None),
@@ -123,13 +126,15 @@ pub async fn get_datum_left_right(
     );
 
     // TODO: can inline bool
-    let is_left_same = match nearest.0.is_some() {
-        true => nearest.0.as_ref().unwrap().date == *date,
-        false => false,
+    let is_left_same = if nearest.0.is_some() {
+        nearest.0.as_ref().unwrap().date == *date
+    } else {
+        false
     };
-    let is_right_same = match nearest.1.is_some() {
-        true => nearest.1.as_ref().unwrap().date == *date,
-        false => false,
+    let is_right_same = if nearest.1.is_some() {
+        nearest.1.as_ref().unwrap().date == *date
+    } else {
+        false
     };
 
     if is_left_same {

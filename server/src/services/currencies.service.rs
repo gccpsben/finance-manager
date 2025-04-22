@@ -247,7 +247,7 @@ pub async fn get_currency_by_id(
         }
     }
 
-    Ok((db_result.map(|f| f.into()), db_txn))
+    Ok((db_result.map(std::convert::Into::into), db_txn))
 }
 
 #[derive(Debug)]
@@ -272,30 +272,28 @@ pub async fn create_currency(
     db_txn: TransactionWithCallback,
     cache: Arc<Mutex<CurrencyCache>>,
 ) -> Result<(uuid::Uuid, TransactionWithCallback), CreateCurrencyErrors> {
-    // Ensure another base currency doesnt exist
-    let db_txn = match currency.is_base() {
-        true => {
-            // See if base currency in cache or not.
+    let db_txn = if currency.is_base() {
+        // See if base currency in cache or not.
+        {
+            if let Some(_existing_base_currency) =
+                cache.lock().await.query_base_currency(currency.get_owner())
             {
-                if let Some(_existing_base_currency) =
-                    cache.lock().await.query_base_currency(currency.get_owner())
-                {
-                    return Err(CreateCurrencyErrors::RepeatedBaseCurrency);
-                }
-            }
-
-            // If not, query the database to see if it's actually not.
-            match get_base_currency(currency.get_owner(), db_txn, cache.clone())
-                .await
-                .map_err(CreateCurrencyErrors::DbErr)?
-            {
-                (Some(_existing_currency), _) => {
-                    return Err(CreateCurrencyErrors::RepeatedBaseCurrency)
-                }
-                (None, db_txn) => db_txn, // return moved txn if ok
+                return Err(CreateCurrencyErrors::RepeatedBaseCurrency);
             }
         }
-        false => db_txn,
+
+        // If not, query the database to see if it's actually not.
+        match get_base_currency(currency.get_owner(), db_txn, cache.clone())
+            .await
+            .map_err(CreateCurrencyErrors::DbErr)?
+        {
+            (Some(_existing_currency), _) => {
+                return Err(CreateCurrencyErrors::RepeatedBaseCurrency)
+            }
+            (None, db_txn) => db_txn, // return moved txn if ok
+        }
+    } else {
+        db_txn
     };
 
     // Ensure referenced currency exists

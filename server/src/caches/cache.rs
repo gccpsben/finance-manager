@@ -98,35 +98,29 @@ impl<K: Hash + Eq + Clone, V: Clone> AuthPartitionCache<K, V> {
     }
     pub fn register(&mut self, user: &AuthUser, key: &K, value: V) {
         let mut user_in_cache = self.partitions.query_mut(user);
-        match user_in_cache {
-            Some(ref mut user) => {
-                user.register(key, value);
-            }
-            None => {
-                let mut new_cache = PartialCache::new(self.entry_capacity);
-                new_cache.register(key, value);
-                self.partitions.register(user, new_cache);
-            }
+        if let Some(ref mut user) = user_in_cache {
+            user.register(key, value);
+        } else {
+            let mut new_cache = PartialCache::new(self.entry_capacity);
+            new_cache.register(key, value);
+            self.partitions.register(user, new_cache);
         }
     }
     pub fn replace_full(&mut self, user: &AuthUser, items: Box<[(K, V)]>) {
         let mut user_in_cache = self.partitions.query_mut(user);
-        match user_in_cache {
-            Some(ref mut user) => {
-                user.replace_full(items);
-            }
-            None => {
-                let mut new_cache = PartialCache::new(self.entry_capacity);
-                new_cache.replace_full(items);
-                self.partitions.register(user, new_cache);
-            }
+        if let Some(ref mut user) = user_in_cache {
+            user.replace_full(items);
+        } else {
+            let mut new_cache = PartialCache::new(self.entry_capacity);
+            new_cache.replace_full(items);
+            self.partitions.register(user, new_cache);
         }
     }
-    #[allow(unused)]
+    #[cfg(test)]
     pub fn get_user_entry(&mut self, user: &AuthUser) -> Option<&PartialCache<K, V>> {
         self.partitions.query(user)
     }
-    #[allow(unused)]
+
     pub fn get_user_entry_mut(&mut self, user: &AuthUser) -> Option<&mut PartialCache<K, V>> {
         self.partitions.query_mut(user)
     }

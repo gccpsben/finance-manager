@@ -126,14 +126,15 @@ impl CreateCurrencyAction {
 
 impl From<Model> for Currency {
     fn from(value: Model) -> Self {
-        match value.is_base {
-            true => Currency::Base {
+        if value.is_base {
+            Currency::Base {
                 id: CurrencyId(value.id),
                 name: value.name.to_string(),
                 owner: AuthUser(value.owner_id),
                 ticker: value.ticker.to_string(),
-            },
-            false => Currency::Normal {
+            }
+        } else {
+            Currency::Normal {
                 id: CurrencyId(value.id),
                 name: value.name.to_string(),
                 owner: AuthUser(value.owner_id),
@@ -147,7 +148,7 @@ impl From<Model> for Currency {
                         .fallback_rate_currency_id
                         .expect("Currency Domain Enum failure 2"),
                 ),
-            },
+            }
         }
     }
 }

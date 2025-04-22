@@ -84,7 +84,7 @@ impl actix_web::ResponseError for EndpointsErrors {
             E::MissingPassword => StatusCode::BAD_REQUEST,
             E::RepeatedTxnTags(_) => StatusCode::BAD_REQUEST,
             E::TxnTagNotFound(_id) => StatusCode::NOT_FOUND,
-            E::TxnNotFound(_id) => StatusCode::NOT_FOUND
+            E::TxnNotFound(_id) => StatusCode::NOT_FOUND,
         }
     }
 }

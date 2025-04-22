@@ -37,12 +37,12 @@ where
     )
 }
 
-/// Convert DateTime in Rust to ISOString from JS.
+/// Convert `DateTime` in Rust to `ISOString` from JS.
 pub fn iso8601_to_js_iso(input: chrono::DateTime<chrono::Utc>) -> String {
     input.format("%Y-%m-%dT%H:%M:%S%.3fZ").to_string()
 }
 
-/// Parse ISOString from JS to DateTime in Rust.
+/// Parse `ISOString` from JS t`DateTime`me in Rust.
 pub fn js_iso_to_iso8601(input: &str) -> Result<chrono::DateTime<chrono::Utc>, ParseISO8601Errors> {
     let mut owned = String::from(input);
     if owned.len() > 1 {

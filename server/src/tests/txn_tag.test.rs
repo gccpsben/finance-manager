@@ -228,7 +228,7 @@ pub mod txn_tags {
                 resp.status,
                 StatusCode::UNAUTHORIZED,
                 "Create valid txn tag without token"
-            )
+            );
         }
 
         #[actix_web::test]
@@ -237,14 +237,14 @@ pub mod txn_tags {
             let token = bootstrap_token(("123", "123"), &runtime.server).await.token;
             let resp = driver_post_txn_tag(
                 TestBody::Expected(PostTxnTagRequestBody {
-                    name: "".to_string(),
+                    name: String::new(),
                 }),
                 Some(&token),
                 &runtime.server,
                 false,
             )
             .await;
-            assert_eq!(resp.status, StatusCode::OK)
+            assert_eq!(resp.status, StatusCode::OK);
         }
 
         #[actix_web::test]

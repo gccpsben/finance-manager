@@ -84,27 +84,27 @@ pub struct CreateTxnActionFragment {
 
 pub fn fragments_to_account_ids(fragments: &[CreateTxnActionFragment]) -> Vec<AccountId> {
     let mut acc_ids = HashSet::<Uuid>::new();
-    fragments.iter().for_each(|frag| {
+    for frag in fragments {
         if let Some(from) = &frag.from {
             acc_ids.insert(from.account);
         }
         if let Some(to) = &frag.to {
             acc_ids.insert(to.account);
         }
-    });
+    }
     acc_ids.iter().map(|id| AccountId(*id)).collect::<Vec<_>>()
 }
 
 pub fn fragments_to_curr_ids(fragments: &[CreateTxnActionFragment]) -> Vec<CurrencyId> {
     let mut curr_ids = HashSet::<Uuid>::new();
-    fragments.iter().for_each(|frag| {
+    for frag in fragments {
         if let Some(from) = &frag.from {
             curr_ids.insert(from.currency);
         }
         if let Some(to) = &frag.to {
             curr_ids.insert(to.currency);
         }
-    });
+    }
     curr_ids
         .iter()
         .map(|id| CurrencyId(*id))
