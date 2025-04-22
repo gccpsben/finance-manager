@@ -87,8 +87,13 @@ pub mod get_txns {
         data: web::Data<DatabaseStates>,
     ) -> Result<web::Json<GetTxnsResponse>, EndpointsErrors> {
         let db_txn = TransactionWithCallback::new(data.db.begin().await?, vec![]);
-        let (paginated_txns, db_txn) =
-            get_txns(&user, crate::services::PaginationReq::All, db_txn).await?;
+        let (paginated_txns, db_txn) = get_txns(
+            &user,
+            crate::services::PaginationReq::All,
+            db_txn,
+            data.txns_cache.clone(),
+        )
+        .await?;
         db_txn.commit().await;
 
         Ok(web::Json(GetTxnsResponse {
@@ -155,7 +160,8 @@ pub mod get_txn {
                 .map_err(|_err| EndpointsErrors::InvalidUUID(query.id.clone()))?,
         );
 
-        let (txn, db_txn) = get_txn_by_id(&user, requested_uuid.0, db_txn).await?;
+        let (txn, db_txn) =
+            get_txn_by_id(&user, requested_uuid.0, db_txn, data.txns_cache.clone()).await?;
         db_txn.commit().await;
 
         let txn = txn.ok_or(EndpointsErrors::TxnNotFound(TxnId(requested_uuid.0)))?;

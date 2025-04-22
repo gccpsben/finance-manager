@@ -10,6 +10,13 @@ pub enum PartialCacheState {
     Partial,
 }
 
+#[derive(Debug, PartialEq, Eq, Clone)]
+pub enum IntegratedQueryResult<T> {
+    TruePositive(T),
+    TrueNegative,
+    UnsureNegative,
+}
+
 /// An LRU cache with a state to track partial states.
 pub struct PartialCache<K: Hash + Eq + Clone, V> {
     pairs: LruCache<K, V>,
@@ -41,9 +48,10 @@ impl<K: Hash + Eq + Clone, V> PartialCache<K, V> {
             && new_len == old_len
             && expect_more_entries
         {
-            self.state = PartialCacheState::Partial
+            self.state = PartialCacheState::Partial;
         }
     }
+    #[cfg(test)]
     pub fn query(&mut self, key: &K) -> Option<&V> {
         self.pairs.get(key)
     }
@@ -59,13 +67,19 @@ impl<K: Hash + Eq + Clone, V> PartialCache<K, V> {
     pub fn get_state(&self) -> &PartialCacheState {
         &self.state
     }
-    #[allow(unused)]
-    pub fn remove(&mut self, key: K) {
-        self.pairs.pop(&key);
+    #[cfg(test)]
+    pub fn remove(&mut self, key: &K) {
+        self.pairs.pop(key);
     }
-    #[allow(unused)]
-    pub fn contains(&mut self, key: K) -> bool {
-        self.pairs.contains(&key)
+    #[cfg(test)]
+    pub fn contains(&mut self, key: &K) -> bool {
+        self.pairs.contains(key)
+    }
+    pub fn get_all_items(&mut self) -> Vec<(K, &V)> {
+        self.pairs
+            .iter()
+            .map(|pair| (pair.0.clone(), pair.1))
+            .collect::<Vec<_>>()
     }
 }
 
@@ -116,18 +130,30 @@ impl<K: Hash + Eq + Clone, V: Clone> AuthPartitionCache<K, V> {
     pub fn get_user_entry_mut(&mut self, user: &AuthUser) -> Option<&mut PartialCache<K, V>> {
         self.partitions.query_mut(user)
     }
-    pub fn get_user_entry_item(&mut self, user: &AuthUser, key: &K) -> Option<&V> {
-        let user_result = self.partitions.query_mut(user);
-        match user_result {
-            Some(user_cache) => user_cache.query(key),
-            None => None,
+
+    /// Try to fetch cache given a ``user`` and ``key``,
+    /// return the state of the user's sub-cache and value.
+    /// Will return `None` if the user is not registered in the cache.
+    pub fn get_user_entry_item_mut(
+        &mut self,
+        user: &AuthUser,
+        key: &K,
+    ) -> IntegratedQueryResult<V> {
+        let mut sub_cache = self.partitions.query_mut(user);
+
+        match sub_cache {
+            Some(ref mut sub_cache) => {
+                let sub_cache_state = sub_cache.get_state().clone();
+                let query_result = sub_cache.query_mut(key).cloned();
+
+                match (sub_cache_state, query_result) {
+                    (PartialCacheState::Full, None) => IntegratedQueryResult::TrueNegative,
+                    (PartialCacheState::Partial, None) => IntegratedQueryResult::UnsureNegative,
+                    (_, Some(val)) => IntegratedQueryResult::TruePositive(val),
+                }
+            }
+            None => IntegratedQueryResult::UnsureNegative,
         }
-    }
-    pub fn get_user_entry_state(&mut self, user: &AuthUser) -> Option<PartialCacheState> {
-        self.partitions
-            .query(user)
-            .map(|entry| entry.get_state())
-            .cloned()
     }
     pub fn get_all_items(&mut self, user: &AuthUser) -> Option<Vec<(K, V)>> {
         self.partitions.query_mut(user).map(|user_tags| {
@@ -137,5 +163,9 @@ impl<K: Hash + Eq + Clone, V: Clone> AuthPartitionCache<K, V> {
                 .map(|pair| (pair.0.clone(), pair.1.clone()))
                 .collect::<Vec<_>>()
         })
+    }
+    pub fn get_user_entry_state(&mut self, user: &AuthUser) -> Option<PartialCacheState> {
+        let sub_cache = self.partitions.query_mut(user);
+        sub_cache.map(|sub_cache| sub_cache.get_state()).cloned()
     }
 }

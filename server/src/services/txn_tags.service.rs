@@ -58,24 +58,21 @@ pub async fn get_txn_tag_by_id(
     db_txn: TransactionWithCallback,
     txn_tags_cache: Arc<Mutex<TxnTagsCache>>,
 ) -> Result<(Option<txn_tag::Model>, TransactionWithCallback), DbErr> {
+    type QueryResult<T> = crate::caches::cache::IntegratedQueryResult<T>;
     let mut cache_lock = txn_tags_cache.lock().await;
-    let query_result = cache_lock.0.get_user_entry_item(user, &TxnTagId(id));
-    let cache_result = query_result
-        .iter()
-        .find(|cached_tag| cached_tag.owner_id == user.0 && id == cached_tag.id)
-        .cloned();
-
-    match cache_result {
-        None => Ok((
+    let query_result = cache_lock.0.get_user_entry_item_mut(user, &TxnTagId(id));
+    Ok(match query_result {
+        QueryResult::TruePositive(tag) => (Some(tag.clone()), db_txn),
+        QueryResult::TrueNegative => (None, db_txn),
+        QueryResult::UnsureNegative => (
             txn_tag::Entity::find()
                 .filter(txn_tag::Column::OwnerId.eq(user.0))
                 .filter(txn_tag::Column::Id.eq(id))
                 .one(db_txn.get_db_txn())
                 .await?,
             db_txn,
-        )),
-        Some(tag) => Ok((Some(tag.clone()), db_txn)),
-    }
+        ),
+    })
 }
 
 /// Get all txn tags of given a user.
@@ -86,7 +83,10 @@ pub async fn get_txn_tags(
     txn_tags_cache: Arc<Mutex<TxnTagsCache>>,
 ) -> Result<(Vec<txn_tag::Model>, TransactionWithCallback), DbErr> {
     let mut cache_lock = txn_tags_cache.lock().await;
-    let txn_tag_cache_state = cache_lock.0.get_user_entry_state(user);
+    let txn_tag_cache_state = cache_lock
+        .0
+        .get_user_entry_mut(user)
+        .map(|cache| cache.get_state().clone());
     drop(cache_lock);
 
     let extract_items_from_cache = |mut cache_lock: MutexGuard<TxnTagsCache>| {

@@ -117,7 +117,7 @@ pub mod commons {
             status: status_code,
             expected: parsed_body_expected,
             json: body_json,
-            str: Some(String::from("")),
+            str: Some(String::new()),
         }
     }
 
@@ -132,9 +132,17 @@ pub mod commons {
         }
     }
 
-    /// Setup connection to a test database.
-    /// WARN: The content in the given database will be cleared.
+    /// Setup connection and application states for testing.
+    /// The application states will default to reasonable values for testing.
     pub async fn setup_connection() -> TestRuntime {
+        setup_connection_custom(DatabaseStates::new).await
+    }
+
+    /// Setup connection and application states for testing.
+    /// Custom application states can be provided.
+    pub async fn setup_connection_custom<T: FnOnce(DatabaseConnection) -> DatabaseStates>(
+        states_builder: T,
+    ) -> TestRuntime {
         let tests_threads: u32 = std::env::var("NEXTEST_TEST_GLOBAL_SLOT")
             .expect("Cannot find NEXTEST_TEST_GLOBAL_SLOT.")
             .parse()
@@ -144,8 +152,7 @@ pub mod commons {
 
         let db = Database::connect(std::env::var(test_db_url.clone()).unwrap_or_else(|_| {
             panic!(
-                "Env var {} is not defined. Cannot setup database for testing. Notice that the number of database url required is the same as the number of test threads.",
-                test_db_url
+                "Env var {test_db_url} is not defined. Cannot setup database for testing. Notice that the number of database url required is the same as the number of test threads."
             )
         }))
         .await
@@ -154,7 +161,7 @@ pub mod commons {
         <Migrator as finance_manager_migration::MigratorTrait>::fresh(&db)
             .await
             .expect("Migrator fresh failure");
-        let states = DatabaseStates::new(db);
+        let states = states_builder(db);
         let states_cloned = states.clone();
         let server = actix_test::start(move || {
             let app_data = web::Data::new(states_cloned.clone());
@@ -179,7 +186,7 @@ pub mod commons {
                     db.execute(db.get_database_backend().build(db_index))
                         .await
                         .unwrap_or_else(|_| {
-                            panic!("Failed creating test indexes for entity: {:?}", entity)
+                            panic!("Failed creating test indexes for entity: {entity:?}")
                         });
                 }
             })
@@ -189,6 +196,6 @@ pub mod commons {
         let stmt: TableCreateStatement = schema.create_table_from_entity(entity);
         db.execute(db.get_database_backend().build(&stmt))
             .await
-            .unwrap_or_else(|_| panic!("Failed creating test table for entity: {:?}", entity));
+            .unwrap_or_else(|_| panic!("Failed creating test table for entity: {entity:?}"));
     }
 }

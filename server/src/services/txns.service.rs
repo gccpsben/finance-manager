@@ -1,10 +1,14 @@
+use crate::caches::cache::IntegratedQueryResult;
+use crate::caches::cache::PartialCacheState;
 use crate::caches::currency_cache::CurrencyCache;
+use crate::caches::txn::TxnCache;
 use crate::caches::txn_tag::TxnTagsCache;
 use crate::entities::fragment;
 use crate::entities::txn;
 use crate::entities::txn_txn_tag_mapping;
 use crate::extended_models::account::AccountId;
 use crate::extended_models::currency::CurrencyId;
+use crate::extended_models::txn::TxnId;
 use crate::extended_models::txn_tag::TxnTagId;
 use crate::extractors::auth_user::AuthUser;
 use crate::iter::get_first_duplicated;
@@ -113,6 +117,7 @@ pub async fn get_txns(
     owner: &AuthUser,
     pagination: PaginationReq,
     db_txn: TransactionWithCallback,
+    txn_cache: Arc<Mutex<TxnCache>>,
 ) -> Result<
     (
         PagedContent<(
@@ -129,9 +134,40 @@ pub async fn get_txns(
 
     let (txn_models, total_items, page_index, page_size) = match pagination {
         PaginationReq::All => {
-            let items = query.all(db_txn.get_db_txn()).await?;
-            let len = items.len() as u64;
-            (items, len, 0, len)
+            let mut cache_lock = txn_cache.lock().await;
+            let cache_state = cache_lock.0.get_user_entry_state(owner);
+            drop(cache_lock);
+
+            // If cache is in FULL state, return the result as is.
+            match cache_state {
+                Some(PartialCacheState::Full) => {
+                    let mut cache_lock = txn_cache.lock().await;
+                    let items_in_cache = cache_lock
+                        .0
+                        .get_user_entry_mut(owner)
+                        .expect("this is not be None if state is FULL")
+                        .get_all_items()
+                        .iter()
+                        .map(|txn| txn.1.clone())
+                        .collect::<Vec<_>>();
+                    let len = items_in_cache.len() as u64;
+                    (items_in_cache, len, 0, len)
+                }
+
+                // Fetch the database for all txns and update the cache
+                None | Some(PartialCacheState::Partial) => {
+                    let items = query.all(db_txn.get_db_txn()).await?;
+                    let mut cache_lock = txn_cache.lock().await;
+                    cache_lock.0.replace_full(
+                        owner,
+                        Box::from(items.iter().map(|txn| (TxnId(txn.id), txn.clone())))
+                            .collect::<Vec<_>>()
+                            .into(),
+                    );
+                    let len = items.len() as u64;
+                    (items, len, 0, len)
+                }
+            }
         }
         PaginationReq::Paged {
             page_size,
@@ -169,6 +205,7 @@ pub async fn get_txn_by_id(
     owner: &AuthUser,
     id: uuid::Uuid,
     db_txn: TransactionWithCallback,
+    cache: Arc<Mutex<TxnCache>>,
 ) -> Result<
     (
         Option<(
@@ -180,24 +217,52 @@ pub async fn get_txn_by_id(
     ),
     DbErr,
 > {
-    let model = txn::Entity::find_by_id((id, owner.0))
-        .one(db_txn.get_db_txn())
-        .await?;
+    type TxnModel = crate::entities::txn::Model;
 
-    match model {
-        None => Ok((None, db_txn)),
-        Some(txn_model) => {
-            let fragments = txn_model
-                .find_related(fragment::Entity)
-                .all(db_txn.get_db_txn())
+    let cache_result = cache
+        .lock()
+        .await
+        .0
+        .get_user_entry_item_mut(owner, &TxnId(id));
+    let fetch_fragments = async |txn_model: &TxnModel| {
+        txn_model
+            .find_related(fragment::Entity)
+            .all(db_txn.get_db_txn())
+            .await
+    };
+    let fetch_txn_tags = async |txn_model: &TxnModel| {
+        txn_model
+            .find_related(txn_txn_tag_mapping::Entity)
+            .all(db_txn.get_db_txn())
+            .await
+    };
+
+    match cache_result {
+        IntegratedQueryResult::TruePositive(txn_model) => Ok((
+            Some((
+                txn_model.clone(),
+                fetch_fragments(&txn_model).await?,
+                fetch_txn_tags(&txn_model).await?,
+            )),
+            db_txn,
+        )),
+        IntegratedQueryResult::TrueNegative => Ok((None, db_txn)),
+        IntegratedQueryResult::UnsureNegative => {
+            let txn_model = txn::Entity::find_by_id((id, owner.0))
+                .one(db_txn.get_db_txn())
                 .await?;
 
-            let txn_tags = txn_model
-                .find_related(txn_txn_tag_mapping::Entity)
-                .all(db_txn.get_db_txn())
-                .await?;
-
-            Ok((Some((txn_model, fragments, txn_tags)), db_txn))
+            Ok((
+                match txn_model {
+                    Some(txn_model) => Some((
+                        txn_model.clone(),
+                        fetch_fragments(&txn_model).await?,
+                        fetch_txn_tags(&txn_model).await?,
+                    )),
+                    None => None,
+                },
+                db_txn,
+            ))
         }
     }
 }
@@ -210,6 +275,7 @@ pub async fn create_txn(
     owner: &AuthUser,
     currency_cache: Arc<Mutex<CurrencyCache>>,
     txn_tags_cache: Arc<Mutex<TxnTagsCache>>,
+    txn_cache: Arc<Mutex<TxnCache>>,
 ) -> Result<(Uuid, TransactionWithCallback), CreateTxnErrors> {
     // Ensure accounts exist
     let db_txn = unpack_db_txn(
@@ -256,7 +322,7 @@ pub async fn create_txn(
         model
     };
 
-    active_model
+    let inserted_model = active_model
         .insert(db_txn.get_db_txn())
         .await
         .map_err(CreateTxnErrors::DbErr)?;
@@ -290,6 +356,13 @@ pub async fn create_txn(
     let db_txn = replace_txn_tags_of_txn(owner, &generated_txn_uuid, tags, db_txn)
         .await
         .map_err(CreateTxnErrors::DbErr)?;
+
+    // Write newly created txn into cache
+    txn_cache
+        .lock()
+        .await
+        .0
+        .register(owner, &TxnId(generated_txn_uuid), inserted_model);
 
     Ok((generated_txn_uuid, db_txn))
 }

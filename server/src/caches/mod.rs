@@ -7,5 +7,8 @@ pub mod currency_rate_datum;
 #[path = "./txn_tag.cache.rs"]
 pub mod txn_tag;
 
+#[path = "./txn.cache.rs"]
+pub mod txn;
+
 #[path = "./cache.rs"]
 pub mod cache;

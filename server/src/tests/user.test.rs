@@ -285,7 +285,7 @@ pub mod users {
                 TestBody::Bytes(Box::from([1, 2, 3, 4, 5])),
                 TestBody::Bytes(Box::from([])),
                 TestBody::Bytes(Box::from([0])),
-                TestBody::Bytes(Box::from("".to_string().as_bytes())),
+                TestBody::Bytes(Box::from(String::new().as_bytes())),
                 TestBody::Bytes(Box::from("1".to_string().as_bytes())),
                 TestBody::Bytes(Box::from("{".to_string().as_bytes())),
                 TestBody::Bytes(Box::from("{}".to_string().as_bytes())),
@@ -301,8 +301,7 @@ pub mod users {
                 assert_eq!(
                     resp.status,
                     StatusCode::BAD_REQUEST,
-                    "test_invalid_logins: expect item at index {} to fail.",
-                    count
+                    "test_invalid_logins: expect item at index {count} to fail.",
                 );
             }
 
@@ -321,8 +320,7 @@ pub mod users {
                 assert_eq!(
                     resp.status,
                     StatusCode::UNAUTHORIZED,
-                    "test_invalid_logins: expect item at index {} to fail.",
-                    count
+                    "test_invalid_logins: expect item at index {count} to fail.",
                 );
             }
         }

@@ -92,16 +92,28 @@ pub mod txns {
 
     mod tests {
 
+        use std::sync::Arc;
+
         use serde_json::json;
+        use tokio::sync::Mutex;
 
         use super::drivers::driver_get_txn;
         use super::drivers::driver_get_txns;
         use super::drivers::driver_post_txn;
         use super::*;
+        use crate::caches::cache::AuthPartitionCache;
+        use crate::caches::cache::PartialCacheState;
+        use crate::caches::currency_cache::CurrencyCache;
+        use crate::caches::currency_rate_datum::CurrencyRateDatumCache;
+        use crate::caches::txn::TxnCache;
+        use crate::caches::txn_tag::TxnTagsCache;
+        use crate::extended_models::txn::TxnId;
         use crate::routes::txns::post_txns::PostTxnRequestFragment;
         use crate::routes::txns::post_txns::PostTxnRequestFragmentSide;
+        use crate::states::database_states::DatabaseStates;
         use crate::tests::account_tests::accounts::drivers::bootstrap_post_account;
         use crate::tests::commons::setup_connection;
+        use crate::tests::commons::setup_connection_custom;
         use crate::tests::currency_tests::currencies::drivers::bootstrap_base_curr;
         use crate::tests::txn_tag::txn_tags::drivers::bootstrap_txn_tag;
         use crate::tests::user_tests::users::drivers::bootstrap_token;
@@ -891,7 +903,13 @@ pub mod txns {
             let runtime = setup_connection().await;
             let token = bootstrap_token(("123", "123"), &runtime.server).await.token;
             let random_uuid = Uuid::new_v4();
-            let resp = driver_get_txn(Some(&format!("{random_uuid}2")), Some(&token), &runtime.server, false).await;
+            let resp = driver_get_txn(
+                Some(&format!("{random_uuid}2")),
+                Some(&token),
+                &runtime.server,
+                false,
+            )
+            .await;
             assert_eq!(resp.status, StatusCode::BAD_REQUEST);
         }
 
@@ -930,9 +948,274 @@ pub mod txns {
             .id;
 
             let random_uuid = Uuid::new_v4();
-            let resp = driver_get_txn(Some(&format!("{random_uuid}")), Some(&token), &runtime.server, false).await;
+            let resp = driver_get_txn(
+                Some(&format!("{random_uuid}")),
+                Some(&token),
+                &runtime.server,
+                false,
+            )
+            .await;
             assert_eq!(resp.status, StatusCode::NOT_FOUND);
         }
 
+        /// Test if the get single txn endpoint is actually using the cache correctly.
+        #[actix_web::test]
+        async fn test_get_single_txn_cache() {
+            let runtime = setup_connection_custom(|db_conn| DatabaseStates {
+                db: db_conn,
+                currency_cache: Arc::new(Mutex::from(CurrencyCache::new(128))),
+                currency_rate_datums_cache: Arc::new(Mutex::from(CurrencyRateDatumCache::new(128))),
+                txn_tags_cache: Arc::new(Mutex::from(TxnTagsCache(AuthPartitionCache::new(
+                    128.try_into().unwrap(),
+                    128.try_into().unwrap(),
+                )))),
+                txns_cache: Arc::new(Mutex::from(TxnCache(AuthPartitionCache::new(
+                    128.try_into().unwrap(),
+                    1.try_into().unwrap(),
+                )))),
+            })
+            .await;
+            let server = runtime.server;
+            let states = runtime.states;
+            let u1 = bootstrap_token(("123", "123"), &server).await;
+            let u1_auth = u1.unwrap_auth_user();
+            let base_cid = bootstrap_base_curr(("BASE", "Base"), &u1.token, &server).await;
+            let first_account = bootstrap_post_account("My account", &u1.token, &server).await;
+            let first_tag = bootstrap_txn_tag("my tag", &u1.token, &server).await;
+
+            // Check if the cache is empty
+            {
+                let mut cache_lock = states.txns_cache.lock().await;
+                assert!(cache_lock.0.get_user_entry_mut(&u1_auth).is_none());
+                drop(cache_lock);
+            }
+
+            // Post txn via API
+            let original_post_body = PostTxnRequest {
+                description: "my description".to_string(),
+                title: "my title".to_string(),
+                date_utc: "2025-01-01T01:02:00.000Z".to_string(),
+                fragments: vec![PostTxnRequestFragment {
+                    from: Some(PostTxnRequestFragmentSide {
+                        account: first_account.clone(),
+                        currency: base_cid.clone(),
+                        amount: "1".to_string(),
+                    }),
+                    to: None,
+                }],
+                tags: vec![first_tag.clone()],
+            };
+            let txn_id = Uuid::parse_str({
+                &driver_post_txn(
+                    Some(&u1.token),
+                    TestBody::Expected(original_post_body.clone()),
+                    &server,
+                    true,
+                )
+                .await
+                .expected
+                .unwrap()
+                .id
+            })
+            .unwrap();
+
+            // Ensure new entry created in cache
+            {
+                let mut cache_lock = states.txns_cache.lock().await;
+                assert_eq!(cache_lock.0.get_user_entry_mut(&u1_auth).unwrap().len(), 1);
+            }
+
+            // Modify the data in cache
+            {
+                let mut cache_lock = states.txns_cache.lock().await;
+                let cache_entry = cache_lock
+                    .0
+                    .get_user_entry_mut(&u1_auth)
+                    .unwrap()
+                    .query_mut(&TxnId(txn_id))
+                    .cloned()
+                    .unwrap();
+                cache_lock.0.register(
+                    &u1_auth,
+                    &TxnId(txn_id),
+                    crate::entities::txn::Model {
+                        id: txn_id,
+                        owner_id: u1.unwrap_id_uuid(),
+                        date: cache_entry.date,
+                        title: "my title changed".to_string(),
+                        description: "my description changed".to_string(),
+                    },
+                );
+            }
+
+            // After modified the newly created txn in cache, but not the db.
+            // we should see difference in cache and db.
+            {
+                let resp =
+                    driver_get_txn(Some(&txn_id.to_string()), Some(&u1.token), &server, true).await;
+                let resp_body = resp.expected.unwrap();
+                assert_eq!(resp.status, StatusCode::OK);
+                assert_eq!(resp_body.id, txn_id.to_string());
+                assert_ne!(resp_body.description, original_post_body.description);
+                assert_ne!(resp_body.title, original_post_body.title);
+            }
+        }
+
+        /// Test if the get all txns endpoint is actually using the cache correctly.
+        #[actix_web::test]
+        async fn test_get_txns_cache() {
+            let runtime = setup_connection_custom(|db_conn| DatabaseStates {
+                db: db_conn,
+                currency_cache: Arc::new(Mutex::from(CurrencyCache::new(128))),
+                currency_rate_datums_cache: Arc::new(Mutex::from(CurrencyRateDatumCache::new(128))),
+                txn_tags_cache: Arc::new(Mutex::from(TxnTagsCache(AuthPartitionCache::new(
+                    128.try_into().unwrap(),
+                    128.try_into().unwrap(),
+                )))),
+                txns_cache: Arc::new(Mutex::from(TxnCache(AuthPartitionCache::new(
+                    128.try_into().unwrap(),
+                    2.try_into().unwrap(),
+                )))),
+            })
+            .await;
+            let server = runtime.server;
+            let states = runtime.states;
+            let u1 = bootstrap_token(("123", "123"), &server).await;
+            let u1_auth = u1.unwrap_auth_user();
+            let base_cid = bootstrap_base_curr(("BASE", "Base"), &u1.token, &server).await;
+            let first_account = bootstrap_post_account("My account", &u1.token, &server).await;
+            let first_tag = bootstrap_txn_tag("my tag", &u1.token, &server).await;
+
+            // Check if the cache is empty
+            {
+                let mut cache_lock = states.txns_cache.lock().await;
+                assert!(cache_lock.0.get_user_entry_mut(&u1_auth).is_none());
+                drop(cache_lock);
+            }
+
+            // Post txn via API
+            let dummy_fragments = vec![PostTxnRequestFragment {
+                from: Some(PostTxnRequestFragmentSide {
+                    account: first_account.clone(),
+                    currency: base_cid.clone(),
+                    amount: "1".to_string(),
+                }),
+                to: None,
+            }];
+
+            let original_post_body_1 = PostTxnRequest {
+                description: "my description 1".to_string(),
+                title: "my title 1".to_string(),
+                date_utc: "2025-01-01T01:02:00.000Z".to_string(),
+                fragments: dummy_fragments.clone(),
+                tags: vec![first_tag.clone()],
+            };
+            let txn_id_1 = Uuid::parse_str({
+                &driver_post_txn(
+                    Some(&u1.token),
+                    TestBody::Expected(original_post_body_1.clone()),
+                    &server,
+                    true,
+                )
+                .await
+                .expected
+                .unwrap()
+                .id
+            })
+            .unwrap();
+
+            let original_post_body_2 = PostTxnRequest {
+                description: "my description 2".to_string(),
+                title: "my title 2".to_string(),
+                date_utc: "2025-01-01T01:02:00.000Z".to_string(),
+                fragments: dummy_fragments.clone(),
+                tags: vec![first_tag.clone()],
+            };
+            let txn_id_2 = Uuid::parse_str({
+                &driver_post_txn(
+                    Some(&u1.token),
+                    TestBody::Expected(original_post_body_2.clone()),
+                    &server,
+                    true,
+                )
+                .await
+                .expected
+                .unwrap()
+                .id
+            })
+            .unwrap();
+
+            // Ensure new entry created in cache, and its state is PARTIAL
+            {
+                let mut cache_lock = states.txns_cache.lock().await;
+                assert_eq!(cache_lock.0.get_user_entry_mut(&u1_auth).unwrap().len(), 2);
+                assert!(matches!(
+                    cache_lock.0.get_user_entry_state(&u1_auth),
+                    Some(PartialCacheState::Partial)
+                ));
+            }
+
+            // Trigger a full reload of user's txn. This should set the cache state to FULL.
+            {
+                driver_get_txns(Some(&u1.token), &server, true)
+                    .await
+                    .expected
+                    .unwrap();
+
+                let mut cache_lock = states.txns_cache.lock().await;
+                assert_eq!(cache_lock.0.get_user_entry_mut(&u1_auth).unwrap().len(), 2);
+                assert!(matches!(
+                    cache_lock.0.get_user_entry_state(&u1_auth),
+                    Some(PartialCacheState::Full)
+                ));
+            }
+
+            // Modify the first txn in cache
+            {
+                let mut cache_lock = states.txns_cache.lock().await;
+                let cache_entry = cache_lock
+                    .0
+                    .get_user_entry_mut(&u1_auth)
+                    .unwrap()
+                    .query_mut(&TxnId(txn_id_1))
+                    .cloned()
+                    .unwrap();
+                cache_lock.0.register(
+                    &u1_auth,
+                    &TxnId(txn_id_1),
+                    crate::entities::txn::Model {
+                        id: txn_id_1,
+                        owner_id: u1.unwrap_id_uuid(),
+                        date: cache_entry.date,
+                        title: "my title changed".to_string(),
+                        description: "my description changed".to_string(),
+                    },
+                );
+            }
+
+            // After modified the newly created txn in cache, but not the db.
+            // we should see difference in cache and db.
+            {
+                let all_txns_resp = driver_get_txns(Some(&u1.token), &server, true).await;
+                let expected_body = all_txns_resp.expected.unwrap();
+                let all_txns = expected_body.items;
+
+                let txn_1 = all_txns
+                    .iter()
+                    .find(|txn| txn.id == txn_id_1.to_string())
+                    .unwrap();
+                assert_eq!(txn_1.id, txn_id_1.to_string());
+                assert_ne!(txn_1.description, original_post_body_1.description);
+                assert_ne!(txn_1.title, original_post_body_1.title);
+
+                let txn_2 = all_txns
+                    .iter()
+                    .find(|txn| txn.id == txn_id_2.to_string())
+                    .unwrap();
+                assert_eq!(txn_2.id, txn_id_2.to_string());
+                assert_eq!(txn_2.description, original_post_body_2.description);
+                assert_eq!(txn_2.title, original_post_body_2.title);
+            }
+        }
     }
 }
