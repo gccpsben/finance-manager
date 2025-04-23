@@ -124,8 +124,10 @@ pub mod get_txns {
 
 /// Get a single transaction of a user.
 pub mod get_txn {
-    use crate::{extended_models::txn::TxnId, services::txns::get_txn_by_id};
-
+    use crate::extended_models::txn::TxnId;
+    use crate::maths::format_decimal_restful;
+    use crate::services::txns::get_txn_by_id;
+    use crate::services::txns::value_delta_of_fragments;
     use super::*;
 
     #[derive(Serialize, Deserialize, Debug, Clone)]
@@ -139,6 +141,7 @@ pub mod get_txn {
         pub date: String,
         pub fragments: Vec<GetTxnsResponseFragment>,
         pub tags: Vec<String>,
+        pub value_delta: String,
     }
 
     #[derive(TS)]
@@ -162,10 +165,18 @@ pub mod get_txn {
 
         let (txn, db_txn) =
             get_txn_by_id(&user, requested_uuid.0, db_txn, data.txns_cache.clone()).await?;
-        db_txn.commit().await;
 
         let txn = txn.ok_or(EndpointsErrors::TxnNotFound(TxnId(requested_uuid.0)))?;
+        let (value_change, db_txn) = value_delta_of_fragments(
+            &user,
+            &txn.1,
+            db_txn,
+            txn.0.date.and_utc(),
+            data.currency_cache.clone(),
+        )
+        .await?;
 
+        db_txn.commit().await;
         Ok(web::Json(GetTxnResponse {
             id: txn.0.id.to_string(),
             title: txn.0.title.to_string(),
@@ -177,6 +188,7 @@ pub mod get_txn {
                 .iter()
                 .map(|txn_tag_mapping| txn_tag_mapping.tag_id.to_string())
                 .collect::<Vec<_>>(),
+            value_delta: format_decimal_restful(value_change),
         }))
     }
 }

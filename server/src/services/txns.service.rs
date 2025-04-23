@@ -3,6 +3,7 @@ use crate::caches::cache::PartialCacheState;
 use crate::caches::currency_cache::CurrencyCache;
 use crate::caches::txn::TxnCache;
 use crate::caches::txn_tag::TxnTagsCache;
+use crate::entities;
 use crate::entities::fragment;
 use crate::entities::txn;
 use crate::entities::txn_txn_tag_mapping;
@@ -14,6 +15,7 @@ use crate::extractors::auth_user::AuthUser;
 use crate::iter::get_first_duplicated;
 use crate::paging::PagedContent;
 use crate::routes::bootstrap::EndpointsErrors;
+use crate::services::currencies::calculate_currency_rate;
 use crate::services::TransactionWithCallback;
 use chrono::NaiveDateTime;
 use itertools::izip;
@@ -29,6 +31,7 @@ use sea_orm::ModelTrait;
 use sea_orm::PaginatorTrait;
 use sea_orm::QueryFilter;
 use sea_orm::QueryOrder;
+use std::collections::HashMap;
 use std::collections::HashSet;
 use std::sync::Arc;
 use tokio::sync::Mutex;
@@ -36,6 +39,7 @@ use uuid::Uuid;
 
 use super::accounts::find_first_unknown_account;
 use super::currencies::find_first_unknown_currencies;
+use super::currencies::CalculateCurrencyRateErrors;
 use super::txn_tags::find_first_unknown_tag;
 use super::txn_tags::replace_txn_tags_of_txn;
 use super::unpack_db_txn;
@@ -109,6 +113,79 @@ pub fn fragments_to_curr_ids(fragments: &[CreateTxnActionFragment]) -> Vec<Curre
         .iter()
         .map(|id| CurrencyId(*id))
         .collect::<Vec<_>>()
+}
+
+pub async fn value_delta_of_fragments(
+    owner: &AuthUser,
+    fragments: &[entities::fragment::Model],
+    db_txn: TransactionWithCallback,
+    date: chrono::DateTime<chrono::Utc>,
+    currency_cache: Arc<Mutex<CurrencyCache>>,
+) -> Result<(Decimal, TransactionWithCallback), CalculateCurrencyRateErrors> {
+    type Decimal = rust_decimal::Decimal;
+    type Errors = CalculateCurrencyRateErrors;
+    let mut currencies_amount = HashMap::<CurrencyId, Decimal>::new();
+
+    // Err means overflow / underflow / invalid string
+    let mut append = |cid: CurrencyId, amount: String, is_negative: bool| -> Option<()> {
+        let amount_deci = if is_negative {
+            Decimal::from_str_exact(&amount)
+                .ok()?
+                .checked_mul(Decimal::NEGATIVE_ONE)?
+        } else {
+            Decimal::from_str_exact(&amount).ok()?
+        };
+        let entry = currencies_amount.get(&cid);
+        match entry {
+            Some(entry) => {
+                let new_amount = amount_deci.checked_add(*entry)?;
+                currencies_amount.insert(cid, new_amount);
+                Some(())
+            }
+            None => {
+                currencies_amount.insert(cid, amount_deci);
+                Some(())
+            }
+        }
+    };
+
+    for fragment in fragments {
+        if let Some(from_curr_id) = fragment.from_currency_id {
+            append(
+                CurrencyId(from_curr_id),
+                fragment.from_amount.clone().unwrap(),
+                true,
+            );
+        }
+        if let Some(to_curr_id) = fragment.to_currency_id {
+            append(
+                CurrencyId(to_curr_id),
+                fragment.to_amount.clone().unwrap(),
+                false,
+            );
+        }
+    }
+
+    let mut db_txn = db_txn;
+    let mut total_value_change = Decimal::ZERO;
+    for (cid, amount) in currencies_amount.iter() {
+        let cache_arc = currency_cache.clone();
+        let cal_result = calculate_currency_rate(owner, *cid, db_txn, date, cache_arc).await;
+        match cal_result {
+            Ok((val, db_txn_inner)) => {
+                db_txn = db_txn_inner;
+                total_value_change = total_value_change
+                    .checked_add(
+                        val.checked_mul(*amount)
+                            .ok_or(Errors::OverflowOrUnderflow)?,
+                    )
+                    .ok_or(Errors::OverflowOrUnderflow)?;
+            }
+            Err(err) => return Err(err),
+        }
+    }
+
+    Ok((total_value_change, db_txn))
 }
 
 /// Get paginated transactions of a given user.

@@ -7,7 +7,7 @@ use serde::{Deserialize, Serialize};
 use ts_rs::TS;
 use uuid::Uuid;
 
-#[derive(Serialize, Deserialize, TS, Clone, Debug, PartialEq, Copy)]
+#[derive(Serialize, Deserialize, TS, Clone, Debug, PartialEq, Copy, Hash, Eq)]
 pub struct CurrencyId(pub Uuid);
 
 /** This enum represent a currency that already exists in database (saved) */

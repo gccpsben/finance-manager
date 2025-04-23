@@ -114,7 +114,9 @@ pub mod txns {
         use crate::tests::account_tests::accounts::drivers::bootstrap_post_account;
         use crate::tests::commons::setup_connection;
         use crate::tests::commons::setup_connection_custom;
+        use crate::tests::currency_rate_datum::currency_rate_datums::drivers::bootstrap_post_rate_datum;
         use crate::tests::currency_tests::currencies::drivers::bootstrap_base_curr;
+        use crate::tests::currency_tests::currencies::drivers::bootstrap_sec_curr;
         use crate::tests::txn_tag::txn_tags::drivers::bootstrap_txn_tag;
         use crate::tests::user_tests::users::drivers::bootstrap_token;
 
@@ -1215,6 +1217,163 @@ pub mod txns {
                 assert_eq!(txn_2.id, txn_id_2.to_string());
                 assert_eq!(txn_2.description, original_post_body_2.description);
                 assert_eq!(txn_2.title, original_post_body_2.title);
+            }
+        }
+
+        #[actix_web::test]
+        async fn test_get_single_txn_change_in_value() {
+            let runtime = setup_connection().await;
+            let server = runtime.server;
+            let token = bootstrap_token(("123", "123"), &server).await.token;
+            let base_cid = bootstrap_base_curr(("BASE", "Base"), &token, &server).await;
+            let normal_currency_without_datum =
+                bootstrap_sec_curr(("SEC", "Sec"), "2", &base_cid, &token, &server).await;
+            let normal_currency_with_datums =
+                bootstrap_sec_curr(("THI", "Thi"), "2", &base_cid, &token, &server).await;
+            bootstrap_post_rate_datum(
+                "00",
+                "2025-01-01T01:01:00.000Z",
+                &base_cid,
+                &normal_currency_with_datums,
+                &token,
+                &server,
+            )
+            .await;
+            bootstrap_post_rate_datum(
+                "50",
+                "2025-01-01T01:03:00.000Z",
+                &base_cid,
+                &normal_currency_with_datums,
+                &token,
+                &server,
+            )
+            .await;
+            let first_account = bootstrap_post_account("My account", &token, &server).await;
+            let first_tag = bootstrap_txn_tag("my tag", &token, &server).await;
+
+            struct TestCase {
+                req: PostTxnRequest,
+                expected: String,
+                test_name: String,
+            }
+
+            let test_cases: Vec<TestCase> = vec![
+                TestCase {
+                    req: PostTxnRequest {
+                        description: "my description".to_string(),
+                        title: "my title".to_string(),
+                        date_utc: "2025-01-01T01:02:00.000Z".to_string(),
+                        fragments: vec![PostTxnRequestFragment {
+                            from: Some(PostTxnRequestFragmentSide {
+                                account: first_account.clone(),
+                                currency: base_cid.clone(),
+                                amount: "5".to_string(),
+                            }),
+                            to: None,
+                        }],
+                        tags: vec![first_tag.clone()],
+                    },
+                    expected: "-5".to_string(),
+                    test_name: "trivial case (just base currency, 1 fragment,  1 side)".to_string(),
+                },
+                TestCase {
+                    req: PostTxnRequest {
+                        description: "my description".to_string(),
+                        title: "my title".to_string(),
+                        date_utc: "2025-01-01T01:02:00.000Z".to_string(),
+                        fragments: vec![PostTxnRequestFragment {
+                            from: Some(PostTxnRequestFragmentSide {
+                                account: first_account.clone(),
+                                currency: base_cid.clone(),
+                                amount: "5".to_string(),
+                            }),
+                            to: Some(PostTxnRequestFragmentSide {
+                                account: first_account.clone(),
+                                currency: base_cid.clone(),
+                                amount: "2".to_string(),
+                            }),
+                        }],
+                        tags: vec![first_tag.clone()],
+                    },
+                    expected: "-3".to_string(),
+                    test_name: "just base currency, 1 fragment, 2 sides".to_string(),
+                },
+                TestCase {
+                    req: PostTxnRequest {
+                        description: "my description".to_string(),
+                        title: "my title".to_string(),
+                        date_utc: "2025-01-01T01:02:00.000Z".to_string(),
+                        fragments: vec![PostTxnRequestFragment {
+                            from: Some(PostTxnRequestFragmentSide {
+                                account: first_account.clone(),
+                                currency: base_cid.clone(),
+                                amount: "5".to_string(),
+                            }),
+                            to: Some(PostTxnRequestFragmentSide {
+                                account: first_account.clone(),
+                                currency: normal_currency_without_datum.clone(),
+                                amount: "2".to_string(),
+                            }),
+                        }],
+                        tags: vec![first_tag.clone()],
+                    },
+                    expected: "-1".to_string(),
+                    test_name:
+                        "base currency + 1 normal currency without datums, 1 fragment, 2 sides"
+                            .to_string(),
+                },
+                TestCase {
+                    req: PostTxnRequest {
+                        description: "my description".to_string(),
+                        title: "my title".to_string(),
+                        date_utc: "2025-01-01T01:02:00.000Z".to_string(),
+                        fragments: vec![PostTxnRequestFragment {
+                            from: Some(PostTxnRequestFragmentSide {
+                                account: first_account.clone(),
+                                currency: normal_currency_with_datums.clone(),
+                                amount: "5".to_string(),
+                            }),
+                            to: Some(PostTxnRequestFragmentSide {
+                                account: first_account.clone(),
+                                currency: normal_currency_with_datums.clone(),
+                                amount: "2".to_string(),
+                            }),
+                        }],
+                        tags: vec![first_tag.clone()],
+                    },
+                    expected: "-75".to_string(),
+                    test_name: "normal currencies with datums, 1 fragment, 2 sides".to_string(),
+                },
+            ];
+
+            // Asserting test cases
+            for (index, test_case) in test_cases.iter().enumerate() {
+                let txn_id = Uuid::parse_str({
+                    &driver_post_txn(
+                        Some(&token),
+                        TestBody::Expected(test_case.req.clone()),
+                        &server,
+                        true,
+                    )
+                    .await
+                    .expected
+                    .unwrap()
+                    .id
+                })
+                .unwrap();
+
+                let actual_value_delta =
+                    driver_get_txn(Some(&txn_id.to_string()), Some(&token), &server, true)
+                        .await
+                        .expected
+                        .unwrap()
+                        .value_delta;
+
+                assert_eq!(
+                    actual_value_delta, test_case.expected,
+                    "case at index {index} ({}) failed",
+                    test_case.test_name
+                );
             }
         }
     }
