@@ -3,11 +3,13 @@ pub mod txns {
     use crate::routes::txns::get_txns::GetTxnsResponse;
     use crate::routes::txns::post_txns::PostTxnRequest;
     use crate::routes::txns::post_txns::PostTxnResponse;
-    use crate::tests::commons::attach_token_to_req;
-    use crate::tests::commons::parse_response_body;
-    use crate::tests::commons::send_req_with_body;
-    use crate::tests::commons::AssertTestResponse;
-    use crate::tests::commons::TestBody;
+    use crate::tests::commons::requests::attach_token_to_req;
+    use crate::tests::commons::requests::parse_response_body;
+    use crate::tests::commons::requests::send_req_with_body;
+    use crate::tests::commons::requests::AssertTestResponse;
+    use crate::tests::commons::requests::TestBody;
+    use crate::tests::commons::setups::setup_connection;
+    use crate::tests::commons::setups::setup_connection_custom;
     use actix_http::StatusCode;
     use actix_web::http::header::ContentType;
     use uuid::Uuid;
@@ -112,8 +114,6 @@ pub mod txns {
         use crate::routes::txns::post_txns::PostTxnRequestFragmentSide;
         use crate::states::database_states::DatabaseStates;
         use crate::tests::account_tests::accounts::drivers::bootstrap_post_account;
-        use crate::tests::commons::setup_connection;
-        use crate::tests::commons::setup_connection_custom;
         use crate::tests::currency_rate_datum::currency_rate_datums::drivers::bootstrap_post_rate_datum;
         use crate::tests::currency_tests::currencies::drivers::bootstrap_base_curr;
         use crate::tests::currency_tests::currencies::drivers::bootstrap_sec_curr;

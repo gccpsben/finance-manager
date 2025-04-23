@@ -124,11 +124,11 @@ pub mod get_txns {
 
 /// Get a single transaction of a user.
 pub mod get_txn {
+    use super::*;
     use crate::extended_models::txn::TxnId;
     use crate::maths::format_decimal_restful;
     use crate::services::txns::get_txn_by_id;
     use crate::services::txns::value_delta_of_fragments;
-    use super::*;
 
     #[derive(Serialize, Deserialize, Debug, Clone)]
     #[serde(rename_all = "camelCase")]

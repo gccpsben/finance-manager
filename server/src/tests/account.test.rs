@@ -3,8 +3,12 @@ pub mod accounts {
 
     use crate::routes::accounts::get_account::GetAccountResponse;
     use crate::routes::accounts::post_account::*;
-    use crate::tests::commons::TestBody;
-    use crate::tests::commons::*;
+    use crate::tests::commons::requests::attach_token_to_req;
+    use crate::tests::commons::requests::parse_response_body;
+    use crate::tests::commons::requests::send_req_with_body;
+    use crate::tests::commons::requests::AssertTestResponse;
+    use crate::tests::commons::requests::TestBody;
+    use crate::tests::commons::setups::setup_connection;
     use crate::tests::user_tests::users::drivers::*;
     use actix_http::StatusCode;
     use actix_web::http::header::ContentType;

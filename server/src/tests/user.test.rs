@@ -4,8 +4,11 @@ pub mod users {
     use crate::routes::users::login::LoginResponseBody;
     use crate::routes::users::register::PostUserRequestBody;
     use crate::routes::users::register::PostUserResponseBody;
-    use crate::tests::commons::setup_connection;
-    use crate::tests::commons::*;
+    use crate::tests::commons::requests::parse_response_body;
+    use crate::tests::commons::requests::send_req_with_body;
+    use crate::tests::commons::requests::AssertTestResponse;
+    use crate::tests::commons::requests::TestBody;
+    use crate::tests::commons::setups::setup_connection;
     use crate::tests::user_tests::users::drivers::*;
     use actix_http::StatusCode;
     use actix_test::TestServer;
@@ -25,6 +28,7 @@ pub mod users {
         }
 
         impl TokenBootstrap {
+            #[allow(unused)]
             pub fn unwrap_token_uuid(&self) -> Uuid {
                 Uuid::from_str(&self.token).unwrap()
             }

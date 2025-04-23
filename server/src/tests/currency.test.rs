@@ -3,7 +3,12 @@ pub mod currencies {
 
     use crate::routes::currencies::get_currency::*;
     use crate::routes::currencies::post_currency::*;
-    use crate::tests::commons::*;
+    use crate::tests::commons::requests::attach_token_to_req;
+    use crate::tests::commons::requests::parse_response_body;
+    use crate::tests::commons::requests::send_req_with_body;
+    use crate::tests::commons::requests::AssertTestResponse;
+    use crate::tests::commons::requests::TestBody;
+    use crate::tests::commons::setups::setup_connection;
     use crate::tests::user_tests::users::drivers::*;
     use actix_http::StatusCode;
     use actix_test::TestServer;
