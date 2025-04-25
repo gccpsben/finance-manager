@@ -387,7 +387,7 @@ pub mod txns {
                     // First txn
                     {
                         assert_eq!(item_0.tags.len(), 1);
-                        assert_eq!(item_0.tags.first(), first_txn_to_post.tags.first())
+                        assert_eq!(item_0.tags.first(), first_txn_to_post.tags.first());
                     }
 
                     // Second txn
@@ -1007,7 +1007,8 @@ pub mod txns {
                 }],
                 tags: vec![first_tag.clone()],
             };
-            let txn_id = Uuid::parse_str({
+
+            let txn_id = Uuid::parse_str(
                 &driver_post_txn(
                     Some(&u1.token),
                     TestBody::Expected(original_post_body.clone()),
@@ -1018,7 +1019,7 @@ pub mod txns {
                 .expected
                 .unwrap()
                 .id
-            })
+            )
             .unwrap();
 
             // Ensure new entry created in cache
@@ -1112,7 +1113,7 @@ pub mod txns {
                 fragments: dummy_fragments.clone(),
                 tags: vec![first_tag.clone()],
             };
-            let txn_id_1 = Uuid::parse_str({
+            let txn_id_1 = Uuid::parse_str(
                 &driver_post_txn(
                     Some(&u1.token),
                     TestBody::Expected(original_post_body_1.clone()),
@@ -1123,7 +1124,7 @@ pub mod txns {
                 .expected
                 .unwrap()
                 .id
-            })
+            )
             .unwrap();
 
             let original_post_body_2 = PostTxnRequest {
@@ -1133,7 +1134,7 @@ pub mod txns {
                 fragments: dummy_fragments.clone(),
                 tags: vec![first_tag.clone()],
             };
-            let txn_id_2 = Uuid::parse_str({
+            let txn_id_2 = Uuid::parse_str(
                 &driver_post_txn(
                     Some(&u1.token),
                     TestBody::Expected(original_post_body_2.clone()),
@@ -1144,7 +1145,7 @@ pub mod txns {
                 .expected
                 .unwrap()
                 .id
-            })
+            )
             .unwrap();
 
             // Ensure new entry created in cache, and its state is PARTIAL
@@ -1348,7 +1349,7 @@ pub mod txns {
 
             // Asserting test cases
             for (index, test_case) in test_cases.iter().enumerate() {
-                let txn_id = Uuid::parse_str({
+                let txn_id = Uuid::parse_str(
                     &driver_post_txn(
                         Some(&token),
                         TestBody::Expected(test_case.req.clone()),
@@ -1359,7 +1360,7 @@ pub mod txns {
                     .expected
                     .unwrap()
                     .id
-                })
+                )
                 .unwrap();
 
                 let actual_value_delta =

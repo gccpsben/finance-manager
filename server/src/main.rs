@@ -77,7 +77,6 @@ pub async fn main() -> Result<(), Box<dyn Error>> {
     };
 
     Migrator::up(&db, None).await?;
-
     let app_data = web::Data::new(DatabaseStates::new(db.clone()));
     HttpServer::new(move || apply_endpoints(App::new().app_data(app_data.clone())))
         .bind(("127.0.0.1", port))?
