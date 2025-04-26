@@ -1309,9 +1309,10 @@ pub mod txns {
                 req: PostTxnRequest,
                 expected: String,
                 test_name: String,
+                posted_txn_id: Option<Uuid>,
             }
 
-            let test_cases: Vec<TestCase> = vec![
+            let mut test_cases: Vec<TestCase> = vec![
                 TestCase {
                     req: PostTxnRequest {
                         description: "my description".to_string(),
@@ -1329,6 +1330,7 @@ pub mod txns {
                     },
                     expected: "-5".to_string(),
                     test_name: "trivial case (just base currency, 1 fragment,  1 side)".to_string(),
+                    posted_txn_id: None,
                 },
                 TestCase {
                     req: PostTxnRequest {
@@ -1351,6 +1353,7 @@ pub mod txns {
                     },
                     expected: "-3".to_string(),
                     test_name: "just base currency, 1 fragment, 2 sides".to_string(),
+                    posted_txn_id: None,
                 },
                 TestCase {
                     req: PostTxnRequest {
@@ -1375,6 +1378,7 @@ pub mod txns {
                     test_name:
                         "base currency + 1 normal currency without datums, 1 fragment, 2 sides"
                             .to_string(),
+                    posted_txn_id: None,
                 },
                 TestCase {
                     req: PostTxnRequest {
@@ -1397,6 +1401,7 @@ pub mod txns {
                     },
                     expected: "-75".to_string(),
                     test_name: "normal currencies with datums, 1 fragment, 2 sides".to_string(),
+                    posted_txn_id: None,
                 },
                 TestCase {
                     req: PostTxnRequest {
@@ -1434,11 +1439,12 @@ pub mod txns {
                     expected: "-150".to_string(),
                     test_name: "2 fragments: normal currencies with datums, 1 fragment, 2 sides"
                         .to_string(),
+                    posted_txn_id: None,
                 },
             ];
 
             // Asserting test cases
-            for (index, test_case) in test_cases.iter().enumerate() {
+            for (index, test_case) in test_cases.iter_mut().enumerate() {
                 let txn_id = Uuid::parse_str(
                     &driver_post_txn(
                         Some(&token),
@@ -1453,6 +1459,8 @@ pub mod txns {
                 )
                 .unwrap();
 
+                test_case.posted_txn_id = Some(txn_id);
+
                 let actual_value_delta =
                     driver_get_txn(Some(&txn_id.to_string()), Some(&token), &server, true)
                         .await
@@ -1463,6 +1471,22 @@ pub mod txns {
                 assert_eq!(
                     actual_value_delta, test_case.expected,
                     "case at index {index} ({}) failed",
+                    test_case.test_name
+                );
+            }
+
+            // Asserting test cases in get_txns
+            for (index, test_case) in test_cases.iter().enumerate() {
+                let all_txns = driver_get_txns(Some(&token), &server, true)
+                    .await
+                    .expected
+                    .unwrap();
+                let test_case_txn = all_txns.items.iter().find(|item| {
+                    item.id == test_case.posted_txn_id.unwrap().to_string()
+                }).unwrap();
+                assert_eq!(
+                    test_case_txn.value_delta, test_case.expected,
+                    "case at index {index} ({}) failed (get txns)",
                     test_case.test_name
                 );
             }

@@ -1,6 +1,7 @@
 use crate::date::iso8601_to_js_iso;
 use crate::entities::fragment;
 use crate::extractors::auth_user::AuthUser;
+use crate::maths::format_decimal_restful;
 use crate::routes::bootstrap::EndpointsErrors;
 use crate::services::TransactionWithCallback;
 use crate::services::txns::CreateTxnAction;
@@ -57,6 +58,8 @@ impl From<&fragment::Model> for GetTxnsResponseFragment {
 /// Get all transactions of a user.
 pub mod get_txns {
 
+    use crate::services::txns::value_delta_of_fragments;
+
     use super::*;
     #[derive(Serialize, Deserialize, Debug, Clone)]
     #[serde(rename_all = "camelCase")]
@@ -69,6 +72,7 @@ pub mod get_txns {
         pub date: String,
         pub fragments: Vec<GetTxnsResponseFragment>,
         pub tags: Vec<String>,
+        pub value_delta: String,
     }
 
     #[derive(Serialize, Deserialize, Debug, Clone)]
@@ -94,13 +98,21 @@ pub mod get_txns {
             data.txns_cache.clone(),
         )
         .await?;
-        db_txn.commit().await;
 
-        Ok(web::Json(GetTxnsResponse {
-            items: paginated_txns
-                .items
-                .iter()
-                .map(|(txn, fragments, txn_tags)| GetTxnsResponseItem {
+        let (items, db_txn): (Vec<GetTxnsResponseItem>, TransactionWithCallback) = {
+            let mut items: Vec<GetTxnsResponseItem> = vec![];
+            let mut db_txn = db_txn;
+            for (txn, fragments, txn_tags) in paginated_txns.items {
+                // TODO: Value delta calculations can be optimized
+                let (value_change, db_txn_inner) = value_delta_of_fragments(
+                    &user,
+                    &fragments,
+                    db_txn,
+                    txn.date.and_utc(),
+                    data.currency_cache.clone(),
+                )
+                .await?;
+                items.push(GetTxnsResponseItem {
                     date: iso8601_to_js_iso(txn.date.and_utc()),
                     description: txn.description.to_string(),
                     id: txn.id.to_string(),
@@ -113,8 +125,17 @@ pub mod get_txns {
                         .iter()
                         .map(|tag| tag.tag_id.to_string())
                         .collect::<Vec<_>>(),
-                })
-                .collect::<Vec<_>>(),
+                    value_delta: format_decimal_restful(value_change),
+                });
+                db_txn = db_txn_inner;
+            }
+            (items, db_txn)
+        };
+
+        db_txn.commit().await;
+
+        Ok(web::Json(GetTxnsResponse {
+            items,
             page_index: paginated_txns.page_index,
             total_items: paginated_txns.total_items,
             page_size: paginated_txns.page_size,
@@ -126,7 +147,6 @@ pub mod get_txns {
 pub mod get_txn {
     use super::*;
     use crate::extended_models::txn::TxnId;
-    use crate::maths::format_decimal_restful;
     use crate::services::txns::get_txn_by_id;
     use crate::services::txns::value_delta_of_fragments;
 
