@@ -75,29 +75,29 @@ import CustomTableRow from '@/modules/core/components/tables/CustomTableRow.vue'
 import { watch } from 'vue';
 import { useCurrenciesStore } from '../stores/useCurrenciesStore';
 import useNetworkPaginationNew, { type UpdaterReturnType } from '@/modules/core/composables/useNetworkedPagination';
-import type { CurrencyDTO } from '../../../../../api-types/currencies';
 import NumberPagination from '@/modules/core/components/data-display/NumberPagination.vue';
 import OverlapArea from '@/modules/core/components/layout/OverlapArea.vue';
 import NetworkCircularIndicator from '@/modules/core/components/data-display/NetworkCircularIndicator.vue';
 import CurrencyRateHistoryThumbnail from '../components/CurrencyRateHistoryThumbnail.vue';
 import router from '@/router';
+import type { GetCurrencyResponseItem } from '@/../../api_types/GetCurrencyResponseItem';
 
 const currenciesStore = useCurrenciesStore();
 currenciesStore.currencies.updateData();
-const mainPagination = useNetworkPaginationNew<CurrencyDTO>(
+const mainPagination = useNetworkPaginationNew<GetCurrencyResponseItem>(
 {
-    updater: async (start:number, end:number): Promise<UpdaterReturnType<CurrencyDTO>> =>
+    updater: async (start:number, end:number): Promise<UpdaterReturnType<GetCurrencyResponseItem>> =>
     {
         await currenciesStore.currencies.updateData();
         const lastSuccessfulData = currenciesStore.currencies.lastSuccessfulData;
-        let currencies = lastSuccessfulData?.rangeItems ?? [];
+        let currencies = lastSuccessfulData?.items ?? [];
         const endIndex = Math.min(currencies.length, end);
 
         return {
-            totalItems: lastSuccessfulData?.totalItems ?? 0,
+            totalItems: lastSuccessfulData?.items.length ?? 0,
             startingIndex: start,
             endingIndex: endIndex,
-            rangeItems: lastSuccessfulData?.rangeItems ?? []
+            rangeItems: lastSuccessfulData?.items ?? []
         };
     },
     pageIndex: 0,

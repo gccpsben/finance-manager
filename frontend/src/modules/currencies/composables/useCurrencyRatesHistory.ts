@@ -1,4 +1,4 @@
-import type { GetCurrencyRateHistoryAPI } from '@/../../../api-types/currencies';
+import type { GetCurrencyResponse } from '@/../../../api_types/GetCurrencyResponse';
 import { type MaybeRefOrGetter, readonly, toValue, watch } from "vue";
 import { useNetworkRequest } from "@/modules/core/composables/useNetworkRequest";
 import { API_CURRENCY_RATE_HISTORY_PATH } from '../../../apiPaths';
@@ -11,7 +11,7 @@ export function useCurrencyRatesHistory
     autoUpdateOnChange: boolean = true
 )
 {
-    const networkRequest = useNetworkRequest<GetCurrencyRateHistoryAPI.ResponseDTO>
+    const networkRequest = useNetworkRequest<GetCurrencyResponse>
     (
         "",
         { includeAuthHeaders: true, updateOnMount: false }

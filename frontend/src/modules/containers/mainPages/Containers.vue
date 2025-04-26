@@ -33,9 +33,9 @@
                         </template>
                         <template #body>
                             <CustomTableRow v-for="item in mainPagination.lastCallResult.value?.rangeItems"
-                                            @click="viewContainer(item.id)" class="bodyRows">
+                                            @click="viewContainer(item.accountId)" class="bodyRows">
                                 <CustomTableCell grid-area="name">
-                                    <div class="fullSize xLeft yCenter">{{ item.name }}</div>
+                                    <div class="fullSize xLeft yCenter">{{ item.accountName }}</div>
                                 </CustomTableCell>
                                 <CustomTableCell grid-area="value">
                                     <div class="fullSize xLeft yCenter">
@@ -72,6 +72,7 @@ import { API_CONTAINERS_PATH } from '@/apiPaths';
 import { useNetworkRequest } from '@/modules/core/composables/useNetworkRequest';
 import type { GetAccountResponse } from '@/../../api_types/GetAccountResponse.ts';
 import OverlapArea from '@/modules/core/components/layout/OverlapArea.vue';
+import type { GetAccountResponseItem } from '@/../../api_types/GetAccountResponseItem.ts';
 
 const currenciesStore = useCurrenciesStore();
 currenciesStore.currencies.updateData();
@@ -88,10 +89,10 @@ const mainPagination = useNetworkPaginationNew(
         });
 
         await containersFetchRequest.updateData();
-        const containers = containersFetchRequest.lastSuccessfulData.value?.rangeItems ?? [];
+        const containers = containersFetchRequest.lastSuccessfulData.value?.items ?? [];
 
         return {
-            totalItems: containersFetchRequest.lastSuccessfulData.value?.totalItems ?? 0,
+            totalItems: containersFetchRequest.lastSuccessfulData.value?.items ?? 0,
             startingIndex: start,
             endingIndex: containersFetchRequest.lastSuccessfulData.value?.endingIndex ?? 0,
             rangeItems: containers

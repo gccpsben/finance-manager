@@ -74,7 +74,6 @@ import { computed, ref, watch } from 'vue';
 import router from '@/router';
 import NetworkCircularIndicator from '@/modules/core/components/data-display/NetworkCircularIndicator.vue';
 import { useNetworkRequest } from '@/modules/core/composables/useNetworkRequest';
-import type { GetCurrencyAPI } from '@/modules/../../../api-types/currencies';
 import { API_CURRENCIES_PATH } from '@/apiPaths';
 import StaticNotice from '@/modules/core/components/data-display/StaticNotice.vue';
 import ViewTitle from '@/modules/core/components/data-display/ViewTitle.vue';
@@ -82,12 +81,14 @@ import { rateHistoryToDateValueList, useCurrencyRatesHistory } from '@/modules/c
 import ZoomableLineChart from '@/modules/core/components/data-display/ZoomableLineChart.vue';
 import { watchTriggerable } from '@vueuse/core';
 import OverlapArea from '@/modules/core/components/layout/OverlapArea.vue';
+import type { GetCurrencyResponseItem } from "@/../../api_types/GetCurrencyResponseItem";
+import type { GetCurrencyResponse } from "@/../../api_types/GetCurrencyResponse";
 
 type LoadingOrError<T> = ['OK', T] | ['LOADING'] | ['ERROR', unknown];
 
 const currencyRatesHistoryZoomed = ref<LoadingOrError<{x: number, y: number}[]>>(['LOADING']);
 const currencyRatesHistoryFull = ref<LoadingOrError<{x: number, y: number}[]>>(['LOADING']);
-const currencyObj = ref<LoadingOrError<GetCurrencyAPI.ResponseDTO['rangeItems'][0] | null>>(['LOADING']);
+const currencyObj = ref<LoadingOrError<GetCurrencyResponseItem | null>>(['LOADING']);
 const isAnyRequestLoading = computed(() => currencyRatesHistoryFull.value[0] === 'LOADING' || currencyRatesHistoryZoomed.value[0] === 'LOADING');
 const requestError = computed(() => {
     if (currencyRatesHistoryFull.value[0] !== 'ERROR' && currencyRatesHistoryZoomed.value[0] !== 'ERROR')
@@ -102,7 +103,7 @@ const rangeEnd = ref(100);
 // Load currency data when needed
 watch(cid, async () =>
 {
-    const currencyReq = useNetworkRequest<GetCurrencyAPI.ResponseDTO>(
+    const currencyReq = useNetworkRequest<GetCurrencyResponse>(
     {
         url: API_CURRENCIES_PATH, method: "GET",
         query: { id: `${cid.value}` }
@@ -110,7 +111,7 @@ watch(cid, async () =>
     await currencyReq.updateData();
 
     if (currencyReq.error.value) return currencyObj.value = ['ERROR', currencyReq.error.value];
-    currencyObj.value = ['OK', currencyReq.lastSuccessfulData.value!.rangeItems[0] ?? null];
+    currencyObj.value = ['OK', currencyReq.lastSuccessfulData.value!.items[0] ?? null];
 }, { immediate: true });
 
 // Update full history if needed

@@ -93,6 +93,7 @@ import { VTooltip } from 'vuetify/components';
 import TxnTableRow from '../components/TxnTableRow.vue';
 import TxnTableHeader from '../components/TxnTableHeader.vue';
 import type { GetTxnsResponseItem } from '@/../../api_types/GetTxnsResponseItem';
+import type { GetTxnsResponse } from '@/../../api_types/GetTxnsResponse';
 
 const itemsInPage = 50;
 const { authGet, updateAll: mainStoreUpdateAll } = useMainStore();
@@ -145,12 +146,14 @@ const mainPagination = useNetworkPaginationNew<GetTxnsResponseItem>(
                     title: !!searchText.value ? searchText.value : undefined
                 }, { ignoreKey: "ALL" });
 
-                const responseJSON = (await sendQuery(`${API_TRANSACTIONS_PATH}?${queryString}`)).data;
+                const responseJSON = (await sendQuery(`${API_TRANSACTIONS_PATH}?${queryString}`)).data as GetTxnsResponse;
+
+                // TODO: Switch to actual paginated API.
                 return {
-                    totalItems: responseJSON.totalItems,
-                    startingIndex: responseJSON.startingIndex,
-                    endingIndex: responseJSON.endingIndex,
-                    rangeItems: responseJSON.rangeItems
+                    totalItems: responseJSON.items.length,
+                    startingIndex: 0,
+                    endingIndex: responseJSON.items.length,
+                    rangeItems: responseJSON.items
                 };
             }
         }

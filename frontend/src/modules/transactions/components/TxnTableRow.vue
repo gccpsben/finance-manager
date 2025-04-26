@@ -14,7 +14,7 @@
              <OverlapArea class="fullSize">
                  <div class="txnTableRowInner">
                      <div class="bodyRowNameGrid">
-                         <TxnTooltip :txn="{ ...txn, tagIds: [...txn.tagIds], fileIds: [] }"
+                         <TxnTooltip :txn="{ ...txn, tags: [...txn.tags], fileIds: [] }"
                                      :open-delay="props.txnTooltipOpenDelay"
                                      :close-delay="props.txnTooltipCloseDelay">
                              <div class="fullSize rel" style="display: flex; align-items: end;">
@@ -24,8 +24,8 @@
                              </div>
                          </TxnTooltip>
                          <div class="xLeft yTop" style="color: #555;">
-                             <DateTooltip :date="txn.creationDate">
-                                {{ getDateAge(txn.creationDate) }} ago ({{ formatDate(new Date(txn.creationDate), 'YYYY-MM-DD') }})
+                             <DateTooltip :date="new Date(txn.date).getTime()">
+                                {{ getDateAge(new Date(txn.date).getTime()) }} ago ({{ formatDate(new Date(txn.date), 'YYYY-MM-DD') }})
                             </DateTooltip>
                          </div>
                      </div>
@@ -44,7 +44,8 @@
                          </div>
                      </div>
                      <div :class="{ [changeToClass(txn.changeInValue)]: true, bodyRowValueChange: true }">
-                         {{ parseFloat(txn.changeInValue).toFixed(2) }}
+                         <!-- {{ parseFloat(txn.changeInValue).toFixed(2) }} -->
+                        {{ "N/I" }}
                      </div>
                  </div>
                  <SelectionMark v-if="isSelected" />
@@ -63,6 +64,7 @@ import OverlapArea from '@/modules/core/components/layout/OverlapArea.vue';
 import { computed, ref } from 'vue';
 import SelectionMark from '@/modules/core/components/decorations/SelectionMark.vue';
 import { useMediaQuery } from '@vueuse/core';
+import type { GetTxnsResponseItem } from '@/../../../api_types/GetTxnsResponseItem'
 
 /** A symbol that represents a from / to side contains multiple containers. */
 const MULTIPLE: unique symbol = Symbol();
@@ -70,26 +72,7 @@ const LOADING: unique symbol = Symbol();
 
 export type TxnTableRowProps =
 {
-    txn:
-    {
-        readonly id: string,
-        readonly tagIds: readonly string[],
-        readonly creationDate: number,
-        readonly changeInValue: string,
-        readonly title: string,
-        readonly description: string,
-        readonly owner: string,
-        readonly excludedFromIncomesExpenses: boolean,
-        readonly fragments: readonly
-        {
-            readonly fromContainer: string | null,
-            readonly toContainer: string | null,
-            readonly fromAmount: string | null,
-            readonly toAmount: string | null,
-            readonly fromCurrency: string | null,
-            readonly toCurrency: string | null,
-        }[]
-    },
+    txn: GetTxnsResponseItem,
     txnTooltipOpenDelay?: number | undefined,
     txnTooltipCloseDelay?: number | undefined,
     isSelected: boolean
@@ -110,19 +93,19 @@ const { findContainerById } = useContainersStore();
 const containerFlowDirection = computed<[string | null | typeof MULTIPLE | typeof LOADING, string | null | typeof MULTIPLE | typeof LOADING]>(() =>
 {
     const fragments = props.txn.fragments;
-    const fromContainers = [...new Set<string>(fragments.map(x => x.fromContainer).filter(x => x !== null))];
-    const toContainers = [...new Set<string>(fragments.map(x => x.toContainer).filter(x => x !== null))];
+    const fromContainers = [...new Set<string>(fragments.map(x => x.from?.account).filter(x => x !== null && x !== undefined))];
+    const toContainers = [...new Set<string>(fragments.map(x => x.to?.account).filter(x => x !== null && x !== undefined))];
     const fromContainerResult = (() =>
     {
         if (fromContainers.length === 0) return null;
         if (fromContainers.length > 1) return MULTIPLE;
-        return findContainerById(fromContainers[0])?.name ?? LOADING;
+        return findContainerById(fromContainers[0])?.accountName ?? LOADING;
     })();
     const toContainerResult = (() =>
     {
         if (toContainers.length === 0) return null;
         if (toContainers.length > 1) return MULTIPLE;
-        return findContainerById(toContainers[0])?.name ?? LOADING;
+        return findContainerById(toContainers[0])?.accountName ?? LOADING;
     })();
     return [fromContainerResult, toContainerResult] as const;
 });
