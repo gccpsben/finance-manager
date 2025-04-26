@@ -4,10 +4,10 @@ pub mod users {
     use crate::routes::users::login::LoginResponseBody;
     use crate::routes::users::register::PostUserRequestBody;
     use crate::routes::users::register::PostUserResponseBody;
-    use crate::tests::commons::requests::parse_response_body;
-    use crate::tests::commons::requests::send_req_with_body;
     use crate::tests::commons::requests::AssertTestResponse;
     use crate::tests::commons::requests::TestBody;
+    use crate::tests::commons::requests::parse_response_body;
+    use crate::tests::commons::requests::send_req_with_body;
     use crate::tests::commons::setups::setup_connection;
     use crate::tests::user_tests::users::drivers::*;
     use actix_http::StatusCode;
@@ -327,6 +327,17 @@ pub mod users {
                     "test_invalid_logins: expect item at index {count} to fail.",
                 );
             }
+        }
+
+        #[actix_web::test]
+        async fn test_auth_db_closed() {
+            let runtime = setup_connection().await;
+            let server = runtime.server;
+            let _ = bootstrap_token(("123", "123"), &server).await.token;
+            // close the db connection
+            let _ = runtime.states.db.close_by_ref().await;
+            let resp = driver_login_user(TestBody::Expected(("123", "123")), &server, false).await;
+            assert_eq!(resp.status, StatusCode::INTERNAL_SERVER_ERROR);
         }
     }
 }

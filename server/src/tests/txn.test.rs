@@ -606,6 +606,35 @@ pub mod txns {
         }
 
         #[actix_web::test]
+        async fn test_create_txn_unknown_txn_tags() {
+            let runtime = setup_connection().await;
+            let token = bootstrap_token(("123", "123"), &runtime.server).await.token;
+            let base_cid = bootstrap_base_curr(("BASE", "Base"), &token, &runtime.server).await;
+            let first_account = bootstrap_post_account("My account", &token, &runtime.server).await;
+            let resp = driver_post_txn(
+                Some(&token),
+                TestBody::Expected(PostTxnRequest {
+                    description: "my description".to_string(),
+                    title: "my title".to_string(),
+                    date_utc: "2025-01-01T01:02:00.000Z".to_string(),
+                    fragments: vec![PostTxnRequestFragment {
+                        from: Some(PostTxnRequestFragmentSide {
+                            account: first_account.clone(),
+                            currency: base_cid.clone(),
+                            amount: "1".to_string(),
+                        }),
+                        to: None,
+                    }],
+                    tags: vec![Uuid::new_v4().to_string()],
+                }),
+                &runtime.server,
+                false,
+            )
+            .await;
+            assert_eq!(resp.status, StatusCode::NOT_FOUND);
+        }
+
+        #[actix_web::test]
         async fn test_create_txn_repeated_tags() {
             let runtime = setup_connection().await;
 
@@ -1344,6 +1373,43 @@ pub mod txns {
                     },
                     expected: "-75".to_string(),
                     test_name: "normal currencies with datums, 1 fragment, 2 sides".to_string(),
+                },
+                TestCase {
+                    req: PostTxnRequest {
+                        description: "my description".to_string(),
+                        title: "my title".to_string(),
+                        date_utc: "2025-01-01T01:02:00.000Z".to_string(),
+                        fragments: vec![
+                            PostTxnRequestFragment {
+                                from: Some(PostTxnRequestFragmentSide {
+                                    account: first_account.clone(),
+                                    currency: normal_currency_with_datums.clone(),
+                                    amount: "5".to_string(),
+                                }),
+                                to: Some(PostTxnRequestFragmentSide {
+                                    account: first_account.clone(),
+                                    currency: normal_currency_with_datums.clone(),
+                                    amount: "2".to_string(),
+                                }),
+                            },
+                            PostTxnRequestFragment {
+                                from: Some(PostTxnRequestFragmentSide {
+                                    account: first_account.clone(),
+                                    currency: normal_currency_with_datums.clone(),
+                                    amount: "5".to_string(),
+                                }),
+                                to: Some(PostTxnRequestFragmentSide {
+                                    account: first_account.clone(),
+                                    currency: normal_currency_with_datums.clone(),
+                                    amount: "2".to_string(),
+                                }),
+                            },
+                        ],
+                        tags: vec![first_tag.clone()],
+                    },
+                    expected: "-150".to_string(),
+                    test_name: "2 fragments: normal currencies with datums, 1 fragment, 2 sides"
+                        .to_string(),
                 },
             ];
 
