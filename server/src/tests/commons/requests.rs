@@ -1,8 +1,8 @@
 use actix_http::StatusCode;
 use actix_test::ClientRequest;
 use actix_test::ClientResponse;
-use serde::de;
 use serde::Serialize;
+use serde::de;
 use std::str::from_utf8;
 
 pub enum TestBody<T> {

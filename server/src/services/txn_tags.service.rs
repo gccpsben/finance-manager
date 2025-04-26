@@ -3,16 +3,18 @@ use std::sync::Arc;
 use crate::caches::cache::PartialCacheState;
 use crate::caches::txn_tag::TxnTagsCache;
 use crate::entities;
+use crate::entities::txn_tag;
 use crate::extended_models::txn_tag::TxnTagId;
+use crate::extractors::auth_user::AuthUser;
 use crate::services::TransactionWithCallback;
-use crate::{entities::txn_tag, extractors::auth_user::AuthUser};
 use sea_orm::ActiveValue;
 use sea_orm::ColumnTrait;
 use sea_orm::DbErr;
 use sea_orm::EntityTrait;
 use sea_orm::QueryFilter;
 use sea_orm::Value;
-use tokio::sync::{Mutex, MutexGuard};
+use tokio::sync::Mutex;
+use tokio::sync::MutexGuard;
 use uuid::Uuid;
 
 pub async fn create_txn_tag(
@@ -51,7 +53,6 @@ pub async fn create_txn_tag(
     Ok((model.last_insert_id.0, db_txn))
 }
 
-#[allow(unused)]
 pub async fn get_txn_tag_by_id(
     user: &AuthUser,
     id: uuid::Uuid,

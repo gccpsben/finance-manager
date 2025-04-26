@@ -1,17 +1,17 @@
 use super::runtime::TestRuntime;
 use crate::routes::bootstrap::apply_endpoints;
 use crate::states::database_states::DatabaseStates;
-use actix_web::web;
 use actix_web::App;
+use actix_web::web;
 use finance_manager_migration::Migrator;
 use futures::prelude::*;
-use sea_orm::sea_query::IndexCreateStatement;
-use sea_orm::sea_query::TableCreateStatement;
 use sea_orm::ConnectionTrait;
 use sea_orm::Database;
 use sea_orm::DatabaseConnection;
 use sea_orm::EntityTrait;
 use sea_orm::Schema;
+use sea_orm::sea_query::IndexCreateStatement;
+use sea_orm::sea_query::TableCreateStatement;
 
 /// Setup connection and application states for testing.
 /// The application states will default to reasonable values for testing.

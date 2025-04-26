@@ -1,6 +1,6 @@
 use chrono::{DateTime, NaiveDateTime, Utc};
-use serde::de::Error;
 use serde::Deserialize;
+use serde::de::Error;
 use thiserror::Error;
 
 #[derive(Debug, Error)]
@@ -26,7 +26,7 @@ where
             _ => {
                 return Err(D::Error::custom(
                     "The last char of the given date must be 'Z'.",
-                ))
+                ));
             }
         }
     }

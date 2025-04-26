@@ -1,5 +1,7 @@
+use crate::DatabaseStates;
+use crate::extractors::auth_user::AuthUser;
+use crate::services::accounts::create_account;
 use crate::services::accounts::{get_account, get_accounts};
-use crate::{extractors::auth_user::AuthUser, services::accounts::create_account, DatabaseStates};
 use actix_web::web;
 use serde::Deserialize;
 use serde::Serialize;
@@ -7,13 +9,11 @@ use ts_rs::TS;
 
 pub mod get_account {
 
+    use crate::extended_models::account::AccountId;
+    use crate::routes::bootstrap::EndpointsErrors;
+    use crate::routes::bootstrap::parse_uuid;
+    use crate::services::TransactionWithCallback;
     use sea_orm::TransactionTrait;
-
-    use crate::{
-        extended_models::account::AccountId,
-        routes::bootstrap::{parse_uuid, EndpointsErrors},
-        services::TransactionWithCallback,
-    };
 
     use super::*;
 
@@ -79,8 +79,11 @@ pub mod get_account {
 
 pub mod post_account {
     use super::*;
-    use crate::{routes::bootstrap::EndpointsErrors, services::TransactionWithCallback};
-    use sea_orm::{prelude::DateTime, sqlx::types::chrono::Utc, TransactionTrait};
+    use crate::routes::bootstrap::EndpointsErrors;
+    use crate::services::TransactionWithCallback;
+    use sea_orm::TransactionTrait;
+    use sea_orm::prelude::DateTime;
+    use sea_orm::sqlx::types::chrono::Utc;
 
     #[derive(Serialize, Deserialize)]
     #[serde(rename_all = "camelCase", deny_unknown_fields)]

@@ -2,11 +2,11 @@
 pub mod currency_rate_datums {
 
     use crate::routes::currency_rate_datums::post_currency_rate_datum::*;
+    use crate::tests::commons::requests::AssertTestResponse;
+    use crate::tests::commons::requests::TestBody;
     use crate::tests::commons::requests::attach_token_to_req;
     use crate::tests::commons::requests::parse_response_body;
     use crate::tests::commons::requests::send_req_with_body;
-    use crate::tests::commons::requests::AssertTestResponse;
-    use crate::tests::commons::requests::TestBody;
     use crate::tests::commons::setups::setup_connection;
     use crate::tests::currency_rate_datum::currency_rate_datums::drivers::*;
     use crate::tests::user_tests::users::drivers::*;

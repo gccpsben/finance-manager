@@ -1,17 +1,23 @@
-use actix_web::{
-    error::{ErrorInternalServerError, ErrorUnauthorized},
-    web::Data,
-    Error, FromRequest,
-};
+use actix_web::Error;
+use actix_web::FromRequest;
+use actix_web::error::ErrorInternalServerError;
+use actix_web::error::ErrorUnauthorized;
+use actix_web::web::Data;
 use futures::Future;
-use sea_orm::{prelude::Expr, sea_query::IntoCondition, EntityTrait, JoinType, QuerySelect};
-use serde::{Deserialize, Serialize};
-use std::{pin::Pin, str::FromStr};
+use sea_orm::EntityTrait;
+use sea_orm::JoinType;
+use sea_orm::QuerySelect;
+use sea_orm::prelude::Expr;
+use sea_orm::sea_query::IntoCondition;
 
-use crate::{
-    entities::{access_token, user},
-    DatabaseStates,
-};
+use serde::Deserialize;
+use serde::Serialize;
+use std::pin::Pin;
+use std::str::FromStr;
+
+use crate::DatabaseStates;
+use crate::entities::access_token;
+use crate::entities::user;
 
 #[derive(Serialize, Deserialize, Debug, Default, Clone, Hash, PartialEq, Eq)]
 pub struct AuthUser(pub uuid::Uuid);

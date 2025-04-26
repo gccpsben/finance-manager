@@ -1,7 +1,11 @@
 use crate::env::AppEnv;
 use crate::env::EnvLogMode;
-use tracing::{level_filters::LevelFilter, Level};
-use tracing_subscriber::{filter, fmt::Layer, layer::SubscriberExt, util::SubscriberInitExt};
+use tracing::Level;
+use tracing::level_filters::LevelFilter;
+use tracing_subscriber::filter;
+use tracing_subscriber::fmt::Layer;
+use tracing_subscriber::layer::SubscriberExt;
+use tracing_subscriber::util::SubscriberInitExt;
 
 #[derive(Debug)]
 pub enum EnvInitLoggerErrors {

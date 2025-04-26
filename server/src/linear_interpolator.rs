@@ -1,5 +1,6 @@
 use chrono::TimeDelta;
-use rust_decimal::{prelude::FromPrimitive, Decimal};
+use rust_decimal::Decimal;
+use rust_decimal::prelude::FromPrimitive;
 
 /// Convert a given `TimeDelta` into its total mills.
 /// Panics if `NaiveDateTime`'s mills exceed max.

@@ -3,11 +3,11 @@ pub mod txns {
     use crate::routes::txns::get_txns::GetTxnsResponse;
     use crate::routes::txns::post_txns::PostTxnRequest;
     use crate::routes::txns::post_txns::PostTxnResponse;
+    use crate::tests::commons::requests::AssertTestResponse;
+    use crate::tests::commons::requests::TestBody;
     use crate::tests::commons::requests::attach_token_to_req;
     use crate::tests::commons::requests::parse_response_body;
     use crate::tests::commons::requests::send_req_with_body;
-    use crate::tests::commons::requests::AssertTestResponse;
-    use crate::tests::commons::requests::TestBody;
     use crate::tests::commons::setups::setup_connection;
     use crate::tests::commons::setups::setup_connection_custom;
     use actix_http::StatusCode;
@@ -822,6 +822,30 @@ pub mod txns {
             assert_eq!(resp.status, StatusCode::BAD_REQUEST);
         }
 
+        // #[actix_web::test]
+        // async fn test_create_txn_overflow() {
+        //     let runtime = setup_connection().await;
+        //     let token = bootstrap_token(("123", "123"), &runtime.server).await.token;
+
+        //     let resp = driver_post_txn(
+        //         Some(&token),
+        //         TestBody::Expected(PostTxnRequest {
+        //             description: "my description".to_string(),
+        //             title: "my title".to_string(),
+        //             date_utc: "2025-01-01T01:02:00.000".to_string(),
+        //             fragments: vec![PostTxnRequestFragment {
+        //                 from: None,
+        //                 to: None,
+        //             }],
+        //             tags: vec![],
+        //         }),
+        //         &runtime.server,
+        //         false,
+        //     )
+        //     .await;
+        //     assert_eq!(resp.status, StatusCode::BAD_REQUEST);
+        // }
+
         #[actix_web::test]
         async fn test_get_single_txn() {
             let runtime = setup_connection().await;
@@ -1047,7 +1071,7 @@ pub mod txns {
                 .await
                 .expected
                 .unwrap()
-                .id
+                .id,
             )
             .unwrap();
 
@@ -1152,7 +1176,7 @@ pub mod txns {
                 .await
                 .expected
                 .unwrap()
-                .id
+                .id,
             )
             .unwrap();
 
@@ -1173,7 +1197,7 @@ pub mod txns {
                 .await
                 .expected
                 .unwrap()
-                .id
+                .id,
             )
             .unwrap();
 
@@ -1425,7 +1449,7 @@ pub mod txns {
                     .await
                     .expected
                     .unwrap()
-                    .id
+                    .id,
                 )
                 .unwrap();
 

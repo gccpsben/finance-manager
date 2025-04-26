@@ -1,20 +1,25 @@
 use std::sync::Arc;
 
+use super::currency_rate_datum::get_datum_left_right;
 use crate::caches::currency_cache::CurrencyCache;
+use crate::entities::currency;
 use crate::entities::currency_rate_datum::Model;
-use crate::extended_models::currency::{Currency, CurrencyId};
+use crate::extended_models::currency::CreateCurrencyAction;
+use crate::extended_models::currency::Currency;
+use crate::extended_models::currency::CurrencyId;
 use crate::extractors::auth_user::AuthUser;
-use crate::linear_interpolator::{force_time_delta_to_mills_decimal, try_linear_interpolate};
+use crate::linear_interpolator::force_time_delta_to_mills_decimal;
+use crate::linear_interpolator::try_linear_interpolate;
 use crate::maths::ForgivingDecimal;
 use crate::routes::bootstrap::EndpointsErrors;
 use crate::services::TransactionWithCallback;
-use crate::{entities::currency, extended_models::currency::CreateCurrencyAction};
-use rust_decimal::prelude::FromPrimitive;
 use rust_decimal::Decimal;
-use sea_orm::{ColumnTrait, DbErr, EntityTrait, QueryFilter};
+use rust_decimal::prelude::FromPrimitive;
+use sea_orm::ColumnTrait;
+use sea_orm::DbErr;
+use sea_orm::EntityTrait;
+use sea_orm::QueryFilter;
 use tokio::sync::Mutex;
-
-use super::currency_rate_datum::get_datum_left_right;
 
 #[derive(Debug)]
 pub enum CalculateCurrencyRateErrors {
@@ -288,7 +293,7 @@ pub async fn create_currency(
             .map_err(CreateCurrencyErrors::DbErr)?
         {
             (Some(_existing_currency), _) => {
-                return Err(CreateCurrencyErrors::RepeatedBaseCurrency)
+                return Err(CreateCurrencyErrors::RepeatedBaseCurrency);
             }
             (None, db_txn) => db_txn, // return moved txn if ok
         }
@@ -311,7 +316,7 @@ pub async fn create_currency(
             (None, _) => {
                 return Err(CreateCurrencyErrors::ReferencedCurrencyNotExist(
                     *fallback_rate_currency_id,
-                ))
+                ));
             }
         },
     };

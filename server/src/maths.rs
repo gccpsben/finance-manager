@@ -1,5 +1,5 @@
-use crate::services::currencies::CalculateCurrencyRateErrors;
 use crate::RESTFUL_DIGITS;
+use crate::services::currencies::CalculateCurrencyRateErrors;
 use rust_decimal::Decimal;
 use std::str::FromStr;
 

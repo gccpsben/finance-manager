@@ -1,16 +1,22 @@
-use super::currencies::{find_first_unknown_currencies, get_currency_by_id};
+use super::currencies::find_first_unknown_currencies;
+use super::currencies::get_currency_by_id;
+use crate::caches::currency_cache::CurrencyCache;
+use crate::caches::currency_rate_datum::CurrencyRateDatumCache;
 use crate::entities::currency_rate_datum;
 use crate::extended_models::currency::CurrencyId;
+use crate::extractors::auth_user::AuthUser;
 use crate::routes::bootstrap::EndpointsErrors;
 use crate::routes::currency_rate_datums::CreateCurrencyRateDatumAction;
 use crate::services::TransactionWithCallback;
-use crate::{
-    caches::{currency_cache::CurrencyCache, currency_rate_datum::CurrencyRateDatumCache},
-    extractors::auth_user::AuthUser,
-};
+use sea_orm::ColumnTrait;
+use sea_orm::DbErr;
+use sea_orm::EntityTrait;
+use sea_orm::QueryFilter;
+use sea_orm::QueryOrder;
+use sea_orm::Value;
 use sea_orm::prelude::Expr;
-use sea_orm::sqlx::types::chrono::{self, Utc};
-use sea_orm::{ColumnTrait, DbErr, EntityTrait, QueryFilter, QueryOrder, Value};
+use sea_orm::sqlx::types::chrono;
+use sea_orm::sqlx::types::chrono::Utc;
 use std::sync::Arc;
 use tokio::sync::Mutex;
 use uuid::Uuid;
@@ -174,7 +180,7 @@ pub async fn create_currency_rate_datum(
             (Some(uuid_not_found), _db_txn) => {
                 return Err(CreateCurrencyRateDatumErrors::CurrencyNotFound(CurrencyId(
                     uuid_not_found.0,
-                )))
+                )));
             }
         }
     };

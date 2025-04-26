@@ -1,11 +1,14 @@
 use crate::entities::currency_rate_datum;
 use crate::extended_models::currency::CurrencyId;
-use crate::services::{currency_rate_datum::create_currency_rate_datum, TransactionWithCallback};
-use crate::{extractors::auth_user::AuthUser, states::database_states::DatabaseStates};
+use crate::extractors::auth_user::AuthUser;
+use crate::services::TransactionWithCallback;
+use crate::services::currency_rate_datum::create_currency_rate_datum;
+use crate::states::database_states::DatabaseStates;
 use actix_web::web;
-use sea_orm::prelude::DateTime;
 use sea_orm::ActiveValue;
-use serde::{Deserialize, Serialize};
+use sea_orm::prelude::DateTime;
+use serde::Deserialize;
+use serde::Serialize;
 use std::str::FromStr;
 use ts_rs::TS;
 use uuid::Uuid;

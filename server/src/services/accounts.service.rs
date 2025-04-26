@@ -2,12 +2,12 @@ use crate::entities::account;
 use crate::extended_models::account::AccountId;
 use crate::extractors::auth_user::AuthUser;
 use crate::services::TransactionWithCallback;
-use sea_orm::prelude::DateTime;
 use sea_orm::ActiveValue;
 use sea_orm::ColumnTrait;
 use sea_orm::DbErr;
 use sea_orm::EntityTrait;
 use sea_orm::QueryFilter;
+use sea_orm::prelude::DateTime;
 
 pub async fn create_account(
     auth_user: &AuthUser,

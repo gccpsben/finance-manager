@@ -1,3 +1,10 @@
+use super::PaginationReq;
+use super::accounts::find_first_unknown_account;
+use super::currencies::CalculateCurrencyRateErrors;
+use super::currencies::find_first_unknown_currencies;
+use super::txn_tags::find_first_unknown_tag;
+use super::txn_tags::replace_txn_tags_of_txn;
+use super::unpack_db_txn;
 use crate::caches::cache::IntegratedQueryResult;
 use crate::caches::cache::PartialCacheState;
 use crate::caches::currency_cache::CurrencyCache;
@@ -15,12 +22,11 @@ use crate::extractors::auth_user::AuthUser;
 use crate::iter::get_first_duplicated;
 use crate::paging::PagedContent;
 use crate::routes::bootstrap::EndpointsErrors;
-use crate::services::currencies::calculate_currency_rate;
 use crate::services::TransactionWithCallback;
+use crate::services::currencies::calculate_currency_rate;
 use chrono::NaiveDateTime;
 use itertools::izip;
 use rust_decimal::Decimal;
-use sea_orm::ActiveModelBehavior;
 use sea_orm::ActiveModelTrait;
 use sea_orm::ActiveValue;
 use sea_orm::ColumnTrait;
@@ -36,14 +42,6 @@ use std::collections::HashSet;
 use std::sync::Arc;
 use tokio::sync::Mutex;
 use uuid::Uuid;
-
-use super::accounts::find_first_unknown_account;
-use super::currencies::find_first_unknown_currencies;
-use super::currencies::CalculateCurrencyRateErrors;
-use super::txn_tags::find_first_unknown_tag;
-use super::txn_tags::replace_txn_tags_of_txn;
-use super::unpack_db_txn;
-use super::PaginationReq;
 
 #[derive(Debug)]
 pub enum CreateTxnErrors {
@@ -389,14 +387,12 @@ pub async fn create_txn(
     }
 
     let generated_txn_uuid = uuid::Uuid::new_v4();
-    let active_model = {
-        let mut model = txn::ActiveModel::new();
-        model.id = ActiveValue::Set(generated_txn_uuid);
-        model.date = ActiveValue::Set(txn.date);
-        model.description = ActiveValue::Set(txn.description);
-        model.owner_id = ActiveValue::Set(owner.0);
-        model.title = ActiveValue::Set(txn.title);
-        model
+    let active_model = txn::ActiveModel {
+        id: ActiveValue::Set(generated_txn_uuid),
+        date: ActiveValue::Set(txn.date),
+        description: ActiveValue::Set(txn.description),
+        owner_id: ActiveValue::Set(owner.0),
+        title: ActiveValue::Set(txn.title),
     };
 
     let inserted_model = active_model

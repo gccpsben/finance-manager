@@ -1,18 +1,20 @@
-use crate::{extractors::auth_user::AuthUser, states::database_states::DatabaseStates};
+use crate::extended_models::currency::CurrencyId;
+use crate::extractors::auth_user::AuthUser;
+use crate::routes::bootstrap::EndpointsErrors;
+use crate::routes::bootstrap::parse_uuid;
+use crate::services::TransactionWithCallback;
+use crate::states::database_states::DatabaseStates;
 use actix_web::web;
 use sea_orm::TransactionTrait;
-use serde::{Deserialize, Serialize};
+use serde::Deserialize;
+use serde::Serialize;
 use ts_rs::TS;
 
 pub mod post_currency {
 
-    use crate::{
-        extended_models::currency::{CreateCurrencyAction, CurrencyId},
-        routes::bootstrap::{parse_uuid, EndpointsErrors},
-        services::{currencies::create_currency, TransactionWithCallback},
-    };
-
     use super::*;
+    use crate::extended_models::currency::CreateCurrencyAction;
+    use crate::services::currencies::create_currency;
 
     #[derive(Serialize, Deserialize, Debug)]
     #[serde(rename_all = "camelCase", deny_unknown_fields)]
@@ -61,7 +63,7 @@ pub mod post_currency {
                 return Err(EndpointsErrors::MissingArgPair {
                     left_prop_name: "fallbackRateAmount".to_string(),
                     right_prop_name: "fallbackRateCurrencyId".to_string(),
-                })
+                });
             }
         };
 
@@ -79,18 +81,13 @@ pub mod get_currency {
     use futures::TryFutureExt;
     use rust_decimal::Decimal;
 
-    use crate::{
-        date::js_iso_to_iso8601,
-        extended_models::currency::{Currency, CurrencyId},
-        routes::bootstrap::{parse_uuid, EndpointsErrors},
-        services::{
-            currencies::{calculate_currency_rate, get_currencies, get_currency_by_id},
-            TransactionWithCallback,
-        },
-        RESTFUL_DIGITS,
-    };
-
     use super::*;
+    use crate::RESTFUL_DIGITS;
+    use crate::date::js_iso_to_iso8601;
+    use crate::extended_models::currency::Currency;
+    use crate::services::currencies::calculate_currency_rate;
+    use crate::services::currencies::get_currencies;
+    use crate::services::currencies::get_currency_by_id;
 
     #[derive(Serialize, Deserialize)]
     #[serde(rename_all = "camelCase")]

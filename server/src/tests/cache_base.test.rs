@@ -176,9 +176,11 @@ mod auth_partitioned_cache_tests {
         assert_eq!(first_item.query(&4), None.as_ref());
         assert!(matches!(first_item.get_state(), PartialCacheState::Partial));
         let _ = first_item;
-        assert!(cache_1_user_many_items
-            .get_user_entry(&uuid_user(2))
-            .is_none());
+        assert!(
+            cache_1_user_many_items
+                .get_user_entry(&uuid_user(2))
+                .is_none()
+        );
     }
 
     #[actix_web::test]
@@ -239,21 +241,27 @@ mod auth_partitioned_cache_tests {
             assert_eq!(third_item.query(&4), None.as_ref());
             assert!(matches!(third_item.get_state(), PartialCacheState::Partial));
         }
-        assert!(cache_many_users_many_items
-            .get_user_entry(&uuid_user(3))
-            .is_none());
-        assert!(cache_many_users_many_items
-            .get_user_entry(&uuid_user(5))
-            .is_none());
+        assert!(
+            cache_many_users_many_items
+                .get_user_entry(&uuid_user(3))
+                .is_none()
+        );
+        assert!(
+            cache_many_users_many_items
+                .get_user_entry(&uuid_user(5))
+                .is_none()
+        );
     }
 
     #[actix_web::test]
     pub async fn test_many_users_full_states() {
         let mut cache_many_users_many_items =
             AuthPartitionCache::<i32, i32>::new(non_z_size(2), non_z_size(2));
-        assert!(cache_many_users_many_items
-            .get_user_entry(&uuid_user(1))
-            .is_none());
+        assert!(
+            cache_many_users_many_items
+                .get_user_entry(&uuid_user(1))
+                .is_none()
+        );
 
         {
             cache_many_users_many_items.replace_full(&uuid_user(1), Box::from([(1, 2), (2, 3)]));

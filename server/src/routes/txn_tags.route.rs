@@ -1,10 +1,12 @@
-use crate::DatabaseStates;
-use crate::{
-    extractors::auth_user::AuthUser,
-    services::{txn_tags::create_txn_tag, TransactionWithCallback},
-};
-use ::serde::{Deserialize, Serialize};
-use actix_web::{http::header::ContentType, web, HttpResponse};
+use crate::extractors::auth_user::AuthUser;
+use crate::services::TransactionWithCallback;
+use crate::services::txn_tags::create_txn_tag;
+use crate::states::database_states::DatabaseStates;
+use actix_web::HttpResponse;
+use actix_web::http::header::ContentType;
+use actix_web::web;
+use serde::Deserialize;
+use serde::Serialize;
 use ts_rs::TS;
 
 pub mod create_tag {
@@ -34,7 +36,7 @@ pub mod create_tag {
         let db_txn = match TransactionWithCallback::from_db_conn(&data.db, vec![]).await {
             Err(_db_err) => {
                 return HttpResponse::InternalServerError()
-                    .body("Unable to start database transaction.")
+                    .body("Unable to start database transaction.");
             }
             Ok(db_txn) => db_txn,
         };

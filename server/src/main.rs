@@ -15,9 +15,14 @@ mod services;
 mod states;
 mod tests;
 
-use actix_web::{web, App, HttpServer};
-use clap::{command, Parser, ValueHint};
-use finance_manager_migration::{Migrator, MigratorTrait};
+use actix_web::App;
+use actix_web::HttpServer;
+use actix_web::web;
+use clap::Parser;
+use clap::ValueHint;
+use clap::command;
+use finance_manager_migration::Migrator;
+use finance_manager_migration::MigratorTrait;
 use routes::bootstrap::apply_endpoints;
 use sea_orm::Database;
 use states::database_states::DatabaseStates;

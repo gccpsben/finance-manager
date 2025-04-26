@@ -1,7 +1,9 @@
-use crate::services::users::{generate_token_unverified, verify_creds};
 use crate::DatabaseStates;
+use crate::services::users::generate_token_unverified;
+use crate::services::users::verify_creds;
 use actix_web::web;
-use serde::{Deserialize, Serialize};
+use serde::Deserialize;
+use serde::Serialize;
 use ts_rs::TS;
 
 pub mod login {
