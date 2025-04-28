@@ -15,10 +15,8 @@ pub mod txns {
     use uuid::Uuid;
 
     pub mod drivers {
-
-        use crate::routes::txns::get_txn::GetTxnResponse;
-
         use super::*;
+        use crate::routes::txns::get_txn::GetTxnResponse;
 
         pub async fn driver_post_txn(
             token: Option<&str>,
@@ -93,12 +91,6 @@ pub mod txns {
     }
 
     mod tests {
-
-        use std::sync::Arc;
-
-        use serde_json::json;
-        use tokio::sync::Mutex;
-
         use super::drivers::driver_get_txn;
         use super::drivers::driver_get_txns;
         use super::drivers::driver_post_txn;
@@ -119,6 +111,9 @@ pub mod txns {
         use crate::tests::currency_tests::currencies::drivers::bootstrap_sec_curr;
         use crate::tests::txn_tag::txn_tags::drivers::bootstrap_txn_tag;
         use crate::tests::user_tests::users::drivers::bootstrap_token;
+        use serde_json::json;
+        use std::sync::Arc;
+        use tokio::sync::Mutex;
 
         /// Test for IDOR vulnerability in posting transactions.
         #[actix_web::test]
@@ -822,30 +817,6 @@ pub mod txns {
             assert_eq!(resp.status, StatusCode::BAD_REQUEST);
         }
 
-        // #[actix_web::test]
-        // async fn test_create_txn_overflow() {
-        //     let runtime = setup_connection().await;
-        //     let token = bootstrap_token(("123", "123"), &runtime.server).await.token;
-
-        //     let resp = driver_post_txn(
-        //         Some(&token),
-        //         TestBody::Expected(PostTxnRequest {
-        //             description: "my description".to_string(),
-        //             title: "my title".to_string(),
-        //             date_utc: "2025-01-01T01:02:00.000".to_string(),
-        //             fragments: vec![PostTxnRequestFragment {
-        //                 from: None,
-        //                 to: None,
-        //             }],
-        //             tags: vec![],
-        //         }),
-        //         &runtime.server,
-        //         false,
-        //     )
-        //     .await;
-        //     assert_eq!(resp.status, StatusCode::BAD_REQUEST);
-        // }
-
         #[actix_web::test]
         async fn test_get_single_txn() {
             let runtime = setup_connection().await;
@@ -1481,14 +1452,121 @@ pub mod txns {
                     .await
                     .expected
                     .unwrap();
-                let test_case_txn = all_txns.items.iter().find(|item| {
-                    item.id == test_case.posted_txn_id.unwrap().to_string()
-                }).unwrap();
+                let test_case_txn = all_txns
+                    .items
+                    .iter()
+                    .find(|item| item.id == test_case.posted_txn_id.unwrap().to_string())
+                    .unwrap();
                 assert_eq!(
                     test_case_txn.value_delta, test_case.expected,
                     "case at index {index} ({}) failed (get txns)",
                     test_case.test_name
                 );
+            }
+        }
+
+        /// Test if overflow (MAX / MIN value exceeded) in change in value is properly handled.
+        #[actix_web::test]
+        async fn test_change_in_value_overflow() {
+            let runtime = setup_connection().await;
+            let server = runtime.server;
+            let token = bootstrap_token(("123", "123"), &server).await.token;
+            let base_cid = bootstrap_base_curr(("BASE", "Base"), &token, &server).await;
+            let first_account = bootstrap_post_account("My account", &token, &server).await;
+            let assert_txn_and_txns = async |txn_id: &str, expected: &str| {
+                // Test on the single txn endpoint
+                {
+                    let resp = driver_get_txn(Some(txn_id), Some(&token), &server, true)
+                        .await
+                        .expected
+                        .unwrap();
+                    let returned_delta = resp.value_delta;
+                    assert_eq!(returned_delta, expected);
+                }
+                // Test on the txns endpoint
+                {
+                    let resp_items = driver_get_txns(Some(&token), &server, true)
+                        .await
+                        .expected
+                        .unwrap()
+                        .items;
+                    let target_txn = resp_items.iter().find(|x| x.id == txn_id).unwrap();
+                    assert_eq!(target_txn.value_delta, expected);
+                }
+            };
+            let post_txn_and_get_id = async |amounts: &[(Option<&str>, Option<&str>)]| {
+                Uuid::parse_str(
+                    &driver_post_txn(
+                        Some(&token),
+                        TestBody::Expected(PostTxnRequest {
+                            description: "my description".to_string(),
+                            title: "my title".to_string(),
+                            date_utc: "2025-01-01T01:02:00.000Z".to_string(),
+                            fragments: amounts
+                                .iter()
+                                .map(|amount| PostTxnRequestFragment {
+                                    from: amount.0.map(|from_amount| PostTxnRequestFragmentSide {
+                                        account: first_account.clone(),
+                                        currency: base_cid.clone(),
+                                        amount: from_amount.to_string(),
+                                    }),
+                                    to: amount.1.map(|from_amount| PostTxnRequestFragmentSide {
+                                        account: first_account.clone(),
+                                        currency: base_cid.clone(),
+                                        amount: from_amount.to_string(),
+                                    }),
+                                })
+                                .collect::<Vec<_>>(),
+                            tags: vec![],
+                        }),
+                        &server,
+                        true,
+                    )
+                    .await
+                    .expected
+                    .unwrap()
+                    .id,
+                )
+                .unwrap()
+            };
+
+            // Test no error if the `value_delta` is right at the Decimal::MIN
+            {
+                let txn_id =
+                    post_txn_and_get_id(&[(Some(&rust_decimal::Decimal::MAX.to_string()), None)])
+                        .await;
+
+                assert_txn_and_txns(&txn_id.to_string(), &rust_decimal::Decimal::MIN.to_string())
+                    .await;
+            }
+
+            // Test for errors if the `value_delta` is just 1 below at the Decimal::MIN
+            {
+                let txn_id = post_txn_and_get_id(&[
+                    (Some(&rust_decimal::Decimal::MAX.to_string()), None),
+                    (Some("1"), None),
+                ])
+                .await;
+                assert_txn_and_txns(&txn_id.to_string(), "Unpresentable").await;
+            }
+
+            // Test no error if the `value_delta` is right at the Decimal::MAX
+            {
+                let txn_id =
+                    post_txn_and_get_id(&[(None, Some(&rust_decimal::Decimal::MAX.to_string()))])
+                        .await;
+                assert_txn_and_txns(&txn_id.to_string(), &rust_decimal::Decimal::MAX.to_string())
+                    .await;
+            }
+
+            // Test for errors if the `value_delta` is just 1 above at the Decimal::MAX
+            {
+                let txn_id = post_txn_and_get_id(&[
+                    (None, Some(&rust_decimal::Decimal::MAX.to_string())),
+                    (None, Some("1")),
+                ])
+                .await;
+                assert_txn_and_txns(&txn_id.to_string(), "Unpresentable").await;
             }
         }
     }

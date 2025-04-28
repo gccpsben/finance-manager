@@ -8,7 +8,15 @@ members = [".", "migration"]
 
 [dependencies]
 futures = "0.3.31"
-sea-orm = { version = "1.1.7", features = [ "sqlx-sqlite", "sqlx-postgres", "runtime-async-std-native-tls", "macros", "with-json", "debug-print", "with-uuid" ] }
+sea-orm = { version = "1.1.7", features = [
+    "sqlx-sqlite",
+    "sqlx-postgres",
+    "runtime-async-std-native-tls",
+    "macros",
+    "with-json",
+    "debug-print",
+    "with-uuid",
+] }
 argon2 = "0.5.3"
 actix-web = "4.10.2"
 serde = "1.0.219"
@@ -25,7 +33,7 @@ serde_urlencoded = "0.7.1"
 actix-test = "0.1.5"
 rust_decimal = "1.37.1"
 chrono = "0.4.39"
-finance_manager_migration = { path="./migration" }
+finance_manager_migration = { path = "./migration" }
 bson = { version = "2.14.0", features = ["chrono-0_4"] }
 thiserror = "2.0.12"
 tokio = { version = "1.44.2", features = ["sync"] }

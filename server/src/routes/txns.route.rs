@@ -11,7 +11,7 @@ use crate::services::txns::create_txn;
 use crate::services::txns::get_txns;
 use crate::states::database_states::DatabaseStates;
 use actix_web::web;
-use rust_decimal::Decimal;
+use rust_decimal::Decimal as RDecimal;
 use sea_orm::TransactionTrait;
 use serde::Deserialize;
 use serde::Serialize;
@@ -280,8 +280,10 @@ pub mod post_txns {
                     match (account_uuid, currency_uuid) {
                         (Err(err), _) | (_, Err(err)) => Err(err),
                         (Ok(account_uuid), Ok(currency_uuid)) => {
-                            let amount = Decimal::from_str_exact(&side.amount).map_err(map_to_err);
-                            amount.map(|amount| CreateTxnActionFragmentSide {
+                            // Catch unpresentable decimals early when letting users POST txns.
+                            let amount =
+                                RDecimal::from_str_exact(&side.amount).map_err(map_to_err)?;
+                            Ok(CreateTxnActionFragmentSide {
                                 amount,
                                 account: account_uuid,
                                 currency: currency_uuid,

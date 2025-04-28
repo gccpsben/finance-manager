@@ -1,5 +1,3 @@
-use std::sync::Arc;
-
 use super::currency_rate_datum::get_datum_left_right;
 use crate::caches::currency_cache::CurrencyCache;
 use crate::entities::currency;
@@ -10,15 +8,17 @@ use crate::extended_models::currency::CurrencyId;
 use crate::extractors::auth_user::AuthUser;
 use crate::linear_interpolator::force_time_delta_to_mills_decimal;
 use crate::linear_interpolator::try_linear_interpolate;
-use crate::maths::ForgivingDecimal;
+use crate::maths::Decimal;
 use crate::routes::bootstrap::EndpointsErrors;
 use crate::services::TransactionWithCallback;
-use rust_decimal::Decimal;
+use rust_decimal::Decimal as RDecimal;
 use rust_decimal::prelude::FromPrimitive;
 use sea_orm::ColumnTrait;
 use sea_orm::DbErr;
 use sea_orm::EntityTrait;
 use sea_orm::QueryFilter;
+use std::str::FromStr;
+use std::sync::Arc;
 use tokio::sync::Mutex;
 
 #[derive(Debug)]
@@ -26,7 +26,6 @@ pub enum CalculateCurrencyRateErrors {
     DbErr(DbErr),
     CurrencyNotFound(CurrencyId),
     InvalidDecimalValue(String),
-    OverflowOrUnderflow,
 }
 
 impl From<CalculateCurrencyRateErrors> for EndpointsErrors {
@@ -38,9 +37,6 @@ impl From<CalculateCurrencyRateErrors> for EndpointsErrors {
             }
             CalculateCurrencyRateErrors::InvalidDecimalValue(value) => {
                 EndpointsErrors::InvalidDecimalValue(value)
-            }
-            CalculateCurrencyRateErrors::OverflowOrUnderflow => {
-                EndpointsErrors::OverflowOrUnderflow
             }
         }
     }
@@ -54,6 +50,7 @@ async fn get_left_right_datum_rate(
     db_txn: TransactionWithCallback,
     cache: Arc<Mutex<CurrencyCache>>,
 ) -> Result<(Decimal, Decimal, TransactionWithCallback), CalculateCurrencyRateErrors> {
+    type CalErr = CalculateCurrencyRateErrors;
     let (left_rate, db_txn) = calculate_currency_rate(
         owner,
         CurrencyId(left_datum.ref_amount_currency_id),
@@ -70,9 +67,20 @@ async fn get_left_right_datum_rate(
         cache.clone(),
     )
     .await?;
+
+    let left_datum_decimal = Decimal::new(
+        rust_decimal::Decimal::from_str(&left_datum.amount)
+            .map_err(|_| CalErr::InvalidDecimalValue(left_datum.amount.clone()))?,
+    );
+
+    let right_datum_decimal = Decimal::new(
+        rust_decimal::Decimal::from_str(&right_datum.amount)
+            .map_err(|_| CalErr::InvalidDecimalValue(right_datum.amount.clone()))?,
+    );
+
     Ok((
-        left_rate.forgiving_decimal_mul_str(&left_datum.amount)?,
-        right_rate.forgiving_decimal_mul_str(&right_datum.amount)?,
+        left_rate.checked_mul(left_datum_decimal),
+        right_rate.checked_mul(right_datum_decimal),
         db_txn,
     ))
 }
@@ -90,7 +98,7 @@ pub async fn calculate_currency_rate(
         .map_err(CalculateCurrencyRateErrors::DbErr)?;
 
     match curr {
-        Some(Currency::Base { .. }) => Ok((Decimal::ONE, db_txn)),
+        Some(Currency::Base { .. }) => Ok((Decimal::new(rust_decimal::Decimal::ONE), db_txn)),
         Some(Currency::Normal {
             fallback_rate_amount,
             fallback_rate_currency_id,
@@ -114,10 +122,12 @@ pub async fn calculate_currency_rate(
                     ))
                     .await?;
                     let interpolate_result = try_linear_interpolate(
-                        Some((Decimal::ZERO, left_rate)),
+                        Some((Decimal::new(rust_decimal::Decimal::ZERO), left_rate)),
                         Some((force_time_delta_to_mills_decimal(&full_range), right_rate)),
-                        Decimal::from_i64(left_delta.num_milliseconds())
-                            .expect("Unable to convert left_delta to Decimal."),
+                        Decimal::new(
+                            rust_decimal::Decimal::from_i64(left_delta.num_milliseconds())
+                                .expect("Unable to convert left_delta to Decimal."),
+                        ),
                     );
 
                     match interpolate_result {
@@ -138,6 +148,10 @@ pub async fn calculate_currency_rate(
                 }
                 // If only the left datum is found, return the left datum's rate.
                 (Some(left_d), None) => {
+                    let left_amount =
+                        Decimal::new(RDecimal::from_str_exact(&left_d.amount).map_err(|_| {
+                            CalculateCurrencyRateErrors::InvalidDecimalValue(left_d.amount.clone())
+                        })?);
                     let (left_d_rate, db_txn) = Box::pin(calculate_currency_rate(
                         owner,
                         CurrencyId(left_d.ref_amount_currency_id),
@@ -146,13 +160,18 @@ pub async fn calculate_currency_rate(
                         cache,
                     ))
                     .await?;
-                    Ok((
-                        left_d_rate.forgiving_decimal_mul_str(&left_d.amount)?,
-                        db_txn,
-                    ))
+                    Ok((left_d_rate * left_amount, db_txn))
                 }
                 // If only the right datum is found / not found at all, return the currency fallback rate
                 (None, _) => {
+                    let fallback_rate_amount = Decimal::new(
+                        RDecimal::from_str_exact(&fallback_rate_amount).map_err(|_| {
+                            CalculateCurrencyRateErrors::InvalidDecimalValue(
+                                fallback_rate_amount.clone(),
+                            )
+                        })?,
+                    );
+
                     let (fallback_rate, db_txn) = Box::pin(calculate_currency_rate(
                         owner,
                         fallback_rate_currency_id,
@@ -162,10 +181,7 @@ pub async fn calculate_currency_rate(
                     ))
                     .await?;
 
-                    Ok((
-                        fallback_rate.forgiving_decimal_mul_str(&fallback_rate_amount)?,
-                        db_txn,
-                    ))
+                    Ok((fallback_rate * fallback_rate_amount, db_txn))
                 }
             }
         }

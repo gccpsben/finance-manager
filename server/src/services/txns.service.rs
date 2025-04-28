@@ -20,13 +20,14 @@ use crate::extended_models::txn::TxnId;
 use crate::extended_models::txn_tag::TxnTagId;
 use crate::extractors::auth_user::AuthUser;
 use crate::iter::get_first_duplicated;
+use crate::maths::Decimal;
 use crate::paging::PagedContent;
 use crate::routes::bootstrap::EndpointsErrors;
 use crate::services::TransactionWithCallback;
 use crate::services::currencies::calculate_currency_rate;
 use chrono::NaiveDateTime;
 use itertools::izip;
-use rust_decimal::Decimal;
+use rust_decimal::Decimal as RDecimal;
 use sea_orm::ActiveModelTrait;
 use sea_orm::ActiveValue;
 use sea_orm::ColumnTrait;
@@ -74,7 +75,7 @@ pub struct CreateTxnAction {
 #[derive(Clone, Debug)]
 pub struct CreateTxnActionFragmentSide {
     pub account: Uuid,
-    pub amount: Decimal,
+    pub amount: RDecimal,
     pub currency: Uuid,
 }
 
@@ -120,23 +121,23 @@ pub async fn value_delta_of_fragments(
     date: chrono::DateTime<chrono::Utc>,
     currency_cache: Arc<Mutex<CurrencyCache>>,
 ) -> Result<(Decimal, TransactionWithCallback), CalculateCurrencyRateErrors> {
-    type Decimal = rust_decimal::Decimal;
-    type Errors = CalculateCurrencyRateErrors;
     let mut currencies_amount = HashMap::<CurrencyId, Decimal>::new();
 
     // Err means overflow / underflow / invalid string
     let mut append = |cid: CurrencyId, amount: String, is_negative: bool| -> Option<()> {
         let amount_deci = if is_negative {
-            Decimal::from_str_exact(&amount)
-                .ok()?
-                .checked_mul(Decimal::NEGATIVE_ONE)?
+            Decimal::new(
+                RDecimal::from_str_exact(&amount)
+                    .ok()?
+                    .checked_mul(RDecimal::NEGATIVE_ONE)?,
+            )
         } else {
-            Decimal::from_str_exact(&amount).ok()?
+            Decimal::new(RDecimal::from_str_exact(&amount).ok()?)
         };
         let entry = currencies_amount.get(&cid);
         match entry {
             Some(entry) => {
-                let new_amount = amount_deci.checked_add(*entry)?;
+                let new_amount = amount_deci + *entry;
                 currencies_amount.insert(cid, new_amount);
                 Some(())
             }
@@ -165,19 +166,14 @@ pub async fn value_delta_of_fragments(
     }
 
     let mut db_txn = db_txn;
-    let mut total_value_change = Decimal::ZERO;
+    let mut total_value_change: Decimal = Decimal::new(RDecimal::ZERO);
     for (cid, amount) in currencies_amount.iter() {
         let cache_arc = currency_cache.clone();
         let cal_result = calculate_currency_rate(owner, *cid, db_txn, date, cache_arc).await;
         match cal_result {
             Ok((val, db_txn_inner)) => {
                 db_txn = db_txn_inner;
-                total_value_change = total_value_change
-                    .checked_add(
-                        val.checked_mul(*amount)
-                            .ok_or(Errors::OverflowOrUnderflow)?,
-                    )
-                    .ok_or(Errors::OverflowOrUnderflow)?;
+                total_value_change += val * *amount;
             }
             Err(err) => return Err(err),
         }

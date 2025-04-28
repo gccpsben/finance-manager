@@ -1,11 +1,15 @@
+use crate::maths::Decimal;
 use chrono::TimeDelta;
-use rust_decimal::Decimal;
+use rust_decimal::Decimal as RDecimal;
 use rust_decimal::prelude::FromPrimitive;
 
 /// Convert a given `TimeDelta` into its total mills.
 /// Panics if `NaiveDateTime`'s mills exceed max.
 pub fn force_time_delta_to_mills_decimal(delta: &TimeDelta) -> Decimal {
-    Decimal::from_i64(delta.num_milliseconds()).expect("Unable to convert full_range to Decimal.")
+    Decimal::new(
+        RDecimal::from_i64(delta.num_milliseconds())
+            .expect("Unable to convert full_range to Decimal."),
+    )
 }
 
 /// Linear interpolate given `left` and `right`, and a target `x`.

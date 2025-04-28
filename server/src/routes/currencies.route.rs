@@ -82,9 +82,9 @@ pub mod get_currency {
     use rust_decimal::Decimal;
 
     use super::*;
-    use crate::RESTFUL_DIGITS;
     use crate::date::js_iso_to_iso8601;
     use crate::extended_models::currency::Currency;
+    use crate::maths::format_decimal_restful;
     use crate::services::currencies::calculate_currency_rate;
     use crate::services::currencies::get_currencies;
     use crate::services::currencies::get_currency_by_id;
@@ -207,7 +207,7 @@ pub mod get_currency {
                         owner: owner.0.to_string(),
                         ticker: ticker.to_string(),
                         is_base: false,
-                        rate_to_base: rate.round_dp(RESTFUL_DIGITS).normalize().to_string(),
+                        rate_to_base: format_decimal_restful(rate),
                     });
 
                     db_txn
