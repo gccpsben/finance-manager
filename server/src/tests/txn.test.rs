@@ -16,7 +16,11 @@ pub mod txns {
 
     pub mod drivers {
         use super::*;
-        use crate::routes::txns::get_txn::GetTxnResponse;
+        use crate::{
+            routes::txns::{get_txn::GetTxnResponse, get_txns::GetTxnsQuery},
+            tests::commons::requests::TestQuery,
+            tests::commons::requests::req_attach_header_if,
+        };
 
         pub async fn driver_post_txn(
             token: Option<&str>,
@@ -72,9 +76,7 @@ pub mod txns {
             let mut req = app.get("/api/v1/txn");
             req = attach_token_to_req(req, token);
             req = req.insert_header(ContentType::json());
-            if let Some(target_id) = id {
-                req = req.query(&[("id", target_id)]).unwrap();
-            }
+            req = req_attach_header_if(req, "id", id);
             let mut res = req.send().await.unwrap();
             let res_parsed = parse_response_body(&mut res).await;
             if assert_default {

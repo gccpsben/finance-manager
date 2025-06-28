@@ -3,10 +3,16 @@ use actix_test::ClientRequest;
 use actix_test::ClientResponse;
 use serde::Serialize;
 use serde::de;
+use std::fmt::Display;
 use std::str::from_utf8;
 
 pub enum TestBody<T> {
     Bytes(Box<[u8]>),
+    Expected(T),
+}
+
+pub enum TestQuery<T> {
+    Str(Box<[(String, String)]>),
     Expected(T),
 }
 
@@ -20,11 +26,20 @@ pub struct AssertTestResponse<ExpectedType> {
     pub status: StatusCode,
 }
 
-pub fn attach_token_to_req(req: ClientRequest, token: Option<&str>) -> ClientRequest {
-    match token {
+/// Attach a header to request if the value is `Some(T)`.
+pub fn req_attach_header_if<T: Display>(
+    req: ClientRequest,
+    key: &str,
+    value: Option<T>,
+) -> ClientRequest {
+    match value {
+        Some(v) => req.insert_header((key, v.to_string())),
         None => req,
-        Some(token) => req.insert_header(("authorization", token)),
     }
+}
+
+pub fn attach_token_to_req(req: ClientRequest, token: Option<&str>) -> ClientRequest {
+    req_attach_header_if(req, "authorization", token)
 }
 
 pub async fn send_req_with_body<T: Serialize>(
@@ -44,36 +59,23 @@ pub async fn parse_response_body<ExpectedType: de::DeserializeOwned>(
 ) -> AssertTestResponse<ExpectedType> {
     let status_code = res.status();
     let body_json_str = response_body_to_str(res).await;
-    let parsed_body_expected: Option<ExpectedType> = match body_json_str {
-        Some(_) => match body_json_str {
-            Some(ref body_json_str) => match serde_json::from_str::<ExpectedType>(body_json_str) {
-                Ok(expected) => Some(expected),
-                Err(_) => None,
-            },
-            None => None,
-        },
-        None => None,
-    };
-    let body_json: Option<std::collections::HashMap<String, serde_json::Value>> =
-        match body_json_str {
-            Some(ref body_str) => serde_json::from_str(body_str).unwrap_or_default(),
-            None => None,
-        };
+    let parsed_body_expected: Option<ExpectedType> = body_json_str
+        .clone()
+        .and_then(|body_json_str| serde_json::from_str::<ExpectedType>(&body_json_str).ok());
+    let body_json: Option<std::collections::HashMap<String, serde_json::Value>> = body_json_str
+        .clone()
+        .map(|body| serde_json::from_str(&body).unwrap_or_default());
     AssertTestResponse {
         status: status_code,
         expected: parsed_body_expected,
         json: body_json,
-        str: Some(String::new()),
+        str: body_json_str,
     }
 }
 
 pub async fn response_body_to_str(res: &mut ClientResponse) -> Option<String> {
-    let res_body = res.body().await;
-    match res_body {
-        Err(_) => None,
-        Ok(body_bytes) => match from_utf8(&body_bytes) {
-            Err(_) => None,
-            Ok(str) => Some(str.to_string()),
-        },
-    }
+    res.body()
+        .await
+        .ok()
+        .and_then(|body_bytes| from_utf8(&body_bytes).ok().map(|bytes| bytes.to_string()))
 }

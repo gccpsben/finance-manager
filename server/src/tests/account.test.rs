@@ -7,6 +7,7 @@ pub mod accounts {
     use crate::tests::commons::requests::TestBody;
     use crate::tests::commons::requests::attach_token_to_req;
     use crate::tests::commons::requests::parse_response_body;
+    use crate::tests::commons::requests::req_attach_query_if;
     use crate::tests::commons::requests::send_req_with_body;
     use crate::tests::commons::setups::setup_connection;
     use crate::tests::user_tests::users::drivers::*;
@@ -24,9 +25,7 @@ pub mod accounts {
             assert_default: bool,
         ) -> AssertTestResponse<GetAccountResponse> {
             let mut req = app.get("/api/v1/accounts");
-            if let Some(target_id) = target_id {
-                req = req.query(&[("id", target_id)]).unwrap();
-            }
+            req = req_attach_query_if(req, "id", target_id);
             req = req.insert_header(ContentType::json());
             req = attach_token_to_req(req, token);
             let mut res = req.send().await.unwrap();
