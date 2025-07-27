@@ -1,5 +1,6 @@
 use crate::extended_models::currency::CurrencyId;
 use crate::extractors::auth_user::AuthUser;
+use crate::import_req_res_derive::import_req_res_derive;
 use crate::routes::bootstrap::EndpointsErrors;
 use crate::routes::bootstrap::parse_uuid;
 use crate::services::TransactionWithCallback;
@@ -9,6 +10,7 @@ use sea_orm::TransactionTrait;
 use serde::Deserialize;
 use serde::Serialize;
 use ts_rs::TS;
+import_req_res_derive!();
 
 pub mod post_currency {
 
@@ -16,23 +18,25 @@ pub mod post_currency {
     use crate::extended_models::currency::CreateCurrencyAction;
     use crate::services::currencies::create_currency;
 
-    #[derive(Serialize, Deserialize, Debug)]
-    #[serde(rename_all = "camelCase", deny_unknown_fields)]
-    #[derive(TS)]
-    #[ts(export)]
-    pub struct PostCurrencyRequestBody {
-        pub name: String,
-        pub fallback_rate_amount: Option<String>,
-        pub fallback_rate_currency_id: Option<String>,
-        pub ticker: String,
+    use_req_res_derive! {
+        #[serde(rename_all = "camelCase", deny_unknown_fields)]
+        #[derive(TS)]
+        #[ts(export)]
+        pub struct PostCurrencyRequestBody {
+            pub name: String,
+            pub fallback_rate_amount: Option<String>,
+            pub fallback_rate_currency_id: Option<String>,
+            pub ticker: String,
+        }
     }
 
-    #[derive(Serialize, Deserialize, Debug)]
-    #[serde(rename_all = "camelCase")]
-    #[derive(TS)]
-    #[ts(export)]
-    pub struct PostCurrencyResponseBody {
-        pub id: String,
+    use_req_res_derive! {
+        #[serde(rename_all = "camelCase")]
+        #[derive(TS)]
+        #[ts(export)]
+        pub struct PostCurrencyResponseBody {
+            pub id: String,
+        }
     }
 
     pub async fn handler(
@@ -89,36 +93,39 @@ pub mod get_currency {
     use crate::services::currencies::get_currencies;
     use crate::services::currencies::get_currency_by_id;
 
-    #[derive(Serialize, Deserialize)]
-    #[serde(rename_all = "camelCase")]
-    #[derive(TS)]
-    #[ts(export)]
-    pub struct GetCurrencyQuery {
-        pub id: Option<String>,
-        pub date: Option<String>,
+    use_req_res_derive! {
+        #[serde(rename_all = "camelCase")]
+        #[derive(TS)]
+        #[ts(export)]
+        pub struct GetCurrencyQuery {
+            pub id: Option<String>,
+            pub date: Option<String>,
+        }
     }
 
-    #[derive(Serialize, Deserialize)]
-    #[serde(rename_all = "camelCase")]
-    #[derive(TS)]
-    #[ts(export)]
-    pub struct GetCurrencyResponseItem {
-        pub id: String,
-        pub name: String,
-        pub fallback_rate_amount: Option<String>,
-        pub fallback_rate_currency_id: Option<String>,
-        pub ticker: String,
-        pub is_base: bool,
-        pub owner: String,
-        pub rate_to_base: String,
+    use_req_res_derive! {
+        #[serde(rename_all = "camelCase")]
+        #[derive(TS)]
+        #[ts(export)]
+        pub struct GetCurrencyResponseItem {
+            pub id: String,
+            pub name: String,
+            pub fallback_rate_amount: Option<String>,
+            pub fallback_rate_currency_id: Option<String>,
+            pub ticker: String,
+            pub is_base: bool,
+            pub owner: String,
+            pub rate_to_base: String,
+        }
     }
 
-    #[derive(Serialize, Deserialize)]
-    #[serde(rename_all = "camelCase")]
-    #[derive(TS)]
-    #[ts(export)]
-    pub struct GetCurrencyResponse {
-        pub items: Vec<GetCurrencyResponseItem>,
+    use_req_res_derive! {
+        #[serde(rename_all = "camelCase")]
+        #[derive(TS)]
+        #[ts(export)]
+        pub struct GetCurrencyResponse {
+            pub items: Vec<GetCurrencyResponseItem>,
+        }
     }
 
     pub async fn handler(

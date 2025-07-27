@@ -18,24 +18,27 @@ use serde::Serialize;
 use std::str::FromStr;
 use ts_rs::TS;
 use uuid::Uuid;
+import_req_res_derive!();
 
-#[derive(Serialize, Deserialize, Debug, Clone, PartialEq)]
-#[serde(rename_all = "camelCase")]
-#[derive(TS)]
-#[ts(export)]
-pub struct GetTxnsResponseFragmentSide {
-    pub account: Uuid,
-    pub amount: String,
-    pub currency: Uuid,
+use_req_res_derive! {
+    #[serde(rename_all = "camelCase")]
+    #[derive(TS)]
+    #[ts(export)]
+    pub struct GetTxnsResponseFragmentSide {
+        pub account: Uuid,
+        pub amount: String,
+        pub currency: Uuid,
+    }
 }
 
-#[derive(Serialize, Deserialize, Debug, Clone, PartialEq)]
-#[serde(rename_all = "camelCase")]
-#[derive(TS)]
-#[ts(export)]
-pub struct GetTxnsResponseFragment {
-    pub from: Option<GetTxnsResponseFragmentSide>,
-    pub to: Option<GetTxnsResponseFragmentSide>,
+use_req_res_derive! {
+    #[serde(rename_all = "camelCase")]
+    #[derive(TS)]
+    #[ts(export)]
+    pub struct GetTxnsResponseFragment {
+        pub from: Option<GetTxnsResponseFragmentSide>,
+        pub to: Option<GetTxnsResponseFragmentSide>,
+    }
 }
 
 impl From<&fragment::Model> for GetTxnsResponseFragment {
@@ -84,6 +87,15 @@ pub mod get_txns {
         pub page_index: u64,
         pub total_items: u64,
         pub page_size: u64,
+    }
+
+    #[derive(Serialize, Deserialize, Debug, Clone)]
+    #[serde(rename_all = "camelCase", deny_unknown_fields)]
+    #[derive(TS)]
+    #[ts(export)]
+    pub struct GetTxnsQuery {
+        pub page_size: Option<u64>,
+        pub page_index: Option<u64>,
     }
 
     pub async fn handler(

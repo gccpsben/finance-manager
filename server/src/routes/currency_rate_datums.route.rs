@@ -1,6 +1,7 @@
 use crate::entities::currency_rate_datum;
 use crate::extended_models::currency::CurrencyId;
 use crate::extractors::auth_user::AuthUser;
+use crate::import_req_res_derive::import_req_res_derive;
 use crate::services::TransactionWithCallback;
 use crate::services::currency_rate_datum::create_currency_rate_datum;
 use crate::states::database_states::DatabaseStates;
@@ -12,6 +13,7 @@ use serde::Serialize;
 use std::str::FromStr;
 use ts_rs::TS;
 use uuid::Uuid;
+import_req_res_derive!();
 
 pub mod post_currency_rate_datum {
 
@@ -19,23 +21,25 @@ pub mod post_currency_rate_datum {
 
     use super::*;
 
-    #[derive(Serialize, Deserialize, Debug)]
-    #[serde(rename_all = "camelCase", deny_unknown_fields)]
-    #[derive(TS)]
-    #[ts(export)]
-    pub struct PostCurrencyRateDatumRequest {
-        pub ref_currency_id: String,
-        pub ref_amount_currency_id: String,
-        pub amount: String,
-        pub date_utc: String,
+    use_req_res_derive! {
+        #[serde(rename_all = "camelCase", deny_unknown_fields)]
+        #[derive(TS)]
+        #[ts(export)]
+        pub struct PostCurrencyRateDatumRequest {
+            pub ref_currency_id: String,
+            pub ref_amount_currency_id: String,
+            pub amount: String,
+            pub date_utc: String,
+        }
     }
 
-    #[derive(Serialize, Deserialize, Debug)]
-    #[serde(rename_all = "camelCase")]
-    #[derive(TS)]
-    #[ts(export)]
-    pub struct PostCurrencyRateDatumResponse {
-        pub id: String,
+    use_req_res_derive! {
+        #[serde(rename_all = "camelCase")]
+        #[derive(TS)]
+        #[ts(export)]
+        pub struct PostCurrencyRateDatumResponse {
+            pub id: String,
+        }
     }
 
     pub async fn handler(

@@ -86,7 +86,6 @@ pub mod currency_rate_datums {
                 &runtime.server,
             )
             .await;
-
             let mut base_valid_json = json!(PostCurrencyRateDatumRequest {
                 ref_currency_id: sec_cid.clone(),
                 ref_amount_currency_id: base_cid.clone(),

@@ -21,3 +21,55 @@ pub mod txn_tags;
 
 #[path = "./txns.route.rs"]
 pub mod txns;
+
+#[macro_export]
+macro_rules! derive_alias {
+    ($($name:ident => #[derive($($derive:ident),*)] $(,)?)*) => {
+        $(
+            macro_rules! $name {
+                ($i:item) => {
+                    #[derive($($derive),*)]
+                    $i
+                }
+            }
+        )*
+    }
+}
+
+#[macro_export]
+macro_rules! inner_export_derive_alias {
+    (
+        $import_name:ident,
+        $alias_name: ident,
+        #[derive($($content:ident $(,)?)*)]
+    ) => {
+        #[macro_export]
+        macro_rules! $import_name {
+            () => {
+                use $crate::derive_alias;
+                derive_alias! {
+                    $alias_name => #[derive($($content),*)]
+                }
+            };
+        }
+    }
+}
+
+#[macro_export]
+macro_rules! export_derive_alias {
+    (
+        $import_name:ident,
+        $alias_name: ident,
+        #[derive($($content:ident $(,)?)*)]
+    ) => {
+        mod $import_name {
+            pub use $crate::inner_export_derive_alias;
+            inner_export_derive_alias!(
+                $import_name,
+                $alias_name,
+                #[derive($($content),*)]
+            );
+            pub use $import_name;
+        }
+    }
+}

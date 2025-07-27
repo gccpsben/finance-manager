@@ -1,11 +1,13 @@
 use crate::DatabaseStates;
 use crate::extractors::auth_user::AuthUser;
+use crate::import_req_res_derive::import_req_res_derive;
 use crate::services::accounts::create_account;
 use crate::services::accounts::{get_account, get_accounts};
 use actix_web::web;
 use serde::Deserialize;
 use serde::Serialize;
 use ts_rs::TS;
+import_req_res_derive!();
 
 pub mod get_account {
 
@@ -24,22 +26,24 @@ pub mod get_account {
         pub id: Option<String>,
     }
 
-    #[derive(Serialize, Deserialize)]
-    #[serde(rename_all = "camelCase")]
-    #[derive(TS)]
-    #[ts(export)]
-    pub struct GetAccountResponseItem {
-        pub account_id: String,
-        pub account_name: String,
-        pub creation_date: i64,
+    use_req_res_derive! {
+        #[serde(rename_all = "camelCase")]
+        #[derive(TS)]
+        #[ts(export)]
+        pub struct GetAccountResponseItem {
+            pub account_id: String,
+            pub account_name: String,
+            pub creation_date: i64,
+        }
     }
 
-    #[derive(Serialize, Deserialize)]
-    #[serde(rename_all = "camelCase")]
-    #[derive(TS)]
-    #[ts(export)]
-    pub struct GetAccountResponse {
-        pub items: Vec<GetAccountResponseItem>,
+    use_req_res_derive! {
+        #[serde(rename_all = "camelCase")]
+        #[derive(TS)]
+        #[ts(export)]
+        pub struct GetAccountResponse {
+            pub items: Vec<GetAccountResponseItem>,
+        }
     }
 
     pub async fn handler(
@@ -85,20 +89,22 @@ pub mod post_account {
     use sea_orm::prelude::DateTime;
     use sea_orm::sqlx::types::chrono::Utc;
 
-    #[derive(Serialize, Deserialize)]
-    #[serde(rename_all = "camelCase", deny_unknown_fields)]
-    #[derive(TS)]
-    #[ts(export)]
-    pub struct PostAccountRequestBody {
-        pub account_name: String,
+    use_req_res_derive! {
+        #[serde(rename_all = "camelCase", deny_unknown_fields)]
+        #[derive(TS)]
+        #[ts(export)]
+        pub struct PostAccountRequestBody {
+            pub account_name: String,
+        }
     }
 
-    #[derive(Serialize, Deserialize)]
-    #[serde(rename_all = "camelCase")]
-    #[derive(TS)]
-    #[ts(export)]
-    pub struct PostAccountResponseBody {
-        pub id: String,
+    use_req_res_derive! {
+        #[serde(rename_all = "camelCase")]
+        #[derive(TS)]
+        #[ts(export)]
+        pub struct PostAccountResponseBody {
+            pub id: String,
+        }
     }
 
     pub async fn handler(

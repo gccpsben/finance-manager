@@ -1,31 +1,35 @@
 use crate::DatabaseStates;
+use crate::import_req_res_derive::import_req_res_derive;
 use crate::services::users::generate_token_unverified;
 use crate::services::users::verify_creds;
 use actix_web::web;
 use serde::Deserialize;
 use serde::Serialize;
 use ts_rs::TS;
+import_req_res_derive!();
 
 pub mod login {
     use super::*;
     use crate::routes::bootstrap::EndpointsErrors;
 
-    #[derive(Serialize, Deserialize, Clone, Debug)]
-    #[serde(rename_all = "camelCase", deny_unknown_fields)]
-    #[derive(TS)]
-    #[ts(export)]
-    pub struct LoginRequestBody {
-        pub username: String,
-        pub password: String,
+    use_req_res_derive! {
+        #[serde(rename_all = "camelCase", deny_unknown_fields)]
+        #[derive(TS)]
+        #[ts(export)]
+        pub struct LoginRequestBody {
+            pub username: String,
+            pub password: String,
+        }
     }
 
-    #[derive(Serialize, Deserialize, Clone, Debug)]
-    #[serde(rename_all = "camelCase")]
-    #[derive(TS)]
-    #[ts(export)]
-    pub struct LoginResponseBody {
-        pub token: String,
-        pub owner: String,
+    use_req_res_derive! {
+        #[serde(rename_all = "camelCase")]
+        #[derive(TS)]
+        #[ts(export)]
+        pub struct LoginResponseBody {
+            pub token: String,
+            pub owner: String,
+        }
     }
 
     pub async fn handler(
@@ -55,15 +59,23 @@ pub mod register {
     use super::*;
     use crate::{routes::bootstrap::EndpointsErrors, services::users::register_user};
 
-    #[derive(Serialize, Deserialize, Clone)]
-    pub struct PostUserResponseBody {
-        pub id: String,
+    use_req_res_derive! {
+        #[serde(rename_all = "camelCase", deny_unknown_fields)]
+        #[derive(TS)]
+        #[ts(export)]
+        pub struct PostUserResponseBody {
+            pub id: String,
+        }
     }
 
-    #[derive(Serialize, Deserialize, Clone)]
-    pub struct PostUserRequestBody {
-        pub username: String,
-        pub password: String,
+    use_req_res_derive! {
+        #[serde(rename_all = "camelCase", deny_unknown_fields)]
+        #[derive(TS)]
+        #[ts(export)]
+        pub struct PostUserRequestBody {
+            pub username: String,
+            pub password: String,
+        }
     }
 
     pub async fn handler(

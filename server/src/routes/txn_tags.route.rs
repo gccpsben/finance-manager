@@ -1,4 +1,5 @@
 use crate::extractors::auth_user::AuthUser;
+use crate::import_req_res_derive::import_req_res_derive;
 use crate::services::TransactionWithCallback;
 use crate::services::txn_tags::create_txn_tag;
 use crate::states::database_states::DatabaseStates;
@@ -8,24 +9,27 @@ use actix_web::web;
 use serde::Deserialize;
 use serde::Serialize;
 use ts_rs::TS;
+import_req_res_derive!();
 
 pub mod create_tag {
     use super::*;
 
-    #[derive(Serialize, Deserialize, Clone, Debug)]
-    #[serde(rename_all = "camelCase", deny_unknown_fields)]
-    #[derive(TS)]
-    #[ts(export)]
-    pub struct PostTxnTagRequestBody {
-        pub name: String,
+    use_req_res_derive! {
+        #[serde(rename_all = "camelCase", deny_unknown_fields)]
+        #[derive(TS)]
+        #[ts(export)]
+        pub struct PostTxnTagRequestBody {
+            pub name: String,
+        }
     }
 
-    #[derive(Serialize, Deserialize, Clone, Debug)]
-    #[serde(rename_all = "camelCase")]
-    #[derive(TS)]
-    #[ts(export)]
-    pub struct PostTxnTagResponseBody {
-        pub id: String,
+    use_req_res_derive! {
+        #[serde(rename_all = "camelCase")]
+        #[derive(TS)]
+        #[ts(export)]
+        pub struct PostTxnTagResponseBody {
+            pub id: String,
+        }
     }
 
     pub async fn handler(
@@ -58,25 +62,26 @@ pub mod create_tag {
 }
 
 pub mod get_tags {
+    use super::*;
     use crate::{routes::bootstrap::EndpointsErrors, services::txn_tags::get_txn_tags};
 
-    use super::*;
-
-    #[derive(Serialize, Deserialize, Clone, Debug)]
-    #[serde(rename_all = "camelCase")]
-    #[derive(TS)]
-    #[ts(export)]
-    pub struct GetTxnTagsResponseBodyItem {
-        pub name: String,
-        pub id: String,
+    use_req_res_derive! {
+        #[serde(rename_all = "camelCase")]
+        #[derive(TS)]
+        #[ts(export)]
+        pub struct GetTxnTagsResponseBodyItem {
+            pub name: String,
+            pub id: String,
+        }
     }
 
-    #[derive(Serialize, Deserialize, Clone, Debug)]
-    #[serde(rename_all = "camelCase")]
-    #[derive(TS)]
-    #[ts(export)]
-    pub struct GetTxnTagsResponseBody {
-        pub tags: Vec<GetTxnTagsResponseBodyItem>,
+    use_req_res_derive! {
+        #[serde(rename_all = "camelCase")]
+        #[derive(TS)]
+        #[ts(export)]
+        pub struct GetTxnTagsResponseBody {
+            pub tags: Vec<GetTxnTagsResponseBodyItem>,
+        }
     }
 
     pub async fn handler(

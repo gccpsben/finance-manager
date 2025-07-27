@@ -44,6 +44,12 @@ struct Args {
     exit_on_not_fully_migrated: Option<bool>,
 }
 
+export_derive_alias!(
+    import_req_res_derive,
+    use_req_res_derive,
+    #[derive(Serialize, Deserialize, PartialEq, Eq, Debug, Clone)]
+);
+
 #[cfg_attr(test, mutants::skip)]
 #[actix_web::main]
 pub async fn main() -> Result<(), Box<dyn Error>> {
