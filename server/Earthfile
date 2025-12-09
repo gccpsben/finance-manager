@@ -1,13 +1,5 @@
 VERSION 0.8
 
-# Make a postgres image, with N databases for testing purpose.
-# This image will include a `.sh` file, that will be
-# ran when the official postgres image starts.
-# The script create databases according to the `POSTGRES_MULTIPLE_DATABASES` env variable.
-multiple-databases-postgres:
-    FROM postgres # todo: pinning
-    COPY create-multiple-postgresql-databases.sh /docker-entrypoint-initdb.d/
-
 prepare-build-deps:
     FROM earthly/dind:ubuntu-24.04-docker-27.3.1-1
     RUN apt-get update && \
@@ -17,40 +9,25 @@ prepare-build-deps:
 
 copy-src-and-prepare-build-deps:
     FROM +prepare-build-deps
-    WORKDIR /app
-    COPY --dir ./src ./migration ./
-    COPY Cargo.lock Cargo.toml ./
+    WORKDIR /docker-app
     COPY ./.cargo ./.cargo
+    COPY Cargo.lock Cargo.toml ./
+    COPY --dir ./src ./migration ./
 
-test-no-coverage:
+# Common deps for performing various types of tests
+tests-base:
     FROM +copy-src-and-prepare-build-deps
+    RUN /bin/bash -c "source $HOME/.cargo/env && cargo +stable install cargo-llvm-cov --locked" && \
+        apt install postgresql-client -y
+    COPY ./tests/tests-compose.yaml ./tests/setup_db_urls.sh ./tests/coverage.sh ./
 
-    WITH DOCKER --load multiple-databases-postgres:latest=+multiple-databases-postgres
-        RUN docker run --name test_postgres_db \
-            -p 5432:5432 \
-
-            # This var is NOT standard official postgres docker variable.
-            # This variable will be read by `create-multiple-postgres-database.sh`
-            # See more: https://github.com/mrts/docker-postgresql-multiple-databases/tree/master
-            -e POSTGRES_MULTIPLE_DATABASES=t0,t1,t2,t3,t4,t5,t6,t7,t8,t9,t10,t11 \
-
-            -e POSTGRES_PASSWORD=PW \
-            -e POSTGRES_USER=UR \
-            -d multiple-databases-postgres && \
-            sleep 10 && \ # wait for postgres to start
+integration-test-with-coverage:
+    FROM +tests-base
+    WITH DOCKER --compose ./tests-compose.yaml
+        RUN --no-cache while ! pg_isready --host=localhost --port=5432 --dbname=t0 --username=postgres; do sleep 1; done ; \
             /bin/bash -c "source $HOME/.cargo/env &&
-                export TEST_DB_URL_0=postgres://UR:PW@0.0.0.0:5432/t0 &&
-                export TEST_DB_URL_1=postgres://UR:PW@0.0.0.0:5432/t1 &&
-                export TEST_DB_URL_2=postgres://UR:PW@0.0.0.0:5432/t2 &&
-                export TEST_DB_URL_3=postgres://UR:PW@0.0.0.0:5432/t3 &&
-                export TEST_DB_URL_4=postgres://UR:PW@0.0.0.0:5432/t4 &&
-                export TEST_DB_URL_5=postgres://UR:PW@0.0.0.0:5432/t5 &&
-                export TEST_DB_URL_6=postgres://UR:PW@0.0.0.0:5432/t6 &&
-                export TEST_DB_URL_7=postgres://UR:PW@0.0.0.0:5432/t7 &&
-                export TEST_DB_URL_8=postgres://UR:PW@0.0.0.0:5432/t8 &&
-                export TEST_DB_URL_9=postgres://UR:PW@0.0.0.0:5432/t9 &&
-                export TEST_DB_URL_10=postgres://UR:PW@0.0.0.0:5432/t10 &&
-                export TEST_DB_URL_11=postgres://UR:PW@0.0.0.0:5432/t11 &&
-                cargo nextest run --test-threads=12
-            "
+                source ./setup_db_urls.sh &&
+                ./coverage.sh
+            ";
     END
+    SAVE ARTIFACT ./lcov.info AS LOCAL ./lcov.info

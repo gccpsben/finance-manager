@@ -1,0 +1,29 @@
+# This compose file will be referenced by the Earthfile integration tests as the test databases.
+
+services:
+  postgres-test:
+    container_name: local-postgres
+    image: postgres
+    ports:
+      - 127.0.0.1:5432:5432
+    hostname: postgres
+    entrypoint: [ "/bin/bash", "-c","
+      docker-entrypoint.sh postgres &
+      until pg_isready -U postgres; do sleep 3; done &&
+      psql -U postgres -d postgres -c 'CREATE DATABASE t0;' || true &&
+      psql -U postgres -d postgres -c 'CREATE DATABASE t1;' || true &&
+      psql -U postgres -d postgres -c 'CREATE DATABASE t2;' || true &&
+      psql -U postgres -d postgres -c 'CREATE DATABASE t3;' || true &&
+      psql -U postgres -d postgres -c 'CREATE DATABASE t4;' || true &&
+      psql -U postgres -d postgres -c 'CREATE DATABASE t5;' || true &&
+      psql -U postgres -d postgres -c 'CREATE DATABASE t6;' || true &&
+      psql -U postgres -d postgres -c 'CREATE DATABASE t7;' || true &&
+      psql -U postgres -d postgres -c 'CREATE DATABASE t8;' || true &&
+      psql -U postgres -d postgres -c 'CREATE DATABASE t9;' || true &&
+      psql -U postgres -d postgres -c 'CREATE DATABASE t10;' || true &&
+      psql -U postgres -d postgres -c 'CREATE DATABASE t11;' || true &&
+      wait"
+    ]
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
